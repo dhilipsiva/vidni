@@ -1,0 +1,3 @@
+# Rebuilt by ./build.sh: voices, audio, stills, cards, QA frames and the rendered videos.
+build/
+out/

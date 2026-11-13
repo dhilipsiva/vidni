@@ -1,0 +1,141 @@
+{
+  "title": "nibli: the LLM drafts, the engine decides",
+  "playground": "https://dhilipsiva.dev/nibli-playground/",
+  "voice": {
+    "model": "en_US-joe-medium",
+    "length_scale": 1.0,
+    "sentence_gap": 0.28,
+    "segment_gap": 0.75,
+    "lead_in": 0.6,
+    "tail": 2.4
+  },
+  "respell": [
+    ["dhilipsiva.dev/nibli-playground", "Dhilip Siva dot dev, slash nibli playground"],
+    ["dhilipsiva", "Dhilip Siva"],
+    ["nibli KR", "nibli K R"],
+    ["theorem prover", "theorem proover"],
+    ["RESOURCE_EXCEEDED", "resource exceeded"],
+    ["AI Engineers", "A I Engineers"],
+    ["source #1", "source number one"],
+    ["source #0", "source number zero"]
+  ],
+  "segments": [
+    {
+      "id": "intro",
+      "label": "",
+      "sentences": [
+        {"show": "Language models predict the next word. A reasoner derives the next step.", "card": "intro"},
+        {"show": "In five minutes: what symbolic reasoning is, what a theorem prover does, where an LLM fits around one, and a small proof in nibli, step by step.", "cam": "app"}
+      ]
+    },
+    {
+      "id": "symbolic",
+      "label": "symbolic reasoning",
+      "sentences": [
+        {"show": "Symbolic reasoning works on explicit statements and explicit rules.", "do": [{"tab": "nibli KR"}], "hl": ["kr"], "cam": "kb"},
+        {"show": "Here are three: every dog is an animal, every animal eats, and Adam is a dog.", "hl": ["kr-line:1", "kr-line:3", "kr-line:5"], "cam": "kb"},
+        {"show": "Nothing is learned from examples, and nothing is guessed.", "cam": "kb"},
+        {"show": "A conclusion counts only if it follows from these statements by fixed rules of inference.", "hl": ["kr-line:1", "kr-line:3", "kr-line:5"], "cam": "kb"},
+        {"show": "Run it again tomorrow and you get the same answer, and you can inspect every step that produced it.", "hl": ["row:eats", "row:animal", "row:given"], "cam": "right"}
+      ]
+    },
+    {
+      "id": "proving",
+      "label": "theorem proving",
+      "sentences": [
+        {"show": "A theorem prover automates that.", "cam": "app"},
+        {"show": "You give it premises and a claim, and it searches for a proof: a chain of rule applications from the premises to the claim.", "hl": ["kr", "query-select"], "cam": "left"},
+        {"show": "If it finds one, the answer is TRUE, and it can show you the chain.", "hl": ["verdict", "row:eats", "row:animal", "row:given"], "cam": "right"},
+        {"show": "That answer is sound with respect to what you encoded.", "hl": ["tree"], "cam": "proof"},
+        {"show": "It doesn't make your premises true. It tells you what they commit you to.", "hl": ["kr-line:1", "kr-line:3", "kr-line:5"], "cam": "kb"},
+        {"show": "nibli answers with one of four verdicts: TRUE; FALSE, meaning not derivable; UNKNOWN, with a reason; and RESOURCE_EXCEEDED, when a depth, fuel or memory budget runs out.", "say": "nibli answers with one of four verdicts. TRUE. FALSE, meaning not derivable. UNKNOWN, with a reason. And RESOURCE_EXCEEDED, when a depth, fuel or memory budget runs out.", "hl": ["verdict"], "cam": "right", "overlay": "verdicts"}
+      ]
+    },
+    {
+      "id": "neurosymbolic",
+      "label": "neuro-symbolic architecture",
+      "sentences": [
+        {"show": "A neuro-symbolic system pairs a neural front end with a symbolic core, and lets each do what it's good at.", "do": [{"tab": "Source"}], "cam": "kb"},
+        {"show": "Language models are good at reading prose.", "hl": ["source-text"], "cam": "kb"},
+        {"show": "So in nibli, an LLM can formalize plain English into nibli KR, the engine's rule language.", "hl": ["source-text", "formalize"], "cam": "kb"},
+        {"show": "That draft sits outside the reasoning firewall.", "hl": ["formalize"], "cam": "kb", "overlay": "firewall"},
+        {"show": "Before anything reasons over it, deterministic gates check it.", "do": [{"tab": "nibli KR"}], "hl": ["kr", "kb-status"], "cam": "kb", "overlay": "firewall"},
+        {"show": "The grammar. A committed vocabulary, where an unknown word is an error instead of a guess. The semantic compiler. And a round trip back to canonical text.", "hl": ["kr"], "cam": "kb", "overlay": "firewall"},
+        {"show": "Then a person reviews the rules and their back-translation: a fixed, mechanical reading, with no model involved.", "do": [{"tab": "Back-translation"}], "hl": ["bt-line:0", "bt-line:1", "bt-line:2"], "cam": "kb"},
+        {"show": "This example comes pre-encoded, so the Formalize button is switched off and we skip the drafting.", "do": [{"tab": "Source"}], "hl": ["formalize"], "cam": "kb"},
+        {"show": "The LLM drafts. The engine decides.", "cam": "app"}
+      ]
+    },
+    {
+      "id": "nibli",
+      "label": "nibli",
+      "sentences": [
+        {"show": "nibli is the engine I build in Rust.", "hl": ["brand"], "cam": "app"},
+        {"show": "It's a theorem prover, and it's open source.", "cam": "app"},
+        {"show": "It compiles nibli KR into first-order logic, and answers claims by backward chaining over a fact store.", "do": [{"tab": "nibli KR"}], "hl": ["kr", "tree"], "cam": "top"},
+        {"show": "The whole pipeline, parser, compiler and reasoner, runs right here in the browser as WebAssembly, and also under Wasmtime or as a native crate.", "hl": ["footer"], "cam": "full"},
+        {"show": "It never invents a fact, a rule or a proof step.", "cam": "app"}
+      ]
+    },
+    {
+      "id": "syllogism",
+      "label": "the syllogism",
+      "sentences": [
+        {"show": "Here's the syllogism example: three lines of nibli KR.", "hl": ["examples", "kr-line:1", "kr-line:3", "kr-line:5"], "cam": "app", "vcam": "kb"},
+        {"show": "The first reads: for every X, if X is a dog, then X is an animal.", "do": [{"tab": "Back-translation"}], "hl": ["bt-line:0"], "cam": "kb"},
+        {"show": "The second: for every X, if X is an animal, then X eats.", "hl": ["bt-line:1"], "cam": "kb"},
+        {"show": "The third: Adam is a dog.", "hl": ["bt-line:2"], "cam": "kb"},
+        {"show": "We don't ask a question. We state the claim to check: Adam eats.", "hl": ["query-select", "query-gloss"], "cam": "query"}
+      ]
+    },
+    {
+      "id": "reasoning",
+      "label": "reasoning backward",
+      "sentences": [
+        {"show": "The engine starts from the claim and works backward.", "do": [{"tab": "nibli KR"}], "hl": ["row:eats"], "cam": "right"},
+        {"show": "The goal is: Adam eats. No stored fact says so.", "hl": ["row:eats"], "cam": "proof"},
+        {"show": "So it looks for a rule whose conclusion is eats: line two, every animal eats.", "hl": ["kr-line:3", "row:eats"], "cam": "top", "vcam": "kb"},
+        {"show": "Matching that conclusion to the goal binds X to Adam, and leaves a new goal: Adam is an animal.", "hl": ["row:animal"], "cam": "proof"},
+        {"show": "Again there's no stored fact, so it looks for a rule that concludes animal: line one, every dog is an animal.", "hl": ["kr-line:1", "row:animal"], "cam": "top", "vcam": "kb"},
+        {"show": "That leaves one goal, Adam is a dog, and that one is stored.", "hl": ["kr-line:5", "row:given"], "cam": "top", "vcam": "kb"},
+        {"show": "The chain closes in two rule steps.", "hl": ["row:eats", "row:animal", "row:given"], "cam": "proof"},
+        {"show": "To find the shortest chain, the engine first runs a cheap search without recording, raising the depth limit one step at a time until the claim resolves.", "cam": "proof"}
+      ]
+    },
+    {
+      "id": "trace",
+      "label": "building the proof trace",
+      "sentences": [
+        {"show": "Then it runs the search once more at that depth, this time recording every step. That record is the proof trace.", "hl": ["tree"], "cam": "proof"},
+        {"show": "The stored fact becomes a leaf, marked given.", "hl": ["row:given"], "cam": "proof"},
+        {"show": "Each rule step becomes a node that cites the source line it used.", "hl": ["row:eats", "row:animal"], "cam": "proof"},
+        {"show": "“Adam eats” cites recorded source #1: every animal eats.", "hl": ["row:eats"], "cam": "proof"},
+        {"show": "“Adam is an animal” cites recorded source #0: every dog is an animal.", "hl": ["row:animal"], "cam": "proof"},
+        {"show": "Open the role-level detail, and you see what those lines are made of.", "do": [{"expand": "given-detail"}, {"scrollTo": "row:given"}], "hl": ["row:detail-given"], "cam": "proof"},
+        {"show": "The fact is stored as an event with named roles: the dog, Adam, and a breed nobody specified.", "hl": ["rows:roles"], "cam": "proof"},
+        {"show": "When the same sub-goal comes up again, the trace says “proved above” and points back, instead of proving it twice.", "do": [{"scrollTo": "rows:proved"}], "hl": ["rows:proved"], "cam": "proof"},
+        {"show": "The playground folds the whole record into the three lines you saw, with a plain-English why.", "do": [{"collapse": "given-detail"}, {"scroll": 0}], "hl": ["why", "row:eats", "row:animal", "row:given"], "cam": "proof"}
+      ]
+    },
+    {
+      "id": "false",
+      "label": "a real FALSE",
+      "sentences": [
+        {"show": "Now the claim that Adam is a bird.", "do": [{"preset": "2"}], "hl": ["query-select"], "cam": "app"},
+        {"show": "Nothing in the knowledge base supports it, so the answer is FALSE.", "hl": ["row:failed", "verdict"], "cam": "right"},
+        {"show": "The why line says no example could be found that satisfies the claim.", "hl": ["why"], "cam": "proof"},
+        {"show": "Here, FALSE means not derivable from what we asserted. It isn't a proof that Adam isn't a bird.", "hl": ["row:failed"], "cam": "proof"},
+        {"show": "nibli won't claim more than its premises support.", "cam": "app"}
+      ]
+    },
+    {
+      "id": "end",
+      "label": "",
+      "sentences": [
+        {"show": "Try it at dhilipsiva.dev/nibli-playground. The code is on GitHub.", "card": "end"},
+        {"show": "It's also the running example in my book, Ultimate Neuro-Symbolic Reasoning for AI Engineers, scheduled for December 2026.", "card": "end"},
+        {"show": "I'm dhilipsiva.", "card": "end"}
+      ]
+    }
+  ]
+}
