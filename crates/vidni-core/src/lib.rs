@@ -4,11 +4,17 @@
 //! Everything here is deterministic and does no media I/O. See `TODO.md`,
 //! milestone P2.
 
+pub mod edit;
+pub mod fmt;
 pub mod project;
 pub mod validate;
 
 /// The vidni version, shared by every crate and front end.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// A new project's `vidni.toml`, with a comment on each part. It is in the
+/// canonical layout, so `vidni fmt` leaves it unchanged.
+pub const TEMPLATE: &str = include_str!("template.toml");
 
 /// The JSON Schema of `vidni.toml`, for editors (`docs/vidni.schema.json`).
 pub fn schema_json() -> String {

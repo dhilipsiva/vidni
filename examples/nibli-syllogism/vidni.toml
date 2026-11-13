@@ -74,22 +74,31 @@ track = "none"
 
 [sections.intro]
 label = ""
+
 [sections.symbolic]
 label = "symbolic reasoning"
+
 [sections.proving]
 label = "theorem proving"
+
 [sections.neurosymbolic]
 label = "neuro-symbolic architecture"
+
 [sections.nibli]
 label = "nibli"
+
 [sections.syllogism]
 label = "the syllogism"
+
 [sections.reasoning]
 label = "reasoning backward"
+
 [sections.trace]
 label = "building the proof trace"
+
 [sections.false]
 label = "a real FALSE"
+
 [sections.end]
 label = ""
 
@@ -413,7 +422,10 @@ camera = "proof"
 id = "trace-6"
 section = "trace"
 show = "Open the role-level detail, and you see what those lines are made of."
-do = [{ expand = "row-detail-given", control = ".proof-disclosure" }, { scroll_to = "row-given", within = "proof-panel", offset = 14 }]
+do = [
+  { expand = "row-detail-given", control = ".proof-disclosure" },
+  { scroll_to = "row-given", within = "proof-panel", offset = 14 },
+]
 highlight = ["row-detail-given"]
 camera = "proof"
 
@@ -436,7 +448,10 @@ camera = "proof"
 id = "trace-9"
 section = "trace"
 show = "The playground folds the whole record into the three lines you saw, with a plain-English why."
-do = [{ collapse = "row-detail-given", control = ".proof-disclosure" }, { scroll = "proof-panel", top = 0 }]
+do = [
+  { collapse = "row-detail-given", control = ".proof-disclosure" },
+  { scroll = "proof-panel", top = 0 },
+]
 highlight = ["why", "row-eats", "row-animal", "row-given"]
 camera = "proof"
 
@@ -500,11 +515,7 @@ scale = 3
 color_scheme = "dark"
 default_camera = "app"
 vertical_follows_highlights = 760
-setup = [
-  { wait = "app-shell" },
-  { select = "examples", value = "0" },
-  { wait = "result" },
-]
+setup = [{ wait = "app-shell" }, { select = "examples", value = "0" }, { wait = "result" }]
 
 [scenes.playground.targets]
 # Regions the cameras frame
@@ -654,6 +665,4 @@ text = "No example could be found that satisfies the query."
 scene = "playground"
 at = "false-1"
 target = "proof-rows"
-texts = [
-  "No witness found",
-]
+texts = ["No witness found"]

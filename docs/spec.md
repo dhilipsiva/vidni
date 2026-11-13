@@ -235,6 +235,19 @@ An expectation is text a web scene must show. A capture stops when the page show
 
 Set `text` or `texts`, not both.
 
+## Layout: `vidni fmt`
+
+`vidni fmt` rewrites a valid file in one canonical layout, and `vidni fmt --check` reports a file that isn't in it. Every comment is kept, and every value is kept as written: strings keep their quotes and escapes, and numbers keep their spelling. The rest is fixed:
+- **Tables** come in the order of this page: `meta`, `voice`, `timing`, `lint`, `style`, `cuts`, `music`, the sections in script order, `lines`, `scenes`, `expectations`.
+- **Keys** come in the order of this page within each table.
+- **Spacing:** `key = value` has single spaces, and inline tables read `{ a = 1, b = 2 }`.
+- **Blank lines:** each table header has one blank line before it. Keys have none, except before a comment that starts a group.
+- **Arrays** stay on one line when the line fits in 100 columns and holds no comments. Otherwise each element gets its own line, indented two spaces, with a trailing comma.
+- **Trailing comments** sit one space after their value.
+- **Dotted tables** become headed tables, and the file ends with one newline.
+
+The desktop app edits a file through the same core, and an edit changes only what it names: a changed value keeps its comment, a new key goes where `vidni fmt` would put it, and a moved line takes its comments along.
+
 ## What `vidni validate` checks
 
 ```sh

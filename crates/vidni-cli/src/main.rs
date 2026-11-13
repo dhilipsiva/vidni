@@ -26,6 +26,15 @@ enum Command {
         #[arg(default_value = ".")]
         path: PathBuf,
     },
+    /// Rewrite a project file in the canonical layout, keeping every comment.
+    Fmt {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// Change nothing; exit 1 if the file isn't in the canonical layout.
+        #[arg(long)]
+        check: bool,
+    },
     /// Print the JSON Schema of vidni.toml, for editors.
     Schema,
 }
@@ -33,6 +42,7 @@ enum Command {
 fn main() -> ExitCode {
     match Cli::parse().command {
         Command::Validate { path } => validate(&path),
+        Command::Fmt { path, check } => fmt(&path, check),
         Command::Schema => {
             print!("{}", vidni_core::schema_json());
             ExitCode::SUCCESS
@@ -40,14 +50,57 @@ fn main() -> ExitCode {
     }
 }
 
-fn validate(path: &Path) -> ExitCode {
+/// Reads a project's file, or reports why it can't.
+fn read(path: &Path) -> Result<(PathBuf, String), ExitCode> {
     let file = validate::project_file(path);
-    let text = match fs::read_to_string(&file) {
-        Ok(text) => text,
+    match fs::read_to_string(&file) {
+        Ok(text) => Ok((file, text)),
         Err(e) => {
             eprintln!("vidni: {}: {e}", file.display());
-            return ExitCode::from(2);
+            Err(ExitCode::from(2))
         }
+    }
+}
+
+fn report(file: &Path, problems: &[validate::Diagnostic]) -> ExitCode {
+    for problem in problems {
+        eprintln!("{}:{problem}", file.display());
+    }
+    eprintln!("{}", count(problems.len(), "problem"));
+    ExitCode::FAILURE
+}
+
+fn fmt(path: &Path, check: bool) -> ExitCode {
+    let (file, text) = match read(path) {
+        Ok(read) => read,
+        Err(code) => return code,
+    };
+    let formatted = match vidni_core::fmt::format(&text) {
+        Ok(formatted) => formatted,
+        Err(problems) => return report(&file, &problems),
+    };
+    if formatted == text {
+        println!("{}: already in the canonical layout", file.display());
+        ExitCode::SUCCESS
+    } else if check {
+        eprintln!(
+            "{}: not in the canonical layout; run `vidni fmt`",
+            file.display()
+        );
+        ExitCode::FAILURE
+    } else if let Err(e) = fs::write(&file, formatted) {
+        eprintln!("vidni: {}: {e}", file.display());
+        ExitCode::from(2)
+    } else {
+        println!("{}: formatted", file.display());
+        ExitCode::SUCCESS
+    }
+}
+
+fn validate(path: &Path) -> ExitCode {
+    let (file, text) = match read(path) {
+        Ok(read) => read,
+        Err(code) => return code,
     };
     let dir = file
         .parent()
@@ -65,13 +118,7 @@ fn validate(path: &Path) -> ExitCode {
             );
             ExitCode::SUCCESS
         }
-        Err(problems) => {
-            for problem in &problems {
-                eprintln!("{}:{problem}", file.display());
-            }
-            eprintln!("{}", count(problems.len(), "problem"));
-            ExitCode::FAILURE
-        }
+        Err(problems) => report(&file, &problems),
     }
 }
 

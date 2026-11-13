@@ -1,0 +1,56 @@
+#:schema https://raw.githubusercontent.com/dhilipsiva/vidni/main/docs/vidni.schema.json
+# A vidni project: one video, in one file. docs/spec.md in the vidni
+# repository describes every key, and `vidni validate` checks this file.
+
+schema = 1
+
+# What the video is.
+[meta]
+title = "My first video"
+language = "en"
+# The scene a line shows when it names none.
+default_scene = "page"
+
+# The draft voice speaks every line until you record your own takes.
+[voice]
+draft = "piper:en_US-joe-medium"
+# Spellings the draft voice says better, such as names it mispronounces.
+respell = [{ text = "vidni", say = "vid nee" }]
+
+# Pauses, in seconds.
+[timing]
+lead_in = 0.6
+line_gap = 0.28
+section_gap = 0.75
+tail = 2.4
+
+# A long video for YouTube.
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+# A vertical cut for YouTube Shorts, Instagram Reels and WhatsApp Status.
+[[cuts]]
+id = "vertical"
+aspect = "9:16"
+
+# Sections group lines. Their labels are shown on screen and become chapters.
+[sections.intro]
+label = "Introduction"
+
+# The script, one narrated line at a time. A line's ID never changes: your
+# takes are filed under it.
+[[lines]]
+id = "intro-1"
+section = "intro"
+show = "Hello, and welcome."
+
+[[lines]]
+id = "intro-2"
+section = "intro"
+show = "This video was made with vidni." # Edit the words; the ID stays.
+
+# What the lines show: here, a web page under the virtual camera.
+[scenes.page]
+kind = "web"
+url = "https://example.com"
