@@ -33,6 +33,8 @@ just            # list the tasks
 just lint test  # what CI runs
 ```
 
+The reference checks (`just golden`, `just parity …` and `just test-reference`) also need the example's takes and the reference's build files, which are kept out of git. See [`examples/nibli-syllogism/README.md`](examples/nibli-syllogism/README.md).
+
 ## License
 
 Licensed under either of

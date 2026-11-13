@@ -44,6 +44,11 @@ golden:
 golden-update:
     ref="$(realpath {{reference}})"; env -u LD_LIBRARY_PATH nix develop "$ref" --command python3 -I tools/golden.py update "$ref"
 
+# Run the reference's tests (reference/tests) in its nix shell, in a network namespace with
+# no network and with no PipeWire or Pulse socket reachable, so no microphone (P1-VIDNI-05).
+test-reference:
+    ref="$(realpath {{reference}})"; env -u LD_LIBRARY_PATH nix develop "$ref" --command bash -c 'unset LD_LIBRARY_PATH; cd "$1"; run="$(mktemp -d)"; trap "rm -rf $run" EXIT; env -u PIPEWIRE_REMOTE -u PULSE_SERVER XDG_RUNTIME_DIR="$run" unshare -rn python3 -I -B -m unittest discover -s tests -v' _ "$ref"
+
 # Check every example's out-of-git assets (takes) against its assets.lock.
 assets-check:
     for lock in examples/*/assets.lock; do (cd "$(dirname "$lock")" && sha256sum -c --quiet --strict assets.lock) && echo "$lock: every file matches"; done

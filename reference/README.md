@@ -26,6 +26,8 @@ The videos are rebuilt from source and stay out of git.
 ./build.sh compose --remux  # new narration into both cuts, video not re-encoded
 ```
 
+`tests/` specifies this pipeline's behaviour for the Rust port: cue splitting, timeline assembly, camera framing, the recorder's terminal scenarios, and keeping the variants apart. Run it from vidni's root with `just test-reference`. It takes under a minute, with no microphone and no network.
+
 Narration is normalized in two loudnorm passes. One pass measured −18.1 LUFS on this speech-with-pauses track, below the −16 target.
 
 **Requirements:**
