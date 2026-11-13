@@ -10,8 +10,8 @@ Run it from this folder inside its nix shell:
 
     python3 -I tests/test_variants.py
 
-The creator's takes are read from RECORDINGS_DIR (default:
-../examples/nibli-syllogism/recordings).
+The creator's takes are read from RECORDINGS_DIR, as numbered files;
+`just test-reference` lays the example's takes out there with `vidni takes --link`.
 """
 
 import hashlib
@@ -23,8 +23,8 @@ import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BUILD = os.path.join(ROOT, "build")
-RECORDINGS = os.path.abspath(os.environ.get("RECORDINGS_DIR") or
-                             os.path.join(ROOT, "..", "examples", "nibli-syllogism", "recordings"))
+RECORDINGS = os.environ.get("RECORDINGS_DIR") or sys.exit(
+    "set RECORDINGS_DIR to the takes as numbered files; `just test-reference` does")
 
 
 def run(args, **env):

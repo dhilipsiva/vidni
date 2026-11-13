@@ -5,6 +5,7 @@
 build/
 out/
 recordings/
+takes/
 __pycache__/
 # The golden framemd5 logs are committed, whatever a global gitignore says about *.gz.
 !golden/framemd5/*.gz

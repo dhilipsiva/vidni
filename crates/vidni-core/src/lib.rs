@@ -7,6 +7,8 @@
 pub mod edit;
 pub mod fmt;
 pub mod project;
+pub mod spoken;
+pub mod takes;
 pub mod validate;
 
 /// The vidni version, shared by every crate and front end.

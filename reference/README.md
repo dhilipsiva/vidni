@@ -89,10 +89,9 @@ Narration is normalized in two loudnorm passes. One pass measured −18.1 LUFS o
 **If something fails,** you get a message instead of a crash, and every take you kept stays saved. Unexpected errors go to `record-error.log` in the takes folder.
 
 **Where takes go:**
-- The takes folder is `../examples/nibli-syllogism/recordings/`. Set `RECORDINGS_DIR` to use another one.
-- Kept takes go to `NNN.wav` there, at 48 kHz, 16-bit mono.
-- Every raw take stays in its `raw/` folder.
-- The takes are kept out of git, so back them up. `examples/nibli-syllogism/assets.lock` lists their sha256.
+- The nibli example's takes live in vidni's take store, `../examples/nibli-syllogism/takes/`, filed by line ID and spoken words (P2-VIDNI-03). `./build.sh own` lays them out as numbered files with `vidni takes --link`.
+- This recorder writes the older numbered layout, into the folder `RECORDINGS_DIR` names: kept takes as `NNN.wav` (48 kHz, 16-bit mono), and every raw take in `raw/`.
+- Takes are kept out of git, so back them up. `examples/nibli-syllogism/assets.lock` lists their sha256.
 
 **Choosing a microphone.** `wpctl status` lists the microphones. To use one, either make it the default with `wpctl set-default <id>` or set `MIC` to its node name.
 

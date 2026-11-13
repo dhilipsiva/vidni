@@ -112,3 +112,54 @@ fn fmt_refuses_an_invalid_file_with_its_problems() {
     assert_eq!(out.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&out.stderr).contains(":14:9: unknown scene \"pgae\""));
 }
+
+#[test]
+fn takes_lists_each_lines_take_and_links_the_current_ones() {
+    let dir = tempfile::tempdir().unwrap();
+    let project = dir.path().to_str().unwrap();
+    fs::write(dir.path().join("vidni.toml"), vidni_core::TEMPLATE).unwrap();
+    let listing = |args: &[&str]| String::from_utf8(vidni(args).stdout).unwrap();
+    let before = listing(&["takes", project]);
+    assert!(
+        before.ends_with("0 current, 0 stale, 2 missing\n"),
+        "{before}"
+    );
+    // Record a take where the listing says each one goes.
+    let paths: Vec<String> = before
+        .lines()
+        .take(2)
+        .map(|l| l.split_whitespace().nth(2).unwrap().to_string())
+        .collect();
+    for path in &paths {
+        let file = dir.path().join(path);
+        fs::create_dir_all(file.parent().unwrap()).unwrap();
+        fs::write(&file, path.as_bytes()).unwrap();
+    }
+    assert!(listing(&["takes", project]).ends_with("2 current, 0 stale, 0 missing\n"));
+    let links = dir.path().join("links");
+    let out = vidni(&["takes", project, "--link", links.to_str().unwrap()]);
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    for (k, path) in paths.iter().enumerate() {
+        let link = links.join(format!("{k:03}.wav"));
+        assert_eq!(fs::read_link(&link).unwrap(), dir.path().join(path));
+    }
+    // New words for the second line: its take goes stale, and --link refuses.
+    let edited = vidni_core::TEMPLATE.replace(
+        "This video was made with vidni.",
+        "This video was made by hand.",
+    );
+    fs::write(dir.path().join("vidni.toml"), edited).unwrap();
+    assert!(listing(&["takes", project]).contains("stale"));
+    let out = vidni(&[
+        "takes",
+        project,
+        "--link",
+        dir.path().join("links2").to_str().unwrap(),
+    ]);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("intro-2"));
+}

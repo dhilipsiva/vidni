@@ -8,20 +8,23 @@ Until vidni can render it from a `vidni.toml` (P8-VIDNI-02), the reference pipel
 
 ## The creator's takes
 
-`recordings/` holds the recorded narration:
-- `NNN.wav` is the kept take for line NNN. There are 57 lines, recorded at 48 kHz, 16-bit mono.
-- `raw/` keeps every raw take, before trimming.
+`takes/` holds the recorded narration, filed by line ID and spoken words (docs/spec.md, "Takes and spoken words"):
+- `takes/<line-id>/<hash>.wav` is the kept take for each of the 57 lines, at 48 kHz, 16-bit mono.
+- `takes/<line-id>/raw/` keeps every raw take, before trimming.
+- `takes/_room/` holds the room tone from the mic check.
 
-The takes are kept out of git (DECISIONS.md, D4), so a clone of vidni doesn't include them. `assets.lock` records the sha256 of each take, kept and raw. It lets anyone check a copy restored from a backup:
+The takes were recorded as numbered files and moved here in P2-VIDNI-03, each checked by sha256. `vidni takes examples/nibli-syllogism` shows them all as current.
+
+The takes are kept out of git (DECISIONS.md, D4), so a clone of vidni doesn't include them. `assets.lock` records the sha256 of each one, so anyone can check a copy restored from a backup:
 
 ```sh
 just assets-check   # or: cd examples/nibli-syllogism && sha256sum -c assets.lock
 ```
 
-Without the takes, only the synthetic variant can be rebuilt. `just golden` needs them too, because the creator's voice is one of the golden variants.
+Without the takes, only the synthetic variant can be rebuilt. `just golden` needs them too, because the creator's voice is one of the golden variants. It lays them out for the reference pipeline with `vidni takes --link`.
 
-To record or re-record lines, run `./build.sh record` in `reference/`. It writes here unless `RECORDINGS_DIR` points somewhere else. After a retake, refresh the lock:
+After a retake, refresh the lock:
 
 ```sh
-cd examples/nibli-syllogism && find recordings -type f -print0 | sort -z | xargs -0 sha256sum > assets.lock
+cd examples/nibli-syllogism && find takes -type f -print0 | sort -z | xargs -0 sha256sum > assets.lock
 ```

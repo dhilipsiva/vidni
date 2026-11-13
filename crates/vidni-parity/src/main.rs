@@ -1,5 +1,5 @@
-//! `vidni-parity <stage> [--candidate DIR | --reference-self] [--golden DIR] [--reference DIR] [--takes DIR]`
-//! `vidni-parity selftest [--golden DIR] [--reference DIR] [--takes DIR]`
+//! `vidni-parity <stage> [--candidate DIR | --reference-self] [--golden DIR] [--reference DIR]`
+//! `vidni-parity selftest [--golden DIR] [--reference DIR]`
 //!
 //! Compares a candidate folder with the golden outputs (TODO.md, P1-VIDNI-04).
 //! The stages are timeline, narration, encode, cuts, stills and all.
@@ -13,8 +13,8 @@ use std::process::ExitCode;
 use vidni_parity::{STAGES, Sources, check_stage, reference_as_candidate, selftest::selftest};
 
 const USAGE: &str = "usage: vidni-parity <timeline|narration|encode|cuts|stills|all> \
-                     [--candidate DIR | --reference-self] [--golden DIR] [--reference DIR] [--takes DIR]\n       \
-                     vidni-parity selftest [--golden DIR] [--reference DIR] [--takes DIR]";
+                     [--candidate DIR | --reference-self] [--golden DIR] [--reference DIR]\n       \
+                     vidni-parity selftest [--golden DIR] [--reference DIR]";
 
 fn main() -> ExitCode {
     match run() {
@@ -40,7 +40,6 @@ fn run() -> Result<bool, String> {
     let mut reference = std::env::var_os("VIDNI_REFERENCE")
         .map(PathBuf::from)
         .unwrap_or_else(|| root.join("reference"));
-    let mut takes = root.join("examples/nibli-syllogism/recordings");
     while let Some(flag) = args.next() {
         let mut value = || {
             args.next()
@@ -51,7 +50,6 @@ fn run() -> Result<bool, String> {
             "--candidate" => candidate = Some(value()?),
             "--golden" => golden = value()?,
             "--reference" => reference = value()?,
-            "--takes" => takes = value()?,
             "--reference-self" => reference_self = true,
             _ => return Err(format!("unknown argument {flag}\n{USAGE}")),
         }
@@ -63,8 +61,6 @@ fn run() -> Result<bool, String> {
     let sources = Sources {
         golden: existing(golden)?,
         reference: existing(reference)?,
-        // A clone without the takes can still check every other output.
-        takes: takes.canonicalize().unwrap_or(takes),
     };
     let scratch = std::env::temp_dir().join(format!("vidni-parity-{}", std::process::id()));
     fs::create_dir_all(&scratch).map_err(|e| e.to_string())?;

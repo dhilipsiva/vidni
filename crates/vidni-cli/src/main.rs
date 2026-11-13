@@ -5,6 +5,7 @@ use clap::{Parser, Subcommand};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use vidni_core::takes::Status;
 use vidni_core::validate;
 
 #[derive(Parser)]
@@ -35,6 +36,16 @@ enum Command {
         #[arg(long)]
         check: bool,
     },
+    /// List each line's take: current, stale (recorded for other words) or missing.
+    Takes {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// Instead, lay the current takes out in DIR as 000.wav, 001.wav … in
+        /// script order, as symbolic links, for tools that read numbered files.
+        #[arg(long, value_name = "DIR")]
+        link: Option<PathBuf>,
+    },
     /// Print the JSON Schema of vidni.toml, for editors.
     Schema,
 }
@@ -43,6 +54,7 @@ fn main() -> ExitCode {
     match Cli::parse().command {
         Command::Validate { path } => validate(&path),
         Command::Fmt { path, check } => fmt(&path, check),
+        Command::Takes { path, link } => takes(&path, link.as_deref()),
         Command::Schema => {
             print!("{}", vidni_core::schema_json());
             ExitCode::SUCCESS
@@ -94,6 +106,96 @@ fn fmt(path: &Path, check: bool) -> ExitCode {
     } else {
         println!("{}: formatted", file.display());
         ExitCode::SUCCESS
+    }
+}
+
+fn takes(path: &Path, link: Option<&Path>) -> ExitCode {
+    let (file, text) = match read(path) {
+        Ok(read) => read,
+        Err(code) => return code,
+    };
+    let dir = file
+        .parent()
+        .filter(|d| !d.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    let project = match validate::check(&text, Some(dir)) {
+        Ok(project) => project,
+        Err(problems) => return report(&file, &problems),
+    };
+    let lines = vidni_core::takes::status(&project, dir);
+    let shown = |p: &Path| p.strip_prefix(dir).unwrap_or(p).display().to_string();
+    if let Some(link) = link {
+        return link_takes(&lines, link);
+    }
+    let width = lines.iter().map(|l| l.id.len()).max().unwrap_or(0);
+    let (mut current, mut stale, mut missing) = (0, 0, 0);
+    for line in &lines {
+        let (state, note) = match &line.status {
+            Status::Current(_) => {
+                current += 1;
+                ("current", String::new())
+            }
+            Status::Stale(others) => {
+                stale += 1;
+                (
+                    "stale",
+                    format!(
+                        " (recorded for other words: {})",
+                        count(others.len(), "take")
+                    ),
+                )
+            }
+            Status::Missing => {
+                missing += 1;
+                ("missing", String::new())
+            }
+        };
+        println!("{:width$}  {state:7}  {}{note}", line.id, shown(&line.path));
+    }
+    println!("{current} current, {stale} stale, {missing} missing");
+    ExitCode::SUCCESS
+}
+
+fn link_takes(lines: &[vidni_core::takes::LineTake], dir: &Path) -> ExitCode {
+    let not_current: Vec<&str> = lines
+        .iter()
+        .filter(|l| !matches!(l.status, Status::Current(_)))
+        .map(|l| l.id.as_str())
+        .collect();
+    if !not_current.is_empty() {
+        eprintln!(
+            "vidni: these lines have no current take: {}",
+            not_current.join(", ")
+        );
+        return ExitCode::FAILURE;
+    }
+    if dir.exists()
+        && fs::read_dir(dir)
+            .map(|mut d| d.next().is_some())
+            .unwrap_or(true)
+    {
+        eprintln!("vidni: {} must be a new or empty folder", dir.display());
+        return ExitCode::from(2);
+    }
+    let linked = fs::create_dir_all(dir).and_then(|_| {
+        lines.iter().enumerate().try_for_each(|(k, line)| {
+            let target = std::path::absolute(&line.path)?;
+            std::os::unix::fs::symlink(target, dir.join(format!("{k:03}.wav")))
+        })
+    });
+    match linked {
+        Ok(()) => {
+            println!(
+                "linked {} into {}",
+                count(lines.len(), "take"),
+                dir.display()
+            );
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("vidni: {}: {e}", dir.display());
+            ExitCode::from(2)
+        }
     }
 }
 

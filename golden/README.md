@@ -13,7 +13,7 @@ These files record what the reference pipeline produces for the nibli syllogism 
 **Frozen inputs** are hashed, never regenerated, because they cannot be re-made deterministically. Each is hashed twice: the file bytes, and the decoded PCM or RGBA pixels. They are:
 - the script (`segments.json`)
 - the synthetic Piper takes (`build/audio`)
-- the creator's takes (`examples/nibli-syllogism/recordings`, listed as `recordings/`)
+- the creator's takes (`examples/nibli-syllogism/takes`, laid out as numbered files by `vidni takes --link` and listed as `recordings/`)
 - the captures and cards Chromium rendered (`build/stills`, `build/cards`)
 - `capture.json`, and `onscreen.json` without its clock field
 

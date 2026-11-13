@@ -94,11 +94,11 @@ pub fn pcm_sha256(path: &Path) -> Result<String, String> {
 
 /// Normalizes a timeline as `tools/golden.py` does: whisper's `heard` and
 /// `score` are dropped, and each clip path, absolute or relative to `root`,
-/// is rewritten so that it doesn't depend on where the takes are stored. The
-/// creator's takes in `takes` become `recordings/NNN.wav`; any other clip is
-/// made relative to `root`.
-pub fn normalize_timeline(timeline: &mut Value, root: &Path, takes: &Path) {
-    let (root, takes) = (lexical(root), lexical(takes));
+/// is rewritten so that it doesn't depend on where the takes were laid out.
+/// A clip in the reference's `build/` (a synthetic take) is made relative to
+/// `root`; any other clip is one of the creator's takes, `recordings/<file>`.
+pub fn normalize_timeline(timeline: &mut Value, root: &Path) {
+    let root = lexical(root);
     if let Some(sentences) = timeline.get_mut("sentences").and_then(Value::as_array_mut) {
         for sentence in sentences {
             if let Some(map) = sentence.as_object_mut() {
@@ -106,12 +106,14 @@ pub fn normalize_timeline(timeline: &mut Value, root: &Path, takes: &Path) {
                 map.remove("score");
                 if let Some(Value::String(wav)) = map.get_mut("wav") {
                     let clip = lexical(&root.join(wav.as_str()));
-                    if clip.parent() == Some(takes.as_path())
-                        && let Some(name) = clip.file_name()
-                    {
-                        *wav = format!("recordings/{}", name.to_string_lossy());
-                    } else if let Ok(rel) = clip.strip_prefix(&root) {
-                        *wav = rel.to_string_lossy().into_owned();
+                    match clip.strip_prefix(&root) {
+                        Ok(rel) if rel.starts_with("build") => {
+                            *wav = rel.to_string_lossy().into_owned();
+                        }
+                        _ => {
+                            let name = clip.file_name().unwrap_or_default().to_string_lossy();
+                            *wav = format!("recordings/{name}");
+                        }
                     }
                 }
             }
@@ -316,13 +318,7 @@ pub fn load_json(path: &Path) -> Result<Value, String> {
 }
 
 /// Timelines and captions: exact equality after normalization.
-pub fn check_timeline(
-    candidate: &Path,
-    golden: &Path,
-    root: &Path,
-    takes: &Path,
-    report: &mut Report,
-) {
+pub fn check_timeline(candidate: &Path, golden: &Path, root: &Path, report: &mut Report) {
     for (variant, suffix) in VARIANTS {
         let name = format!("timeline-{variant}.json");
         match (
@@ -330,7 +326,7 @@ pub fn check_timeline(
             load_json(&candidate.join(&name)),
         ) {
             (Ok(g), Ok(mut c)) => {
-                normalize_timeline(&mut c, root, takes);
+                normalize_timeline(&mut c, root);
                 match json_diff(&g, &c, "") {
                     None => report.pass(),
                     Some(d) => report.fail(format!("{name}: {d}")),
@@ -479,11 +475,10 @@ pub fn check_stills(candidate: &Path, reference_build: &Path, hashes: &Value, re
 /// The stages, in the order `all` runs them.
 pub const STAGES: [&str; 5] = ["timeline", "narration", "encode", "cuts", "stills"];
 
-/// Where the golden outputs, the reference pipeline and the creator's takes are.
+/// Where the golden outputs and the reference pipeline are.
 pub struct Sources {
     pub golden: PathBuf,
     pub reference: PathBuf,
-    pub takes: PathBuf,
 }
 
 /// Runs one stage's checks, or every stage's for `all`, on a candidate folder.
@@ -500,13 +495,7 @@ pub fn check_stage(
     let on = |s: &str| stage == "all" || stage == s;
     let mut report = Report::default();
     if on("timeline") {
-        check_timeline(
-            candidate,
-            &sources.golden,
-            &sources.reference,
-            &sources.takes,
-            &mut report,
-        );
+        check_timeline(candidate, &sources.golden, &sources.reference, &mut report);
     }
     if on("narration") {
         check_narration(candidate, &hashes, &mut report);
@@ -600,15 +589,11 @@ mod tests {
         let mut t = json!({"sentences": [
             {"wav": "/x/ref/build/audio/000.wav", "heard": "hi", "score": 0.9, "k": 0},
             {"wav": "build/audio/001.wav", "k": 1},
-            {"wav": "../examples/nibli-syllogism/recordings/002.wav", "k": 2},
+            {"wav": "../../tmp/tmpab12/takes/002.wav", "k": 2},
             {"wav": "/x/examples/nibli-syllogism/recordings/003.wav", "k": 3},
             {"wav": "./build/../build/audio/004.wav", "k": 4},
         ]});
-        normalize_timeline(
-            &mut t,
-            Path::new("/x/ref"),
-            Path::new("/x/ref/../examples/nibli-syllogism/recordings"),
-        );
+        normalize_timeline(&mut t, Path::new("/x/ref"));
         assert_eq!(
             t,
             json!({"sentences": [

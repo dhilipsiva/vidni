@@ -133,6 +133,30 @@ Sections come in the order of their first line, and a section's lines must be to
 
 `do`, `highlight`, `camera` and `camera_vertical` need a web scene. A line on a page scene shows that page full-frame.
 
+## Takes and spoken words
+
+A line's audio is filed under its ID and a hash of its spoken words. This covers its takes, its synthetic clips and its captions.
+- **The spoken form** is `say`, or else `show` with `voice.read_as` applied.
+- **Its words** are the spoken form in lowercase, with apostrophes joined (`it's` becomes `its`) and every other punctuation mark removed.
+- **The hash** is the first 16 hex digits of the words' SHA-256.
+
+So an edit to a line's punctuation or capitals keeps its audio, and an edit to its words makes the audio stale. Inserting, removing or moving other lines never touches it.
+
+The creator's takes live in the project folder, out of git (DECISIONS.md, D4):
+
+```text
+takes/<line-id>/<hash>.wav          the kept take for that wording
+takes/<line-id>/raw/<hash>-<n>.wav  every raw take for it, numbered from 1
+takes/_room/                        room tone from the mic check
+```
+
+`vidni takes` lists each line's take as one of:
+- **current:** there is a take for the line's words.
+- **stale:** there are takes only for other words. They stay on disk, in case the edit is undone.
+- **missing:** there are no takes at all.
+
+`vidni takes --link DIR` lays the current takes out as `000.wav`, `001.wav` … in script order, as symbolic links, for tools that read numbered files.
+
 ## `[scenes.<id>]`
 
 | Key | Type | Kinds | Meaning |

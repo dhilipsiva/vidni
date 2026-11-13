@@ -3,8 +3,9 @@
 # Usage: ./build.sh [voices|tts|capture|compose [16x9|9x16|--remux]|qa|all]   (default: all)
 #        ./build.sh record [--test|--only N,M|--from N]   record your own narration (interactive)
 #        ./build.sh own                                   build the cuts from your takes
-# Your takes live in ../examples/nibli-syllogism/recordings (out of git);
-# RECORDINGS_DIR moves them and OWN_AUDIO_DIR reads another folder for one build.
+# The example's takes live in vidni's take store, ../examples/nibli-syllogism/takes
+# (out of git). `own` lays them out as numbered files with `vidni takes --link`
+# (VIDNI_BIN, or vidni on PATH); OWN_AUDIO_DIR reads another folder instead.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -42,7 +43,11 @@ record() { voices; in_shell python3 -I record.py "$@"; }
 
 # Your recordings instead of Piper; outputs are named nibli-syllogism-voice-*.
 own() {
-  export VARIANT=voice OWN_AUDIO_DIR="${OWN_AUDIO_DIR:-${RECORDINGS_DIR:-$PWD/../examples/nibli-syllogism/recordings}}"
+  if [ -z "${OWN_AUDIO_DIR:-}" ]; then
+    OWN_AUDIO_DIR="$(mktemp -d)/takes"
+    "${VIDNI_BIN:-vidni}" takes ../examples/nibli-syllogism --link "$OWN_AUDIO_DIR"
+  fi
+  export VARIANT=voice OWN_AUDIO_DIR
   voices
   tts
   [ -s build/capture.json ] || capture

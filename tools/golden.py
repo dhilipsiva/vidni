@@ -1,6 +1,7 @@
 """Golden outputs of the reference pipeline (TODO.md, P1-VIDNI-01).
 
-Run inside the reference's nix shell, as `just golden` and `just golden-update` do:
+Run inside the reference's nix shell, with VIDNI_BIN naming the vidni binary,
+as `just golden` and `just golden-update` do:
 
     python3 -I tools/golden.py update <reference-dir>   re-derive and write golden/
     python3 -I tools/golden.py verify <reference-dir>   re-derive and compare with golden/
@@ -10,7 +11,8 @@ once for the synthetic variant and once for the creator's voice ("voice"):
 
 1. tts.py builds the timeline, the narration and the captions. Synthetic audio
    comes from the cached Piper takes in build/audio; voice audio comes from
-   the creator's takes in examples/nibli-syllogism/recordings.
+   the creator's takes in examples/nibli-syllogism/takes, which
+   `vidni takes --link` lays out as the numbered files the reference reads.
 2. compose.py renders both cuts (16x9 and 9x16).
 
 Some things are frozen inputs rather than re-made outputs: the live page's
@@ -37,7 +39,7 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GOLDEN = os.path.join(os.path.dirname(HERE), "golden")
-TAKES = os.path.join(os.path.dirname(HERE), "examples", "nibli-syllogism", "recordings")
+EXAMPLE = os.path.join(os.path.dirname(HERE), "examples", "nibli-syllogism")
 VARIANTS = {"synthetic": "", "voice": "voice"}
 CUTS = ("16x9", "9x16")
 
@@ -76,11 +78,11 @@ def normalized_json(path, drop=()):
     return data
 
 
-def normalized_timeline(path, ref):
+def normalized_timeline(path, ref, takes):
     data = normalized_json(path)
     for e in data["sentences"]:
         wav = os.path.normpath(os.path.join(ref, e["wav"]))  # relative since P1-VIDNI-02
-        if os.path.dirname(wav) == os.path.normpath(TAKES):
+        if os.path.dirname(wav) == os.path.normpath(takes):
             e["wav"] = "recordings/" + os.path.basename(wav)
         else:
             e["wav"] = os.path.relpath(wav, ref)
@@ -104,8 +106,9 @@ def framemd5(path):
     return out
 
 
-def derive(ref, stage):
-    """Re-derive every golden artifact into `stage`; return the manifest."""
+def derive(ref, stage, takes):
+    """Re-derive every golden artifact into `stage` from the creator's takes as
+    numbered files in `takes`; return the manifest."""
     ref = os.path.abspath(ref)
     base_env = {k: v for k, v in os.environ.items()
                 if k not in ("VARIANT", "OWN_AUDIO_DIR", "LD_LIBRARY_PATH")}
@@ -116,11 +119,11 @@ def derive(ref, stage):
         suffix = f"-{tag}" if tag else ""
         if tag:
             env["VARIANT"] = tag
-            env["OWN_AUDIO_DIR"] = TAKES
-        how = f"VARIANT={tag} OWN_AUDIO_DIR={os.path.relpath(TAKES, ref)} " if tag else ""
+            env["OWN_AUDIO_DIR"] = takes
+        how = f"VARIANT={tag} OWN_AUDIO_DIR=<takes> " if tag else ""
         print(f"[{variant}] narration, timeline and captions", flush=True)
         run(["python3", "-I", "tts.py"], ref, env)
-        timeline = canonical(normalized_timeline(os.path.join(ref, "build", f"timeline{suffix}.json"), ref))
+        timeline = canonical(normalized_timeline(os.path.join(ref, "build", f"timeline{suffix}.json"), ref, takes))
         with open(os.path.join(stage, f"timeline-{variant}.json"), "w") as f:
             f.write(timeline)
         srt = f"nibli-syllogism{suffix}.en.srt"
@@ -147,7 +150,7 @@ def derive(ref, stage):
     ins = manifest["inputs"]
     ins["segments.json"] = sha256_file(os.path.join(ref, "segments.json"))
     # The creator's takes are listed as recordings/, wherever they are stored.
-    for folder, where, kind in (("build/audio", None, "wav"), ("recordings", TAKES, "wav"),
+    for folder, where, kind in (("build/audio", None, "wav"), ("recordings", takes, "wav"),
                                 ("build/stills", None, "png"), ("build/cards", None, "png")):
         where = where or os.path.join(ref, folder)
         names = sorted(n for n in os.listdir(where) if n.endswith("." + kind))
@@ -184,9 +187,13 @@ def main():
         sys.exit(__doc__)
     mode, ref = sys.argv[1], sys.argv[2]
     started = time.time()
-    with tempfile.TemporaryDirectory() as stage:
+    vidni = os.environ.get("VIDNI_BIN") or sys.exit("set VIDNI_BIN to the vidni binary; `just golden` does")
+    with tempfile.TemporaryDirectory() as stage, tempfile.TemporaryDirectory() as links:
+        takes = os.path.join(links, "takes")
+        subprocess.run([vidni, "takes", EXAMPLE, "--link", takes], check=True, stdout=subprocess.DEVNULL)
         os.makedirs(os.path.join(stage, "framemd5"))
-        manifest = derive(ref, stage)
+        manifest = derive(ref, stage, takes)
+        manifest["commands"]["voice: takes"] = "vidni takes examples/nibli-syllogism --link <takes>"
         manifest_text = canonical({k: manifest[k] for k in ("inputs", "outputs")})
         if mode == "update":
             if os.path.exists(GOLDEN):

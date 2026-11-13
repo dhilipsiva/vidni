@@ -17,9 +17,9 @@ guide (how long the synthetic voice took). A take that is too short or has
 no speech is discarded with a message and you stay on the same line. Kept
 takes are trimmed (keypresses and the silence around the words), checked
 for level and transcribed, so a misread line shows up straight away. Takes
-go to NNN.wav in the takes folder, ../examples/nibli-syllogism/recordings
-(RECORDINGS_DIR overrides it), at 48 kHz, 16-bit mono; every raw take stays
-in its raw/ folder. The takes are kept out of git, so back them up.
+go to NNN.wav in the folder RECORDINGS_DIR names, at 48 kHz, 16-bit mono;
+every raw take stays in its raw/ folder. The nibli example's takes now live
+in vidni's take store, so this recorder no longer writes there.
 Set MIC to a PipeWire node name to use a microphone other than the default.
 """
 
@@ -46,9 +46,10 @@ sys.path.insert(0, ROOT)
 sys.dont_write_bytecode = True
 from tts import SPOKEN, closeness, heard, spoken  # noqa: E402  (the narration build's whisper check)
 
-# The creator's takes live with the example, out of git (assets.lock lists them).
-REC = os.path.abspath(os.environ.get("RECORDINGS_DIR")
-                      or os.path.join(ROOT, "..", "examples", "nibli-syllogism", "recordings"))
+# The nibli example's takes moved to vidni's take store (P2-VIDNI-03), so
+# this recorder writes the old numbered layout only where it is told to.
+REC = os.path.abspath(os.environ.get("RECORDINGS_DIR") or sys.exit(
+    "set RECORDINGS_DIR: the example's takes live in vidni's take store now"))
 RAW = os.path.join(REC, "raw")
 GUIDE = os.path.join(ROOT, "build", "audio")
 RATE = 48000
