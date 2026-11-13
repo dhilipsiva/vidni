@@ -88,6 +88,7 @@
       "$ref": "#/$defs/Voice",
       "default": {
         "draft": "piper:en_US-joe-medium",
+        "heard_as": [],
         "length_scale": 1.0,
         "read_as": [],
         "respell": [],
@@ -420,6 +421,25 @@
       "required": [
         "within",
         "max_height"
+      ]
+    },
+    "HeardAs": {
+      "description": "One word as the listening check hears it, and the script's word for\nthe same sound.",
+      "type": "object",
+      "properties": {
+        "heard": {
+          "description": "The word as whisper writes it. Case is ignored.",
+          "type": "string"
+        },
+        "means": {
+          "description": "The script's word for it.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "heard",
+        "means"
       ]
     },
     "Line": {
@@ -997,6 +1017,14 @@
           "description": "The synthetic draft voice: a voice pack, as `<engine>:<model>`.",
           "type": "string",
           "default": "piper:en_US-joe-medium"
+        },
+        "heard_as": {
+          "description": "Words the listening check hears spelled differently from the script\nfor the same sound. They make its scores fairer and change nothing\nelse: no output depends on what the check hears.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/HeardAs"
+          }
         },
         "length_scale": {
           "description": "The draft voice's pace: above 1 is slower.",

@@ -31,6 +31,18 @@ respell = [
   { text = "source #1", say = "source number one" },
   { text = "source #0", say = "source number zero" },
 ]
+# Words the listening check hears spelled differently for the same sound.
+heard_as = [
+  { heard = "atom", means = "adam" },
+  { heard = "atoms", means = "adams" },
+  { heard = "roll", means = "role" },
+  { heard = "y", means = "why" },
+  { heard = "nibbly", means = "nibli" },
+  { heard = "nibley", means = "nibli" },
+  { heard = "nibali", means = "nibli" },
+  { heard = "site's", means = "cites" },
+  { heard = "sites", means = "cites" },
+]
 
 [timing]
 lead_in = 0.6

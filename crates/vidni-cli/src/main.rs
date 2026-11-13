@@ -85,6 +85,20 @@ enum Command {
         #[arg(long)]
         refresh: bool,
     },
+    /// Listen to each line's audio with whisper, and say how close what it
+    /// hears is to the script. It only advises: nothing it hears changes an
+    /// output.
+    Hear {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// The line to listen to; repeat for more. Default: every line.
+        #[arg(long = "line", value_name = "ID")]
+        lines: Vec<String>,
+        /// Listen to the draft voice's clips, even where a line has a take.
+        #[arg(long)]
+        draft: bool,
+    },
     /// Take the captures the cuts need and the project folder doesn't hold
     /// yet: a still of each web line, and each page scene at each size.
     Capture {
@@ -140,6 +154,7 @@ fn main() -> ExitCode {
             cuts,
             refresh,
         } => unratify(&path, &cuts, refresh),
+        Command::Hear { path, lines, draft } => hear(&path, &lines, draft),
         Command::Capture { path } => capture(&path),
         Command::Platforms => platforms(),
         Command::Voices { action: None } => voices(),
@@ -655,4 +670,102 @@ fn capture(path: &Path) -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+fn hear(path: &Path, only: &[String], draft: bool) -> ExitCode {
+    use vidni_media::hear::{self, Heard, Kind, Listener, WORTH_A_LISTEN};
+    let (file, text) = match read(path) {
+        Ok(read) => read,
+        Err(code) => return code,
+    };
+    let dir = file
+        .parent()
+        .filter(|d| !d.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    let project = match validate::check(&text, Some(dir)) {
+        Ok(project) => project,
+        Err(problems) => return report(&file, &problems),
+    };
+    if let Some(unknown) = only
+        .iter()
+        .find(|id| !project.lines.iter().any(|l| l.id == **id))
+    {
+        eprintln!("vidni: {}: no line {unknown}", file.display());
+        return ExitCode::FAILURE;
+    }
+    let cant = |why: &str| {
+        eprintln!("vidni: the listening check can't run: {why}");
+        ExitCode::from(2)
+    };
+    let language = &project.meta.language;
+    if !hear::understands(language) {
+        return cant(&format!(
+            "it knows English only, and this script's language is {language}"
+        ));
+    }
+    let listener = match Listener::find() {
+        Ok(listener) => listener,
+        Err(e) => return cant(&e),
+    };
+    // Without the draft voice's pack, no draft clip can be told to be for
+    // a line's present wording, so only takes are heard.
+    let found = voices::find(&project.voice.draft, voices::store().as_deref())
+        .and_then(|pack| hear::clips(&project, dir, pack.as_ref(), draft));
+    let clips = match found {
+        Ok(clips) => clips,
+        Err(e) => {
+            eprintln!("vidni: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let width = project.lines.iter().map(|l| l.id.len()).max().unwrap_or(0);
+    let (mut close, mut listen, mut nothing, mut missing, mut unheard) = (0, 0, 0, 0, 0);
+    for (id, clip) in clips {
+        if !only.is_empty() && !only.contains(&id) {
+            continue;
+        }
+        let Some(clip) = clip else {
+            missing += 1;
+            say!("{id:width$}  no audio");
+            continue;
+        };
+        let kind = match clip.kind {
+            Kind::Take => "take",
+            Kind::Draft => "draft",
+        };
+        match listener.hear(&clip.path) {
+            Heard::Words(words) => {
+                // Judged as it is shown, to two decimals.
+                let score = hear::closeness(&clip.script, &words, &project.voice.heard_as);
+                let score = (score * 100.0).round() / 100.0;
+                say!("{id:width$}  {kind:5}  {score:.2}");
+                if score < WORTH_A_LISTEN {
+                    listen += 1;
+                    say!("{:width$}    heard:  {words}", "");
+                    say!("{:width$}    script: {}", "", clip.script);
+                } else {
+                    close += 1;
+                }
+            }
+            Heard::Nothing => {
+                nothing += 1;
+                say!("{id:width$}  {kind:5}  nothing to hear");
+            }
+            Heard::Unavailable(why) => {
+                unheard += 1;
+                say!("{id:width$}  {kind:5}  not heard");
+                eprintln!("vidni: {why}");
+            }
+        }
+    }
+    say!(
+        "{}: {close} heard as scripted, {listen} worth a listen (below {WORTH_A_LISTEN}), \
+         {nothing} with nothing to hear, {missing} with no audio",
+        file.display()
+    );
+    if unheard > 0 {
+        eprintln!("vidni: {} couldn't be listened to", count(unheard, "line"));
+        return ExitCode::from(2);
+    }
+    ExitCode::SUCCESS
 }

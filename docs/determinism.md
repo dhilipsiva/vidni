@@ -25,6 +25,7 @@ Some inputs can't be made deterministic: a live web page, every Chromium render,
 | 2026-11-14 | same | capture: five captures of a local scene, each in a fresh Chromium | identical on one host | `just test-capture`: the stills and their frames are byte-identical across the five. One line of the scene, captured 30 times, gave one still |
 | 2026-11-14 | same | capture: five captures of the nibli example's live page | identical on one host | `just capture-repeat`: the pixels and frames of all 46 stills agree across the five. One still, captured 40 times, gave one result |
 | 2026-11-14 | same | capture: a local copy of the example's site header at scale 3 | identical on one host | 80 captures gave one still. Before the three fixes of T6, about 1 capture in 6 differed in a few pixels of an icon |
+| 2026-11-14 | same | the listening check: whisper-cli 1.9.5 with `ggml-base.en`, on the nibli example's 57 takes and 57 draft clips | held to no tier; repeated on one host | two runs of `vidni hear`, and two of `vidni hear --draft`, printed the same transcripts and scores, and left the project folder's 223 files untouched |
 
 The compositor's frame streams (rgb24, every frame in order), drawn with IBM Plex Sans Bold (sha256 `19de5aec…c316`), IBM Plex Mono Bold (`44f6da8e…a6c7`) and Space Grotesk Bold (`be8709ab…368f`):
 
@@ -69,3 +70,8 @@ nibli-syllogism-voice-9x16  8,441 frames  97cc6585c827b80c014d03e7eb9f888cc56835
 - three things that varied from one launch to the next until they were pinned (DECISIONS.md, T6): a page above scale 1 is loaded twice, each layer is rastered as one tile, and vidni's style and highlight layer are in a document from its start.
 
 Five captures of a local scene give identical bytes, stills and frames alike (`just test-capture`, which CI runs), and so did five captures of the nibli example's live page. Each capture is filed by what it shows, frozen by hash when its cut is ratified, and never retaken unless its scene changes or `--refresh` asks for it (DECISIONS.md, T3).
+
+**The listening check** (`vidni_media::hear`) is held to no tier, because no output depends on it (DECISIONS.md, T7):
+- It writes no file, and no build step reads what it hears.
+- Its model is pinned by SHA-256, and whisper-cli by the flake. What whisper hears may still differ from one CPU or build to the next; only one host has been measured.
+- Its score is plain arithmetic on the two texts, so the same transcript always gets the same score.

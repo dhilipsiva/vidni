@@ -368,3 +368,58 @@ fn capture_names_a_chromium_that_isnt_there() {
         .unwrap_or(0);
     assert_eq!(left, 0);
 }
+
+#[test]
+fn hear_says_why_it_cant_listen() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = project_with_voice(dir.path(), "piper:en_US-joe-medium");
+    let out = Command::new(env!("CARGO_BIN_EXE_vidni"))
+        .args(["hear", file.to_str().unwrap()])
+        .env("VIDNI_WHISPER", "/nonexistent/whisper-cli")
+        .env("VIDNI_WHISPER_MODEL", dir.path().join("no-model.bin"))
+        .output()
+        .unwrap();
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(out.status.code(), Some(2), "{stderr}");
+    assert!(
+        stderr.starts_with("vidni: the listening check can't run: /nonexistent/whisper-cli: "),
+        "{stderr}"
+    );
+    // Both missing things are named at once.
+    assert!(stderr.contains("no-model.bin: "), "{stderr}");
+    assert!(out.stdout.is_empty());
+    // And the check leaves the project folder as it was.
+    let left: Vec<_> = fs::read_dir(dir.path())
+        .unwrap()
+        .map(|e| e.unwrap().file_name())
+        .collect();
+    assert_eq!(left, ["vidni.toml"]);
+}
+
+#[test]
+fn hear_refuses_a_script_that_isnt_english() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = project_with_voice(dir.path(), "piper:en_US-joe-medium");
+    let tamil = fs::read_to_string(&file)
+        .unwrap()
+        .replace("[meta]", "[meta]\nlanguage = \"ta\"");
+    fs::write(&file, tamil).unwrap();
+    let out = vidni(&["hear", file.to_str().unwrap()]);
+    assert_eq!(out.status.code(), Some(2));
+    assert_eq!(
+        String::from_utf8_lossy(&out.stderr),
+        "vidni: the listening check can't run: it knows English only, and this script's language is ta\n"
+    );
+}
+
+#[test]
+fn hear_names_a_line_that_isnt_there() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = project_with_voice(dir.path(), "piper:en_US-joe-medium");
+    let out = vidni(&["hear", file.to_str().unwrap(), "--line", "nope"]);
+    assert_eq!(out.status.code(), Some(1));
+    assert_eq!(
+        String::from_utf8_lossy(&out.stderr),
+        format!("vidni: {}: no line nope\n", file.display())
+    );
+}

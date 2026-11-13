@@ -83,6 +83,7 @@ A line's ID is permanent. Takes, captions and per-cut state are keyed by it (P2-
 | `length_scale` | number | `1.0` | The draft voice's pace; above 1 is slower. It must be above 0. |
 | `read_as` | array of `{ text, say }` | empty | How a reader says symbols that the captions show, such as `{ text = "#1", say = "number one" }`. The recorder's prompter shows these, and takes are scored against them. |
 | `respell` | array of `{ text, say }` | empty | Spellings the draft voice says better, applied in order to what it speaks, such as `{ text = "theorem prover", say = "theorem proover" }` |
+| `heard_as` | array of `{ heard, means }` | empty | Words the listening check hears spelled differently from the script for the same sound, such as `{ heard = "nibley", means = "nibli" }` (see [The listening check](#the-listening-check-vidni-hear)). `heard` is one word of letters, digits and apostrophes, listed once. No output depends on these. |
 
 ## `[timing]`
 
@@ -187,6 +188,38 @@ files = [
 **The cache.** Clips are cached in `build/voice/<line-id>/<key>-<seed>.wav`, where the key is the first 16 hex digits of a SHA-256 over what the voice is given (the line's `say` or `show`, with `voice.respell` applied), the pack's ID and file hashes, and `voice.length_scale`. A draft speaks only what the cache doesn't hold. Clearing `build/` and drafting again gives the same PCM, from `voice.lock`.
 
 **Licences.** A voice whose licence doesn't allow commercial use may still be drafted with, but its audio can't go into a cut that is used commercially. `vidni validate` and `vidni draft` warn about such a voice, and about one whose licence vidni can't find.
+
+## The listening check: `vidni hear`
+
+`vidni hear` listens to each line's audio with whisper and says how close what it hears is to the script. It points you at a line that may have been read, or synthesized, differently from its words: a dropped word, a stumble, a name the draft voice garbles.
+
+**It only advises.** Nothing it hears is written into an output or decides one, and it writes no file. A low score fails nothing: it means the line is worth a listen.
+
+```text
+$ vidni hear examples/nibli-syllogism
+intro-1          take   1.00
+intro-2          take   0.97
+…
+syllogism-1      take   0.80
+                   heard:  Here is the silage some example 3 lines of Nibali KR.
+                   script: Here's the syllogism example: three lines of nibli KR.
+…
+examples/nibli-syllogism/vidni.toml: 55 heard as scripted, 2 worth a listen (below 0.9), 0 with nothing to hear, 0 with no audio
+```
+
+- **What it listens to.** A line's current take, or else the clip the last draft kept for the line's present wording. A stale take isn't the line's audio, and neither is a draft clip spoken from an earlier wording: a line with only those is listed as having no audio. `--draft` listens to the draft clips even where there are takes, and `--line ID`, which can be repeated, picks lines.
+- **What it compares.** A take is compared with the line's spoken form: `say`, or `show` with `voice.read_as` applied. A draft clip is compared with what the draft voice was given: `say` or `show`, with `voice.respell` applied.
+- **The score** runs from 0 to 1. Both texts are reduced to their letters, so case, spaces, punctuation and digits don't count. The score is the share of those letters that lie in runs the two texts have in common. A line whose score, as shown to two decimals, is below 0.90 is listed with what was heard.
+- **`voice.heard_as`** lists words that whisper spells differently from the script for the same sound, as it usually does a made-up name: `{ heard = "nibley", means = "nibli" }`. Each such word is read as what it means, in the script and in what was heard, whatever its case. A number can be given its word the same way: `{ heard = "3", means = "three" }`.
+- **Nothing to hear.** A clip that is empty, shorter than 0.3 seconds or silent (never above −60 dBFS) is reported as having nothing to hear. whisper isn't asked about it: it fails on an empty clip, and it hears words in silence. Its notes on sounds that aren't speech, such as `(machine whirring)`, are left out of what was heard, and a clip with nothing but those has nothing to hear either.
+- **English only.** The model knows English, and the score compares English letters. For a script in another language (`meta.language`), `vidni hear` says that it can't run.
+
+**What it needs.** `vidni hear` runs whisper.cpp's `whisper-cli` from the path, or the one `VIDNI_WHISPER` names, with whisper.cpp's `ggml-base.en.bin` model (148 MB). The model is pinned by SHA-256, and vidni refuses another file. It is looked for at `$VIDNI_WHISPER_MODEL`, else `$XDG_DATA_HOME/vidni/models/ggml-base.en.bin`, else `~/.local/share/vidni/models/ggml-base.en.bin`. vidni's Nix shell provides both.
+
+**Exit status:**
+- 0 when every line that has audio was listened to, whatever the scores
+- 1 when the project is invalid, or `--line` names a line it doesn't have
+- 2 when the check can't run, or when a clip can't be read. The other lines are still listened to.
 
 ## `[scenes.<id>]`
 
@@ -394,6 +427,7 @@ It checks, in order:
    - Sizes are even and in aspect.
    - Regular expressions compile: a target's as JavaScript, `lint.banned` as Rust's `regex` crate.
    - `scroll`'s `top` and `scroll_to`'s `offset` are finite numbers.
+   - Each `voice.heard_as` entry's `heard` is one word, listed once, and its `means` has letters.
    - No line shows or says wording that `lint.banned` forbids.
    - In a strict project, every line that states a fact names its `source`.
    - Every file a scene names exists.

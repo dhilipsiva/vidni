@@ -22,4 +22,5 @@ vidni-core = { path = "../vidni-core" }
 vidni-media = { path = "../vidni-media" }
 
 [dev-dependencies]
+hound = "3.5.1"
 tempfile = "3.27.0"

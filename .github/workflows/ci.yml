@@ -25,5 +25,7 @@ jobs:
         env:
           VIDNI_NO_SANDBOX: "1"
         run: nix develop .#ci --command just test-capture
+      - name: just test-hear
+        run: nix develop .#ci --command just test-hear
       - name: nix flake check
         run: nix flake check

@@ -65,8 +65,16 @@ pub(crate) const ROOT: &[&str] = &[
     "expectations",
 ];
 pub(crate) const META: &[&str] = &["title", "subtitle", "language", "strict", "default_scene"];
-const VOICE: &[&str] = &["draft", "seed", "length_scale", "read_as", "respell"];
+const VOICE: &[&str] = &[
+    "draft",
+    "seed",
+    "length_scale",
+    "read_as",
+    "respell",
+    "heard_as",
+];
 const RESPELLING: &[&str] = &["text", "say"];
+const HEARD_AS: &[&str] = &["heard", "means"];
 const TIMING: &[&str] = &["lead_in", "line_gap", "section_gap", "tail"];
 const LINT: &[&str] = &["banned"];
 const STYLE: &[&str] = &["theme"];
@@ -134,6 +142,7 @@ fn key_order(path: &[String]) -> Option<&'static [&'static str]> {
         ["meta"] => Some(META),
         ["voice"] => Some(VOICE),
         ["voice", "read_as" | "respell", "#"] => Some(RESPELLING),
+        ["voice", "heard_as", "#"] => Some(HEARD_AS),
         ["timing"] => Some(TIMING),
         ["lint"] => Some(LINT),
         ["style"] => Some(STYLE),

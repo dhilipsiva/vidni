@@ -204,7 +204,18 @@ Grammar, as in the workspace TODO, one line per item: `- [ ] **P<m>-VIDNI-<nn>**
     - `just test-capture` runs 8 Chromium tests on local pages, among them a late result, a script error, a dialog, a covered click, a navigation and a busy network. `just parity-selftest` catches a moved camera box and an overlay made opaque.
     - An independent review ran twice. The first found defects that are now fixed: stale stills, ignored page errors, leaked browsers and an open debugging port among them. The second confirmed the fixes and traced the last run-to-run difference to capture itself, which led to the tile and mount fixes.
     - Fixed on the way: the flake's fontconfig file had let the host's fonts in and now pins them, and a line's capture key covers the expectations waited for.
-- [ ] **P3-VIDNI-05** (LOW) Port the intelligibility check (whisper.cpp through `whisper-rs` or the pinned CLI). It is advisory only, never feeds an output, and returns no transcript for empty audio instead of crashing. *Done when:* tests cover empty, silent and spoken clips. [S]
+- [x] **P3-VIDNI-05** (LOW) Port the intelligibility check (whisper.cpp through `whisper-rs` or the pinned CLI). It is advisory only, never feeds an output, and returns no transcript for empty audio instead of crashing. *Done when:* tests cover empty, silent and spoken clips. [S]
+  - Evidence (2026-11-14): `vidni hear` listens to each line's take, or else its draft clip, with the pinned `whisper-cli` and its `ggml-base.en` model, and scores what it hears against the script (`vidni_media::hear`; DECISIONS.md T7 says why not `whisper-rs`).
+    - It only advises: it writes no file, and no build step reads a score. A line that scores below 0.90 is listed with what was heard.
+    - A clip that is empty, shorter than 0.3 s or silent has nothing to hear, and whisper is never given it. Measured with the pinned tools: whisper-cli exits 11 on an empty clip and hears "you" in silence.
+    - The score is the reference's, ported exactly: it gives the reference's score for each of its 57 lines. The homophones the reference had built in became a key, `voice.heard_as`, and the example carries them.
+    - The check knows English only, and refuses a script in another language.
+
+    How it was checked:
+    - `just test-hear`, which CI runs, uses the real whisper-cli. A spoken clip scores at least 0.9, and an empty and a silent one have nothing to hear, through the library and through `vidni hear` on a five-line project. That project also has a take of other words, a missing take and an unreadable one, and its folder is left untouched.
+    - Unit tests need no whisper. They cover empty, short, silent and too-quiet clips, a whisper-cli that isn't there, whisper's notes on sounds, and which clip a line is heard from.
+    - With the guard removed, so that whisper is given every clip, the unit test and `just test-hear` both fail.
+    - On the nibli example, the 57 takes score 0.974 on average and the 57 draft clips 0.986. Two of each score below 0.90: the takes of `syllogism-1` and `end-1`, and the draft clips of `nibli-1` and `end-1`. Two runs of each printed the same.
 - [ ] **P3-VIDNI-06** (LOW) Wire up `vidni draft`, `ratify`, `final`, `approve`, `repro` and `--offline`. `repro` builds twice under `env -i` with a fixed TZ and locale, `SOURCE_DATE_EPOCH` and different paths and core sets; `--offline` runs under `unshare -n`. *Done when:* the nibli example goes from draft to approved through the Rust CLI, with T1 and T2 equal under `vidni repro`. [M]
 - [ ] **P3-VIDNI-07** (LOW) Retire the reference once every stage passes parity: it stays read-only in `reference/`, and `just parity` keeps running against it. *Done when:* no Python or Node remains on the build path, and `just parity` is green. [S]
 

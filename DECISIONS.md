@@ -157,3 +157,22 @@ Added as the items are built.
 - **A click** scrolls its target into view and refuses to land on anything covering it, as Playwright's does. The first port clicked a row hidden by its scroll panel, and the still that followed showed the wrong state.
 - **The sandbox stays on.** Playwright turns it off; stills are the same either way.
 - **Fonts:** the flake's fontconfig file lists only pinned fonts. `makeFontsConf` had let the host's fonts in, against D12. Golden was made with the host's fonts, so the parity recipes set the flake's file aside, and their result holds on the maintainer's desktop only.
+
+### T7. How the listening check listens
+- **2026-11-14, P3-VIDNI-05.** The check runs the pinned `whisper-cli` (whisper.cpp 1.9.5, from the flake) as a process, with the `ggml-base.en` model, not `whisper-rs`.
+  - **Why:** the check only advises, so nothing is gained by linking whisper in. `whisper-rs` would compile whisper.cpp, a C++ build through cmake, into every build of vidni, for a tool no output depends on.
+  - The command is the one the reference ran, and a whisper that fails stays outside vidni's process.
+  - The model is pinned by size and SHA-256 at one revision of `ggerganov/whisper.cpp` on Hugging Face. The flake fetches it, and vidni refuses another file.
+- **Nothing it hears reaches an output.** `vidni hear` writes no file, and no build step reads a score.
+  - The reference chose between Piper's takes by this score. vidni's draft keeps the take of median length instead (T5).
+- **Empty and silent clips are never given to whisper.** Measured with the pinned whisper-cli and model:
+  - A clip with no samples makes it exit 11.
+  - It hears "you" in 2 and in 30 seconds of digital silence, and in noise at −66 dBFS.
+  - It answers a tone, or louder noise, with a note in parentheses, such as `(eerie music)`.
+
+  So a clip shorter than 0.3 seconds, or never above −60 dBFS, is reported as having nothing to hear without asking. The notes are left out of what was heard, and a transcript that holds only notes is nothing to hear as well.
+- **The score is the reference's,** ported exactly: Python's `difflib.SequenceMatcher(autojunk=False).ratio()` over the letters of the two texts.
+  - The port gives the reference's score, to four decimals, for each of its 57 lines.
+- **`voice.heard_as` replaces the table of homophones the reference had built in.** Those were the nibli video's words (`nibley` for `nibli`, `atom` for `adam`), so they now live in that project's file.
+  - The key sits in `[voice]`, which no cut's ratified content covers. Whatever later hashes a release must leave it out as well.
+- **The check knows English only:** the model is English, and the score compares the letters a to z. `vidni hear` refuses a script in another language instead of scoring it. P9-VIDNI-03 will need a multilingual model and a score over Unicode letters.

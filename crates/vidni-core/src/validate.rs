@@ -316,6 +316,33 @@ impl Rules {
                 }
             }
         }
+        let mut listed: BTreeSet<String> = BTreeSet::new();
+        for (i, h) in p.voice.heard_as.iter().enumerate() {
+            let at = |key: &str| path!["voice", "heard_as", i, key];
+            // The listening check compares word by word, and its words are
+            // runs of these characters.
+            let word = |c: char| c.is_ascii_alphanumeric() || c == '\'';
+            if h.heard.is_empty() || !h.heard.chars().all(word) {
+                self.add(
+                    at("heard"),
+                    format!(
+                        "heard must be one word of letters, digits and apostrophes, not {:?}",
+                        h.heard
+                    ),
+                );
+            } else if !listed.insert(h.heard.to_ascii_lowercase()) {
+                self.add(
+                    at("heard"),
+                    format!("heard_as already says what {:?} means", h.heard),
+                );
+            }
+            if !h.means.chars().any(|c| c.is_ascii_alphabetic()) {
+                self.add(
+                    at("means"),
+                    format!("means must be a word, not {:?}", h.means),
+                );
+            }
+        }
     }
 
     fn lines(&mut self, p: &Project) {

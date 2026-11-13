@@ -1,0 +1,300 @@
+{
+ "heard_as": {
+  "atom": "adam",
+  "atoms": "adams",
+  "roll": "role",
+  "y": "why",
+  "nibbly": "nibli",
+  "nibley": "nibli",
+  "nibali": "nibli",
+  "site's": "cites",
+  "sites": "cites"
+ },
+ "lines": [
+  {
+   "script": "Language models predict the next word. A reasoner derives the next step.",
+   "heard": "Language models predict the next word. A reasoner derives the next step.",
+   "score": 1.0
+  },
+  {
+   "script": "In five minutes: what symbolic reasoning is, what a theorem proover does, where an LLM fits around one, and a small proof in nibli, step by step.",
+   "heard": "In five minutes, what symbolic reasoning is, what a Theraprover does, where an LLM fits around one, and a small proof in Nibley, step by step.",
+   "score": 0.9776
+  },
+  {
+   "script": "Symbolic reasoning works on explicit statements and explicit rules.",
+   "heard": "Symbolic reasoning works on explicit statements and explicit rules.",
+   "score": 1.0
+  },
+  {
+   "script": "Here are three: every dog is an animal, every animal eats, and Adam is a dog.",
+   "heard": "Here are three. Every dog is an animal. Every animal eats, and Adam is a dog.",
+   "score": 1.0
+  },
+  {
+   "script": "Nothing is learned from examples, and nothing is guessed.",
+   "heard": "Nothing is learned from examples, and nothing is guessed.",
+   "score": 1.0
+  },
+  {
+   "script": "A conclusion counts only if it follows from these statements by fixed rules of inference.",
+   "heard": "At conclusion counts only if it follows from these statements by fixed rules of inference.",
+   "score": 0.9933
+  },
+  {
+   "script": "Run it again tomorrow and you get the same answer, and you can inspect every step that produced it.",
+   "heard": "Run it again tomorrow when you get the same answer, and you can inspect every step that produced it.",
+   "score": 0.9686
+  },
+  {
+   "script": "A theorem proover automates that.",
+   "heard": "A theorem prover automates that.",
+   "score": 0.9818
+  },
+  {
+   "script": "You give it premises and a claim, and it searches for a proof: a chain of rule applications from the premises to the claim.",
+   "heard": "You give it premises and a claim, and it searches for approve, a chain of rule applications from the premises to the claim.",
+   "score": 0.9744
+  },
+  {
+   "script": "If it finds one, the answer is TRUE, and it can show you the chain.",
+   "heard": "If it finds one, the answer is true, and it can show you the chain.",
+   "score": 1.0
+  },
+  {
+   "script": "That answer is sound with respect to what you encoded.",
+   "heard": "That answer is sound with respect to what you encoded.",
+   "score": 1.0
+  },
+  {
+   "script": "It doesn't make your premises true. It tells you what they commit you to.",
+   "heard": "It doesn't make your premises true. It tells you what they commit you to.",
+   "score": 1.0
+  },
+  {
+   "script": "nibli answers with one of four verdicts. TRUE. FALSE, meaning not derivable. UNKNOWN, with a reason. And resource exceeded, when a depth, fuel or memory budget runs out.",
+   "heard": "Nibbly answers with one of four verdicts. True, false, meaning not derivable, unknown with the reason, and resource exceeded when a depth, fuel, or memory budget runs out.",
+   "score": 0.9851
+  },
+  {
+   "script": "A neuro-symbolic system pairs a neural front end with a symbolic core, and lets each do what it's good at.",
+   "heard": "A neuro symbolic system pairs a neural front end with a symbolic core and lets each do what it's good at.",
+   "score": 1.0
+  },
+  {
+   "script": "Language models are good at reading prose.",
+   "heard": "Language models are good at reading prose.",
+   "score": 1.0
+  },
+  {
+   "script": "So in nibli, an LLM can formalize plain English into nibli K R, the engine's rule language.",
+   "heard": "So in Nibali, an LLN can formalize plain English into Nibali KR, the engine's rule language.",
+   "score": 0.9859
+  },
+  {
+   "script": "That draft sits outside the reasoning firewall.",
+   "heard": "That draft sits outside the reasoning firewall.",
+   "score": 1.0
+  },
+  {
+   "script": "Before anything reasons over it, deterministic gates check it.",
+   "heard": "before anything reasons over it, deterministic gates check it.",
+   "score": 1.0
+  },
+  {
+   "script": "The grammar. A committed vocabulary, where an unknown word is an error instead of a guess. The semantic compiler. And a round trip back to canonical text.",
+   "heard": "The grammar, a committed vocabulary, where an unknown word is an error instead of a guess, the semantic compiler, and a round trip back to canonical text.",
+   "score": 1.0
+  },
+  {
+   "script": "Then a person reviews the rules and their back-translation: a fixed, mechanical reading, with no model involved.",
+   "heard": "Then a person reviews the rules and their back translation, a fixed, mechanical reading with no model involved.",
+   "score": 1.0
+  },
+  {
+   "script": "This example comes pre-encoded, so the Formalize button is switched off and we skip the drafting.",
+   "heard": "This example comes pre-encoded, so the formalize button is switched off and we skip the drafting.",
+   "score": 1.0
+  },
+  {
+   "script": "The LLM drafts. The engine decides.",
+   "heard": "The LLM drafts. The engine decides.",
+   "score": 1.0
+  },
+  {
+   "script": "nibli is the engine I build in Rust.",
+   "heard": "Nibley is the engine I build and rust.",
+   "score": 0.9474
+  },
+  {
+   "script": "It's a theorem proover, and it's open source.",
+   "heard": "It's a theorem prover and it's open source.",
+   "score": 0.9851
+  },
+  {
+   "script": "It compiles nibli K R into first-order logic, and answers claims by backward chaining over a fact store.",
+   "heard": "It compiles Nibley KRN to first order logic, and answers claims by backward chaining over a fact store.",
+   "score": 0.994
+  },
+  {
+   "script": "The whole pipeline, parser, compiler and reasoner, runs right here in the browser as WebAssembly, and also under Wasmtime or as a native crate.",
+   "heard": "The whole pipeline, parser, compiler, and reasoner, runs right here in the browser as web assembly, and also under \"wasm time\" or as a native crate.",
+   "score": 1.0
+  },
+  {
+   "script": "It never invents a fact, a rule or a proof step.",
+   "heard": "It never invents a fact, a rule or proof step.",
+   "score": 0.9859
+  },
+  {
+   "script": "Here's the syllogism example: three lines of nibli K R.",
+   "heard": "Here's the syllogism example, three lines of Nibali KR.",
+   "score": 1.0
+  },
+  {
+   "script": "The first reads: for every X, if X is a dog, then X is an animal.",
+   "heard": "The first reads, \"For every x, if x is a dog, then x is an animal.\"",
+   "score": 1.0
+  },
+  {
+   "script": "The second: for every X, if X is an animal, then X eats.",
+   "heard": "The second, for every x, if x is an animal, then x eats.",
+   "score": 1.0
+  },
+  {
+   "script": "The third: Adam is a dog.",
+   "heard": "The third, Adam is a dog.",
+   "score": 1.0
+  },
+  {
+   "script": "We don't ask a question. We state the claim to check: Adam eats.",
+   "heard": "We don't ask a question. We stake the claim to check Adam Eats.",
+   "score": 0.9792
+  },
+  {
+   "script": "The engine starts from the claim and works backward.",
+   "heard": "The engine starts from the claim and works backward.",
+   "score": 1.0
+  },
+  {
+   "script": "The goal is: Adam eats. No stored fact says so.",
+   "heard": "The goal is, Adam eats. No stored fact says so.",
+   "score": 1.0
+  },
+  {
+   "script": "So it looks for a rule whose conclusion is eats: line two, every animal eats.",
+   "heard": "So it looks for a role whose conclusion is eats, line two, every animal eats.",
+   "score": 0.9833
+  },
+  {
+   "script": "Matching that conclusion to the goal binds X to Adam, and leaves a new goal: Adam is an animal.",
+   "heard": "Matching that conclusion to the goal binds X to Adam and leaves a new goal. Adam is an animal.",
+   "score": 1.0
+  },
+  {
+   "script": "Again there's no stored fact, so it looks for a rule that concludes animal: line one, every dog is an animal.",
+   "heard": "Again, there's no stored fat, so it looks for a rule that concludes animal. Lime one. Every dog is an animal.",
+   "score": 0.982
+  },
+  {
+   "script": "That leaves one goal, Adam is a dog, and that one is stored.",
+   "heard": "That leaves one goal, Adam is a dog, and that one is stored.",
+   "score": 1.0
+  },
+  {
+   "script": "The chain closes in two rule steps.",
+   "heard": "The chain closes in two rule steps.",
+   "score": 1.0
+  },
+  {
+   "script": "To find the shortest chain, the engine first runs a cheap search without recording, raising the depth limit one step at a time until the claim resolves.",
+   "heard": "To find the shortest chain, the engine first runs a cheap search without recording, raising the depth limit one step at a time until the claim results.",
+   "score": 0.9796
+  },
+  {
+   "script": "Then it runs the search once more at that depth, this time recording every step. That record is the proof trace.",
+   "heard": "Then it runs the search once more at the depth, this time recording every step. That record is the proof trace.",
+   "score": 0.9831
+  },
+  {
+   "script": "The stored fact becomes a leaf, marked given.",
+   "heard": "The stored fact becomes a leaf, mark given.",
+   "score": 0.9714
+  },
+  {
+   "script": "Each rule step becomes a node that cites the source line it used.",
+   "heard": "Each rule step becomes a node that cites the source line it used.",
+   "score": 1.0
+  },
+  {
+   "script": "“Adam eats” cites recorded source number one: every animal eats.",
+   "heard": "Adam Eatsites recorded source number one. Every animal eats.",
+   "score": 0.9901
+  },
+  {
+   "script": "“Adam is an animal” cites recorded source number zero: every dog is an animal.",
+   "heard": "Adam is an animal site's recorded source number zero. Every dog is an animal.",
+   "score": 1.0
+  },
+  {
+   "script": "Open the role-level detail, and you see what those lines are made of.",
+   "heard": "Open the roll level detail and you see what those lines are made of.",
+   "score": 1.0
+  },
+  {
+   "script": "The fact is stored as an event with named roles: the dog, Adam, and a breed nobody specified.",
+   "heard": "The fact is stored as an event with name roles, the dog, Adam, and a breed nobody specified.",
+   "score": 0.993
+  },
+  {
+   "script": "When the same sub-goal comes up again, the trace says “proved above” and points back, instead of proving it twice.",
+   "heard": "When the same sub goal comes up again, the trace says proved above and points back instead of proving it twice.",
+   "score": 1.0
+  },
+  {
+   "script": "The playground folds the whole record into the three lines you saw, with a plain-English why.",
+   "heard": "The playground folds the whole record into the three lines you saw, with a plain English Y.",
+   "score": 1.0
+  },
+  {
+   "script": "Now the claim that Adam is a bird.",
+   "heard": "Now the claim that Adam is a bird.",
+   "score": 1.0
+  },
+  {
+   "script": "Nothing in the knowledge base supports it, so the answer is FALSE.",
+   "heard": "Nothing in the knowledge base supports it, so the answer is false.",
+   "score": 1.0
+  },
+  {
+   "script": "The why line says no example could be found that satisfies the claim.",
+   "heard": "The y-line says no example could be found that satisfies the claim.",
+   "score": 1.0
+  },
+  {
+   "script": "Here, FALSE means not derivable from what we asserted. It isn't a proof that Adam isn't a bird.",
+   "heard": "Here, false means not deriable from what we asserted. It isn't a proof that Adam isn't a bird.",
+   "score": 0.9931
+  },
+  {
+   "script": "nibli won't claim more than its premises support.",
+   "heard": "Nibley won't claim more than its premises support.",
+   "score": 1.0
+  },
+  {
+   "script": "Try it at Dhilip Siva dot dev, slash nibli playground. The code is on GitHub.",
+   "heard": "try it at Dilipseva.dev/nibalyplayground. The code is on GitHub.",
+   "score": 0.875
+  },
+  {
+   "script": "It's also the running example in my book, Ultimate Neuro-Symbolic Reasoning for A I Engineers, scheduled for December 2026.",
+   "heard": "It's also the running example in my book, Ultimate Neurosymbolic Reasoning for Eye Engineers, scheduled for December 2026.",
+   "score": 0.9741
+  },
+  {
+   "script": "I'm Dhilip Siva.",
+   "heard": "I'm Dilip Siva.",
+   "score": 0.9565
+  }
+ ]
+}

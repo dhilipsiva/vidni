@@ -86,6 +86,11 @@ compose-stream *args:
 test-capture:
     cargo test -p vidni-media --test capture -- --ignored
 
+# The listening check's tests with whisper-cli and its model, as the dev shell has them
+# (P3-VIDNI-05): the library on its own, and `vidni hear` on a small project.
+test-hear:
+    cargo test -p vidni-media -p vidni-cli --test hear -- --ignored
+
 # Capture the example's web scene five times, each from scratch, and compare every still's
 # pixels. It reads the live page over the network, so it measures that page as much as vidni
 # (docs/determinism.md); `just test-capture` checks five captures of a local scene.

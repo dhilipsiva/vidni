@@ -94,6 +94,10 @@ pub struct Voice {
     pub read_as: Vec<Respelling>,
     /// Spellings the draft voice says better, applied in order to what it speaks.
     pub respell: Vec<Respelling>,
+    /// Words the listening check hears spelled differently from the script
+    /// for the same sound. They make its scores fairer and change nothing
+    /// else: no output depends on what the check hears.
+    pub heard_as: Vec<HeardAs>,
 }
 
 impl Default for Voice {
@@ -104,6 +108,7 @@ impl Default for Voice {
             length_scale: 1.0,
             read_as: Vec::new(),
             respell: Vec::new(),
+            heard_as: Vec::new(),
         }
     }
 }
@@ -116,6 +121,17 @@ pub struct Respelling {
     pub text: String,
     /// How it is said.
     pub say: String,
+}
+
+/// One word as the listening check hears it, and the script's word for
+/// the same sound.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct HeardAs {
+    /// The word as whisper writes it. Case is ignored.
+    pub heard: String,
+    /// The script's word for it.
+    pub means: String,
 }
 
 /// The pauses around the lines, in seconds.

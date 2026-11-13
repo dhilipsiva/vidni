@@ -19,6 +19,7 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 - `vidni takes` tracks the recorded takes.
 - `vidni voices` lists the draft voices with their licences, and `vidni draft` speaks every line in the draft voice, seeded so that a redraft repeats it.
 - `vidni capture` captures web scenes and page scenes through Chromium, as the cuts need them.
+- `vidni hear` listens to each line's audio with whisper and flags a line that doesn't sound like its script. It only advises.
 - `vidni ratify` and `vidni status` freeze cuts.
 
 Nothing renders yet.

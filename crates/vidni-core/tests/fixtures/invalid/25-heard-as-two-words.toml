@@ -1,0 +1,24 @@
+# expect: 9:23: heard must be one word of letters, digits and apostrophes, not "nib lee"
+schema = 1
+
+[meta]
+title = "A broken project"
+default_scene = "page"
+
+[voice]
+heard_as = [{ heard = "nib lee", means = "nibli" }]
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "Hello."
+
+[scenes.page]
+kind = "web"
+url = "https://example.com"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

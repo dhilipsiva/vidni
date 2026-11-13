@@ -93,6 +93,13 @@
         patches = (old.patches or [ ]) ++ [ ./nix/piper-seed.patch ];
       });
 
+      # The model of the listening check, pinned by revision and hash
+      # (P3-VIDNI-05). vidni reads it from $VIDNI_WHISPER_MODEL.
+      whisperModel = pkgs.fetchurl {
+        url = "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-base.en.bin";
+        sha256 = "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002";
+      };
+
       # The external tools vidni drives, pinned by this flake (DECISIONS D3).
       mediaTools = [
         pkgs.ffmpeg-full
@@ -122,16 +129,19 @@
         default = pkgs.mkShell {
           packages = rustTools ++ mediaTools ++ [ pkgs.rust-analyzer ];
           FONTCONFIG_FILE = fontsConf;
+          VIDNI_WHISPER_MODEL = whisperModel;
         };
         # CI's shell: the Rust toolchain and just, plus a headless ffmpeg for the
-        # parity tests and Chromium for the capture tests, without the other
-        # media tools.
+        # parity tests, Chromium for the capture tests and whisper for the
+        # listening tests, without the other media tools.
         ci = pkgs.mkShell {
           packages = rustTools ++ [
             pkgs.ffmpeg-headless
             pkgs.chromium
+            pkgs.whisper-cpp
           ];
           FONTCONFIG_FILE = fontsConf;
+          VIDNI_WHISPER_MODEL = whisperModel;
         };
       };
 
