@@ -10,3 +10,11 @@ authors.workspace = true
 
 [lints]
 workspace = true
+
+[dependencies]
+hound = "3.5.1"
+serde_json = "1.0.154"
+vidni-core = { path = "../vidni-core" }
+
+[dev-dependencies]
+tempfile = "3.27.0"

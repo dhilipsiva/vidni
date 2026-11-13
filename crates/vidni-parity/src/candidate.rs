@@ -7,7 +7,7 @@
 
 use crate::{CUTS, VARIANTS};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use vidni_core::project::Project;
 use vidni_core::takes::{self, Status};
 use vidni_core::timeline::{self, Clip};
@@ -16,9 +16,13 @@ use vidni_core::timeline::{self, Clip};
 pub fn build(stage: &str, example: &Path, reference: &Path, dst: &Path) -> Result<(), String> {
     match stage {
         "timeline" => timelines(example, reference, dst),
-        "narration" | "encode" => Err(format!(
-            "the Rust port of {stage} isn't built yet (P3-VIDNI-01)"
-        )),
+        "narration" => narrations(example, reference, dst),
+        "encode" => Err(
+            "the Rust encoder is held to T2, not to the reference's packets: its flags \
+                         differ on purpose (bitexact, fixed threads, -cpuflags 0). Run \
+                         `just encode-t2` (P3-VIDNI-01)"
+                .into(),
+        ),
         "cuts" => Err(format!(
             "the Rust port of cuts isn't built yet (P3-VIDNI-02); there are {} cuts to match",
             CUTS.len()
@@ -50,25 +54,58 @@ fn clip(path: &Path, wav: String) -> Result<Clip, String> {
     })
 }
 
-/// Both variants' timelines and captions: the synthetic one from the
-/// reference's cached Piper takes, the creator's from the example's takes.
-fn timelines(example: &Path, reference: &Path, dst: &Path) -> Result<(), String> {
-    let project = project(example)?;
+/// Each variant's clips, as files and as the reference names them: the
+/// synthetic ones from the reference's cached Piper takes, the creator's
+/// from the example's takes.
+fn variants(
+    project: &Project,
+    example: &Path,
+    reference: &Path,
+) -> Result<[Vec<(PathBuf, Clip)>; 2], String> {
     let synthetic = (0..project.lines.len())
         .map(|k| {
             let name = format!("build/audio/{k:03}.wav");
-            clip(&reference.join(&name), name)
+            let path = reference.join(&name);
+            clip(&path, name).map(|c| (path, c))
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let voice = takes::status(&project, example)
+    let voice = takes::status(project, example)
         .into_iter()
         .enumerate()
         .map(|(k, line)| match line.status {
-            Status::Current(path) => clip(&path, format!("recordings/{k:03}.wav")),
+            Status::Current(path) => {
+                clip(&path, format!("recordings/{k:03}.wav")).map(|c| (path, c))
+            }
             _ => Err(format!("line {} has no current take", line.id)),
         })
         .collect::<Result<Vec<_>, _>>()?;
-    for ((variant, suffix), clips) in VARIANTS.into_iter().zip([synthetic, voice]) {
+    Ok([synthetic, voice])
+}
+
+/// Both variants' narration tracks, assembled on their timelines.
+fn narrations(example: &Path, reference: &Path, dst: &Path) -> Result<(), String> {
+    let project = project(example)?;
+    for ((variant, _), clips) in VARIANTS
+        .into_iter()
+        .zip(variants(&project, example, reference)?)
+    {
+        let infos: Vec<Clip> = clips.iter().map(|(_, c)| c.clone()).collect();
+        let paths: Vec<&Path> = clips.iter().map(|(p, _)| p.as_path()).collect();
+        let timeline = timeline::build(&project, &infos)?;
+        let out = dst.join(format!("narration-{variant}.wav"));
+        vidni_media::narration::assemble(&timeline, &paths, &out)?;
+    }
+    Ok(())
+}
+
+/// Both variants' timelines and captions.
+fn timelines(example: &Path, reference: &Path, dst: &Path) -> Result<(), String> {
+    let project = project(example)?;
+    for ((variant, suffix), clips) in VARIANTS
+        .into_iter()
+        .zip(variants(&project, example, reference)?)
+    {
+        let clips: Vec<Clip> = clips.into_iter().map(|(_, c)| c).collect();
         let timeline = timeline::build(&project, &clips)?;
         let json = serde_json::to_string_pretty(&timeline).map_err(|e| e.to_string())?;
         let write = |name: String, text: String| {

@@ -70,6 +70,11 @@ parity stage *args:
 parity-selftest:
     cargo run -q -p vidni-parity -- selftest
 
+# Encode the golden 16:9 frames and narration twice with the Rust encoder, and compare the
+# packets and bytes (T2, P3-VIDNI-01).
+encode-t2:
+    dir="$(mktemp -d)"; trap 'rm -rf "$dir"' EXIT; cargo run -q --release -p vidni-media --example t2_golden -- {{reference}}/out/nibli-syllogism-16x9.mp4 {{reference}}/build/narration.wav "$dir"
+
 # Build twice under a hermetic environment and compare (P3-VIDNI-06).
 repro:
     @echo "not built yet: P3-VIDNI-06 adds vidni repro" >&2; exit 2

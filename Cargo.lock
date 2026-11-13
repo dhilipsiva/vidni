@@ -811,6 +811,12 @@ dependencies = [
 [[package]]
 name = "vidni-media"
 version = "0.1.0"
+dependencies = [
+ "hound",
+ "serde_json",
+ "tempfile",
+ "vidni-core",
+]
 
 [[package]]
 name = "vidni-parity"
@@ -822,6 +828,7 @@ dependencies = [
  "sha2",
  "tempfile",
  "vidni-core",
+ "vidni-media",
 ]
 
 [[package]]
