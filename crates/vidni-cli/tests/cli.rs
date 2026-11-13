@@ -262,3 +262,87 @@ fn platforms_lists_every_profile_with_its_date_and_sources() {
     }
     assert!(text.ends_with("confirm one in the app before relying on it.\n"));
 }
+
+/// Runs vidni with an empty voice store.
+fn vidni_without_voices(args: &[&str], store: &Path) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_vidni"))
+        .args(args)
+        .current_dir(root())
+        .env("VIDNI_VOICES", store)
+        .output()
+        .unwrap()
+}
+
+/// The minimal fixture with `draft` as its draft voice.
+fn project_with_voice(dir: &Path, draft: &str) -> PathBuf {
+    let minimal =
+        fs::read_to_string(root().join("crates/vidni-core/tests/fixtures/valid/minimal.toml"))
+            .unwrap()
+            .replace(
+                "[sections.main]",
+                &format!("[voice]\ndraft = \"{draft}\"\n\n[sections.main]"),
+            );
+    let file = dir.join("vidni.toml");
+    fs::write(&file, minimal).unwrap();
+    file
+}
+
+#[test]
+fn validate_warns_about_a_draft_voice_that_forbids_commercial_use() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = project_with_voice(dir.path(), "piper:en_US-ryan-medium");
+    let out = vidni_without_voices(&["validate", file.to_str().unwrap()], dir.path());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(out.status.success(), "{stderr}");
+    assert!(
+        stderr.contains(&format!(
+            "{}:9:9: warning: the draft voice piper:en_US-ryan-medium is licensed \
+             CC-BY-NC-SA-4.0, which doesn't allow commercial use",
+            file.display()
+        )),
+        "{stderr}"
+    );
+    let file = project_with_voice(dir.path(), "piper:en_US-joe-medium");
+    let out = vidni_without_voices(&["validate", file.to_str().unwrap()], dir.path());
+    assert!(out.status.success() && out.stderr.is_empty());
+}
+
+#[test]
+fn validate_warns_when_a_draft_voices_licence_is_unknown() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = project_with_voice(dir.path(), "piper:someone-elses");
+    let out = vidni_without_voices(&["validate", file.to_str().unwrap()], dir.path());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(out.status.success(), "{stderr}");
+    assert!(stderr.contains("so its licence is unknown"), "{stderr}");
+}
+
+#[test]
+fn voices_lists_each_pack_with_its_licence() {
+    let store = tempfile::tempdir().unwrap();
+    let out = vidni_without_voices(&["voices"], store.path());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success());
+    assert!(
+        stdout.contains(
+            "piper:en_US-joe-medium (en_US): CC0-1.0, commercial use allowed; not fetched"
+        )
+    );
+    assert!(stdout.contains(
+        "piper:en_US-ryan-medium (en_US): CC-BY-NC-SA-4.0, no commercial use; not fetched"
+    ));
+}
+
+#[test]
+fn draft_says_how_to_fetch_a_missing_voice() {
+    let store = tempfile::tempdir().unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let file = project_with_voice(dir.path(), "piper:en_US-joe-medium");
+    let out = vidni_without_voices(&["draft", file.to_str().unwrap()], store.path());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(out.status.code(), Some(1), "{stderr}");
+    assert!(
+        stderr.contains("run `vidni voices fetch piper:en_US-joe-medium`"),
+        "{stderr}"
+    );
+}

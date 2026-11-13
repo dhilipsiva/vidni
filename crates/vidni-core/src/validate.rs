@@ -42,14 +42,7 @@ pub fn project_file(path: &Path) -> PathBuf {
 /// Parses and checks a project file's text. `dir` is the project folder,
 /// for checking the files a project names; `None` skips those checks.
 pub fn check(text: &str, dir: Option<&Path>) -> Result<Project, Vec<Diagnostic>> {
-    let at = |span: Option<Range<usize>>, message: String| {
-        let (line, column) = position(text, span.map_or(0, |s| s.start));
-        Diagnostic {
-            line,
-            column,
-            message,
-        }
-    };
+    let at = |span: Option<Range<usize>>, message: String| diagnostic(text, span, message);
     let doc = Document::parse(text)
         .map_err(|e| vec![at(e.span(), format!("TOML syntax: {}", e.message().trim()))])?;
     // A newer schema would fail below with confusing messages, so say so first.
@@ -150,6 +143,41 @@ fn locate(root: &Item, path: &[Seg]) -> Option<Range<usize>> {
         span = next.span().or(span);
     }
     span
+}
+
+/// What `vidni validate` warns about without failing, in a project that
+/// passed [`check`]: a draft voice whose licence doesn't allow commercial
+/// use, or whose licence vidni can't find. `store` is the voice store, which
+/// holds a creator's own packs.
+pub fn warnings(text: &str, project: &Project, store: Option<&Path>) -> Vec<Diagnostic> {
+    let Ok(doc) = Document::parse(text) else {
+        return Vec::new();
+    };
+    let id = &project.voice.draft;
+    let message = match crate::voices::find(id, store) {
+        Ok(Some(pack)) if !pack.commercial => format!(
+            "the draft voice {id} is licensed {}, which doesn't allow commercial use \
+             (its model card: {})",
+            pack.licence, pack.source
+        ),
+        Ok(Some(_)) => return Vec::new(),
+        Ok(None) => format!(
+            "the draft voice {id} isn't a voice pack vidni knows, and the voice store has no \
+             pack.toml for it, so its licence is unknown"
+        ),
+        Err(e) => e,
+    };
+    let span = locate(doc.as_item(), &[Seg::from("voice"), Seg::from("draft")]);
+    vec![diagnostic(text, span, message)]
+}
+
+fn diagnostic(text: &str, span: Option<Range<usize>>, message: String) -> Diagnostic {
+    let (line, column) = position(text, span.map_or(0, |s| s.start));
+    Diagnostic {
+        line,
+        column,
+        message,
+    }
 }
 
 /// Whether `id` is lowercase letters and digits in words joined by single hyphens.

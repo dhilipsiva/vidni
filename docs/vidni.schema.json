@@ -994,7 +994,7 @@
       "type": "object",
       "properties": {
         "draft": {
-          "description": "The synthetic draft voice, as `<engine>:<model>`.",
+          "description": "The synthetic draft voice: a voice pack, as `<engine>:<model>`.",
           "type": "string",
           "default": "piper:en_US-joe-medium"
         },
@@ -1021,7 +1021,7 @@
           }
         },
         "seed": {
-          "description": "The draft voice's seed, so that a redraft repeats.",
+          "description": "Where a line's first draft takes its seeds from. The seed it keeps\ngoes into `voice.lock`, so changing this changes only the lines\ndrafted afresh.",
           "type": "integer",
           "format": "uint64",
           "default": 0,

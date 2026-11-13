@@ -1,0 +1,49 @@
+# The draft voices vidni can fetch, as voice packs (TODO.md, P3-VIDNI-03).
+#
+# Each pack pins its files by size and SHA-256, at one revision of their
+# repository, and says what its model card gives as the licence: the
+# training data's licence, and whether that allows commercial use. Each
+# entry was read off its model card on the date in `checked`. `vidni
+# validate` warns when a project's draft voice doesn't allow commercial use.
+
+[[voice]]
+id = "piper:en_US-joe-medium"
+language = "en_US"
+licence = "CC0-1.0"
+commercial = true
+notes = "Trained on the OHF-Voice voice datasets (CC0), fine-tuned from the rdh base model (CC0)."
+source = "https://huggingface.co/rhasspy/piper-voices/blob/6b9cfaacb4fb2e02a9621227e3c1a48bec9710c3/en/en_US/joe/medium/MODEL_CARD"
+checked = "2026-11-13"
+
+[[voice.files]]
+name = "en_US-joe-medium.onnx"
+url = "https://huggingface.co/rhasspy/piper-voices/resolve/6b9cfaacb4fb2e02a9621227e3c1a48bec9710c3/en/en_US/joe/medium/en_US-joe-medium.onnx"
+size = 63221984
+sha256 = "abf4b998e34045cbd00eaf050de2de620f81ded6eb8b85a24b022a1c2b3f08d2"
+
+[[voice.files]]
+name = "en_US-joe-medium.onnx.json"
+url = "https://huggingface.co/rhasspy/piper-voices/resolve/6b9cfaacb4fb2e02a9621227e3c1a48bec9710c3/en/en_US/joe/medium/en_US-joe-medium.onnx.json"
+size = 5465
+sha256 = "7b5f0293c0bf5bda8e377be1696da84af798befeef31038e43beefc01fe858da"
+
+[[voice]]
+id = "piper:en_US-ryan-medium"
+language = "en_US"
+licence = "CC-BY-NC-SA-4.0"
+commercial = false
+notes = "Trained on the RyanSpeech dataset (CC BY-NC-SA 4.0), fine-tuned from the rdh base model (CC0)."
+source = "https://huggingface.co/rhasspy/piper-voices/blob/6b9cfaacb4fb2e02a9621227e3c1a48bec9710c3/en/en_US/ryan/medium/MODEL_CARD"
+checked = "2026-11-13"
+
+[[voice.files]]
+name = "en_US-ryan-medium.onnx"
+url = "https://huggingface.co/rhasspy/piper-voices/resolve/6b9cfaacb4fb2e02a9621227e3c1a48bec9710c3/en/en_US/ryan/medium/en_US-ryan-medium.onnx"
+size = 63221984
+sha256 = "33b53106e049f68a51f014e4fa10bf5a04e0f7d6668692dc05228cc4554c1d71"
+
+[[voice.files]]
+name = "en_US-ryan-medium.onnx.json"
+url = "https://huggingface.co/rhasspy/piper-voices/resolve/6b9cfaacb4fb2e02a9621227e3c1a48bec9710c3/en/en_US/ryan/medium/en_US-ryan-medium.onnx.json"
+size = 5466
+sha256 = "774482143a035ce5ec26e3546b50f079de282b27eb3f8498b8a03906edbfe564"

@@ -6,7 +6,7 @@ vidni's outputs are deterministic in three tiers (TODO.md, rule 2):
 - **T2:** an MP4's packets (`ffmpeg -map 0 -c copy -f framemd5`) and its file bytes are identical across runs on one host.
 - **T3:** across hosts, MP4s are compared by SSIM and are not promised to match. The delivered files are archived.
 
-Some inputs can't be made deterministic: a live web page, every Chromium render, sampled TTS, whisper, the creator's takes and the clock. They are frozen by hash when a cut is ratified, and whisper never feeds an output.
+Some inputs can't be made deterministic: a live web page, every Chromium render, sampled TTS across hosts (seeded, it repeats on one host), whisper, the creator's takes and the clock. They are frozen by hash when a cut is ratified, and whisper never feeds an output.
 
 ## Verified
 
@@ -20,6 +20,7 @@ Some inputs can't be made deterministic: a live web page, every Chromium render,
 | 2026-11-13 | same | the compositor, every picture of the four cuts | equal to the reference's frames before encoding | `just compose-stream`: in each cut, the 1,254 pictures change at the same frames as the reference's and differ from them by at most 2 of 255 (16:9) or 1 of 255 (9:16) |
 | 2026-11-13 | same | the compositor's frame streams | T1 | `just compose-t1`: two renders of each cut gave the same rgb24 stream, hashed below |
 | 2026-11-13 | a clean `nixos/nix` container on the same desktop: Nix 2.35.6, vidni built from source by `nix build` | the compositor's frame streams | T1, equal to the desktop's | `vidni-parity compose-t1 --fonts …` in the container: two identical renders of each cut, with the desktop's four hashes |
+| 2026-11-13 | the maintainer's desktop | the draft voice: Piper 1.8.0 with vidni's seed patch, piper:en_US-joe-medium, on the nibli example's 57 lines | repeatable on one host | `vidni draft` chose each line's take from 3 (171 takes). With the cache cleared, a redraft from `voice.lock` gave the same PCM: the 57 clips' combined sha256 is `59359d31…ffca` both times. A redraft with the lock cleared as well chose the same seeds and gave the same PCM again |
 
 The compositor's frame streams (rgb24, every frame in order), drawn with IBM Plex Sans Bold (sha256 `19de5aec…c316`), IBM Plex Mono Bold (`44f6da8e…a6c7`) and Space Grotesk Bold (`be8709ab…368f`):
 
@@ -50,5 +51,11 @@ nibli-syllogism-voice-9x16  8,441 frames  97cc6585c827b80c014d03e7eb9f888cc56835
 - The compositor draws only with the font files it is given and never asks fontconfig or the system for a font. The parity tools pin the reference's three faces by sha256 (`REFERENCE_FONTS` in `vidni-parity`), because fc-match answers with some other font when it has none of the family. `compose-t1` prints each file's path and hash.
 - Drawing ports Pillow's arithmetic (DECISIONS.md, T4). Resampling is fixed-point, text positions are whole 26.6 units, and the floating-point steps are plain IEEE operations: no transcendental function is called (the camera's ease is a polynomial).
 - A frame whose line and caption match the frame before, with nothing moving, is the same picture, so it is reused instead of drawn again (`FrameKey`).
+
+**Draft voice** (`vidni_media::tts`):
+- Piper runs with a seed (DECISIONS.md, T5), so a take depends only on what the voice is given, the voice pack's files, the pace and the seed.
+- The pack's files are checked against their SHA-256 before every draft.
+- Each line's kept seed is recorded in `voice.lock`, so a draft never depends on what the cache holds.
+- The same seed gives the same PCM on one host. Across hosts it isn't promised, since onnxruntime may take different paths on different CPUs.
 
 **Captures** (`vidni_core::capture`) aren't deterministic, because they come from a live page. Each is filed by what it shows, frozen by hash when its cut is ratified, and never retaken unless its scene changes or `--refresh` asks for it (DECISIONS.md, T3).

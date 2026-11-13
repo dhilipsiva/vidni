@@ -22,13 +22,22 @@
         pkgs.just
       ];
 
+      # Piper 1.8 draws its sampling noise inside the voice's ONNX graph, from
+      # generators that onnxruntime seeds when a session starts. This patch
+      # adds `--seed` to set that seed, so that a draft take repeats
+      # (DECISIONS.md, T5).
+      piper = pkgs.piper-tts.overridePythonAttrs (old: {
+        patches = (old.patches or [ ]) ++ [ ./nix/piper-seed.patch ];
+      });
+
       # The external tools vidni drives, pinned by this flake (DECISIONS D3).
       mediaTools = [
         pkgs.ffmpeg-full
         pkgs.chromium
-        pkgs.piper-tts
+        piper
         pkgs.whisper-cpp
         pkgs.espeak-ng
+        pkgs.curl
       ];
 
       vidni = pkgs.rustPlatform.buildRustPackage {

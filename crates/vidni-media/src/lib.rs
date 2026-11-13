@@ -6,6 +6,7 @@ pub mod compose;
 pub mod encode;
 pub mod narration;
 pub mod qa;
+pub mod tts;
 
 use std::process::{Command, Output};
 

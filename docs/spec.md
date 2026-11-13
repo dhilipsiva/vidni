@@ -78,8 +78,8 @@ A line's ID is permanent. Takes, captions and per-cut state are keyed by it (P2-
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `draft` | string | `"piper:en_US-joe-medium"` | The synthetic draft voice, as `<engine>:<model>` |
-| `seed` | integer | `0` | The draft voice's seed, so that a redraft repeats |
+| `draft` | string | `"piper:en_US-joe-medium"` | The synthetic draft voice: a voice pack, as `<engine>:<model>` (see [The draft voice](#the-draft-voice)) |
+| `seed` | integer | `0` | Where a line's first draft takes its seeds from. The seed it keeps goes into `voice.lock`, so changing this changes only the lines drafted afresh |
 | `length_scale` | number | `1.0` | The draft voice's pace; above 1 is slower. It must be above 0. |
 | `read_as` | array of `{ text, say }` | empty | How a reader says symbols that the captions show, such as `{ text = "#1", say = "number one" }`. The recorder's prompter shows these, and takes are scored against them. |
 | `respell` | array of `{ text, say }` | empty | Spellings the draft voice says better, applied in order to what it speaks, such as `{ text = "theorem prover", say = "theorem proover" }` |
@@ -136,7 +136,7 @@ Sections come in the order of their first line, and a section's lines must be to
 
 ## Takes and spoken words
 
-A line's audio is filed under its ID and a hash of its spoken words. This covers its takes, its synthetic clips and its captions.
+A line's takes and captions are filed under its ID and a hash of its spoken words. Its draft clips are filed under its ID and a key of what the draft voice is given ([The draft voice](#the-draft-voice)).
 - **The spoken form** is `say`, or else `show` with `voice.read_as` applied.
 - **Its words** are the spoken form in lowercase, with apostrophes joined (`it's` becomes `its`) and every other punctuation mark removed.
 - **The hash** is the first 16 hex digits of the words' SHA-256.
@@ -157,6 +157,36 @@ takes/_room/                        room tone from the mic check
 - **missing:** there are no takes at all.
 
 `vidni takes --link DIR` lays the current takes out as `000.wav`, `001.wav` … in script order, as symbolic links, for tools that read numbered files.
+
+## The draft voice
+
+`vidni draft` speaks every line in the draft voice, `voice.draft`, so that a cut can be watched before any take is recorded.
+
+**Voice packs.** A draft voice is a voice pack: a model's files, pinned by size and SHA-256, plus what its model card says about the licence. `vidni voices` lists the packs vidni ships, each with its licence, whether that allows commercial use, and the model card it was read from. `vidni voices fetch <id>` downloads a pack into the voice store and checks every file. The store is `$VIDNI_VOICES`, else `$XDG_DATA_HOME/vidni/voices`, else `~/.local/share/vidni/voices`, and a pack lives in `<engine>/<model>/` there with a `pack.toml` holding its description. A creator's own voice is a folder of the same shape, with a `pack.toml` they write:
+
+```toml
+id = "piper:my-voice"
+language = "en_GB"
+licence = "proprietary"            # an SPDX ID where there is one
+commercial = true                  # whether the licence allows commercial use
+notes = "Recorded and trained by me."
+source = "notes.md"                # where the licence is stated
+checked = "2026-11-13"
+files = [
+  { name = "my-voice.onnx", size = 63221984, sha256 = "…" },
+  { name = "my-voice.onnx.json", size = 5465, sha256 = "…" },
+]
+```
+
+**Takes and seeds.** Piper samples, so a take depends on a seed as well as on the text. vidni runs Piper with a seed (vidni's flake patches it to take `--seed`), and the same seed gives the same PCM.
+- A line's first draft speaks three takes, with seeds made from `voice.seed`, the line's ID and its key. It keeps the take of median length, since a take much longer or shorter than the others has usually stretched or dropped a word.
+- The kept seed goes into `voice.lock`, beside `vidni.toml`. Commit it: every later draft speaks the line from that seed.
+- A line is drafted afresh when what the voice is given changes: its `say` or `show` (punctuation too, since it changes how the voice reads), `voice.respell`, the voice pack, or `voice.length_scale`.
+- To hear another take of a line, write another seed into its entry in `voice.lock`.
+
+**The cache.** Clips are cached in `build/voice/<line-id>/<key>-<seed>.wav`, where the key is the first 16 hex digits of a SHA-256 over what the voice is given (the line's `say` or `show`, with `voice.respell` applied), the pack's ID and file hashes, and `voice.length_scale`. A draft speaks only what the cache doesn't hold. Clearing `build/` and drafting again gives the same PCM, from `voice.lock`.
+
+**Licences.** A voice whose licence doesn't allow commercial use may still be drafted with, but its audio can't go into a cut that is used commercially. `vidni validate` and `vidni draft` warn about such a voice, and about one whose licence vidni can't find.
 
 ## `[scenes.<id>]`
 
@@ -331,3 +361,5 @@ It checks, in order:
    - Expectations name a web scene, a target, and a line on that scene.
 
 The broken fixtures in `crates/vidni-core/tests/fixtures/invalid` show one problem of each kind, with the message it produces.
+
+It also warns, without failing, when the draft voice's licence doesn't allow commercial use or isn't known ([The draft voice](#the-draft-voice)). A warning reads `<file>:<line>:<column>: warning: <message>`.

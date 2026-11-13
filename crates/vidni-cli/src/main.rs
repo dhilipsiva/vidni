@@ -8,6 +8,7 @@ use std::process::ExitCode;
 use vidni_core::ratify::{self, Status as RatifyStatus};
 use vidni_core::takes::Status;
 use vidni_core::validate;
+use vidni_core::voices;
 
 /// Prints a line to stdout. A reader that has gone away, as in
 /// `vidni takes | head`, isn't an error, so a failed write is ignored
@@ -86,8 +87,30 @@ enum Command {
     },
     /// List the platform profiles, with the date each was checked and its sources.
     Platforms,
+    /// List the draft voices vidni can fetch, with each one's licence; or fetch one.
+    Voices {
+        #[command(subcommand)]
+        action: Option<VoicesAction>,
+    },
+    /// Draft a project: speak every line in the draft voice. A line's first
+    /// draft keeps one of a few seeded takes and records its seed in
+    /// voice.lock; every later draft repeats that take.
+    Draft {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+    },
     /// Print the JSON Schema of vidni.toml, for editors.
     Schema,
+}
+
+#[derive(Subcommand)]
+enum VoicesAction {
+    /// Download a voice's files into the voice store, checking each one's SHA-256.
+    Fetch {
+        /// The voice, as `voice.draft` names it, such as piper:en_US-joe-medium.
+        id: String,
+    },
 }
 
 fn main() -> ExitCode {
@@ -103,6 +126,11 @@ fn main() -> ExitCode {
             refresh,
         } => unratify(&path, &cuts, refresh),
         Command::Platforms => platforms(),
+        Command::Voices { action: None } => voices(),
+        Command::Voices {
+            action: Some(VoicesAction::Fetch { id }),
+        } => fetch_voice(&id),
+        Command::Draft { path } => draft(&path),
         Command::Schema => {
             say!("{}", vidni_core::schema_json().trim_end());
             ExitCode::SUCCESS
@@ -436,6 +464,15 @@ fn validate(path: &Path) -> ExitCode {
                 count(p.scenes.len(), "scene"),
                 count(p.cuts.len(), "cut")
             );
+            for w in validate::warnings(&text, &p, voices::store().as_deref()) {
+                eprintln!(
+                    "{}:{}:{}: warning: {}",
+                    file.display(),
+                    w.line,
+                    w.column,
+                    w.message
+                );
+            }
             ExitCode::SUCCESS
         }
         Err(problems) => report(&file, &problems),
@@ -445,4 +482,122 @@ fn validate(path: &Path) -> ExitCode {
 /// "1 line", "2 lines".
 fn count(n: usize, noun: &str) -> String {
     format!("{n} {noun}{}", if n == 1 { "" } else { "s" })
+}
+
+fn voices() -> ExitCode {
+    let store = voices::store();
+    for p in voices::all() {
+        let fetched = store
+            .as_deref()
+            .is_some_and(|s| voices::check_files(&p, &voices::pack_dir(s, &p.id)).is_ok());
+        let use_ = if p.commercial {
+            "commercial use allowed"
+        } else {
+            "no commercial use"
+        };
+        let state = if fetched { "fetched" } else { "not fetched" };
+        say!("{} ({}): {}, {use_}; {state}", p.id, p.language, p.licence);
+        say!("  {}", p.notes);
+        say!("  licence from {} (checked {})", p.source, p.checked);
+    }
+    match store {
+        Some(s) => say!("voice store: {}", s.display()),
+        None => say!("voice store: none; set VIDNI_VOICES or HOME"),
+    }
+    ExitCode::SUCCESS
+}
+
+fn fetch_voice(id: &str) -> ExitCode {
+    let Some(store) = voices::store() else {
+        eprintln!("vidni: no voice store; set VIDNI_VOICES or HOME");
+        return ExitCode::from(2);
+    };
+    let Some(pack) = voices::all().into_iter().find(|p| p.id == id) else {
+        eprintln!("vidni: {id} isn't a voice vidni can fetch; `vidni voices` lists them");
+        return ExitCode::FAILURE;
+    };
+    match vidni_media::tts::fetch(&pack, &store) {
+        Ok(dir) => {
+            say!("{id}: fetched into {}", dir.display());
+            if !pack.commercial {
+                say!(
+                    "{id}: licensed {}, which doesn't allow commercial use",
+                    pack.licence
+                );
+            }
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("vidni: {e}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn draft(path: &Path) -> ExitCode {
+    use vidni_media::tts::{self, From, Piper};
+    let (file, text) = match read(path) {
+        Ok(read) => read,
+        Err(code) => return code,
+    };
+    let dir = file
+        .parent()
+        .filter(|d| !d.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    let project = match validate::check(&text, Some(dir)) {
+        Ok(project) => project,
+        Err(problems) => return report(&file, &problems),
+    };
+    let store = voices::store();
+    let id = &project.voice.draft;
+    let pack = match voices::find(id, store.as_deref()) {
+        Ok(Some(pack)) => pack,
+        Ok(None) => {
+            eprintln!(
+                "vidni: the draft voice {id} isn't a voice vidni knows, and the voice store has no pack.toml for it"
+            );
+            return ExitCode::FAILURE;
+        }
+        Err(e) => {
+            eprintln!("vidni: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let Some(store) = store else {
+        eprintln!("vidni: no voice store; set VIDNI_VOICES or HOME");
+        return ExitCode::from(2);
+    };
+    let engine = match Piper::new(&pack, &voices::pack_dir(&store, id)) {
+        Ok(engine) => engine,
+        Err(e) => {
+            eprintln!("vidni: {e}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let drafted = match tts::draft(&project, dir, &pack, &engine) {
+        Ok(drafted) => drafted,
+        Err(e) => {
+            eprintln!("vidni: {e}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let n = |from: From| drafted.iter().filter(|d| d.from == from).count();
+    say!(
+        "{}: draft voice {id}: {}; {} chosen afresh from {} takes each, {} spoken from {}, {} from the cache",
+        file.display(),
+        count(drafted.len(), "line"),
+        n(From::Chosen),
+        tts::ATTEMPTS,
+        n(From::Lock),
+        voices::LOCK,
+        n(From::Cache)
+    );
+    if !pack.commercial {
+        eprintln!(
+            "{}: warning: the draft voice {id} is licensed {}, which doesn't allow commercial use",
+            file.display(),
+            pack.licence
+        );
+    }
+    ExitCode::SUCCESS
 }

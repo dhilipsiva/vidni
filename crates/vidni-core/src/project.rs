@@ -81,9 +81,11 @@ fn default_language() -> String {
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
 #[serde(default, deny_unknown_fields)]
 pub struct Voice {
-    /// The synthetic draft voice, as `<engine>:<model>`.
+    /// The synthetic draft voice: a voice pack, as `<engine>:<model>`.
     pub draft: String,
-    /// The draft voice's seed, so that a redraft repeats.
+    /// Where a line's first draft takes its seeds from. The seed it keeps
+    /// goes into `voice.lock`, so changing this changes only the lines
+    /// drafted afresh.
     pub seed: u64,
     /// The draft voice's pace: above 1 is slower.
     pub length_scale: f64,

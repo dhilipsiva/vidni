@@ -115,3 +115,17 @@ Added as the items are built.
   - cosmic-text's own layout shapes word by word and sums float advances. A caption measured 1281 px where Pillow measured 1280.9375, so its box came out a pixel wider and the box and text shifted by a pixel.
   - With that layout, 15 of the 80 sampled frames fell between SSIM 0.987 and 0.995 against golden's MP4s.
   - Matching Pillow's arithmetic removes those differences at their source, and the ports are small. It left two sampled frames below 0.995, and those were golden's own compression in the middle of a camera move (A9).
+
+### T5. How the draft voice repeats
+- **2026-11-13, P3-VIDNI-03.** The draft voice is the pinned Piper CLI, patched in vidni's flake to take `--seed` (`nix/piper-seed.patch`), not `piper-rs` over `ort`.
+  - **Why:** Piper 1.8 draws its sampling noise inside the voice's ONNX graph, from generators that onnxruntime seeds when a session starts.
+  - onnxruntime's Python API can set that seed, so the patch is a few lines, and the same seed then gives byte-identical PCM. Without it, two runs of the same line differ.
+  - `ort` exposes no such seed. Seeding there would mean rewriting each voice's graph to take its noise as an input.
+  - Piper ignores flags it doesn't know, so vidni checks that its Piper lists `--seed` and refuses one that doesn't, rather than draft unrepeatable takes.
+- A line's first draft speaks three takes and keeps the one of median length.
+  - **Why:** whisper's score would pick better, but whisper is advisory only and never decides an output (P3-VIDNI-05).
+  - Length is deterministic and catches Piper's usual failures, a stretched or dropped word.
+  - The kept seed goes into `voice.lock`, a committed file, so a creator can also choose a take by writing a seed.
+- The voice packs vidni ships pin each file by size and SHA-256 at one revision of rhasspy/piper-voices, and carry the licence their model card gives.
+  - joe (CC0) is the default, and ryan (CC BY-NC-SA 4.0) shows the warning for a non-commercial voice.
+  - libritts_r is left out. Its data is CC BY 4.0, but it was fine-tuned from lessac, whose recordings are licensed for research only (the Blizzard 2013 research licence), so its status is unclear.

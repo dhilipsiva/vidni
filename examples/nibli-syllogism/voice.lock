@@ -1,0 +1,231 @@
+# Written by `vidni draft`: the seed each line's draft voice take was kept at.
+# Commit it, so that a redraft gives the same audio. To hear another take of
+# a line, give it another seed (docs/spec.md, The draft voice).
+
+[lines.end-1]
+key = "bb89cb1d8686eac8"
+seed = 2139338074
+
+[lines.end-2]
+key = "b313133efc0c8b97"
+seed = 239251544
+
+[lines.end-3]
+key = "c0ad289c205f3135"
+seed = 1829254027
+
+[lines.false-1]
+key = "d74338c7785d3530"
+seed = 914125633
+
+[lines.false-2]
+key = "335eb65163482437"
+seed = 1527530704
+
+[lines.false-3]
+key = "3db8e93236bae678"
+seed = 689101724
+
+[lines.false-4]
+key = "4992413dd29c7568"
+seed = 1785552856
+
+[lines.false-5]
+key = "2662c90ea9b1f46a"
+seed = 900982374
+
+[lines.intro-1]
+key = "a87b39f7e064550f"
+seed = 328796989
+
+[lines.intro-2]
+key = "fe9b04febc84e796"
+seed = 2033661168
+
+[lines.neurosymbolic-1]
+key = "12540345307c5b5f"
+seed = 859022412
+
+[lines.neurosymbolic-2]
+key = "14508be4b252223e"
+seed = 1009247603
+
+[lines.neurosymbolic-3]
+key = "8c77387f4f5490b5"
+seed = 1176517430
+
+[lines.neurosymbolic-4]
+key = "49400159beef8f62"
+seed = 1714780340
+
+[lines.neurosymbolic-5]
+key = "05a6dd2ee7e716a2"
+seed = 29272075
+
+[lines.neurosymbolic-6]
+key = "219c7bdb6fd1dc1c"
+seed = 406829445
+
+[lines.neurosymbolic-7]
+key = "852255d5bf64a25f"
+seed = 1704049237
+
+[lines.neurosymbolic-8]
+key = "8e2bc6a7cc2e022f"
+seed = 1123787917
+
+[lines.neurosymbolic-9]
+key = "d436adb2520471ef"
+seed = 1924969418
+
+[lines.nibli-1]
+key = "0a1ff305a202635b"
+seed = 447895426
+
+[lines.nibli-2]
+key = "d9b1cf18dd029e97"
+seed = 1821899920
+
+[lines.nibli-3]
+key = "561df764f5e0e534"
+seed = 1159482500
+
+[lines.nibli-4]
+key = "feb547b27ad96977"
+seed = 606539159
+
+[lines.nibli-5]
+key = "de8b07622a680fb0"
+seed = 2080514330
+
+[lines.proving-1]
+key = "3fbe35a84b2ddc3b"
+seed = 373913856
+
+[lines.proving-2]
+key = "1d2cc45dfa2f0586"
+seed = 923074136
+
+[lines.proving-3]
+key = "67d58888802e1ef1"
+seed = 220841273
+
+[lines.proving-4]
+key = "44a5e39a939a4584"
+seed = 2134423331
+
+[lines.proving-5]
+key = "4e455507fe3450de"
+seed = 449401388
+
+[lines.proving-6]
+key = "ea06aa1686a305a2"
+seed = 2029521504
+
+[lines.reasoning-1]
+key = "74c9af58a49dadc8"
+seed = 821545170
+
+[lines.reasoning-2]
+key = "cbc80a16001930ea"
+seed = 1096778991
+
+[lines.reasoning-3]
+key = "829444fea3446c6f"
+seed = 601003840
+
+[lines.reasoning-4]
+key = "8dc82ce89c7d71a3"
+seed = 806094176
+
+[lines.reasoning-5]
+key = "73cad6f8cbe71d94"
+seed = 1323417784
+
+[lines.reasoning-6]
+key = "84e569572c10f11e"
+seed = 928588398
+
+[lines.reasoning-7]
+key = "a326b1f651e97981"
+seed = 797578498
+
+[lines.reasoning-8]
+key = "0c117dcd7e8893f8"
+seed = 746911306
+
+[lines.syllogism-1]
+key = "aaf2277ff818b130"
+seed = 1419085920
+
+[lines.syllogism-2]
+key = "2f8e38260597eac8"
+seed = 1035542424
+
+[lines.syllogism-3]
+key = "792b0218608bbf16"
+seed = 1493821521
+
+[lines.syllogism-4]
+key = "1700eb0a5014980b"
+seed = 1417577735
+
+[lines.syllogism-5]
+key = "50f373322a8b56dc"
+seed = 529881798
+
+[lines.symbolic-1]
+key = "7e021bddeb964f6f"
+seed = 1410615816
+
+[lines.symbolic-2]
+key = "588c4c26853d904d"
+seed = 584709828
+
+[lines.symbolic-3]
+key = "b5878625883dc361"
+seed = 1474242796
+
+[lines.symbolic-4]
+key = "b41d11b2966e5eb5"
+seed = 795704765
+
+[lines.symbolic-5]
+key = "0fff312c4fa36802"
+seed = 1485846948
+
+[lines.trace-1]
+key = "420971e192bdca12"
+seed = 930234055
+
+[lines.trace-2]
+key = "6a226d84806a739c"
+seed = 984677444
+
+[lines.trace-3]
+key = "17f5d4125c652ce5"
+seed = 259025184
+
+[lines.trace-4]
+key = "21348a667095dc39"
+seed = 153007379
+
+[lines.trace-5]
+key = "a8637f5232571946"
+seed = 719061756
+
+[lines.trace-6]
+key = "d929aa72fb55f2b4"
+seed = 723772850
+
+[lines.trace-7]
+key = "30ca9ca7f0df8cc7"
+seed = 1503741915
+
+[lines.trace-8]
+key = "6eb46abda5701de4"
+seed = 782777306
+
+[lines.trace-9]
+key = "ac1f6baab69e82b7"
+seed = 72529481
