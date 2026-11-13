@@ -1,0 +1,32 @@
+# expect: 14:7: an action has one verb, and this one has click and wait
+schema = 1
+
+[meta]
+title = "A broken project"
+default_scene = "page"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "Hello."
+do = [{ click = "title", wait = "title" }]
+
+[scenes.page]
+kind = "web"
+url = "https://example.com"
+
+[scenes.page.targets]
+title = { css = "h1" }
+
+[scenes.page.cameras]
+heading = { union = ["title"] }
+
+[scenes.card]
+kind = "page"
+url = "cards/card.html"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

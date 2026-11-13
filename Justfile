@@ -15,6 +15,10 @@ build:
 test:
     cargo test --workspace --all-targets
 
+# Regenerate docs/vidni.schema.json, the JSON Schema of vidni.toml, from the project model.
+schema:
+    cargo run -q -p vidni-cli -- schema > docs/vidni.schema.json
+
 # Check formatting, and run clippy with warnings denied.
 lint:
     cargo fmt --all --check

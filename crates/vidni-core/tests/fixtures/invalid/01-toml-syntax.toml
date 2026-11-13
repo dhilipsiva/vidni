@@ -1,0 +1,5 @@
+# expect: 5:32: TOML syntax: invalid basic string, expected `"`
+schema = 1
+
+[meta]
+title = "An unterminated string

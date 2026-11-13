@@ -1,0 +1,21 @@
+# The smallest valid project: one line, one scene, one cut.
+schema = 1
+
+[meta]
+title = "A minimal project"
+default_scene = "page"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "Hello."
+
+[scenes.page]
+kind = "web"
+url = "https://example.com"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

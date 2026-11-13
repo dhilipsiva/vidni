@@ -1,0 +1,659 @@
+#:schema ../../docs/vidni.schema.json
+# The nibli syllogism explainer, converted from the reference pipeline's
+# segments.json (P2-VIDNI-01). docs/spec.md describes every key.
+
+schema = 1
+
+[meta]
+title = "nibli: the LLM drafts, the engine decides"
+subtitle = "nibli · the syllogism walkthrough"
+language = "en"
+default_scene = "playground"
+
+[voice]
+draft = "piper:en_US-joe-medium"
+length_scale = 1.0
+# How a reader says the symbols the captions show.
+read_as = [
+  { text = "dhilipsiva.dev/nibli-playground", say = "dhilipsiva dot dev slash nibli playground" },
+  { text = "RESOURCE_EXCEEDED", say = "resource exceeded" },
+  { text = "#1", say = "number one" },
+  { text = "#0", say = "number zero" },
+]
+# Spellings the draft voice says better.
+respell = [
+  { text = "dhilipsiva.dev/nibli-playground", say = "Dhilip Siva dot dev, slash nibli playground" },
+  { text = "dhilipsiva", say = "Dhilip Siva" },
+  { text = "nibli KR", say = "nibli K R" },
+  { text = "theorem prover", say = "theorem proover" },
+  { text = "RESOURCE_EXCEEDED", say = "resource exceeded" },
+  { text = "AI Engineers", say = "A I Engineers" },
+  { text = "source #1", say = "source number one" },
+  { text = "source #0", say = "source number zero" },
+]
+
+[timing]
+lead_in = 0.6
+line_gap = 0.28
+section_gap = 0.75
+tail = 2.4
+
+# The wording rules of nibli's canonical facts: no line may show or say these.
+[lint]
+banned = [
+  'zero[- ]hallucination',
+  'no hallucination',
+  'cannot hallucinate',
+  'guarantee',
+  'machine[- ]checked',
+  'verified engine',
+  'high[- ]performance',
+  '\bpublished\b',
+  'UNDETERMINED',
+  'sub[- ]millisecond',
+  'LLM[^.]*\bcompil',
+  '\bcompil\w*[^.]*\bLLM',
+]
+
+# The reference burns captions into both cuts. The vertical cut runs about
+# five minutes, which is too long for the short-video platforms.
+[[cuts]]
+id = "long"
+aspect = "16:9"
+captions = "burned"
+platforms = ["youtube"]
+
+[[cuts]]
+id = "vertical"
+aspect = "9:16"
+captions = "burned"
+platforms = []
+
+[music]
+track = "none"
+
+[sections.intro]
+label = ""
+[sections.symbolic]
+label = "symbolic reasoning"
+[sections.proving]
+label = "theorem proving"
+[sections.neurosymbolic]
+label = "neuro-symbolic architecture"
+[sections.nibli]
+label = "nibli"
+[sections.syllogism]
+label = "the syllogism"
+[sections.reasoning]
+label = "reasoning backward"
+[sections.trace]
+label = "building the proof trace"
+[sections.false]
+label = "a real FALSE"
+[sections.end]
+label = ""
+
+[[lines]]
+id = "intro-1"
+section = "intro"
+show = "Language models predict the next word. A reasoner derives the next step."
+scene = "intro"
+
+[[lines]]
+id = "intro-2"
+section = "intro"
+show = "In five minutes: what symbolic reasoning is, what a theorem prover does, where an LLM fits around one, and a small proof in nibli, step by step."
+
+[[lines]]
+id = "symbolic-1"
+section = "symbolic"
+show = "Symbolic reasoning works on explicit statements and explicit rules."
+do = [{ click = "tab-kr" }]
+highlight = ["kr"]
+camera = "kb"
+
+[[lines]]
+id = "symbolic-2"
+section = "symbolic"
+show = "Here are three: every dog is an animal, every animal eats, and Adam is a dog."
+highlight = ["kr-line-1", "kr-line-3", "kr-line-5"]
+camera = "kb"
+
+[[lines]]
+id = "symbolic-3"
+section = "symbolic"
+show = "Nothing is learned from examples, and nothing is guessed."
+camera = "kb"
+
+[[lines]]
+id = "symbolic-4"
+section = "symbolic"
+show = "A conclusion counts only if it follows from these statements by fixed rules of inference."
+highlight = ["kr-line-1", "kr-line-3", "kr-line-5"]
+camera = "kb"
+
+[[lines]]
+id = "symbolic-5"
+section = "symbolic"
+show = "Run it again tomorrow and you get the same answer, and you can inspect every step that produced it."
+highlight = ["row-eats", "row-animal", "row-given"]
+camera = "right"
+
+[[lines]]
+id = "proving-1"
+section = "proving"
+show = "A theorem prover automates that."
+
+[[lines]]
+id = "proving-2"
+section = "proving"
+show = "You give it premises and a claim, and it searches for a proof: a chain of rule applications from the premises to the claim."
+highlight = ["kr", "query-select"]
+camera = "left"
+
+[[lines]]
+id = "proving-3"
+section = "proving"
+show = "If it finds one, the answer is TRUE, and it can show you the chain."
+highlight = ["verdict", "row-eats", "row-animal", "row-given"]
+camera = "right"
+
+[[lines]]
+id = "proving-4"
+section = "proving"
+show = "That answer is sound with respect to what you encoded."
+highlight = ["tree"]
+camera = "proof"
+
+[[lines]]
+id = "proving-5"
+section = "proving"
+show = "It doesn't make your premises true. It tells you what they commit you to."
+highlight = ["kr-line-1", "kr-line-3", "kr-line-5"]
+camera = "kb"
+
+[[lines]]
+id = "proving-6"
+section = "proving"
+show = "nibli answers with one of four verdicts: TRUE; FALSE, meaning not derivable; UNKNOWN, with a reason; and RESOURCE_EXCEEDED, when a depth, fuel or memory budget runs out."
+say = "nibli answers with one of four verdicts. TRUE. FALSE, meaning not derivable. UNKNOWN, with a reason. And RESOURCE_EXCEEDED, when a depth, fuel or memory budget runs out."
+highlight = ["verdict"]
+camera = "right"
+overlay = "verdicts"
+
+[[lines]]
+id = "neurosymbolic-1"
+section = "neurosymbolic"
+show = "A neuro-symbolic system pairs a neural front end with a symbolic core, and lets each do what it's good at."
+do = [{ click = "tab-source" }]
+camera = "kb"
+
+[[lines]]
+id = "neurosymbolic-2"
+section = "neurosymbolic"
+show = "Language models are good at reading prose."
+highlight = ["source-text"]
+camera = "kb"
+
+[[lines]]
+id = "neurosymbolic-3"
+section = "neurosymbolic"
+show = "So in nibli, an LLM can formalize plain English into nibli KR, the engine's rule language."
+highlight = ["source-text", "formalize"]
+camera = "kb"
+
+[[lines]]
+id = "neurosymbolic-4"
+section = "neurosymbolic"
+show = "That draft sits outside the reasoning firewall."
+highlight = ["formalize"]
+camera = "kb"
+overlay = "firewall"
+
+[[lines]]
+id = "neurosymbolic-5"
+section = "neurosymbolic"
+show = "Before anything reasons over it, deterministic gates check it."
+do = [{ click = "tab-kr" }]
+highlight = ["kr", "kb-status"]
+camera = "kb"
+overlay = "firewall"
+
+[[lines]]
+id = "neurosymbolic-6"
+section = "neurosymbolic"
+show = "The grammar. A committed vocabulary, where an unknown word is an error instead of a guess. The semantic compiler. And a round trip back to canonical text."
+highlight = ["kr"]
+camera = "kb"
+overlay = "firewall"
+
+[[lines]]
+id = "neurosymbolic-7"
+section = "neurosymbolic"
+show = "Then a person reviews the rules and their back-translation: a fixed, mechanical reading, with no model involved."
+do = [{ click = "tab-back-translation" }]
+highlight = ["bt-line-0", "bt-line-1", "bt-line-2"]
+camera = "kb"
+
+[[lines]]
+id = "neurosymbolic-8"
+section = "neurosymbolic"
+show = "This example comes pre-encoded, so the Formalize button is switched off and we skip the drafting."
+do = [{ click = "tab-source" }]
+highlight = ["formalize"]
+camera = "kb"
+
+[[lines]]
+id = "neurosymbolic-9"
+section = "neurosymbolic"
+show = "The LLM drafts. The engine decides."
+
+[[lines]]
+id = "nibli-1"
+section = "nibli"
+show = "nibli is the engine I build in Rust."
+highlight = ["brand"]
+
+[[lines]]
+id = "nibli-2"
+section = "nibli"
+show = "It's a theorem prover, and it's open source."
+
+[[lines]]
+id = "nibli-3"
+section = "nibli"
+show = "It compiles nibli KR into first-order logic, and answers claims by backward chaining over a fact store."
+do = [{ click = "tab-kr" }]
+highlight = ["kr", "tree"]
+camera = "top"
+
+[[lines]]
+id = "nibli-4"
+section = "nibli"
+show = "The whole pipeline, parser, compiler and reasoner, runs right here in the browser as WebAssembly, and also under Wasmtime or as a native crate."
+highlight = ["footer"]
+camera = "full"
+
+[[lines]]
+id = "nibli-5"
+section = "nibli"
+show = "It never invents a fact, a rule or a proof step."
+
+[[lines]]
+id = "syllogism-1"
+section = "syllogism"
+show = "Here's the syllogism example: three lines of nibli KR."
+highlight = ["examples", "kr-line-1", "kr-line-3", "kr-line-5"]
+camera_vertical = "kb"
+
+[[lines]]
+id = "syllogism-2"
+section = "syllogism"
+show = "The first reads: for every X, if X is a dog, then X is an animal."
+do = [{ click = "tab-back-translation" }]
+highlight = ["bt-line-0"]
+camera = "kb"
+
+[[lines]]
+id = "syllogism-3"
+section = "syllogism"
+show = "The second: for every X, if X is an animal, then X eats."
+highlight = ["bt-line-1"]
+camera = "kb"
+
+[[lines]]
+id = "syllogism-4"
+section = "syllogism"
+show = "The third: Adam is a dog."
+highlight = ["bt-line-2"]
+camera = "kb"
+
+[[lines]]
+id = "syllogism-5"
+section = "syllogism"
+show = "We don't ask a question. We state the claim to check: Adam eats."
+highlight = ["query-select", "query-gloss"]
+camera = "query"
+
+[[lines]]
+id = "reasoning-1"
+section = "reasoning"
+show = "The engine starts from the claim and works backward."
+do = [{ click = "tab-kr" }]
+highlight = ["row-eats"]
+camera = "right"
+
+[[lines]]
+id = "reasoning-2"
+section = "reasoning"
+show = "The goal is: Adam eats. No stored fact says so."
+highlight = ["row-eats"]
+camera = "proof"
+
+[[lines]]
+id = "reasoning-3"
+section = "reasoning"
+show = "So it looks for a rule whose conclusion is eats: line two, every animal eats."
+highlight = ["kr-line-3", "row-eats"]
+camera = "top"
+camera_vertical = "kb"
+
+[[lines]]
+id = "reasoning-4"
+section = "reasoning"
+show = "Matching that conclusion to the goal binds X to Adam, and leaves a new goal: Adam is an animal."
+highlight = ["row-animal"]
+camera = "proof"
+
+[[lines]]
+id = "reasoning-5"
+section = "reasoning"
+show = "Again there's no stored fact, so it looks for a rule that concludes animal: line one, every dog is an animal."
+highlight = ["kr-line-1", "row-animal"]
+camera = "top"
+camera_vertical = "kb"
+
+[[lines]]
+id = "reasoning-6"
+section = "reasoning"
+show = "That leaves one goal, Adam is a dog, and that one is stored."
+highlight = ["kr-line-5", "row-given"]
+camera = "top"
+camera_vertical = "kb"
+
+[[lines]]
+id = "reasoning-7"
+section = "reasoning"
+show = "The chain closes in two rule steps."
+highlight = ["row-eats", "row-animal", "row-given"]
+camera = "proof"
+
+[[lines]]
+id = "reasoning-8"
+section = "reasoning"
+show = "To find the shortest chain, the engine first runs a cheap search without recording, raising the depth limit one step at a time until the claim resolves."
+camera = "proof"
+
+[[lines]]
+id = "trace-1"
+section = "trace"
+show = "Then it runs the search once more at that depth, this time recording every step. That record is the proof trace."
+highlight = ["tree"]
+camera = "proof"
+
+[[lines]]
+id = "trace-2"
+section = "trace"
+show = "The stored fact becomes a leaf, marked given."
+highlight = ["row-given"]
+camera = "proof"
+
+[[lines]]
+id = "trace-3"
+section = "trace"
+show = "Each rule step becomes a node that cites the source line it used."
+highlight = ["row-eats", "row-animal"]
+camera = "proof"
+
+[[lines]]
+id = "trace-4"
+section = "trace"
+show = "“Adam eats” cites recorded source #1: every animal eats."
+highlight = ["row-eats"]
+camera = "proof"
+
+[[lines]]
+id = "trace-5"
+section = "trace"
+show = "“Adam is an animal” cites recorded source #0: every dog is an animal."
+highlight = ["row-animal"]
+camera = "proof"
+
+[[lines]]
+id = "trace-6"
+section = "trace"
+show = "Open the role-level detail, and you see what those lines are made of."
+do = [{ expand = "row-detail-given", control = ".proof-disclosure" }, { scroll_to = "row-given", within = "proof-panel", offset = 14 }]
+highlight = ["row-detail-given"]
+camera = "proof"
+
+[[lines]]
+id = "trace-7"
+section = "trace"
+show = "The fact is stored as an event with named roles: the dog, Adam, and a breed nobody specified."
+highlight = ["rows-roles"]
+camera = "proof"
+
+[[lines]]
+id = "trace-8"
+section = "trace"
+show = "When the same sub-goal comes up again, the trace says “proved above” and points back, instead of proving it twice."
+do = [{ scroll_to = "rows-proved", within = "proof-panel", offset = 14 }]
+highlight = ["rows-proved"]
+camera = "proof"
+
+[[lines]]
+id = "trace-9"
+section = "trace"
+show = "The playground folds the whole record into the three lines you saw, with a plain-English why."
+do = [{ collapse = "row-detail-given", control = ".proof-disclosure" }, { scroll = "proof-panel", top = 0 }]
+highlight = ["why", "row-eats", "row-animal", "row-given"]
+camera = "proof"
+
+[[lines]]
+id = "false-1"
+section = "false"
+show = "Now the claim that Adam is a bird."
+do = [{ select = "query-select", value = "2" }]
+highlight = ["query-select"]
+
+[[lines]]
+id = "false-2"
+section = "false"
+show = "Nothing in the knowledge base supports it, so the answer is FALSE."
+highlight = ["row-failed", "verdict"]
+camera = "right"
+
+[[lines]]
+id = "false-3"
+section = "false"
+show = "The why line says no example could be found that satisfies the claim."
+highlight = ["why"]
+camera = "proof"
+
+[[lines]]
+id = "false-4"
+section = "false"
+show = "Here, FALSE means not derivable from what we asserted. It isn't a proof that Adam isn't a bird."
+highlight = ["row-failed"]
+camera = "proof"
+
+[[lines]]
+id = "false-5"
+section = "false"
+show = "nibli won't claim more than its premises support."
+
+[[lines]]
+id = "end-1"
+section = "end"
+show = "Try it at dhilipsiva.dev/nibli-playground. The code is on GitHub."
+scene = "end"
+
+[[lines]]
+id = "end-2"
+section = "end"
+show = "It's also the running example in my book, Ultimate Neuro-Symbolic Reasoning for AI Engineers, scheduled for December 2026."
+scene = "end"
+
+[[lines]]
+id = "end-3"
+section = "end"
+show = "I'm dhilipsiva."
+scene = "end"
+
+# The live playground, captured at 1280×720 CSS pixels and 3× density.
+[scenes.playground]
+kind = "web"
+url = "https://dhilipsiva.dev/nibli-playground"
+viewport = [1280, 720]
+scale = 3
+color_scheme = "dark"
+default_camera = "app"
+vertical_follows_highlights = 760
+setup = [
+  { wait = "app-shell" },
+  { select = "examples", value = "0" },
+  { wait = "result" },
+]
+
+[scenes.playground.targets]
+# Regions the cameras frame
+header = { css = ".app-header", pick = "first" }
+kb = { css = ".main-row .col-tabs", pick = "first" }
+proof = { css = ".main-row .col-proof", pick = "first" }
+query = { css = ".query-row .col-tabs", pick = "first" }
+log = { css = ".output-log-container", pick = "first" }
+top = { css = ".main-row", pick = "first" }
+# What the narration points at
+kr = { css = ".main-row .col-tabs .kr-editor" }
+kr-line-1 = { css = "#kb-kr-highlight", line = 1 }
+kr-line-3 = { css = "#kb-kr-highlight", line = 3 }
+kr-line-5 = { css = "#kb-kr-highlight", line = 5 }
+kb-status = { css = ".kb-status-summary" }
+source-text = { css = ".main-row .col-tabs textarea" }
+examples = { css = ".app-header__examples" }
+brand = { css = ".app-header__brand" }
+footer = { css = "body *", text = { contains = "compiled to WebAssembly" }, pick = "last" }
+query-select = { css = ".query-select" }
+query-gloss = { css = ".query-gloss" }
+why = { css = ".proof-why" }
+tree = { css = ".proof-tree" }
+row-eats = { css = ".proof-row", text_of = ":scope > .proof-label", text = { starts_with = "Adam eats" }, pick = "first" }
+row-animal = { css = ".proof-row", text_of = ":scope > .proof-label", text = { starts_with = "Adam is an animal" }, pick = "first" }
+row-given = { css = ".proof-row", text_of = ":scope > .proof-label", text = { starts_with = "Adam is a dog" }, pick = "first" }
+row-detail-given = { css = ".proof-node.proof-asserted:not(.proof-leaf) > .proof-children > .proof-role-detail > .proof-row", pick = "first" }
+rows-roles = { css = ".proof-row", text_of = ":scope > .proof-label", text = { starts_with = "Asserted: dog" }, merge = true }
+rows-proved = { css = ".proof-row", text_of = ":scope > .proof-label", text = { starts_with = "(proved above)" }, merge = true }
+row-failed = { css = ".proof-node.proof-failed > .proof-row" }
+verdict = { css = ".output-entry", pick = "last" }
+# What actions use
+app-shell = { css = ".app-shell" }
+result = { css = ".output-result", pick = "last" }
+tab-kr = { css = ".main-row .col-tabs button", text = { starts_with = "nibli KR" } }
+tab-source = { css = ".main-row .col-tabs button", text = "Source" }
+tab-back-translation = { css = ".main-row .col-tabs button", text = "Back-translation" }
+proof-panel = { css = ".col-proof .proof-panel", pick = "first" }
+# What the expectations read
+why-text = { css = ".proof-why-text", pick = "first" }
+proof-rows = { css = ".proof-tree > .proof-node .proof-row", text_of = ":scope > .proof-label", exclude = { starts_with = "role-level" } }
+bt-texts = { css = ".main-row .col-tabs .tab-content *", text = { matches = '^(For every X|Adam is a dog\.$)' }, unique = true }
+
+[scenes.playground.targets.formalize]
+any = [
+  { css = ".main-row .col-tabs button", text = "Formalize" },
+  { css = ".main-row .col-tabs button", attr = { name = "title", matches = '(?i)configure llm' } },
+]
+
+[scenes.playground.targets.bt-line-0]
+css = ".main-row .col-tabs .tab-content *"
+text = "For every X, if X is a dog, then X is an animal."
+pick = "last"
+grow = { within = ".main-row .col-tabs .tab-content", max_height = 70, margin = 8 }
+
+[scenes.playground.targets.bt-line-1]
+css = ".main-row .col-tabs .tab-content *"
+text = "For every X, if X is an animal, then X eats."
+pick = "last"
+grow = { within = ".main-row .col-tabs .tab-content", max_height = 70, margin = 8 }
+
+[scenes.playground.targets.bt-line-2]
+css = ".main-row .col-tabs .tab-content *"
+text = "Adam is a dog."
+pick = "last"
+grow = { within = ".main-row .col-tabs .tab-content", max_height = 70, margin = 8 }
+
+[scenes.playground.cameras]
+full = { viewport = true, vertical = "proof" }
+app = { union = ["header", "kb", "proof", "query", "log"], vertical = "proof" }
+top = { union = ["top"], vertical = "proof" }
+kb = { union = ["kb"] }
+proof = { union = ["proof"] }
+query = { union = ["query"] }
+log = { union = ["log"] }
+left = { union = ["kb", "query"] }
+right = { union = ["proof", "log"] }
+
+# Cards and overlays: one HTML file, rendered for each cut.
+[scenes.intro]
+kind = "page"
+url = "cards/card.html?v=intro&r={aspect}"
+
+[scenes.end]
+kind = "page"
+url = "cards/card.html?v=end&r={aspect}"
+
+[scenes.verdicts]
+kind = "page"
+url = "cards/card.html?v=verdicts&r={aspect}"
+transparent = true
+size = { landscape = [1600, 150], portrait = [1000, 330] }
+
+[scenes.firewall]
+kind = "page"
+url = "cards/card.html?v=firewall&r={aspect}"
+transparent = true
+size = { landscape = [1600, 190], portrait = [1000, 330] }
+
+# The pinned output of nibli-wasm's syllogism test. A capture stops when the
+# page shows anything else.
+[[expectations]]
+scene = "playground"
+at = "setup"
+target = "result"
+text = "TRUE"
+
+[[expectations]]
+scene = "playground"
+at = "setup"
+target = "why-text"
+text = "Because Adam is a dog, Adam is an animal; and because Adam is an animal, Adam eats."
+
+[[expectations]]
+scene = "playground"
+at = "setup"
+target = "proof-rows"
+texts = [
+  "Adam eats [by recorded source #1/0: eats(every animal).]",
+  "Adam is an animal [by recorded source #0/0: animal(every dog).]",
+  "Adam is a dog [given]",
+]
+
+[[expectations]]
+scene = "playground"
+at = "neurosymbolic-7"
+target = "bt-texts"
+texts = [
+  "For every X, if X is a dog, then X is an animal.",
+  "For every X, if X is an animal, then X eats.",
+  "Adam is a dog.",
+]
+
+[[expectations]]
+scene = "playground"
+at = "false-1"
+target = "result"
+text = "FALSE"
+
+[[expectations]]
+scene = "playground"
+at = "false-1"
+target = "why-text"
+text = "No example could be found that satisfies the query."
+
+[[expectations]]
+scene = "playground"
+at = "false-1"
+target = "proof-rows"
+texts = [
+  "No witness found",
+]

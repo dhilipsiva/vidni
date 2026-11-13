@@ -88,3 +88,7 @@ Added as the items are built.
 - The fingerprint drops the `#software` line and the side data listed after a packet's hash. It keeps the extradata, the stream parameters, and every packet's timing, size and payload MD5.
 - **Why:** the golden logs were written by the reference's ffmpeg 8.1.3, and vidni pins ffmpeg 9.0.2. For the same file, ffmpeg 9 writes a different `#software` line and lists the last AAC packet's skip-samples side data, which ffmpeg 8 doesn't. Every packet payload is identical, so the fingerprint changes only when the streams do.
 - `golden/hashes.json` keeps the hash of each whole log, and the harness checks each committed log against it before reading it.
+
+### T2. How schema 1 reports problems
+- **2026-11-13, P2-VIDNI-01.** The project model is plain structs that deny unknown keys, not serde's tagged enums. Rules that reach across tables are checked after parsing, and each finding is placed in the file by its key path, through toml_edit's spans.
+- **Why:** a tagged enum reads its whole table before choosing a variant, so a problem inside a scene could only be reported at the scene's header. Flat structs keep each type error and unknown key at its own line and column, and the key path does the same for the cross-table rules. A key that belongs to the other kind of scene is still caught, by a rule.

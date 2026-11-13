@@ -1,0 +1,1026 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Project",
+  "description": "One video: its script, what each line shows, and the cuts made from it.",
+  "type": "object",
+  "properties": {
+    "cuts": {
+      "description": "The videos made from the script.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Cut"
+      }
+    },
+    "expectations": {
+      "description": "Text that must be on screen when a scene is captured.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Expectation"
+      }
+    },
+    "lines": {
+      "description": "The script: every narrated line, in order.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Line"
+      }
+    },
+    "lint": {
+      "description": "Wording checks.",
+      "$ref": "#/$defs/Lint",
+      "default": {
+        "banned": []
+      }
+    },
+    "meta": {
+      "description": "What the video is.",
+      "$ref": "#/$defs/Meta"
+    },
+    "music": {
+      "description": "Background music.",
+      "$ref": "#/$defs/Music",
+      "default": {
+        "track": "none"
+      }
+    },
+    "scenes": {
+      "description": "What the lines show, by ID.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/Scene"
+      },
+      "default": {}
+    },
+    "schema": {
+      "description": "The schema version: 1.",
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "sections": {
+      "description": "The sections, by ID. They come in the order of their first line.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/Section"
+      },
+      "default": {}
+    },
+    "style": {
+      "description": "The look of every cut.",
+      "$ref": "#/$defs/Style",
+      "default": {
+        "theme": "default"
+      }
+    },
+    "timing": {
+      "description": "The pauses around the lines.",
+      "$ref": "#/$defs/Timing",
+      "default": {
+        "lead_in": 0.6,
+        "line_gap": 0.28,
+        "section_gap": 0.75,
+        "tail": 2.4
+      }
+    },
+    "voice": {
+      "description": "The voices that speak the lines.",
+      "$ref": "#/$defs/Voice",
+      "default": {
+        "draft": "piper:en_US-joe-medium",
+        "length_scale": 1.0,
+        "read_as": [],
+        "respell": [],
+        "seed": 0
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "meta",
+    "lines",
+    "cuts"
+  ],
+  "$defs": {
+    "Action": {
+      "description": "One step on a web page. Exactly one verb is set: `click`, `select`,\n`expand`, `collapse`, `scroll`, `scroll_to` or `wait`, each naming a target.",
+      "type": "object",
+      "properties": {
+        "click": {
+          "description": "Click the target.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "collapse": {
+          "description": "Close the target if it is open, by clicking `control`.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "control": {
+          "description": "For `expand` and `collapse`: the CSS selector, inside the target, to click.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "expand": {
+          "description": "Open the target if it is closed (`aria-expanded`), by clicking `control`.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "offset": {
+          "description": "For `scroll_to`: the gap left above the target, in CSS pixels.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "scroll": {
+          "description": "Scroll the target, a scroll container, to `top`.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "scroll_to": {
+          "description": "Scroll `within` until the target is at its top, less `offset`.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "select": {
+          "description": "Choose `value` in the target, a `<select>`.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "top": {
+          "description": "For `scroll`: the scroll position, in CSS pixels.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "value": {
+          "description": "The option value for `select`.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "wait": {
+          "description": "Wait until the target is visible.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "within": {
+          "description": "For `scroll_to`: the scroll container, a target.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "additionalProperties": false
+    },
+    "Aspect": {
+      "description": "A cut's aspect ratio.",
+      "type": "string",
+      "enum": [
+        "16:9",
+        "9:16"
+      ]
+    },
+    "AttrMatch": {
+      "description": "An attribute test.",
+      "type": "object",
+      "properties": {
+        "matches": {
+          "description": "A regular expression its value must match.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The attribute's name.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "matches"
+      ]
+    },
+    "Camera": {
+      "description": "A named framing of a web scene.",
+      "type": "object",
+      "properties": {
+        "union": {
+          "description": "Frame the union of these targets.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "vertical": {
+          "description": "The camera vertical cuts use instead, when this one is too wide.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "viewport": {
+          "description": "Frame the whole viewport.",
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "Captions": {
+      "description": "How a cut carries its captions.",
+      "oneOf": [
+        {
+          "description": "Drawn into the picture.",
+          "type": "string",
+          "const": "burned"
+        },
+        {
+          "description": "A clean picture, with captions as SRT and VTT files.",
+          "type": "string",
+          "const": "file"
+        },
+        {
+          "description": "A clean master with caption files, and a burned-in variant.",
+          "type": "string",
+          "const": "both"
+        }
+      ]
+    },
+    "ColorScheme": {
+      "description": "A colour scheme a web scene can ask for.",
+      "type": "string",
+      "enum": [
+        "light",
+        "dark"
+      ]
+    },
+    "Cut": {
+      "description": "A video made from the script.",
+      "type": "object",
+      "properties": {
+        "aspect": {
+          "description": "`16:9` or `9:16`.",
+          "$ref": "#/$defs/Aspect"
+        },
+        "captions": {
+          "description": "`burned`, `file` or `both`. Default: `both` for 16:9, `burned` for 9:16.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Captions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "id": {
+          "description": "A stable ID, like a line's.",
+          "type": "string"
+        },
+        "lines": {
+          "description": "`all`, or the IDs of the lines the cut uses, in script order.",
+          "$ref": "#/$defs/LineSelection",
+          "default": "all"
+        },
+        "platforms": {
+          "description": "The platform profiles the cut is made for. Default: `youtube` for\n16:9; `youtube-shorts`, `instagram-reels` and `whatsapp-status` for 9:16.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "default": null,
+          "items": {
+            "type": "string"
+          }
+        },
+        "size": {
+          "description": "The frame size in pixels. Default `[1920, 1080]` or `[1080, 1920]`.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "default": null,
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "maxItems": 2,
+          "minItems": 2
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "aspect"
+      ]
+    },
+    "Expectation": {
+      "description": "Text a web scene must show, checked when it is captured.",
+      "type": "object",
+      "properties": {
+        "at": {
+          "description": "`setup`, or the ID of a line on that scene: checked after its actions.",
+          "type": "string"
+        },
+        "scene": {
+          "description": "The web scene.",
+          "type": "string"
+        },
+        "target": {
+          "description": "The target whose text is read.",
+          "type": "string"
+        },
+        "text": {
+          "description": "The text of the target's single match.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "texts": {
+          "description": "The texts of all its matches, in page order.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "default": null,
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "scene",
+        "at",
+        "target"
+      ]
+    },
+    "Grow": {
+      "description": "How a match grows to its enclosing block.",
+      "type": "object",
+      "properties": {
+        "margin": {
+          "description": "The block must stay this many CSS pixels narrower than the container.",
+          "type": "number",
+          "format": "double",
+          "default": 0.0
+        },
+        "max_height": {
+          "description": "The tallest block it may grow to, in CSS pixels.",
+          "type": "number",
+          "format": "double"
+        },
+        "within": {
+          "description": "The container the match grows within (a CSS selector).",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "within",
+        "max_height"
+      ]
+    },
+    "Line": {
+      "description": "One narrated line.",
+      "type": "object",
+      "properties": {
+        "camera": {
+          "description": "The web scene's camera for landscape cuts; the scene's\n`default_camera` when absent.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "camera_vertical": {
+          "description": "The camera for vertical cuts, when it differs.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "do": {
+          "description": "Actions on a web scene before the line is captured.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Action"
+          }
+        },
+        "highlight": {
+          "description": "Targets of a web scene to box while the line plays.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "id": {
+          "description": "A stable ID: lowercase letters and digits in words joined by hyphens.",
+          "type": "string"
+        },
+        "overlay": {
+          "description": "A page scene drawn over the line's picture.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "say": {
+          "description": "What is said, when it differs from what is shown.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "scene": {
+          "description": "The scene the line shows; `meta.default_scene` when absent.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "section": {
+          "description": "The section the line belongs to.",
+          "type": "string"
+        },
+        "show": {
+          "description": "The caption: the line as it is shown.",
+          "type": "string"
+        },
+        "source": {
+          "description": "Where the line's facts come from.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "section",
+        "show"
+      ]
+    },
+    "LineSelection": {
+      "description": "\"all\", or the IDs of the lines a cut uses.",
+      "oneOf": [
+        {
+          "const": "all"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "Lint": {
+      "description": "Wording checks.",
+      "type": "object",
+      "properties": {
+        "banned": {
+          "description": "Regular expressions, matched without regard to case, that no line may\nshow or say.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Meta": {
+      "description": "What the video is.",
+      "type": "object",
+      "properties": {
+        "default_scene": {
+          "description": "The scene a line shows when it names none.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "language": {
+          "description": "The script's language, as a BCP 47 tag.",
+          "type": "string",
+          "default": "en"
+        },
+        "strict": {
+          "description": "Whether every factual line must name its source (P2-VIDNI-06).",
+          "type": "boolean",
+          "default": false
+        },
+        "subtitle": {
+          "description": "A short line shown with the title, such as a series name.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "title": {
+          "description": "The video's title.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "title"
+      ]
+    },
+    "Music": {
+      "description": "Background music.",
+      "type": "object",
+      "properties": {
+        "track": {
+          "description": "`none`. Licensed tracks come with the music library (P6-VIDNI-06).",
+          "type": "string",
+          "default": "none"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PageSize": {
+      "description": "A page scene's size for each orientation, in pixels.",
+      "type": "object",
+      "properties": {
+        "landscape": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "maxItems": 2,
+          "minItems": 2
+        },
+        "portrait": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "maxItems": 2,
+          "minItems": 2
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "landscape",
+        "portrait"
+      ]
+    },
+    "Pick": {
+      "description": "Which of a target's matches to keep.",
+      "type": "string",
+      "enum": [
+        "all",
+        "first",
+        "last"
+      ]
+    },
+    "Respelling": {
+      "description": "One text and how it is said.",
+      "type": "object",
+      "properties": {
+        "say": {
+          "description": "How it is said.",
+          "type": "string"
+        },
+        "text": {
+          "description": "The text as written.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "text",
+        "say"
+      ]
+    },
+    "Scene": {
+      "description": "What lines show.",
+      "type": "object",
+      "properties": {
+        "cameras": {
+          "description": "web: named framings. `viewport` and `highlights` are always defined.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Camera"
+          },
+          "default": {}
+        },
+        "color_scheme": {
+          "description": "web: the colour scheme the page is asked for.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ColorScheme"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "default_camera": {
+          "description": "web: the camera of a line that names none. Default `viewport`.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "kind": {
+          "description": "`web`: a page captured at a fixed viewport and framed by the virtual\ncamera. `page`: an HTML file rendered at each cut's own size, for\ncards and overlays.",
+          "$ref": "#/$defs/SceneKind"
+        },
+        "scale": {
+          "description": "web: device pixels per CSS pixel. Default 1.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "default": null,
+          "minimum": 0
+        },
+        "setup": {
+          "description": "web: actions run once, after the page loads.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Action"
+          }
+        },
+        "size": {
+          "description": "page: the rendered size for each orientation. Default: the cut's size.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageSize"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "targets": {
+          "description": "web: named parts of the page, for highlights, cameras, actions and\nexpectations.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Target"
+          },
+          "default": {}
+        },
+        "transparent": {
+          "description": "page: rendered on a transparent background, as an overlay.",
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": null
+        },
+        "url": {
+          "description": "web: the page's address. page: a file in the project folder;\n`{aspect}` becomes `16x9` or `9x16`.",
+          "type": "string"
+        },
+        "vertical_follows_highlights": {
+          "description": "web: in vertical cuts, a line whose highlights are at most this many\nCSS pixels wide is framed on its highlights.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "viewport": {
+          "description": "web: the viewport in CSS pixels. Default `[1280, 720]`.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "default": null,
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "maxItems": 2,
+          "minItems": 2
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "url"
+      ]
+    },
+    "SceneKind": {
+      "description": "The kinds of scene in schema 1.",
+      "type": "string",
+      "enum": [
+        "web",
+        "page"
+      ]
+    },
+    "Section": {
+      "description": "A run of lines under one label.",
+      "type": "object",
+      "properties": {
+        "label": {
+          "description": "Shown on screen while the section plays, and used for chapters. Empty\nfor none.",
+          "type": "string",
+          "default": ""
+        }
+      },
+      "additionalProperties": false
+    },
+    "Style": {
+      "description": "The look of every cut.",
+      "type": "object",
+      "properties": {
+        "theme": {
+          "description": "`default`, or the path of a theme folder.",
+          "type": "string",
+          "default": "default"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Target": {
+      "description": "A named part of a web page: the visible elements that match.",
+      "type": "object",
+      "properties": {
+        "any": {
+          "description": "The union of other matchers, instead of `css`.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Target"
+          }
+        },
+        "attr": {
+          "description": "Keep the elements whose attribute matches.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AttrMatch"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "css": {
+          "description": "A CSS selector.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "exclude": {
+          "description": "Drop the elements whose text matches.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextMatch"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "grow": {
+          "description": "Grow each match to its largest enclosing block that still ends with the same text.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Grow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "line": {
+          "description": "One line of the element's text, counted from 0.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "default": null,
+          "minimum": 0
+        },
+        "merge": {
+          "description": "Draw one box around all the matches.",
+          "type": "boolean",
+          "default": false
+        },
+        "pick": {
+          "description": "Which matches to keep. Default `all`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Pick"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "text": {
+          "description": "Keep the elements whose text matches.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextMatch"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "text_of": {
+          "description": "Match `text` against this child (a CSS selector) instead of the whole element.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "unique": {
+          "description": "When reading texts, keep each text once.",
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "TextMatch": {
+      "description": "A string to match exactly, after collapsing whitespace, or a table with one of starts_with, contains or matches.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/TextRule"
+        }
+      ]
+    },
+    "TextRule": {
+      "description": "A text test other than an exact match. Exactly one key is set.",
+      "type": "object",
+      "properties": {
+        "contains": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "matches": {
+          "description": "A regular expression.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "starts_with": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "additionalProperties": false
+    },
+    "Timing": {
+      "description": "The pauses around the lines, in seconds.",
+      "type": "object",
+      "properties": {
+        "lead_in": {
+          "description": "Silence before the first line.",
+          "type": "number",
+          "format": "double",
+          "default": 0.6
+        },
+        "line_gap": {
+          "description": "The pause between two lines of one section.",
+          "type": "number",
+          "format": "double",
+          "default": 0.28
+        },
+        "section_gap": {
+          "description": "The pause between sections.",
+          "type": "number",
+          "format": "double",
+          "default": 0.75
+        },
+        "tail": {
+          "description": "Silence after the last line.",
+          "type": "number",
+          "format": "double",
+          "default": 2.4
+        }
+      },
+      "additionalProperties": false
+    },
+    "Voice": {
+      "description": "The voices that speak the lines.",
+      "type": "object",
+      "properties": {
+        "draft": {
+          "description": "The synthetic draft voice, as `<engine>:<model>`.",
+          "type": "string",
+          "default": "piper:en_US-joe-medium"
+        },
+        "length_scale": {
+          "description": "The draft voice's pace: above 1 is slower.",
+          "type": "number",
+          "format": "double",
+          "default": 1.0
+        },
+        "read_as": {
+          "description": "How a reader says symbols that the captions show. The prompter shows\nthese, and takes are scored against them.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Respelling"
+          }
+        },
+        "respell": {
+          "description": "Spellings the draft voice says better, applied in order to what it speaks.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Respelling"
+          }
+        },
+        "seed": {
+          "description": "The draft voice's seed, so that a redraft repeats.",
+          "type": "integer",
+          "format": "uint64",
+          "default": 0,
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

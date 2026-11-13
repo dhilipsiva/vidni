@@ -13,7 +13,7 @@ You draft with a synthetic voice, then finish with your own recorded voice.
 
 vidni has one Rust core and two front ends: the `vidni` command line and a native desktop app built with egui. Every step works without an LLM.
 
-**Status:** being built, item by item, from [`TODO.md`](TODO.md). The decisions behind it are in [`DECISIONS.md`](DECISIONS.md). Nothing is usable yet.
+**Status:** being built, item by item, from [`TODO.md`](TODO.md). The decisions behind it are in [`DECISIONS.md`](DECISIONS.md). So far, `vidni validate` checks a project file against [schema 1](docs/spec.md); nothing renders yet.
 
 ## Layout
 

@@ -1,0 +1,31 @@
+# expect: 27:7: cards/missing.html is not in the project folder
+schema = 1
+
+[meta]
+title = "A broken project"
+default_scene = "page"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "Hello."
+
+[scenes.page]
+kind = "web"
+url = "https://example.com"
+
+[scenes.page.targets]
+title = { css = "h1" }
+
+[scenes.page.cameras]
+heading = { union = ["title"] }
+
+[scenes.card]
+kind = "page"
+url = "cards/missing.html"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
