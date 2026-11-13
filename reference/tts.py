@@ -1,13 +1,15 @@
 """Narration: lint the script, synthesize one clip per sentence, build the timeline.
 
-Writes build/audio/NNN.wav, build/narration.wav, build/timeline.json and
-out/nibli-syllogism.en.srt. Set OWN_AUDIO_DIR to a folder of NNN.wav files
-(16-bit mono, one per sentence, numbered in script order) to use your own
-recordings instead of Piper.
+Writes build/audio/NNN.wav, build/narration.wav, build/timeline.json,
+script.md and out/nibli-syllogism<-VARIANT>.en.srt. Set OWN_AUDIO_DIR to a
+folder of NNN.wav files (16-bit mono, one per sentence, numbered in script
+order, as record.py writes them) to use your own recordings instead of Piper;
+VARIANT names that build's outputs (build.sh's "own" step uses "voice").
 
 Piper samples differently on every run, so when whisper-cli and
 build/models/ggml-base.en.bin are present each sentence is synthesized up to
 TAKES times and the take whisper transcribes closest to the script is kept.
+Own recordings are transcribed too, to flag lines read differently.
 """
 
 import difflib
@@ -25,6 +27,8 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 BUILD = os.path.join(ROOT, "build")
 AUDIO = os.path.join(BUILD, "audio")
 OUT = os.path.join(ROOT, "out")
+VARIANT = os.environ.get("VARIANT", "")
+SUFFIX = f"-{VARIANT}" if VARIANT else ""
 
 # Wording rules from canonical-facts.md (B, E, G) and the book repo's CLAUDE.md.
 BANNED = [
@@ -52,6 +56,17 @@ def lint(sentences):
                     hits.append(f"sentence {k}: /{pattern}/ in {text!r}")
     if hits:
         sys.exit("script lint failed:\n  " + "\n  ".join(hits))
+
+
+# How a person reads the symbols the captions show (record.py prints these as hints).
+SPOKEN = [("dhilipsiva.dev/nibli-playground", "dhilipsiva dot dev slash nibli playground"),
+          ("RESOURCE_EXCEEDED", "resource exceeded"), ("#1", "number one"), ("#0", "number zero")]
+
+
+def spoken(text):
+    for symbol, words in SPOKEN:
+        text = text.replace(symbol, words)
+    return text
 
 
 def respell(text, pairs):
@@ -185,6 +200,10 @@ def main():
         for i, s in enumerate(seg["sentences"]):
             flat.append((seg, i, s))
     lint([s for _, _, s in flat])
+    if own:
+        missing = [f"{k:03d}" for k in range(len(flat)) if not os.path.exists(os.path.join(own, f"{k:03d}.wav"))]
+        if missing:
+            sys.exit(f"{own}: {len(missing)} of {len(flat)} lines not recorded yet: {', '.join(missing)}")
 
     t = voice["lead_in"]
     rate = None
@@ -192,7 +211,9 @@ def main():
     for k, (seg, i, s) in enumerate(flat):
         say = respell(s.get("say", s["show"]), spec["respell"])
         if own:
-            path, transcript, score = os.path.join(own, f"{k:03d}.wav"), None, None
+            path = os.path.join(own, f"{k:03d}.wav")
+            transcript = heard(path)
+            score = closeness(spoken(s["show"]), transcript) if transcript is not None else None
         else:
             path, transcript, score = synthesize(k, say, voice, model)
         dur, r = duration(path)
@@ -236,10 +257,11 @@ def main():
 
     with open(os.path.join(BUILD, "timeline.json"), "w") as f:
         json.dump({"total": total, "rate": rate, "sentences": entries}, f, indent=1)
-    write_script(spec, entries, total)
+    if not own:
+        write_script(spec, entries, total)
 
     n = 0
-    with open(os.path.join(OUT, "nibli-syllogism.en.srt"), "w") as f:
+    with open(os.path.join(OUT, f"nibli-syllogism{SUFFIX}.en.srt"), "w") as f:
         for e in entries:
             for c in e["cues"]:
                 n += 1
@@ -247,8 +269,8 @@ def main():
 
     words = sum(len(e["show"].split()) for e in entries)
     print(f"{len(entries)} sentences, {n} cues, {words} words, {total:.1f} s "
-          f"({int(total // 60)}:{total % 60:04.1f}), voice {voice['model']}"
-          + (" (own audio)" if own else ""))
+          f"({int(total // 60)}:{total % 60:04.1f}), "
+          + ("your recordings" if own else f"voice {voice['model']}"))
     scored = [e for e in entries if e["score"] is not None and e["heard"] is not None]
     if scored:
         worst = sorted(scored, key=lambda e: e["score"])[:5]

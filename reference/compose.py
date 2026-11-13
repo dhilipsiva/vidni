@@ -18,6 +18,7 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = os.path.dirname(os.path.abspath(__file__))
 BUILD = os.path.join(ROOT, "build")
 OUT = os.path.join(ROOT, "out")
+SUFFIX = f"-{os.environ['VARIANT']}" if os.environ.get("VARIANT") else ""
 FPS = 30
 CAM_EASE = 0.7      # seconds for a camera move
 XFADE = 0.35        # seconds for a crossfade between stills or cards
@@ -98,7 +99,7 @@ def normalized_audio():
 
 def remux(name):
     """Swap in the normalized narration without re-encoding the video."""
-    out = os.path.join(OUT, f"nibli-syllogism-{name}.mp4")
+    out = os.path.join(OUT, f"nibli-syllogism{SUFFIX}-{name}.mp4")
     tmp = out + ".remux.mp4"
     subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", out, "-i", normalized_audio(),
                     "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k",
@@ -342,7 +343,7 @@ class Cut:
 
     def render(self):
         os.makedirs(OUT, exist_ok=True)
-        out = os.path.join(OUT, f"nibli-syllogism-{self.name}.mp4")
+        out = os.path.join(OUT, f"nibli-syllogism{SUFFIX}-{self.name}.mp4")
         cmd = ["ffmpeg", "-loglevel", "error", "-y",
                "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{self.W}x{self.H}", "-r", str(FPS), "-i", "-",
                "-i", normalized_audio(),

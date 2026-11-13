@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Build the nibli syllogism explainer: narration, playground capture, both cuts.
-# Usage: ./build.sh [voices|tts|capture|compose [16x9|9x16]|qa|all]   (default: all)
+# Usage: ./build.sh [voices|tts|capture|compose [16x9|9x16|--remux]|qa|all]   (default: all)
+#        ./build.sh record [--test|--only N,M|--from N]   record your own narration (interactive)
+#        ./build.sh own                                   build the cuts from recordings/
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -34,6 +36,17 @@ tts() { in_shell python3 -I tts.py; }
 capture() { node capture.mjs; }
 compose() { in_shell python3 -I compose.py "$@"; }
 qa() { in_shell python3 -I qa.py; }
+record() { voices; in_shell python3 -I record.py "$@"; }
+
+# Your recordings instead of Piper; outputs are named nibli-syllogism-voice-*.
+own() {
+  export VARIANT=voice OWN_AUDIO_DIR="$PWD/recordings"
+  voices
+  tts
+  [ -s build/capture.json ] || capture
+  compose
+  qa
+}
 
 case "${1:-all}" in
   voices) voices ;;
@@ -41,6 +54,8 @@ case "${1:-all}" in
   capture) capture ;;
   compose) shift; compose "$@" ;;
   qa) qa ;;
+  record) shift; record "$@" ;;
+  own) own ;;
   all) voices; tts; capture; compose; qa ;;
-  *) echo "usage: $0 [voices|tts|capture|compose [16x9|9x16]|qa|all]" >&2; exit 2 ;;
+  *) echo "usage: $0 [voices|tts|capture|compose [16x9|9x16|--remux]|qa|record [--test|--only N,M|--from N]|own|all]" >&2; exit 2 ;;
 esac

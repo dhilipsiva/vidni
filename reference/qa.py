@@ -13,6 +13,7 @@ import sys
 ROOT = os.path.dirname(os.path.abspath(__file__))
 BUILD = os.path.join(ROOT, "build")
 OUT = os.path.join(ROOT, "out")
+SUFFIX = f"-{os.environ['VARIANT']}" if os.environ.get("VARIANT") else ""
 CUTS = {"16x9": (1920, 1080), "9x16": (1080, 1920)}
 
 
@@ -37,7 +38,7 @@ def main():
         if not segments or segments[-1][0] != e["segment"]:
             segments.append([e["segment"], e["start"], e["end"]])
         segments[-1][2] = e["end"]
-    srt = open(os.path.join(OUT, "nibli-syllogism.en.srt")).read()
+    srt = open(os.path.join(OUT, f"nibli-syllogism{SUFFIX}.en.srt")).read()
     cues = len(re.findall(r"-->", srt))
     expected_cues = sum(len(e["cues"]) for e in timeline["sentences"])
     problems = []
@@ -45,7 +46,7 @@ def main():
         problems.append(f"SRT has {cues} cues, timeline has {expected_cues}")
     os.makedirs(os.path.join(BUILD, "qa"), exist_ok=True)
     for cut, (w, h) in CUTS.items():
-        path = os.path.join(OUT, f"nibli-syllogism-{cut}.mp4")
+        path = os.path.join(OUT, f"nibli-syllogism{SUFFIX}-{cut}.mp4")
         info = probe(path)
         v = next(s for s in info["streams"] if s["codec_type"] == "video")
         a = next((s for s in info["streams"] if s["codec_type"] == "audio"), None)
@@ -68,7 +69,7 @@ def main():
             problems.append(f"{cut}: loudness {lufs} LUFS")
         for n, (seg, start, end) in enumerate(segments):
             t = (start + end) / 2
-            shot = os.path.join(BUILD, "qa", f"{cut}-{n:02d}-{seg}.png")
+            shot = os.path.join(BUILD, "qa", f"{cut}{SUFFIX}-{n:02d}-{seg}.png")
             subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", f"{t:.2f}", "-i", path,
                             "-frames:v", "1", shot], check=True)
     print(f"captions: {cues} cues; review frames in build/qa/")

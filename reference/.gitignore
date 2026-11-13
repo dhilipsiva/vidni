@@ -1,3 +1,6 @@
 # Rebuilt by ./build.sh: voices, audio, stills, cards, QA frames and the rendered videos.
 build/
 out/
+__pycache__/
+# Your own narration takes (record.py). Personal and large: back them up, don't commit them.
+recordings/

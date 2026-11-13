@@ -55,15 +55,39 @@ Narration is normalized in two loudnorm passes. One pass measured −18.1 LUFS o
 | `card` | Use a card instead of the playground | `intro`, `end` |
 | `overlay` | Draw an overlay | `verdicts`, `firewall` |
 
-## Re-voicing
+## Recording your own narration
 
-To use your own voice, record one 16-bit mono WAV per sentence, numbered in script order (`000.wav` …). Then run:
+`record.py` is a prompter and recorder for the 57 lines. Run it in a terminal, because it's interactive:
 
 ```sh
-OWN_AUDIO_DIR=/path/to/wavs ./build.sh tts && ./build.sh compose && ./build.sh qa
+./build.sh record --test        # mic and room check: levels, noise, playback
+./build.sh record               # every line not recorded yet; quit and resume any time
+./build.sh record --only 12,23  # redo lines 012 and 023
+./build.sh own                  # build out/nibli-syllogism-voice-{16x9,9x16}.mp4
 ```
 
-The captions and timing follow your recordings.
+**Recording a line:**
+- Each line shows its section, the line before it, and a pace guide: how long the synthetic voice took.
+- Press Enter, pause a beat, read the line, pause a beat, then press Enter.
+- The take is cleaned up automatically: the keypresses and the silence around the words are trimmed.
+- Its levels are checked and it's transcribed, so a misread line shows up straight away.
+- After each take you can play it back, redo it, or keep it.
+
+**Where takes go:**
+- Kept takes go to `recordings/NNN.wav`, at 48 kHz, 16-bit mono.
+- Every raw take stays in `recordings/raw/`.
+- `recordings/` is kept out of git, so back it up.
+
+**Choosing a microphone.** `wpctl status` lists the microphones. To use one, either make it the default with `wpctl set-default <id>` or set `MIC` to its node name.
+
+**What adapts to your recordings:**
+- Timing, captions and camera moves all follow your takes, so read at whatever pace is natural.
+- `./build.sh own` writes `nibli-syllogism-voice-*` beside the synthetic cut and leaves the synthetic cut in place.
+- It transcribes every take again and lists the lines that differ most from the script.
+
+**Pronunciations:** "nibli" is said NIB-lee. The prompter shows how to read symbols: `#1` as "number one", RESOURCE_EXCEEDED as "resource exceeded", and the URL.
+
+If you record with another app instead, save one 16-bit mono WAV per line, named `000.wav` to `056.wav` in script order. Then run `OWN_AUDIO_DIR=/path ./build.sh own`.
 
 ## Voice and licences
 
