@@ -65,6 +65,7 @@ Every decision has a date and a ruling, or "default" where the maintainer accept
 - **R5. Release signing.** Each release ships `SHA256SUMS` plus GitHub build-provenance attestations, which `gh attestation verify` checks.
 - **R17. Moving the reference's takes.** The maintainer's takes are moved, not copied, into `examples/nibli-syllogism/`, where they stay out of git and are hash-locked. Every hash is checked before the originals are removed, and a README in the old folder points to the new location.
 - **Branching.** Work happens on `main`, which is pushed after every item. This is the maintainer's standing rule to work on the current branch.
+- **Clauses that can't be met.** When a *Done when* clause turns out to be impossible as written, it is amended in the table below with the measured reason, never weakened quietly. This is step 4 of the ratified plan for each item.
 
 ## Amendments to *Done when* clauses
 
@@ -78,6 +79,7 @@ Every decision has a date and a ruling, or "default" where the maintainer accept
 | A6 (R11) | P9-VIDNI-03 | The second language is Tamil. The assistant prepares the translations, and the maintainer corrects them and records the takes. | The maintainer chose the language and records the voice. |
 | A7 (R12) | P9-VIDNI-04 | The voices are judged on measurements only, and naturalness is recorded as not judged. | The maintainer chose not to do listening tests. |
 | A8 (R4) | P8-VIDNI-06 | The maintainer announces the release, and the announcement is not part of *done*. | Announcing belongs to the maintainer. |
+| A9 (clauses that can't be met) | P3-VIDNI-02 | The 20 frames per cut are compared with the reference's own frames before encoding, instead of with frames decoded from golden's MP4s. `tools/reference_frames.py` regenerates them with `reference/compose.py`. The reference's MP4s are still checked against golden first, and `just golden` shows that the reference re-derives them byte for byte, so these are the frames golden's MP4s were encoded from. | Golden's MP4s are x264 at CRF 18. While the camera moves, compression alone keeps the reference's own frames below SSIM 0.995 against them: 0.9811 at 206.74 s of the 16:9 cut, and 0.9860 at 49.24 s of the voice 16:9 cut. No port could pass there. Against the frames before encoding, the check measures the compositor alone, and vidni's frames at those two times differ from the reference's by at most one level of 255. |
 
 ## Technical decisions
 
@@ -104,3 +106,12 @@ Added as the items are built.
   - A still depends on the page and on how the page got there, not on how the still is framed later. So changing a camera never re-captures.
   - The page carries state from line to line (a clicked tab, a scroll position), so a line's key has to include the actions before it.
   - Lines that show the same state with the same highlights share one capture. The reference captured each line separately.
+
+### T4. How the compositor draws
+- **2026-11-13, P3-VIDNI-02.** The compositor reproduces Pillow's arithmetic instead of drawing with tiny-skia. Its resampling (BICUBIC over a float box), blending, pasting, lines, rounded rectangles and mask fills are ports of Pillow's C. Fixtures written by Pillow itself (`tools/pillow_fixtures.py`) test each one byte for byte.
+- Text is shaped by harfrust, one run per line, as libraqm shapes it for Pillow. Positions are rounded to 26.6 as FreeType and HarfBuzz round them, and swash rasterizes the glyphs through cosmic-text's cache. Widths match Pillow's `getlength` exactly, and drawn text differs from Pillow's by at most 2 levels of 255, at glyph edges.
+- resvg isn't used yet: cards and overlays arrive as PNGs that the browser rendered (P3-VIDNI-04).
+- **Why:** the frames must reach SSIM 0.995 against the reference's at every sampled time, and one-pixel shifts were what kept most of them below it.
+  - cosmic-text's own layout shapes word by word and sums float advances. A caption measured 1281 px where Pillow measured 1280.9375, so its box came out a pixel wider and the box and text shifted by a pixel.
+  - With that layout, 15 of the 80 sampled frames fell between SSIM 0.987 and 0.995 against golden's MP4s.
+  - Matching Pillow's arithmetic removes those differences at their source, and the ports are small. It left two sampled frames below 0.995, and those were golden's own compression in the middle of a camera move (A9).

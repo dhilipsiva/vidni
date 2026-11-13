@@ -28,6 +28,13 @@ fn perturbations(candidate: &Path) -> Result<Vec<Perturbation>, String> {
         .collect();
     stills.sort();
     let still = stills.first().ok_or("the candidate has no stills")?;
+    let mut frames: Vec<String> = fs::read_dir(candidate.join("frames"))
+        .map_err(|e| format!("{}: {e}", candidate.join("frames").display()))?
+        .filter_map(|e| e.ok()?.file_name().into_string().ok())
+        .filter(|n| n.ends_with(".png"))
+        .collect();
+    frames.sort();
+    let frame = frames.first().ok_or("the candidate has no cut frames")?;
     Ok(vec![
         Perturbation {
             file: "timeline-synthetic.json".into(),
@@ -54,10 +61,10 @@ fn perturbations(candidate: &Path) -> Result<Vec<Perturbation>, String> {
             apply: reencoded_audio,
         },
         Perturbation {
-            file: "nibli-syllogism-16x9.mp4".into(),
+            file: format!("frames/{frame}"),
             stage: "cuts",
-            what: "a box drawn over every frame",
-            apply: boxed_video,
+            what: "a box drawn over a cut's frame",
+            apply: boxed_still,
         },
         Perturbation {
             file: format!("stills/{still}"),
@@ -72,7 +79,7 @@ fn perturbations(candidate: &Path) -> Result<Vec<Perturbation>, String> {
 pub fn selftest(sources: &Sources, scratch: &Path) -> Result<bool, String> {
     let candidate = scratch.join("candidate");
     fs::create_dir_all(&candidate).map_err(|e| e.to_string())?;
-    reference_as_candidate(&sources.reference, &candidate)?;
+    reference_as_candidate(sources, &candidate, scratch)?;
     let mut good = true;
 
     let clean = check_stage("all", &candidate, sources, scratch)?;
@@ -183,29 +190,6 @@ fn reencoded_audio(path: &Path, scratch: &Path) -> Result<(), String> {
         path,
         scratch,
         &["-map", "0", "-c:v", "copy", "-c:a", "aac", "-b:a", "96k"],
-    )
-}
-
-fn boxed_video(path: &Path, scratch: &Path) -> Result<(), String> {
-    ffmpeg_over(
-        path,
-        scratch,
-        &[
-            "-map",
-            "0",
-            "-vf",
-            "drawbox=x=0:y=0:w=iw/2:h=ih/2:color=red@1:t=fill",
-            "-c:v",
-            "libx264",
-            "-preset",
-            "ultrafast",
-            "-crf",
-            "18",
-            "-pix_fmt",
-            "yuv420p",
-            "-c:a",
-            "copy",
-        ],
     )
 }
 

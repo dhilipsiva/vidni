@@ -12,8 +12,12 @@ authors.workspace = true
 workspace = true
 
 [dependencies]
+cosmic-text = { version = "0.19.0", default-features = false, features = ["std", "swash"] }
+harfrust = "0.5.2"
 hound = "3.5.1"
+png = "0.18.1"
 serde_json = "1.0.154"
+ttf-parser = "0.25.1"
 vidni-core = { path = "../vidni-core" }
 
 [dev-dependencies]

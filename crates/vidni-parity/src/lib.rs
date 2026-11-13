@@ -3,8 +3,10 @@
 //!
 //! Logic outputs must match exactly: the normalized timelines, the captions,
 //! the narration PCM and the MP4 packets (T1 and T2). Rendered frames are
-//! compared by SSIM (at least [`SSIM_MIN`]) while the port is in progress,
-//! against golden media whose hashes are checked first.
+//! compared by SSIM (at least [`SSIM_MIN`]): stills against the reference's
+//! captures, and the cuts' frames against the reference's own frames before
+//! encoding (DECISIONS.md, A9). Golden's hashes are checked first, so both
+//! are golden's.
 //!
 //! Packets are compared by [`packet_fingerprint`], which doesn't depend on
 //! the ffmpeg version that reads them: the reference's golden logs were
@@ -13,6 +15,7 @@
 //! A candidate folder holds any of:
 //! `timeline-{synthetic,voice}.json`, `nibli-syllogism{,-voice}.en.srt`,
 //! `narration-{synthetic,voice}.wav`, `nibli-syllogism{,-voice}-{16x9,9x16}.mp4`,
+//! the cuts' sample frames `frames/nibli-syllogism{,-voice}-{16x9,9x16}-F.png`,
 //! `stills/*.png` and `cards/*.png`. A missing file fails its check.
 
 use flate2::read::GzDecoder;
@@ -22,8 +25,11 @@ use std::fs;
 use std::io::Read;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
+use vidni_media::compose::cut::FPS;
+use vidni_media::compose::image::Image;
 
 pub mod candidate;
+pub mod compose;
 pub mod selftest;
 
 /// The lowest SSIM a rendered frame may reach against its golden frame.
@@ -40,6 +46,10 @@ pub const CUTS: [&str; 2] = ["16x9", "9x16"];
 pub struct Report {
     pub checks: usize,
     pub failures: Vec<String>,
+    /// The lowest SSIM scored, and where.
+    pub lowest: Option<(f64, String)>,
+    /// The largest difference between two pixels' channel values, and where.
+    pub largest: Option<(u8, String)>,
 }
 
 impl Report {
@@ -58,6 +68,27 @@ impl Report {
         } else {
             self.fail(message())
         }
+    }
+
+    /// Keeps the largest pixel difference seen. It is reported, not checked.
+    fn difference(&mut self, difference: u8, what: &str) {
+        if self
+            .largest
+            .as_ref()
+            .is_none_or(|(big, _)| difference > *big)
+        {
+            self.largest = Some((difference, what.to_string()));
+        }
+    }
+
+    /// An SSIM check: passes at [`SSIM_MIN`] or above, and keeps the lowest score.
+    fn score(&mut self, ssim: f64, what: String) {
+        if self.lowest.as_ref().is_none_or(|(low, _)| ssim < *low) {
+            self.lowest = Some((ssim, what.clone()));
+        }
+        self.check(ssim >= SSIM_MIN, || {
+            format!("{what}: SSIM {ssim:.4} < {SSIM_MIN}")
+        });
     }
 }
 
@@ -250,23 +281,6 @@ pub fn duration(path: &Path) -> Result<f64, String> {
         .map_err(|e| format!("{}: duration: {e}", path.display()))
 }
 
-/// Writes the frame at `seconds` as a PNG.
-pub fn frame_at(video: &Path, seconds: f64, png: &Path) -> Result<(), String> {
-    run(Command::new("ffmpeg")
-        .args([
-            "-loglevel",
-            "error",
-            "-y",
-            "-ss",
-            &format!("{seconds:.3}"),
-            "-i",
-        ])
-        .arg(video)
-        .args(["-frames:v", "1"])
-        .arg(png))
-    .map(|_| ())
-}
-
 /// SSIM of two same-sized images, from ffmpeg's `ssim` filter (1.0 is identical).
 pub fn ssim(a: &Path, b: &Path) -> Result<f64, String> {
     let out = run(Command::new("ffmpeg")
@@ -396,45 +410,153 @@ fn verified_golden_cut(
     Ok(path)
 }
 
-/// Cuts: SSIM of evenly spaced frames against the verified golden media.
+/// One cut's sample frames.
+pub struct CutSamples {
+    pub variant: &'static str,
+    pub cut: &'static str,
+    /// `nibli-syllogism[-voice]-CUT`, the stem of the cut's file names.
+    pub name: String,
+    /// Each sample's time in seconds, and the first frame at or after it.
+    pub frames: Vec<(f64, u64)>,
+}
+
+/// [`SAMPLES_PER_CUT`] evenly spaced times over `span` seconds, each with the
+/// first frame at or after it.
+pub fn sample_frames(span: f64) -> Vec<(f64, u64)> {
+    (0..SAMPLES_PER_CUT)
+        .map(|i| {
+            let t = span * (i as f64 + 0.5) / SAMPLES_PER_CUT as f64;
+            (t, (t * FPS - 1e-9).ceil() as u64)
+        })
+        .collect()
+}
+
+/// Every cut's sample frames, spread over the length of the reference's MP4.
+pub fn cut_samples(reference_out: &Path) -> Result<Vec<CutSamples>, String> {
+    let mut all = Vec::new();
+    for (variant, suffix) in VARIANTS {
+        for cut in CUTS {
+            let name = format!("nibli-syllogism{suffix}-{cut}");
+            let span = duration(&reference_out.join(format!("{name}.mp4")))?;
+            all.push(CutSamples {
+                variant,
+                cut,
+                name,
+                frames: sample_frames(span),
+            });
+        }
+    }
+    Ok(all)
+}
+
+/// The reference's own frames at the samples, before encoding, as PNGs in
+/// `dir`: `tools/reference_frames.py` writes the ones not there yet, in the
+/// reference's nix shell.
+pub fn reference_frames(
+    reference: &Path,
+    samples: &[CutSamples],
+    dir: &Path,
+) -> Result<(), String> {
+    let tool = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/reference_frames.py");
+    let reference =
+        fs::canonicalize(reference).map_err(|e| format!("{}: {e}", reference.display()))?;
+    for (variant, _) in VARIANTS {
+        let jobs: Vec<String> = samples
+            .iter()
+            .filter(|s| s.variant == variant)
+            .filter_map(|s| {
+                let missing: Vec<String> = s
+                    .frames
+                    .iter()
+                    .filter(|(_, f)| !dir.join(format!("{}-{f}.png", s.name)).is_file())
+                    .map(|(_, f)| f.to_string())
+                    .collect();
+                (!missing.is_empty()).then(|| format!("{}:{}", s.cut, missing.join(",")))
+            })
+            .collect();
+        if jobs.is_empty() {
+            continue;
+        }
+        run(Command::new("nix")
+            .env_remove("LD_LIBRARY_PATH")
+            .env_remove("FONTCONFIG_FILE")
+            .arg("develop")
+            .arg(&reference)
+            .args(["--command", "python3", "-I", "-B"])
+            .arg(&tool)
+            .arg("--reference")
+            .arg(&reference)
+            .args(["--variant", variant, "--fonts"])
+            .args(compose::REFERENCE_FONTS.map(|(_, sha256)| sha256))
+            .arg("--out")
+            .arg(dir)
+            .args(&jobs))?;
+    }
+    Ok(())
+}
+
+/// The largest difference between two images' channel values.
+pub fn largest_difference(a: &Path, b: &Path) -> Result<u8, String> {
+    let (a, b) = (Image::load_png(a)?.to_rgb(), Image::load_png(b)?.to_rgb());
+    if (a.width, a.height) != (b.width, b.height) {
+        return Err(format!(
+            "{}x{} against {}x{}",
+            b.width, b.height, a.width, a.height
+        ));
+    }
+    Ok(a.data
+        .iter()
+        .zip(&b.data)
+        .map(|(x, y)| x.abs_diff(*y))
+        .max()
+        .unwrap_or(0))
+}
+
+/// Cuts: the candidate's frames against the reference's own frames before
+/// encoding, at evenly spaced times (DECISIONS.md, A9). Golden's MP4s are
+/// lossy, so their decoded frames would measure x264 as well as the
+/// compositor. The reference's MP4s are checked against golden first.
 pub fn check_cuts(
     candidate: &Path,
-    reference_out: &Path,
-    golden_dir: &Path,
+    sources: &Sources,
     hashes: &Value,
     scratch: &Path,
     report: &mut Report,
 ) {
+    let out = sources.reference.join("out");
+    let failures = report.failures.len();
     for (_, suffix) in VARIANTS {
         for cut in CUTS {
             let name = format!("nibli-syllogism{suffix}-{cut}.mp4");
-            let golden = match verified_golden_cut(reference_out, golden_dir, &name, hashes) {
-                Ok(p) => p,
-                Err(e) => {
-                    report.fail(e);
-                    continue;
+            if let Err(e) = verified_golden_cut(&out, &sources.golden, &name, hashes) {
+                report.fail(e);
+            }
+        }
+    }
+    if report.failures.len() > failures {
+        return;
+    }
+    let theirs = scratch.join("reference-frames");
+    let samples = match cut_samples(&out)
+        .and_then(|s| reference_frames(&sources.reference, &s, &theirs).map(|_| s))
+    {
+        Ok(s) => s,
+        Err(e) => {
+            report.fail(e);
+            return;
+        }
+    };
+    for s in &samples {
+        for (t, f) in &s.frames {
+            let file = format!("{}-{f}.png", s.name);
+            let what = format!("frames/{file} at {t:.2} s");
+            let (a, b) = (theirs.join(&file), candidate.join("frames").join(&file));
+            match ssim(&a, &b).and_then(|score| Ok((score, largest_difference(&a, &b)?))) {
+                Ok((score, difference)) => {
+                    report.difference(difference, &what);
+                    report.score(score, what);
                 }
-            };
-            let ours = candidate.join(&name);
-            let span = match (duration(&golden), duration(&ours)) {
-                (Ok(a), Ok(b)) => a.min(b),
-                (Err(e), _) | (_, Err(e)) => {
-                    report.fail(e);
-                    continue;
-                }
-            };
-            for i in 0..SAMPLES_PER_CUT {
-                let t = span * (i as f64 + 0.5) / SAMPLES_PER_CUT as f64;
-                let (a, b) = (scratch.join("golden.png"), scratch.join("candidate.png"));
-                let score = frame_at(&golden, t, &a)
-                    .and_then(|_| frame_at(&ours, t, &b))
-                    .and_then(|_| ssim(&a, &b));
-                match score {
-                    Ok(s) => report.check(s >= SSIM_MIN, || {
-                        format!("{name} at {t:.2} s: SSIM {s:.4} < {SSIM_MIN}")
-                    }),
-                    Err(e) => report.fail(e),
-                }
+                Err(e) => report.fail(format!("{what}: {e}")),
             }
         }
     }
@@ -467,7 +589,7 @@ pub fn check_stills(candidate: &Path, reference_build: &Path, hashes: &Value, re
             }
         }
         match ssim(&golden, &candidate.join(rel)) {
-            Ok(s) => report.check(s >= SSIM_MIN, || format!("{rel}: SSIM {s:.4} < {SSIM_MIN}")),
+            Ok(s) => report.score(s, rel.to_string()),
             Err(e) => report.fail(e),
         }
     }
@@ -505,15 +627,7 @@ pub fn check_stage(
         check_encode(candidate, &sources.golden, &hashes, &mut report);
     }
     if on("cuts") {
-        let out = sources.reference.join("out");
-        check_cuts(
-            candidate,
-            &out,
-            &sources.golden,
-            &hashes,
-            scratch,
-            &mut report,
-        );
+        check_cuts(candidate, sources, &hashes, scratch, &mut report);
     }
     if on("stills") {
         let build = sources.reference.join("build");
@@ -524,7 +638,8 @@ pub fn check_stage(
 
 /// Lays the reference's own outputs out as a candidate, so the harness can be
 /// shown to pass on the reference itself.
-pub fn reference_as_candidate(reference: &Path, dst: &Path) -> Result<(), String> {
+pub fn reference_as_candidate(sources: &Sources, dst: &Path, scratch: &Path) -> Result<(), String> {
+    let reference = &sources.reference;
     let copy = |from: PathBuf, to: PathBuf| -> Result<(), String> {
         fs::copy(&from, &to)
             .map(|_| ())
@@ -558,6 +673,16 @@ pub fn reference_as_candidate(reference: &Path, dst: &Path) -> Result<(), String
                     dst.join(dir).join(path.file_name().unwrap_or_default()),
                 )?;
             }
+        }
+    }
+    let samples = cut_samples(&reference.join("out"))?;
+    let theirs = scratch.join("reference-frames");
+    reference_frames(reference, &samples, &theirs)?;
+    fs::create_dir_all(dst.join("frames")).map_err(|e| e.to_string())?;
+    for s in &samples {
+        for (_, f) in &s.frames {
+            let file = format!("{}-{f}.png", s.name);
+            copy(theirs.join(&file), dst.join("frames").join(&file))?;
         }
     }
     Ok(())

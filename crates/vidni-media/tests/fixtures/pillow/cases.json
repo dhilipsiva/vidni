@@ -1,0 +1,933 @@
+{
+ "resize": [
+  {
+   "size": [
+    40,
+    25
+   ],
+   "box": [
+    10.5,
+    7.25,
+    80.75,
+    50.5
+   ],
+   "file": "resize-0.png"
+  },
+  {
+   "size": [
+    64,
+    40
+   ],
+   "box": [
+    3.3,
+    2.2,
+    23.9,
+    15.1
+   ],
+   "file": "resize-1.png"
+  },
+  {
+   "size": [
+    50,
+    31
+   ],
+   "box": [
+    0.0,
+    0.0,
+    97.0,
+    61.0
+   ],
+   "file": "resize-2.png"
+  },
+  {
+   "size": [
+    97,
+    61
+   ],
+   "box": [
+    0.1,
+    0.2,
+    96.7,
+    60.9
+   ],
+   "file": "resize-3.png"
+  },
+  {
+   "size": [
+    33,
+    80
+   ],
+   "box": [
+    12.4,
+    0.0,
+    45.6,
+    61.0
+   ],
+   "file": "resize-4.png"
+  }
+ ],
+ "blend": [
+  {
+   "alpha": 0.0,
+   "file": "blend-0.png"
+  },
+  {
+   "alpha": 0.1,
+   "file": "blend-1.png"
+  },
+  {
+   "alpha": 0.3333333333333333,
+   "file": "blend-2.png"
+  },
+  {
+   "alpha": 0.5,
+   "file": "blend-3.png"
+  },
+  {
+   "alpha": 0.77,
+   "file": "blend-4.png"
+  },
+  {
+   "alpha": 0.999,
+   "file": "blend-5.png"
+  },
+  {
+   "alpha": 1.0,
+   "file": "blend-6.png"
+  }
+ ],
+ "paste": [
+  {
+   "pos": [
+    5,
+    7
+   ],
+   "file": "paste-0.png"
+  },
+  {
+   "pos": [
+    80,
+    50
+   ],
+   "file": "paste-1.png"
+  }
+ ],
+ "rounded": [
+  {
+   "size": [
+    120,
+    54
+   ],
+   "radius": 10,
+   "fill": [
+    7,
+    7,
+    10,
+    210
+   ],
+   "file": "rounded-0.png"
+  },
+  {
+   "size": [
+    200,
+    90
+   ],
+   "radius": 14,
+   "fill": [
+    7,
+    7,
+    10,
+    222
+   ],
+   "file": "rounded-1.png"
+  }
+ ],
+ "text": {
+  "font": "IBMPlexSans-Bold.otf",
+  "sha256": "19de5aec74215119b3f8f7d1b1f0e0eba867bee2d2c65c5761b287d67581c316",
+  "lengths": [
+   {
+    "size": 42,
+    "text": "A conclusion counts only if it follows from these statements by fixed rules of inference.",
+    "length26": 109018
+   },
+   {
+    "size": 42,
+    "text": "A neuro-symbolic system pairs a neural front end with a symbolic core,",
+    "length26": 89241
+   },
+   {
+    "size": 42,
+    "text": "A theorem prover automates that.",
+    "length26": 42720
+   },
+   {
+    "size": 42,
+    "text": "Again there's no stored fact, so it looks for a rule that concludes animal:",
+    "length26": 90173
+   },
+   {
+    "size": 42,
+    "text": "Before anything reasons over it, deterministic gates check it.",
+    "length26": 76333
+   },
+   {
+    "size": 42,
+    "text": "Each rule step becomes a node that cites the source line it used.",
+    "length26": 80596
+   },
+   {
+    "size": 42,
+    "text": "Here are three: every dog is an animal, every animal eats, and Adam is a dog.",
+    "length26": 96765
+   },
+   {
+    "size": 42,
+    "text": "Here's the syllogism example: three lines of nibli KR.",
+    "length26": 66279
+   },
+   {
+    "size": 42,
+    "text": "Here, FALSE means not derivable from what we asserted.",
+    "length26": 72199
+   },
+   {
+    "size": 42,
+    "text": "I'm dhilipsiva.",
+    "length26": 18075
+   },
+   {
+    "size": 42,
+    "text": "If it finds one, the answer is TRUE, and it can show you the chain.",
+    "length26": 81980
+   },
+   {
+    "size": 42,
+    "text": "In five minutes: what symbolic reasoning is, what a theorem prover does,",
+    "length26": 92263
+   },
+   {
+    "size": 42,
+    "text": "It compiles nibli KR into first-order logic,",
+    "length26": 51450
+   },
+   {
+    "size": 42,
+    "text": "It doesn't make your premises true. It tells you what they commit you to.",
+    "length26": 91467
+   },
+   {
+    "size": 42,
+    "text": "It isn't a proof that Adam isn't a bird.",
+    "length26": 46413
+   },
+   {
+    "size": 42,
+    "text": "It never invents a fact, a rule or a proof step.",
+    "length26": 55846
+   },
+   {
+    "size": 42,
+    "text": "It's a theorem prover, and it's open source.",
+    "length26": 53848
+   },
+   {
+    "size": 42,
+    "text": "It's also the running example in my book,",
+    "length26": 51909
+   },
+   {
+    "size": 42,
+    "text": "Language models are good at reading prose.",
+    "length26": 55461
+   },
+   {
+    "size": 42,
+    "text": "Language models predict the next word. A reasoner derives the next step.",
+    "length26": 92790
+   },
+   {
+    "size": 42,
+    "text": "Matching that conclusion to the goal binds X to Adam,",
+    "length26": 67587
+   },
+   {
+    "size": 42,
+    "text": "Nothing in the knowledge base supports it, so the answer is FALSE.",
+    "length26": 84320
+   },
+   {
+    "size": 42,
+    "text": "Nothing is learned from examples, and nothing is guessed.",
+    "length26": 73541
+   },
+   {
+    "size": 42,
+    "text": "Now the claim that Adam is a bird.",
+    "length26": 43362
+   },
+   {
+    "size": 42,
+    "text": "Open the role-level detail, and you see what those lines are made of.",
+    "length26": 86191
+   },
+   {
+    "size": 42,
+    "text": "Run it again tomorrow and you get the same answer,",
+    "length26": 65946
+   },
+   {
+    "size": 42,
+    "text": "So in nibli, an LLM can formalize plain English into nibli KR, the engine's rule language.",
+    "length26": 108738
+   },
+   {
+    "size": 42,
+    "text": "So it looks for a rule whose conclusion is eats: line two, every animal eats.",
+    "length26": 92998
+   },
+   {
+    "size": 42,
+    "text": "Symbolic reasoning works on explicit statements and explicit rules.",
+    "length26": 84993
+   },
+   {
+    "size": 42,
+    "text": "That answer is sound with respect to what you encoded.",
+    "length26": 70800
+   },
+   {
+    "size": 42,
+    "text": "That draft sits outside the reasoning firewall.",
+    "length26": 56768
+   },
+   {
+    "size": 42,
+    "text": "That leaves one goal, Adam is a dog, and that one is stored.",
+    "length26": 74411
+   },
+   {
+    "size": 42,
+    "text": "The LLM drafts. The engine decides.",
+    "length26": 45058
+   },
+   {
+    "size": 42,
+    "text": "The chain closes in two rule steps.",
+    "length26": 43147
+   },
+   {
+    "size": 42,
+    "text": "The engine starts from the claim and works backward.",
+    "length26": 68483
+   },
+   {
+    "size": 42,
+    "text": "The fact is stored as an event with named roles:",
+    "length26": 60081
+   },
+   {
+    "size": 42,
+    "text": "The first reads: for every X, if X is a dog, then X is an animal.",
+    "length26": 75558
+   },
+   {
+    "size": 42,
+    "text": "The goal is: Adam eats. No stored fact says so.",
+    "length26": 58111
+   },
+   {
+    "size": 42,
+    "text": "The grammar. A committed vocabulary, where an unknown word is an error instead of a guess.",
+    "length26": 118741
+   },
+   {
+    "size": 42,
+    "text": "The playground folds the whole record into the three lines you saw,",
+    "length26": 84423
+   },
+   {
+    "size": 42,
+    "text": "The second: for every X, if X is an animal, then X eats.",
+    "length26": 67445
+   },
+   {
+    "size": 42,
+    "text": "The semantic compiler. And a round trip back to canonical text.",
+    "length26": 79527
+   },
+   {
+    "size": 42,
+    "text": "The stored fact becomes a leaf, marked given.",
+    "length26": 57802
+   },
+   {
+    "size": 42,
+    "text": "The third: Adam is a dog.",
+    "length26": 31393
+   },
+   {
+    "size": 42,
+    "text": "The whole pipeline, parser, compiler and reasoner,",
+    "length26": 63723
+   },
+   {
+    "size": 42,
+    "text": "The why line says no example could be found that satisfies the claim.",
+    "length26": 86947
+   },
+   {
+    "size": 42,
+    "text": "Then a person reviews the rules and their back-translation:",
+    "length26": 74527
+   },
+   {
+    "size": 42,
+    "text": "Then it runs the search once more at that depth,",
+    "length26": 60493
+   },
+   {
+    "size": 42,
+    "text": "This example comes pre-encoded,",
+    "length26": 43197
+   },
+   {
+    "size": 42,
+    "text": "To find the shortest chain, the engine first runs a cheap search without recording,",
+    "length26": 102269
+   },
+   {
+    "size": 42,
+    "text": "Try it at dhilipsiva.dev/nibli-playground. The code is on GitHub.",
+    "length26": 79670
+   },
+   {
+    "size": 42,
+    "text": "Ultimate Neuro-Symbolic Reasoning for AI Engineers, scheduled for December 2026.",
+    "length26": 106831
+   },
+   {
+    "size": 42,
+    "text": "We don't ask a question. We state the claim to check: Adam eats.",
+    "length26": 81929
+   },
+   {
+    "size": 42,
+    "text": "When the same sub-goal comes up again,",
+    "length26": 52242
+   },
+   {
+    "size": 42,
+    "text": "You give it premises and a claim, and it searches for a proof:",
+    "length26": 75500
+   },
+   {
+    "size": 42,
+    "text": "a chain of rule applications from the premises to the claim.",
+    "length26": 73931
+   },
+   {
+    "size": 42,
+    "text": "a fixed, mechanical reading, with no model involved.",
+    "length26": 66283
+   },
+   {
+    "size": 42,
+    "text": "and answers claims by backward chaining over a fact store.",
+    "length26": 74925
+   },
+   {
+    "size": 42,
+    "text": "and leaves a new goal: Adam is an animal.",
+    "length26": 53226
+   },
+   {
+    "size": 42,
+    "text": "and lets each do what it's good at.",
+    "length26": 42885
+   },
+   {
+    "size": 42,
+    "text": "and you can inspect every step that produced it.",
+    "length26": 60424
+   },
+   {
+    "size": 42,
+    "text": "line one, every dog is an animal.",
+    "length26": 40276
+   },
+   {
+    "size": 42,
+    "text": "nibli answers with one of four verdicts: TRUE; FALSE, meaning not derivable; UNKNOWN,",
+    "length26": 112022
+   },
+   {
+    "size": 42,
+    "text": "nibli is the engine I build in Rust.",
+    "length26": 41367
+   },
+   {
+    "size": 42,
+    "text": "nibli won't claim more than its premises support.",
+    "length26": 61725
+   },
+   {
+    "size": 42,
+    "text": "raising the depth limit one step at a time until the claim resolves.",
+    "length26": 81617
+   },
+   {
+    "size": 42,
+    "text": "runs right here in the browser as WebAssembly, and also under Wasmtime or as a native crate.",
+    "length26": 119057
+   },
+   {
+    "size": 42,
+    "text": "so the Formalize button is switched off and we skip the drafting.",
+    "length26": 80818
+   },
+   {
+    "size": 42,
+    "text": "the dog, Adam, and a breed nobody specified.",
+    "length26": 57674
+   },
+   {
+    "size": 42,
+    "text": "the trace says \u201cproved above\u201d and points back, instead of proving it twice.",
+    "length26": 93533
+   },
+   {
+    "size": 42,
+    "text": "this time recording every step. That record is the proof trace.",
+    "length26": 76248
+   },
+   {
+    "size": 42,
+    "text": "where an LLM fits around one, and a small proof in nibli, step by step.",
+    "length26": 87019
+   },
+   {
+    "size": 42,
+    "text": "with a plain-English why.",
+    "length26": 31770
+   },
+   {
+    "size": 42,
+    "text": "with a reason; and RESOURCE_EXCEEDED, when a depth, fuel or memory budget runs out.",
+    "length26": 113827
+   },
+   {
+    "size": 42,
+    "text": "\u201cAdam eats\u201d cites recorded source #1: every animal eats.",
+    "length26": 72369
+   },
+   {
+    "size": 42,
+    "text": "\u201cAdam is an animal\u201d cites recorded source #0: every dog is an animal.",
+    "length26": 87885
+   },
+   {
+    "size": 50,
+    "text": "A conclusion counts only if it follows from these statements by fixed rules of inference.",
+    "length26": 129782
+   },
+   {
+    "size": 50,
+    "text": "A neuro-symbolic system pairs a neural front end with a symbolic core,",
+    "length26": 106243
+   },
+   {
+    "size": 50,
+    "text": "A theorem prover automates that.",
+    "length26": 50859
+   },
+   {
+    "size": 50,
+    "text": "Again there's no stored fact, so it looks for a rule that concludes animal:",
+    "length26": 107354
+   },
+   {
+    "size": 50,
+    "text": "Before anything reasons over it, deterministic gates check it.",
+    "length26": 90865
+   },
+   {
+    "size": 50,
+    "text": "Each rule step becomes a node that cites the source line it used.",
+    "length26": 95942
+   },
+   {
+    "size": 50,
+    "text": "Here are three: every dog is an animal, every animal eats, and Adam is a dog.",
+    "length26": 115204
+   },
+   {
+    "size": 50,
+    "text": "Here's the syllogism example: three lines of nibli KR.",
+    "length26": 78905
+   },
+   {
+    "size": 50,
+    "text": "Here, FALSE means not derivable from what we asserted.",
+    "length26": 85953
+   },
+   {
+    "size": 50,
+    "text": "I'm dhilipsiva.",
+    "length26": 21521
+   },
+   {
+    "size": 50,
+    "text": "If it finds one, the answer is TRUE, and it can show you the chain.",
+    "length26": 97595
+   },
+   {
+    "size": 50,
+    "text": "In five minutes: what symbolic reasoning is, what a theorem prover does,",
+    "length26": 109837
+   },
+   {
+    "size": 50,
+    "text": "It compiles nibli KR into first-order logic,",
+    "length26": 61251
+   },
+   {
+    "size": 50,
+    "text": "It doesn't make your premises true. It tells you what they commit you to.",
+    "length26": 108893
+   },
+   {
+    "size": 50,
+    "text": "It isn't a proof that Adam isn't a bird.",
+    "length26": 55261
+   },
+   {
+    "size": 50,
+    "text": "It never invents a fact, a rule or a proof step.",
+    "length26": 66488
+   },
+   {
+    "size": 50,
+    "text": "It's a theorem prover, and it's open source.",
+    "length26": 64106
+   },
+   {
+    "size": 50,
+    "text": "It's also the running example in my book,",
+    "length26": 61801
+   },
+   {
+    "size": 50,
+    "text": "Language models are good at reading prose.",
+    "length26": 66026
+   },
+   {
+    "size": 50,
+    "text": "Language models predict the next word. A reasoner derives the next step.",
+    "length26": 110462
+   },
+   {
+    "size": 50,
+    "text": "Matching that conclusion to the goal binds X to Adam,",
+    "length26": 80465
+   },
+   {
+    "size": 50,
+    "text": "Nothing in the knowledge base supports it, so the answer is FALSE.",
+    "length26": 100380
+   },
+   {
+    "size": 50,
+    "text": "Nothing is learned from examples, and nothing is guessed.",
+    "length26": 87551
+   },
+   {
+    "size": 50,
+    "text": "Now the claim that Adam is a bird.",
+    "length26": 51627
+   },
+   {
+    "size": 50,
+    "text": "Open the role-level detail, and you see what those lines are made of.",
+    "length26": 102614
+   },
+   {
+    "size": 50,
+    "text": "Run it again tomorrow and you get the same answer,",
+    "length26": 78508
+   },
+   {
+    "size": 50,
+    "text": "So in nibli, an LLM can formalize plain English into nibli KR, the engine's rule language.",
+    "length26": 129455
+   },
+   {
+    "size": 50,
+    "text": "So it looks for a rule whose conclusion is eats: line two, every animal eats.",
+    "length26": 110715
+   },
+   {
+    "size": 50,
+    "text": "Symbolic reasoning works on explicit statements and explicit rules.",
+    "length26": 101184
+   },
+   {
+    "size": 50,
+    "text": "That answer is sound with respect to what you encoded.",
+    "length26": 84284
+   },
+   {
+    "size": 50,
+    "text": "That draft sits outside the reasoning firewall.",
+    "length26": 67581
+   },
+   {
+    "size": 50,
+    "text": "That leaves one goal, Adam is a dog, and that one is stored.",
+    "length26": 88593
+   },
+   {
+    "size": 50,
+    "text": "The LLM drafts. The engine decides.",
+    "length26": 53638
+   },
+   {
+    "size": 50,
+    "text": "The chain closes in two rule steps.",
+    "length26": 51364
+   },
+   {
+    "size": 50,
+    "text": "The engine starts from the claim and works backward.",
+    "length26": 81528
+   },
+   {
+    "size": 50,
+    "text": "The fact is stored as an event with named roles:",
+    "length26": 71525
+   },
+   {
+    "size": 50,
+    "text": "The first reads: for every X, if X is a dog, then X is an animal.",
+    "length26": 89956
+   },
+   {
+    "size": 50,
+    "text": "The goal is: Adam eats. No stored fact says so.",
+    "length26": 69185
+   },
+   {
+    "size": 50,
+    "text": "The grammar. A committed vocabulary, where an unknown word is an error instead of a guess.",
+    "length26": 141363
+   },
+   {
+    "size": 50,
+    "text": "The playground folds the whole record into the three lines you saw,",
+    "length26": 100504
+   },
+   {
+    "size": 50,
+    "text": "The second: for every X, if X is an animal, then X eats.",
+    "length26": 80295
+   },
+   {
+    "size": 50,
+    "text": "The semantic compiler. And a round trip back to canonical text.",
+    "length26": 94678
+   },
+   {
+    "size": 50,
+    "text": "The stored fact becomes a leaf, marked given.",
+    "length26": 68814
+   },
+   {
+    "size": 50,
+    "text": "The third: Adam is a dog.",
+    "length26": 37376
+   },
+   {
+    "size": 50,
+    "text": "The whole pipeline, parser, compiler and reasoner,",
+    "length26": 75862
+   },
+   {
+    "size": 50,
+    "text": "The why line says no example could be found that satisfies the claim.",
+    "length26": 103512
+   },
+   {
+    "size": 50,
+    "text": "Then a person reviews the rules and their back-translation:",
+    "length26": 88723
+   },
+   {
+    "size": 50,
+    "text": "Then it runs the search once more at that depth,",
+    "length26": 72012
+   },
+   {
+    "size": 50,
+    "text": "This example comes pre-encoded,",
+    "length26": 51424
+   },
+   {
+    "size": 50,
+    "text": "To find the shortest chain, the engine first runs a cheap search without recording,",
+    "length26": 121741
+   },
+   {
+    "size": 50,
+    "text": "Try it at dhilipsiva.dev/nibli-playground. The code is on GitHub.",
+    "length26": 94851
+   },
+   {
+    "size": 50,
+    "text": "Ultimate Neuro-Symbolic Reasoning for AI Engineers, scheduled for December 2026.",
+    "length26": 127177
+   },
+   {
+    "size": 50,
+    "text": "We don't ask a question. We state the claim to check: Adam eats.",
+    "length26": 97538
+   },
+   {
+    "size": 50,
+    "text": "When the same sub-goal comes up again,",
+    "length26": 62195
+   },
+   {
+    "size": 50,
+    "text": "You give it premises and a claim, and it searches for a proof:",
+    "length26": 89884
+   },
+   {
+    "size": 50,
+    "text": "a chain of rule applications from the premises to the claim.",
+    "length26": 88016
+   },
+   {
+    "size": 50,
+    "text": "a fixed, mechanical reading, with no model involved.",
+    "length26": 78913
+   },
+   {
+    "size": 50,
+    "text": "and answers claims by backward chaining over a fact store.",
+    "length26": 89201
+   },
+   {
+    "size": 50,
+    "text": "and leaves a new goal: Adam is an animal.",
+    "length26": 63373
+   },
+   {
+    "size": 50,
+    "text": "and lets each do what it's good at.",
+    "length26": 51058
+   },
+   {
+    "size": 50,
+    "text": "and you can inspect every step that produced it.",
+    "length26": 71935
+   },
+   {
+    "size": 50,
+    "text": "line one, every dog is an animal.",
+    "length26": 47950
+   },
+   {
+    "size": 50,
+    "text": "nibli answers with one of four verdicts: TRUE; FALSE, meaning not derivable; UNKNOWN,",
+    "length26": 133365
+   },
+   {
+    "size": 50,
+    "text": "nibli is the engine I build in Rust.",
+    "length26": 49245
+   },
+   {
+    "size": 50,
+    "text": "nibli won't claim more than its premises support.",
+    "length26": 73484
+   },
+   {
+    "size": 50,
+    "text": "raising the depth limit one step at a time until the claim resolves.",
+    "length26": 97164
+   },
+   {
+    "size": 50,
+    "text": "runs right here in the browser as WebAssembly, and also under Wasmtime or as a native crate.",
+    "length26": 141742
+   },
+   {
+    "size": 50,
+    "text": "so the Formalize button is switched off and we skip the drafting.",
+    "length26": 96214
+   },
+   {
+    "size": 50,
+    "text": "the dog, Adam, and a breed nobody specified.",
+    "length26": 68666
+   },
+   {
+    "size": 50,
+    "text": "the trace says \u201cproved above\u201d and points back, instead of proving it twice.",
+    "length26": 111352
+   },
+   {
+    "size": 50,
+    "text": "this time recording every step. That record is the proof trace.",
+    "length26": 90766
+   },
+   {
+    "size": 50,
+    "text": "where an LLM fits around one, and a small proof in nibli, step by step.",
+    "length26": 103603
+   },
+   {
+    "size": 50,
+    "text": "with a plain-English why.",
+    "length26": 37823
+   },
+   {
+    "size": 50,
+    "text": "with a reason; and RESOURCE_EXCEEDED, when a depth, fuel or memory budget runs out.",
+    "length26": 135507
+   },
+   {
+    "size": 50,
+    "text": "\u201cAdam eats\u201d cites recorded source #1: every animal eats.",
+    "length26": 86152
+   },
+   {
+    "size": 50,
+    "text": "\u201cAdam is an animal\u201d cites recorded source #0: every dog is an animal.",
+    "length26": 104628
+   }
+  ],
+  "drawn": [
+   {
+    "size": 42,
+    "text": "A neuro-symbolic system pairs a neural front end",
+    "xy": [
+     600.5,
+     60.0
+    ],
+    "anchor": "mm",
+    "file": "text-0.png"
+   },
+   {
+    "size": 50,
+    "text": "Half-pixel start: y is 80.5",
+    "xy": [
+     100.25,
+     80.5
+    ],
+    "anchor": "ls",
+    "file": "text-1.png"
+   }
+  ]
+ }
+}

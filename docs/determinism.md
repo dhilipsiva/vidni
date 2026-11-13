@@ -16,6 +16,19 @@ Some inputs can't be made deterministic: a live web page, every Chromium render,
 | 2026-11-13 | same | the timeline and captions (Rust) | T1, equal to golden | `just parity timeline`: both variants' timeline JSON and SRT equal the reference's |
 | 2026-11-13 | same | the narration track (Rust) | T1, equal to golden | `just parity narration`: both variants' PCM equal the reference's |
 | 2026-11-13 | same | the encoder (Rust), ffmpeg 9.0.2 with libx264 | T2 | `just encode-t2` encoded the 9,188 golden frames of the 16:9 cut with the golden narration twice: the same framemd5 and the same 25,089,781 bytes |
+| 2026-11-13 | same | the compositor (Rust), 20 sampled frames of each of the four cuts | equal to the reference's frames before encoding (DECISIONS.md, A9) | `just parity cuts`: 80 of 80 at SSIM ≥ 0.995. The lowest rounds to 1.0000, and no channel value differs by more than 2 of 255 |
+| 2026-11-13 | same | the compositor, every picture of the four cuts | equal to the reference's frames before encoding | `just compose-stream`: in each cut, the 1,254 pictures change at the same frames as the reference's and differ from them by at most 2 of 255 (16:9) or 1 of 255 (9:16) |
+| 2026-11-13 | same | the compositor's frame streams | T1 | `just compose-t1`: two renders of each cut gave the same rgb24 stream, hashed below |
+| 2026-11-13 | a clean `nixos/nix` container on the same desktop: Nix 2.35.6, vidni built from source by `nix build` | the compositor's frame streams | T1, equal to the desktop's | `vidni-parity compose-t1 --fonts …` in the container: two identical renders of each cut, with the desktop's four hashes |
+
+The compositor's frame streams (rgb24, every frame in order), drawn with IBM Plex Sans Bold (sha256 `19de5aec…c316`), IBM Plex Mono Bold (`44f6da8e…a6c7`) and Space Grotesk Bold (`be8709ab…368f`):
+
+```
+nibli-syllogism-16x9        9,189 frames  39d61b473952ca905d463fdb9aac2878067e3099f783a8e156b058d2e2801674
+nibli-syllogism-9x16        9,189 frames  e53e6c267b4d116e4860790865af1122af4c54bdb9e5130281eb5fa94baaeed4
+nibli-syllogism-voice-16x9  8,441 frames  cbf1414e513c5574596b3d9907dcfc38af6f56badfb890a1f232ab5f2d04cd5c
+nibli-syllogism-voice-9x16  8,441 frames  97cc6585c827b80c014d03e7eb9f888cc56835b7a9f7b45f343c0bd71eb74b96
+```
 
 ## How each stage stays deterministic
 
@@ -32,5 +45,10 @@ Some inputs can't be made deterministic: a live web page, every Chromium render,
 - The conversion from RGB to YUV is BT.709, with bit-exact, accurate rounding, and the colour tags say so.
 - `-cpuflags 0` stops ffmpeg's filters from choosing SIMD paths by CPU.
 - Loudness is normalized in two passes before encoding, with the measurement fed back into the second pass.
+
+**Compositing** (`vidni_media::compose`):
+- The compositor draws only with the font files it is given and never asks fontconfig or the system for a font. The parity tools pin the reference's three faces by sha256 (`REFERENCE_FONTS` in `vidni-parity`), because fc-match answers with some other font when it has none of the family. `compose-t1` prints each file's path and hash.
+- Drawing ports Pillow's arithmetic (DECISIONS.md, T4). Resampling is fixed-point, text positions are whole 26.6 units, and the floating-point steps are plain IEEE operations: no transcendental function is called (the camera's ease is a polynomial).
+- A frame whose line and caption match the frame before, with nothing moving, is the same picture, so it is reused instead of drawn again (`FrameKey`).
 
 **Captures** (`vidni_core::capture`) aren't deterministic, because they come from a live page. Each is filed by what it shows, frozen by hash when its cut is ratified, and never retaken unless its scene changes or `--refresh` asks for it (DECISIONS.md, T3).

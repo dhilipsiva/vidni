@@ -63,12 +63,23 @@ assets-check:
 # Compare a Rust stage's outputs with the golden outputs (timeline, narration, encode,
 # cuts, stills or all). With no candidate, the stage's Rust port builds one, as in
 # `just parity timeline`; `--candidate DIR` and `--reference-self` pick another.
+# A release build: the cuts stage renders four cuts of some 9,000 frames each.
 parity stage *args:
-    cargo run -q -p vidni-parity -- {{stage}} {{args}}
+    cargo run -q --release -p vidni-parity -- {{stage}} {{args}}
 
 # Show that the parity harness passes the reference itself and catches a perturbed output per stage.
 parity-selftest:
-    cargo run -q -p vidni-parity -- selftest
+    cargo run -q --release -p vidni-parity -- selftest
+
+# Render every cut twice with the Rust compositor and compare the frame streams (T1,
+# P3-VIDNI-02). The fonts are the reference's, found by fc-match, unless `--fonts` names them.
+compose-t1 *args:
+    cargo run -q --release -p vidni-parity -- compose-t1 {{args}}
+
+# Compare every picture of every cut with the reference's own, from compose.py in the
+# reference's nix shell: the frames where the picture changes, and every pixel (P3-VIDNI-02).
+compose-stream *args:
+    cargo run -q --release -p vidni-parity -- compose-stream {{args}}
 
 # Encode the golden 16:9 frames and narration twice with the Rust encoder, and compare the
 # packets and bytes (T2, P3-VIDNI-01).

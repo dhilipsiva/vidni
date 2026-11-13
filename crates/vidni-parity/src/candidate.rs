@@ -5,7 +5,7 @@
 //! the two. The nibli example is the project; the reference's synthetic
 //! clips and the example's takes are the audio.
 
-use crate::{CUTS, VARIANTS};
+use crate::VARIANTS;
 use std::fs;
 use std::path::{Path, PathBuf};
 use vidni_core::project::Project;
@@ -23,16 +23,13 @@ pub fn build(stage: &str, example: &Path, reference: &Path, dst: &Path) -> Resul
                          `just encode-t2` (P3-VIDNI-01)"
                 .into(),
         ),
-        "cuts" => Err(format!(
-            "the Rust port of cuts isn't built yet (P3-VIDNI-02); there are {} cuts to match",
-            CUTS.len()
-        )),
+        "cuts" => cuts(example, reference, dst),
         "stills" => Err("the Rust port of stills isn't built yet (P3-VIDNI-04)".into()),
         _ => Err(format!("no Rust port to build for {stage}")),
     }
 }
 
-fn project(example: &Path) -> Result<Project, String> {
+pub(crate) fn project(example: &Path) -> Result<Project, String> {
     let file = example.join("vidni.toml");
     let text = fs::read_to_string(&file).map_err(|e| format!("{}: {e}", file.display()))?;
     vidni_core::validate::check(&text, Some(example)).map_err(|problems| {
@@ -57,7 +54,7 @@ fn clip(path: &Path, wav: String) -> Result<Clip, String> {
 /// Each variant's clips, as files and as the reference names them: the
 /// synthetic ones from the reference's cached Piper takes, the creator's
 /// from the example's takes.
-fn variants(
+pub(crate) fn variants(
     project: &Project,
     example: &Path,
     reference: &Path,
@@ -116,6 +113,26 @@ fn timelines(example: &Path, reference: &Path, dst: &Path) -> Result<(), String>
             format!("nibli-syllogism{suffix}.en.srt"),
             timeline::srt(&timeline),
         )?;
+    }
+    Ok(())
+}
+
+/// Every cut's sample frames, composited by the Rust port from the
+/// reference's captures, as `frames/NAME-F.png`.
+fn cuts(example: &Path, reference: &Path, dst: &Path) -> Result<(), String> {
+    let faces = crate::compose::reference_faces()?;
+    let samples = crate::cut_samples(&reference.join("out"))?;
+    let frames = dst.join("frames");
+    fs::create_dir_all(&frames).map_err(|e| format!("{}: {e}", frames.display()))?;
+    for mut job in crate::compose::jobs(example, reference, &faces)? {
+        let cut = samples
+            .iter()
+            .find(|s| s.name == job.name)
+            .ok_or_else(|| format!("{}: no samples", job.name))?;
+        for (_, f) in &cut.frames {
+            let png = frames.join(format!("{}-{f}.png", job.name));
+            job.composer.frame(*f)?.save_png(&png)?;
+        }
     }
     Ok(())
 }
