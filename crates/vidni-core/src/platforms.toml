@@ -1,0 +1,186 @@
+# Platform profiles (TODO.md, P2-VIDNI-07). Each profile was checked on its
+# `verified_on` date against its sources, official pages first. Platforms
+# change their limits without notice: confirm a limit in the app before
+# relying on it, and update the profile and its date when it changes.
+#
+# Durations are in seconds and sizes in megabytes (10^6 bytes). None of
+# these platforms publishes a loudness target for uploads: YouTube's -14 LUFS
+# is an independent measurement, and the others use vidni's default (-14 LUFS,
+# -1 dBTP), so one master suits every platform. The safe zones come from each
+# platform's ads guidance; none publishes margins for ordinary posts.
+
+[[platform]]
+id = "youtube"
+name = "YouTube"
+enabled_by_default = true
+aspect = "16:9"
+resolution = [1920, 1080]
+max_upload = 900
+max_size_mb = 256000
+loudness = { integrated = -14.0, true_peak = -1.0, basis = "measured" }
+captions = "file"
+safe_zone = { top = 0.0, bottom = 0.0, left = 0.0, right = 0.0, basis = "none" }
+verified_on = "2026-11-13"
+sources = [
+  "https://support.google.com/youtube/answer/71673",
+  "https://support.google.com/youtube/answer/171664",
+  "https://support.google.com/youtube/answer/6375112",
+  "https://support.google.com/youtube/answer/2734698",
+  "https://www.meterplugs.com/blog/2019/09/18/youtube-changes-loudness-reference-to-14-lufs.html",
+]
+notes = [
+  "15 minutes is the default; an account that verifies a phone number can upload up to 12 hours or 256 GB, whichever is less.",
+  "YouTube publishes no loudness target; -14 LUFS is an independent measurement of its playback normalization (2019).",
+  "Caption files (SRT, VTT and others) are uploaded in YouTube Studio.",
+]
+
+[[platform]]
+id = "youtube-shorts"
+name = "YouTube Shorts"
+enabled_by_default = true
+aspect = "9:16"
+resolution = [1080, 1920]
+max_upload = 180
+max_size_mb = 256000
+loudness = { integrated = -14.0, true_peak = -1.0, basis = "measured" }
+captions = "burned"
+safe_zone = { top = 0.15, bottom = 0.35, left = 0.0444, right = 0.1778, basis = "official ads guidance" }
+verified_on = "2026-11-13"
+sources = [
+  "https://support.google.com/youtube/answer/15424877",
+  "https://support.google.com/youtube/answer/71673",
+  "https://support.google.com/google-ads/answer/9128498",
+  "https://services.google.com/fh/files/misc/universalsafezones-youtube.pdf",
+]
+notes = [
+  "Square or vertical uploads up to 3 minutes count as Shorts (since 15 October 2024).",
+  "A Short over 1 minute with an active Content ID claim is blocked worldwide.",
+  "YouTube gives no pixel size for Shorts; 1080x1920 is the canvas of Google's safe-zone diagram.",
+  "The safe zone is Google's for Shorts ads: 288 px top, 672 px bottom, 48 px left, 192 px right at 1080x1920.",
+  "Captions are burned in: vidni's shorts are always captioned (DECISIONS.md, D7), and caption-file upload isn't documented for Shorts.",
+]
+
+[[platform]]
+id = "instagram-reels"
+name = "Instagram Reels"
+enabled_by_default = true
+aspect = "9:16"
+resolution = [1080, 1920]
+max_upload = 1200
+max_recommended = 180
+loudness = { integrated = -14.0, true_peak = -1.0, basis = "default" }
+captions = "burned"
+safe_zone = { top = 0.14, bottom = 0.35, left = 0.06, right = 0.06, basis = "official ads guidance" }
+verified_on = "2026-11-13"
+sources = [
+  "https://www.facebook.com/help/instagram/2720958398006062",
+  "https://www.facebook.com/help/instagram/1038071743007909",
+  "https://www.facebook.com/help/instagram/7487270478066359",
+  "https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media",
+  "https://www.facebook.com/business/ads-guide/update/video/instagram-reels",
+]
+notes = [
+  "Reels over 3 minutes aren't recommended to new audiences.",
+  "Uploads through the Graph API are limited to 15 minutes and 300 MB; Instagram publishes no file-size limit for the app.",
+  "Instagram's own guidance is an aspect from 1.91:1 to 9:16, at least 720 px and 30 fps; 1080x1920 is common practice, not an official size.",
+  "Instagram takes no caption file; it creates captions by speech recognition, which viewers can turn off.",
+  "The safe zone is Meta's for Reels ads: 14% top, 35% bottom and 6% on each side.",
+]
+
+[[platform]]
+id = "tiktok"
+name = "TikTok"
+enabled_by_default = false
+aspect = "9:16"
+resolution = [1080, 1920]
+max_upload = 1800
+max_size_mb = 10000
+loudness = { integrated = -14.0, true_peak = -1.0, basis = "default" }
+captions = "burned"
+safe_zone = { top = 0.125, bottom = 0.344, left = 0.111, right = 0.278, basis = "official ads guidance" }
+verified_on = "2026-11-13"
+sources = [
+  "https://support.tiktok.com/en/using-tiktok/creating-videos/creator-tools-on-tiktok",
+  "https://developers.tiktok.com/doc/content-posting-api-media-transfer-guide",
+  "https://ads.tiktok.com/help/article/tiktok-auction-in-feed-ads",
+  "https://support.tiktok.com/en/using-tiktok/creating-videos/accessibility",
+  "https://www.newsonair.gov.in/no-order-issued-to-lift-ban-on-tiktok-in-india-govt",
+]
+notes = [
+  "TikTok is banned in India: no order lifts the ban (government sources, August 2025), and there is no proposal to (IT minister, September 2025).",
+  "30 minutes and 10 GB are TikTok Studio's limits on the web; the Content Posting API takes 3 minutes for every creator and up to 10 minutes for some, and 4 GB.",
+  "TikTok's pages don't load from India, so they were read in Wayback Machine snapshots: support (5 January 2026), API (19 July 2026) and ads (9 August 2026).",
+  "Web uploads must be at least 720x1280; TikTok gives no 1080x1920 recommendation.",
+  "TikTok takes no caption file; it creates editable captions by speech recognition.",
+  "The safe zone is TikTok's for in-feed ads (April 2025): 12.5% top, 34.4% bottom, 11.1% on each side, widening to 27.8% on the right over the lowest part, which the profile keeps everywhere.",
+]
+
+[[platform]]
+id = "whatsapp-status"
+name = "WhatsApp Status"
+enabled_by_default = true
+aspect = "9:16"
+resolution = [1080, 1920]
+max_upload = 90
+loudness = { integrated = -14.0, true_peak = -1.0, basis = "default" }
+captions = "burned"
+safe_zone = { top = 0.0, bottom = 0.0, left = 0.0, right = 0.0, basis = "none published; measured in P6-VIDNI-02" }
+verified_on = "2026-11-13"
+sources = [
+  "https://faq.whatsapp.com/643144237275579",
+  "https://faq.whatsapp.com/896930805262380",
+  "https://faq.whatsapp.com/550664524802386",
+]
+notes = [
+  "A Status video can be up to 90 seconds; of a longer one, only the first 90 seconds are shared.",
+  "Status takes a 9:16 ratio; WhatsApp gives no pixel size and no file-size limit for Status.",
+  "Status takes no caption file, so captions are burned in.",
+]
+
+[[platform]]
+id = "linkedin"
+name = "LinkedIn"
+enabled_by_default = false
+aspect = "16:9"
+resolution = [1920, 1080]
+max_upload = 900
+max_size_mb = 5000
+loudness = { integrated = -14.0, true_peak = -1.0, basis = "default" }
+captions = "file"
+safe_zone = { top = 0.0, bottom = 0.0, left = 0.0, right = 0.0, basis = "none" }
+verified_on = "2026-11-13"
+sources = [
+  "https://www.linkedin.com/help/linkedin/answer/a548372",
+  "https://www.linkedin.com/help/linkedin/answer/a552177",
+  "https://www.linkedin.com/help/lms/answer/a424737",
+]
+notes = [
+  "Feed videos last 3 seconds (2 on mobile) to 15 minutes, though LinkedIn's article on Pages says 10 minutes.",
+  "Files from 75 KB to 5 GB, from 256x144 to 4096x2304, at aspects from 1:2.4 to 2.4:1.",
+  "An SRT caption file is attached on the desktop site before posting.",
+]
+
+[[platform]]
+id = "x"
+name = "X"
+enabled_by_default = false
+aspect = "16:9"
+resolution = [1280, 720]
+max_upload = 140
+max_size_mb = 512
+loudness = { integrated = -14.0, true_peak = -1.0, basis = "default" }
+captions = "burned"
+safe_zone = { top = 0.0, bottom = 0.0, left = 0.0, right = 0.0, basis = "none" }
+verified_on = "2026-11-13"
+sources = [
+  "https://help.x.com/en/using-x/x-videos",
+  "https://docs.x.com/x-api/media/quickstart/best-practices",
+  "https://business.x.com/en/help/campaign-setup/creative-ad-specifications",
+]
+notes = [
+  "Free accounts post videos up to 140 seconds and 512 MB; Premium plans up to 4 hours at 1080p and 16 GB.",
+  "X's API documents other limits (20 minutes and 8 GB by default, 125 minutes for Premium), and says its caps match the app's.",
+  "X recommends 1280x720; subscribed users can upload 1080p.",
+  "X's help pages and API docs were read in Wayback Machine snapshots (21 and 14 October 2026), as X blocks automated reading.",
+  "X shows captions made by speech recognition, and its help pages describe no caption-file upload, so captions are burned in.",
+]

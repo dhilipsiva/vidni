@@ -217,3 +217,48 @@ fn status_ratify_and_unratify_work_from_the_hashes() {
     );
     assert_eq!(out(&["ratify", project, "--cut", "nope"]).0, Some(1));
 }
+
+#[test]
+fn platforms_lists_every_profile_with_its_date_and_sources() {
+    let out = vidni(&["platforms"]);
+    assert!(out.status.success());
+    let text = String::from_utf8(out.stdout).unwrap();
+    let blocks: Vec<&str> = text
+        .split("\n\n")
+        .filter(|b| !b.starts_with("Platforms change"))
+        .collect();
+    let ids: Vec<&str> = blocks
+        .iter()
+        .map(|b| b.split_whitespace().next().unwrap())
+        .collect();
+    assert_eq!(
+        ids,
+        [
+            "youtube",
+            "youtube-shorts",
+            "instagram-reels",
+            "tiktok",
+            "whatsapp-status",
+            "linkedin",
+            "x"
+        ]
+    );
+    for block in blocks {
+        let lines: Vec<&str> = block.lines().collect();
+        let at = lines
+            .iter()
+            .position(|l| l.trim_start().starts_with("verified "))
+            .unwrap_or_else(|| panic!("{block}"));
+        let date = lines[at].trim_start()["verified ".len()..].trim_end_matches(" against:");
+        assert_eq!(date.len(), 10, "{}", lines[at]);
+        let sources = &lines[at + 1..];
+        assert!(
+            !sources.is_empty()
+                && sources
+                    .iter()
+                    .all(|s| s.trim_start().starts_with("https://")),
+            "{block}"
+        );
+    }
+    assert!(text.ends_with("confirm one in the app before relying on it.\n"));
+}

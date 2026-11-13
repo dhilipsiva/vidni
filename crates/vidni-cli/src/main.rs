@@ -9,6 +9,16 @@ use vidni_core::ratify::{self, Status as RatifyStatus};
 use vidni_core::takes::Status;
 use vidni_core::validate;
 
+/// Prints a line to stdout. A reader that has gone away, as in
+/// `vidni takes | head`, isn't an error, so a failed write is ignored
+/// instead of panicking as `println!` does.
+macro_rules! say {
+    ($($arg:tt)*) => {{
+        use std::io::Write as _;
+        let _ = writeln!(std::io::stdout(), $($arg)*);
+    }};
+}
+
 #[derive(Parser)]
 #[command(
     name = "vidni",
@@ -74,6 +84,8 @@ enum Command {
         #[arg(long)]
         refresh: bool,
     },
+    /// List the platform profiles, with the date each was checked and its sources.
+    Platforms,
     /// Print the JSON Schema of vidni.toml, for editors.
     Schema,
 }
@@ -90,8 +102,9 @@ fn main() -> ExitCode {
             cuts,
             refresh,
         } => unratify(&path, &cuts, refresh),
+        Command::Platforms => platforms(),
         Command::Schema => {
-            print!("{}", vidni_core::schema_json());
+            say!("{}", vidni_core::schema_json().trim_end());
             ExitCode::SUCCESS
         }
     }
@@ -127,7 +140,7 @@ fn fmt(path: &Path, check: bool) -> ExitCode {
         Err(problems) => return report(&file, &problems),
     };
     if formatted == text {
-        println!("{}: already in the canonical layout", file.display());
+        say!("{}: already in the canonical layout", file.display());
         ExitCode::SUCCESS
     } else if check {
         eprintln!(
@@ -139,7 +152,7 @@ fn fmt(path: &Path, check: bool) -> ExitCode {
         eprintln!("vidni: {}: {e}", file.display());
         ExitCode::from(2)
     } else {
-        println!("{}: formatted", file.display());
+        say!("{}: formatted", file.display());
         ExitCode::SUCCESS
     }
 }
@@ -185,9 +198,9 @@ fn takes(path: &Path, link: Option<&Path>) -> ExitCode {
                 ("missing", String::new())
             }
         };
-        println!("{:width$}  {state:7}  {}{note}", line.id, shown(&line.path));
+        say!("{:width$}  {state:7}  {}{note}", line.id, shown(&line.path));
     }
-    println!("{current} current, {stale} stale, {missing} missing");
+    say!("{current} current, {stale} stale, {missing} missing");
     ExitCode::SUCCESS
 }
 
@@ -220,7 +233,7 @@ fn link_takes(lines: &[vidni_core::takes::LineTake], dir: &Path) -> ExitCode {
     });
     match linked {
         Ok(()) => {
-            println!(
+            say!(
                 "linked {} into {}",
                 count(lines.len(), "take"),
                 dir.display()
@@ -269,10 +282,10 @@ fn status(path: &Path) -> ExitCode {
     let width = states.iter().map(|(id, _)| id.len()).max().unwrap_or(0);
     for (id, state) in states {
         match state {
-            RatifyStatus::Draft => println!("{id:width$}  draft"),
-            RatifyStatus::Ratified => println!("{id:width$}  ratified"),
+            RatifyStatus::Draft => say!("{id:width$}  draft"),
+            RatifyStatus::Ratified => say!("{id:width$}  ratified"),
             RatifyStatus::Changed(reasons) => {
-                println!("{id:width$}  changed: {}", reasons.join("; "))
+                say!("{id:width$}  changed: {}", reasons.join("; "))
             }
         }
     }
@@ -293,7 +306,7 @@ fn ratify(path: &Path, cuts: &[String]) -> ExitCode {
     match done {
         Ok(done) => {
             for (id, content) in done {
-                println!(
+                say!(
                     "{id}: ratified (content {}, {})",
                     &content.content[..12],
                     count(content.captures.len(), "capture")
@@ -320,14 +333,14 @@ fn unratify(path: &Path, cuts: &[String], refresh: bool) -> ExitCode {
     });
     match done {
         Ok(deleted) if refresh => {
-            println!(
+            say!(
                 "unratified; {} deleted, to be taken afresh",
                 count(deleted.len(), "capture")
             );
             ExitCode::SUCCESS
         }
         Ok(_) => {
-            println!("unratified; the captures stay, so the next draft retakes none");
+            say!("unratified; the captures stay, so the next draft retakes none");
             ExitCode::SUCCESS
         }
         Err(e) => {
@@ -335,6 +348,73 @@ fn unratify(path: &Path, cuts: &[String], refresh: bool) -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+fn platforms() -> ExitCode {
+    use vidni_core::platforms::{self, Basis, CaptionStyle, clock};
+    for p in platforms::all() {
+        let default = if p.enabled_by_default {
+            ", on by default"
+        } else {
+            ""
+        };
+        say!("{} ({}{default})", p.id, p.name);
+        let aspect = match p.aspect {
+            vidni_core::project::Aspect::Landscape => "16:9",
+            vidni_core::project::Aspect::Portrait => "9:16",
+        };
+        let mut limits = format!("  {aspect} at {}x{}", p.resolution[0], p.resolution[1]);
+        match p.max_upload {
+            Some(s) => limits.push_str(&format!("; uploads up to {}", clock(s))),
+            None => limits.push_str("; upload length not published"),
+        }
+        if let Some(s) = p.max_recommended {
+            limits.push_str(&format!(", recommended up to {}", clock(s)));
+        }
+        if let Some(mb) = p.max_size_mb {
+            limits.push_str(&format!("; files up to {mb} MB"));
+        }
+        say!("{limits}");
+        let basis = match p.loudness.basis {
+            Basis::Official => "published by the platform",
+            Basis::Measured => "measured, not published",
+            Basis::Default => "vidni's default; the platform publishes none",
+        };
+        let captions = match p.captions {
+            CaptionStyle::File => "uploaded as a file",
+            CaptionStyle::Burned => "burned in",
+        };
+        say!(
+            "  loudness {} LUFS, peaks {} dBTP ({basis}); captions {captions}",
+            p.loudness.integrated,
+            p.loudness.true_peak
+        );
+        let z = &p.safe_zone;
+        if z.basis == "none" {
+            say!("  safe zone: none");
+        } else {
+            say!(
+                "  safe zone: top {:.0}%, bottom {:.0}%, left {:.0}%, right {:.0}% ({})",
+                z.top * 100.0,
+                z.bottom * 100.0,
+                z.left * 100.0,
+                z.right * 100.0,
+                z.basis
+            );
+        }
+        for note in &p.notes {
+            say!("  note: {note}");
+        }
+        say!("  verified {} against:", p.verified_on);
+        for source in &p.sources {
+            say!("    {source}");
+        }
+        say!();
+    }
+    say!(
+        "Platforms change their limits without notice; confirm one in the app before relying on it."
+    );
+    ExitCode::SUCCESS
 }
 
 fn validate(path: &Path) -> ExitCode {
@@ -348,7 +428,7 @@ fn validate(path: &Path) -> ExitCode {
         .unwrap_or(Path::new("."));
     match validate::check(&text, Some(dir)) {
         Ok(p) => {
-            println!(
+            say!(
                 "{}: ok: {} in {}, {}, {}",
                 file.display(),
                 count(p.lines.len(), "line"),

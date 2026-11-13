@@ -8,6 +8,7 @@ pub mod capture;
 pub mod edit;
 pub mod fmt;
 pub mod onscreen;
+pub mod platforms;
 pub mod project;
 pub mod ratify;
 pub mod spoken;

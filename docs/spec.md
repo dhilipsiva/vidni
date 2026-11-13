@@ -237,7 +237,7 @@ Capture waits for the page to settle after every action: it takes screenshots un
 | `aspect` | `"16:9"` or `"9:16"` | required | The frame's shape |
 | `lines` | `"all"` or array of line IDs | `"all"` | The lines the cut uses, in script order |
 | `captions` | `"burned"`, `"file"` or `"both"` | `both` for 16:9, `burned` for 9:16 | `burned` draws captions into the picture. `file` keeps the picture clean and writes SRT and VTT files. `both` makes a clean master with caption files, plus a burned-in variant (DECISIONS.md, D7). |
-| `platforms` | array of strings | `["youtube"]` for 16:9; `["youtube-shorts", "instagram-reels", "whatsapp-status"]` for 9:16 | The platform profiles the cut is made for. Schema 1 knows `youtube`, `youtube-shorts`, `instagram-reels`, `tiktok`, `whatsapp-status`, `linkedin` and `x`. |
+| `platforms` | array of strings | the profiles on by default for the cut's aspect: `["youtube"]` for 16:9; `["youtube-shorts", "instagram-reels", "whatsapp-status"]` for 9:16 | The platform profiles the cut is made for: `youtube`, `youtube-shorts`, `instagram-reels`, `tiktok`, `whatsapp-status`, `linkedin` or `x`. `vidni platforms` lists each profile's limits, with the date they were checked and their sources. |
 | `size` | `[width, height]` | `[1920, 1080]` or `[1080, 1920]` | The frame size: even numbers in exactly the cut's aspect |
 
 ## `[music]`

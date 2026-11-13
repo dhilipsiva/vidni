@@ -6,8 +6,8 @@
 //! Each problem is reported at its line and column.
 
 use crate::project::{
-    Action, Camera, Expectation, LineSelection, PLATFORMS, Project, SCHEMA, Scene, SceneKind,
-    Target, TextMatch,
+    Action, Camera, Expectation, LineSelection, Project, SCHEMA, Scene, SceneKind, Target,
+    TextMatch,
 };
 use regex::Regex;
 use std::collections::{BTreeSet, HashMap};
@@ -802,11 +802,15 @@ impl Rules {
                     }
                 }
             }
+            let known: Vec<String> = crate::platforms::all().into_iter().map(|p| p.id).collect();
             for (j, platform) in cut.platforms.iter().flatten().enumerate() {
-                if !PLATFORMS.contains(&platform.as_str()) {
+                if !known.contains(platform) {
                     self.add(
                         path!["cuts", c, "platforms", j],
-                        format!("unknown platform {platform:?}{}", one_of(PLATFORMS)),
+                        format!(
+                            "unknown platform {platform:?}{}",
+                            one_of(known.iter().map(String::as_str))
+                        ),
                     );
                 }
             }

@@ -152,7 +152,13 @@ Grammar, as in the workspace TODO, one line per item: `- [ ] **P<m>-VIDNI-<nn>**
     - `fixtures/onscreen/changed.json` fails with messages such as "at line \"main-1\", target \"result\" shows \"UNKNOWN\", not \"FALSE\"", while `matching.json` passes.
 
     The nibli example passes its own wording lint.
-- [ ] **P2-VIDNI-07** (LOW) Write the platform profiles as data. Each covers aspect, resolution, `max_upload` and `max_recommended` durations, maximum size, loudness target, caption style and safe zones, with a "verified on" date and a source. The profiles are YouTube long, YouTube Shorts, Instagram Reels, TikTok, WhatsApp Status, LinkedIn and X. *Done when:* `vidni platforms` lists them with their dates and sources. [S]
+- [x] **P2-VIDNI-07** (LOW) Write the platform profiles as data. Each covers aspect, resolution, `max_upload` and `max_recommended` durations, maximum size, loudness target, caption style and safe zones, with a "verified on" date and a source. The profiles are YouTube long, YouTube Shorts, Instagram Reels, TikTok, WhatsApp Status, LinkedIn and X. *Done when:* `vidni platforms` lists them with their dates and sources. [S]
+  - Evidence (2026-11-13): `crates/vidni-core/src/platforms.toml` holds the seven profiles. Each has an aspect and resolution, `max_upload`, `max_recommended` where the platform states one, and the maximum size where it is published. Each also has a loudness target with its basis (official, measured, or vidni's default), caption delivery, safe zones with their basis, notes, a `verified_on` date, and its sources, official pages first. `vidni platforms` lists them with their dates and sources, and cuts take their platform IDs and defaults from the profiles. The research found:
+    - no platform publishes a loudness target;
+    - the only published safe zones are ads guidance;
+    - WhatsApp Status now takes 90 s, where an earlier note in this file said 60 s.
+
+    Tests check that every profile is complete and sourced, that the defaults match D6, and that the CLI lists each profile with its date and https sources.
 - [ ] **P2-VIDNI-08** (LOW) Add `vidni new <slug> [--from outline.md]`, where outline headings become sections and paragraphs become lines, and `vidni plan`, which prints the recording sheet. *Done when:* `vidni new demo && vidni draft demo` renders with no edits. [S]
 - [ ] **P2-VIDNI-09** (LOW) Add a content-addressed cache for every stage: a TTS clip by hash(spoken text, voice, seed, params), a still by hash(scene spec, source revision), and a render by hash(inputs). *Done when:* a second `vidni draft` with nothing changed renders nothing and finishes in under 10 s. [M]
 
@@ -231,7 +237,7 @@ Checked 2026-11-13; confirm each in the app before relying on it.
 
 - **YouTube Shorts:** up to 3 minutes ([YouTube Help](https://support.google.com/youtube/answer/15424877)). Any Content ID claim blocks a Short over 60 s worldwide.
 - **Instagram Reels:** uploads up to 20 minutes (15 through the API), but Reels over 3 minutes aren't recommended to non-followers.
-- **WhatsApp Status:** 60 s in general; 90 s was a staged beta from April 2025.
+- **WhatsApp Status:** up to 90 s; only the first 90 s of a longer video are shared ([WhatsApp Help](https://faq.whatsapp.com/643144237275579), checked for P2-VIDNI-07). An earlier note here said 60 s.
 - **TikTok:** banned in India, per the latest official statements (August and September 2025). It's available elsewhere.
 - **YouTube Partner Program** ([YouTube Help](https://support.google.com/youtube/answer/13429240)):
   - *Full monetization:* 1,000 subscribers, plus 4,000 public watch hours in 12 months or 10M Shorts views in 90 days.

@@ -667,17 +667,6 @@ pub struct Expectation {
     pub texts: Option<Vec<String>>,
 }
 
-/// The platform profiles schema 1 knows (DECISIONS.md, D6).
-pub const PLATFORMS: [&str; 7] = [
-    "youtube",
-    "youtube-shorts",
-    "instagram-reels",
-    "tiktok",
-    "whatsapp-status",
-    "linkedin",
-    "x",
-];
-
 impl Cut {
     /// The IDs of the lines the cut uses, in script order.
     pub fn line_ids(&self, project: &Project) -> Vec<String> {
@@ -703,14 +692,11 @@ impl Cut {
         })
     }
 
-    /// The platforms the cut is made for, with the default for its aspect.
+    /// The platforms the cut is made for, with the default for its aspect:
+    /// the profiles on by default for that aspect (`platforms.toml`).
     pub fn platforms(&self) -> Vec<String> {
-        self.platforms.clone().unwrap_or_else(|| {
-            let ids: &[&str] = match self.aspect {
-                Aspect::Landscape => &["youtube"],
-                Aspect::Portrait => &["youtube-shorts", "instagram-reels", "whatsapp-status"],
-            };
-            ids.iter().map(|s| s.to_string()).collect()
-        })
+        self.platforms
+            .clone()
+            .unwrap_or_else(|| crate::platforms::defaults(self.aspect))
     }
 }
