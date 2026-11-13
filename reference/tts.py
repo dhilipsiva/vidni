@@ -1,7 +1,9 @@
 """Narration: lint the script, synthesize one clip per sentence, build the timeline.
 
-Writes build/audio/NNN.wav, build/narration.wav, build/timeline.json,
-script.md and out/nibli-syllogism<-VARIANT>.en.srt. Set OWN_AUDIO_DIR to a
+Writes build/audio/NNN.wav, build/narration<-VARIANT>.wav,
+build/timeline<-VARIANT>.json, script.md and out/nibli-syllogism<-VARIANT>.en.srt.
+Each variant has its own timeline and narration, so building one never changes
+another; the timeline's clip paths are relative to this folder. Set OWN_AUDIO_DIR to a
 folder of NNN.wav files (16-bit mono, one per sentence, numbered in script
 order, as record.py writes them) to use your own recordings instead of Piper;
 VARIANT names that build's outputs (build.sh's "own" step uses "voice").
@@ -29,6 +31,8 @@ AUDIO = os.path.join(BUILD, "audio")
 OUT = os.path.join(ROOT, "out")
 VARIANT = os.environ.get("VARIANT", "")
 SUFFIX = f"-{VARIANT}" if VARIANT else ""
+TIMELINE = os.path.join(BUILD, f"timeline{SUFFIX}.json")
+NARRATION = os.path.join(BUILD, f"narration{SUFFIX}.wav")
 
 # Wording rules from canonical-facts.md (B, E, G) and the book repo's CLAUDE.md.
 BANNED = [
@@ -109,9 +113,10 @@ def duration(path):
 
 def heard(path):
     """Whisper's transcript of a clip: "" for a clip too short to hold speech,
-    None when whisper isn't available or fails. Never raises; whisper-cli
-    crashes (exit 11) on empty audio."""
-    if not os.path.exists(WHISPER_MODEL):
+    None when whisper isn't available or fails, or when TTS_SKIP_WHISPER is
+    set (tests that don't need it). Never raises; whisper-cli crashes (exit 11)
+    on empty audio."""
+    if not os.path.exists(WHISPER_MODEL) or os.environ.get("TTS_SKIP_WHISPER"):
         return None
     try:
         if duration(path)[0] < 0.3:
@@ -241,7 +246,7 @@ def main():
             c0 = c1
         entries.append({
             "k": k, "segment": seg["id"], "label": seg["label"], "index": i,
-            "start": round(start, 3), "end": round(end, 3), "wav": path,
+            "start": round(start, 3), "end": round(end, 3), "wav": os.path.relpath(path, ROOT),
             "show": s["show"], "say": say, "card": s.get("card"), "cues": cues,
             "heard": transcript, "score": score,
         })
@@ -250,19 +255,19 @@ def main():
     # One narration track with every clip at its start time.
     frames = bytearray(int(total * rate) * 2)
     for e in entries:
-        with wave.open(e["wav"]) as w:
+        with wave.open(os.path.join(ROOT, e["wav"])) as w:
             if w.getsampwidth() != 2 or w.getnchannels() != 1:
                 sys.exit(f"{e['wav']}: need 16-bit mono")
             data = w.readframes(w.getnframes())
         at = int(e["start"] * rate) * 2
         frames[at:at + len(data)] = data
-    with wave.open(os.path.join(BUILD, "narration.wav"), "wb") as w:
+    with wave.open(NARRATION, "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
         w.setframerate(rate)
         w.writeframes(bytes(frames))
 
-    with open(os.path.join(BUILD, "timeline.json"), "w") as f:
+    with open(TIMELINE, "w") as f:
         json.dump({"total": total, "rate": rate, "sentences": entries}, f, indent=1)
     if not own:
         write_script(spec, entries, total)

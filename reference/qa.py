@@ -31,7 +31,7 @@ def loudness(path):
 
 
 def main():
-    timeline = json.load(open(os.path.join(BUILD, "timeline.json")))
+    timeline = json.load(open(os.path.join(BUILD, f"timeline{SUFFIX}.json")))
     total = timeline["total"]
     segments = []
     for e in timeline["sentences"]:

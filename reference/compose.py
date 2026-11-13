@@ -1,9 +1,10 @@
 """Render the 16:9 and 9:16 cuts from the stills, cards and narration timeline.
 
-Reads segments.json, build/timeline.json, build/capture.json, build/stills,
-build/cards and build/narration.wav. Writes out/nibli-syllogism-16x9.mp4 and
-out/nibli-syllogism-9x16.mp4. Pass "16x9" or "9x16" to render one cut, or
---remux to replace only the audio of the rendered cuts.
+Reads segments.json, build/timeline<-VARIANT>.json, build/capture.json,
+build/stills, build/cards and build/narration<-VARIANT>.wav. Writes
+out/nibli-syllogism<-VARIANT>-16x9.mp4 and -9x16.mp4. Pass "16x9" or "9x16" to
+render one cut, --remux to replace only the audio of the rendered cuts, or
+--plan to print which files a build would read and write, without rendering.
 """
 
 import json
@@ -19,6 +20,9 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 BUILD = os.path.join(ROOT, "build")
 OUT = os.path.join(ROOT, "out")
 SUFFIX = f"-{os.environ['VARIANT']}" if os.environ.get("VARIANT") else ""
+TIMELINE = os.path.join(BUILD, f"timeline{SUFFIX}.json")
+NARRATION = os.path.join(BUILD, f"narration{SUFFIX}.wav")
+NARRATION_NORM = os.path.join(BUILD, f"narration{SUFFIX}-norm.wav")
 FPS = 30
 CAM_EASE = 0.7      # seconds for a camera move
 XFADE = 0.35        # seconds for a crossfade between stills or cards
@@ -79,10 +83,9 @@ def wrap(text, fnt, width):
 
 
 def normalized_audio():
-    """build/narration-norm.wav: two-pass loudnorm to -16 LUFS. One pass undershoots on
+    """build/narration<-VARIANT>-norm.wav: two-pass loudnorm to -16 LUFS. One pass undershoots on
     speech with pauses (it measured -18.1 LUFS on this narration)."""
-    src = os.path.join(BUILD, "narration.wav")
-    dst = os.path.join(BUILD, "narration-norm.wav")
+    src, dst = NARRATION, NARRATION_NORM
     if os.path.exists(dst) and os.path.getmtime(dst) >= os.path.getmtime(src):
         return dst
     target = "I=-16:TP=-1.5:LRA=11"
@@ -364,12 +367,19 @@ class Cut:
 
 
 def main():
+    if sys.argv[1:] == ["--plan"]:
+        timeline = json.load(open(TIMELINE))
+        print(json.dumps({"timeline": os.path.relpath(TIMELINE, ROOT),
+                          "narration": os.path.relpath(NARRATION, ROOT),
+                          "total": timeline["total"],
+                          "outputs": [f"out/nibli-syllogism{SUFFIX}-{c}.mp4" for c in CUTS]}))
+        return
     if sys.argv[1:] == ["--remux"]:
         for name in CUTS:
             remux(name)
         return
     spec = json.load(open(os.path.join(ROOT, "segments.json")))
-    timeline = json.load(open(os.path.join(BUILD, "timeline.json")))
+    timeline = json.load(open(TIMELINE))
     capture = json.load(open(os.path.join(BUILD, "capture.json")))
     if len(capture["shots"]) != len(timeline["sentences"]):
         sys.exit("capture.json and timeline.json disagree on the sentence count; re-run both")
