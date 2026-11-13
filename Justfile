@@ -61,7 +61,8 @@ assets-check:
     for lock in examples/*/assets.lock; do (cd "$(dirname "$lock")" && sha256sum -c --quiet --strict assets.lock) && echo "$lock: every file matches"; done
 
 # Compare a Rust stage's outputs with the golden outputs (timeline, narration, encode,
-# cuts, stills or all): `just parity cuts --candidate DIR`, or `--reference-self`.
+# cuts, stills or all). With no candidate, the stage's Rust port builds one, as in
+# `just parity timeline`; `--candidate DIR` and `--reference-self` pick another.
 parity stage *args:
     cargo run -q -p vidni-parity -- {{stage}} {{args}}
 

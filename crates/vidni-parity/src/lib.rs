@@ -23,6 +23,7 @@ use std::io::Read;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 
+pub mod candidate;
 pub mod selftest;
 
 /// The lowest SSIM a rendered frame may reach against its golden frame.

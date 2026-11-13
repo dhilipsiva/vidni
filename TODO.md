@@ -125,7 +125,15 @@ Grammar, as in the workspace TODO, one line per item: `- [ ] **P<m>-VIDNI-<nn>**
     - moving and removing lines keep the others current.
 
     The nibli example's takes (57 kept, 102 raw and 2 room tone) moved from `recordings/NNN.wav` into the take store. Each was copied and checked by sha256 before the originals were removed. `assets.lock` lists the 161 files, and `vidni takes examples/nibli-syllogism` shows 57 current. The migrated example builds: `just golden`, which links the takes with `vidni takes --link`, printed "golden verified: 178 inputs and 14 outputs match (312 s)", and `just test-reference` passes 23 tests.
-- [ ] **P2-VIDNI-04** (LOW) Port the timeline and caption cues to Rust: gaps, cue splitting, cue timing, and the SRT and VTT writers. *Done when:* `just parity timeline` shows the timeline JSON and the SRT identical to the golden outputs. [S]
+- [x] **P2-VIDNI-04** (LOW) Port the timeline and caption cues to Rust: gaps, cue splitting, cue timing, and the SRT and VTT writers. *Done when:* `just parity timeline` shows the timeline JSON and the SRT identical to the golden outputs. [S]
+  - Evidence (2026-11-13): `vidni_core::timeline` ports the reference's timeline:
+    - the lead-in, the line and section gaps, and the tail;
+    - cue splitting, counting characters as Python does;
+    - cue timing in proportion to each cue's length;
+    - millisecond rounding as Python's `round` does it (correctly rounded, ties to even);
+    - SRT and VTT writers.
+
+    With no candidate given, `just parity timeline` now builds one with the Rust port, from the reference's synthetic clips and the example's takes. It prints "parity timeline: 4 of 4 checks pass": both variants' timeline JSON and SRT equal golden exactly. Unit and integration tests cover the gaps, a new section, mismatched clips, Python's rounding, and the SRT and VTT text. An unported stage, such as `just parity cuts`, exits 2 and names the item that will port it.
 - [ ] **P2-VIDNI-05** (LOW) Ratify per cut, with each cut's status derived from hashes and never stored: `ratified.lock` hashes each cut's lines, scenes and captures through `build/resolved.json`; gaps, caption style and platform toggles are hashed only by the release; and `vidni unratify` keeps captures, retaking one only when its scene changes or on `--refresh`. *Done when:* tests show that editing a short leaves the approved long cut approved, editing a shared line regresses every cut using it, a gap change needs no unratify, and a redraft re-captures nothing. [M]
 - [ ] **P2-VIDNI-06** (LOW) Move the honesty checks into the core: banned-phrase lint, a required `source` on every factual line in strict projects, and checks of the text on screen. *Done when:* each check has a failing fixture with a clear message. [S]
 - [ ] **P2-VIDNI-07** (LOW) Write the platform profiles as data. Each covers aspect, resolution, `max_upload` and `max_recommended` durations, maximum size, loudness target, caption style and safe zones, with a "verified on" date and a source. The profiles are YouTube long, YouTube Shorts, Instagram Reels, TikTok, WhatsApp Status, LinkedIn and X. *Done when:* `vidni platforms` lists them with their dates and sources. [S]

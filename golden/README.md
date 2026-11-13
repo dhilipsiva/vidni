@@ -1,6 +1,6 @@
 # Golden outputs of the reference pipeline
 
-These files record what the reference pipeline produces for the nibli syllogism example (TODO.md, P1-VIDNI-01). The reference is the Python and Node pipeline that made the first vidni video. Every Rust stage is checked against these files before it replaces its counterpart (P1-VIDNI-04, `just parity`).
+These files record what the reference pipeline produces for the nibli syllogism example (TODO.md, P1-VIDNI-01). The reference is the Python and Node pipeline that made the first vidni video. Every Rust stage is checked against these files before it replaces its counterpart (P1-VIDNI-04): `just parity <stage>` runs the stage's Rust port and compares its output with them. The timeline and captions are ported so far (P2-VIDNI-04).
 
 | File | What it holds |
 |---|---|

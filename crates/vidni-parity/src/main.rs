@@ -2,14 +2,16 @@
 //! `vidni-parity selftest [--golden DIR] [--reference DIR]`
 //!
 //! Compares a candidate folder with the golden outputs (TODO.md, P1-VIDNI-04).
-//! The stages are timeline, narration, encode, cuts, stills and all.
-//! `--reference-self` uses the reference pipeline's own outputs as the
-//! candidate, which must pass. `selftest` shows that the harness passes the
+//! The stages are timeline, narration, encode, cuts, stills and all. With
+//! neither `--candidate` nor `--reference-self`, the Rust port of the stage
+//! builds the candidate. `--reference-self` uses the reference pipeline's
+//! own outputs as the candidate, which must pass. `selftest` shows that the harness passes the
 //! reference itself and catches a deliberately perturbed output in each stage.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use vidni_parity::candidate::build;
 use vidni_parity::{STAGES, Sources, check_stage, reference_as_candidate, selftest::selftest};
 
 const USAGE: &str = "usage: vidni-parity <timeline|narration|encode|cuts|stills|all> \
@@ -75,8 +77,25 @@ fn run() -> Result<bool, String> {
                 .and_then(|_| reference_as_candidate(&sources.reference, &c))
                 .and_then(|_| compare(&stage, &c, &sources, &scratch))
         }
+        ("all", None, false) => Err(format!(
+            "all needs --candidate or --reference-self; check the ported stages one by one\n{USAGE}"
+        )),
+        (_, None, false) => {
+            let c = scratch.join("candidate");
+            fs::create_dir_all(&c)
+                .map_err(|e| e.to_string())
+                .and_then(|_| {
+                    build(
+                        &stage,
+                        &root.join("examples/nibli-syllogism"),
+                        &sources.reference,
+                        &c,
+                    )
+                })
+                .and_then(|_| compare(&stage, &c, &sources, &scratch))
+        }
         _ => Err(format!(
-            "give exactly one of --candidate and --reference-self\n{USAGE}"
+            "give at most one of --candidate and --reference-self\n{USAGE}"
         )),
     };
     let _ = fs::remove_dir_all(&scratch);
