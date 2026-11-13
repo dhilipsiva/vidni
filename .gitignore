@@ -1,0 +1,8 @@
+/target
+/result
+/result-*
+# Per-project build products, takes and frozen assets stay out of git (D4).
+build/
+out/
+recordings/
+__pycache__/

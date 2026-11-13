@@ -1,0 +1,16 @@
+[package]
+name = "vidni-cli"
+description = "The vidni command line."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "vidni"
+path = "src/main.rs"
+
+[lints]
+workspace = true

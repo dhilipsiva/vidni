@@ -1,0 +1,12 @@
+[package]
+name = "vidni-media"
+description = "vidni's media stages: compose, encode, QA, TTS, capture and the intelligibility check, driving pinned external tools."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,12 @@
+[package]
+name = "vidni-core"
+description = "vidni's project model, validation, hashes and locks, timeline and caption cues: deterministic logic with no media I/O."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
