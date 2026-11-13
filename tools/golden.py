@@ -76,7 +76,8 @@ def normalized_json(path, drop=()):
 def normalized_timeline(path, ref):
     data = normalized_json(path)
     for e in data["sentences"]:
-        e["wav"] = os.path.relpath(e["wav"], ref)
+        if os.path.isabs(e["wav"]):  # relative since P1-VIDNI-02
+            e["wav"] = os.path.relpath(e["wav"], ref)
         e.pop("heard", None)
         e.pop("score", None)
     return data
@@ -113,7 +114,7 @@ def derive(ref, stage):
         how = f"VARIANT={tag} OWN_AUDIO_DIR=recordings " if tag else ""
         print(f"[{variant}] narration, timeline and captions", flush=True)
         run(["python3", "-I", "tts.py"], ref, env)
-        timeline = canonical(normalized_timeline(os.path.join(ref, "build", "timeline.json"), ref))
+        timeline = canonical(normalized_timeline(os.path.join(ref, "build", f"timeline{suffix}.json"), ref))
         with open(os.path.join(stage, f"timeline-{variant}.json"), "w") as f:
             f.write(timeline)
         srt = f"nibli-syllogism{suffix}.en.srt"
@@ -121,7 +122,7 @@ def derive(ref, stage):
         manifest["outputs"][f"timeline-{variant}.json"] = sha256_bytes(timeline.encode())
         manifest["outputs"][srt] = sha256_file(os.path.join(stage, srt))
         manifest["outputs"][f"narration-{variant}.wav (pcm)"] = pcm_sha256(
-            os.path.join(ref, "build", "narration.wav"))
+            os.path.join(ref, "build", f"narration{suffix}.wav"))
         manifest["commands"][f"{variant}: timeline, narration, captions"] = f"{how}python3 -I tts.py"
 
         print(f"[{variant}] both cuts", flush=True)
@@ -135,9 +136,6 @@ def derive(ref, stage):
             manifest["outputs"][f"{name} (framemd5)"] = sha256_bytes(fmd5)
             manifest["outputs"][f"{name} (file)"] = sha256_file(os.path.join(ref, "out", name))
         manifest["commands"]["framemd5"] = "ffmpeg -i <cut>.mp4 -map 0 -c copy -f framemd5 -"
-
-    # Leave the reference in its synthetic state (its timeline.json is shared until P1-VIDNI-02).
-    run(["python3", "-I", "tts.py"], ref, base_env)
 
     print("[frozen inputs] hashing", flush=True)
     ins = manifest["inputs"]
