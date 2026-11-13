@@ -5,6 +5,7 @@ use clap::{Parser, Subcommand};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use vidni_core::ratify::{self, Status as RatifyStatus};
 use vidni_core::takes::Status;
 use vidni_core::validate;
 
@@ -46,6 +47,33 @@ enum Command {
         #[arg(long, value_name = "DIR")]
         link: Option<PathBuf>,
     },
+    /// Show each cut's status: draft, ratified, or changed since it was ratified.
+    Status {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+    },
+    /// Freeze cuts: record the hashes of their lines, scenes and captures in ratified.lock.
+    Ratify {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// The cut to ratify; repeat for more. Default: every cut.
+        #[arg(long = "cut", value_name = "ID")]
+        cuts: Vec<String>,
+    },
+    /// Unfreeze cuts. Their captures stay, so the next draft retakes none.
+    Unratify {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// The cut to unratify; repeat for more. Default: every cut.
+        #[arg(long = "cut", value_name = "ID")]
+        cuts: Vec<String>,
+        /// Also delete the captures no ratified cut shares, so they are taken afresh.
+        #[arg(long)]
+        refresh: bool,
+    },
     /// Print the JSON Schema of vidni.toml, for editors.
     Schema,
 }
@@ -55,6 +83,13 @@ fn main() -> ExitCode {
         Command::Validate { path } => validate(&path),
         Command::Fmt { path, check } => fmt(&path, check),
         Command::Takes { path, link } => takes(&path, link.as_deref()),
+        Command::Status { path } => status(&path),
+        Command::Ratify { path, cuts } => ratify(&path, &cuts),
+        Command::Unratify {
+            path,
+            cuts,
+            refresh,
+        } => unratify(&path, &cuts, refresh),
         Command::Schema => {
             print!("{}", vidni_core::schema_json());
             ExitCode::SUCCESS
@@ -195,6 +230,109 @@ fn link_takes(lines: &[vidni_core::takes::LineTake], dir: &Path) -> ExitCode {
         Err(e) => {
             eprintln!("vidni: {}: {e}", dir.display());
             ExitCode::from(2)
+        }
+    }
+}
+
+/// A valid project, with its file and folder.
+struct Loaded {
+    dir: PathBuf,
+    project: vidni_core::project::Project,
+}
+
+fn load(path: &Path) -> Result<Loaded, ExitCode> {
+    let (file, text) = read(path)?;
+    let dir = file
+        .parent()
+        .filter(|d| !d.as_os_str().is_empty())
+        .unwrap_or(Path::new("."))
+        .to_path_buf();
+    match validate::check(&text, Some(&dir)) {
+        Ok(project) => Ok(Loaded { dir, project }),
+        Err(problems) => Err(report(&file, &problems)),
+    }
+}
+
+fn status(path: &Path) -> ExitCode {
+    let Loaded { dir, project } = match load(path) {
+        Ok(loaded) => loaded,
+        Err(code) => return code,
+    };
+    let lock = match ratify::read_lock(&dir) {
+        Ok(lock) => lock,
+        Err(e) => {
+            eprintln!("vidni: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let states = ratify::status(&project, &dir, &lock);
+    let width = states.iter().map(|(id, _)| id.len()).max().unwrap_or(0);
+    for (id, state) in states {
+        match state {
+            RatifyStatus::Draft => println!("{id:width$}  draft"),
+            RatifyStatus::Ratified => println!("{id:width$}  ratified"),
+            RatifyStatus::Changed(reasons) => {
+                println!("{id:width$}  changed: {}", reasons.join("; "))
+            }
+        }
+    }
+    ExitCode::SUCCESS
+}
+
+fn ratify(path: &Path, cuts: &[String]) -> ExitCode {
+    let Loaded { dir, project } = match load(path) {
+        Ok(loaded) => loaded,
+        Err(code) => return code,
+    };
+    let done = ratify::read_lock(&dir).and_then(|mut lock| {
+        let done = ratify::ratify(&project, &dir, &mut lock, cuts)?;
+        ratify::write_resolved(&project, &dir)?;
+        ratify::write_lock(&dir, &lock)?;
+        Ok(done)
+    });
+    match done {
+        Ok(done) => {
+            for (id, content) in done {
+                println!(
+                    "{id}: ratified (content {}, {})",
+                    &content.content[..12],
+                    count(content.captures.len(), "capture")
+                );
+            }
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("vidni: {e}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn unratify(path: &Path, cuts: &[String], refresh: bool) -> ExitCode {
+    let Loaded { dir, project } = match load(path) {
+        Ok(loaded) => loaded,
+        Err(code) => return code,
+    };
+    let done = ratify::read_lock(&dir).and_then(|mut lock| {
+        let deleted = ratify::unratify(&project, &dir, &mut lock, cuts, refresh)?;
+        ratify::write_lock(&dir, &lock)?;
+        Ok(deleted)
+    });
+    match done {
+        Ok(deleted) if refresh => {
+            println!(
+                "unratified; {} deleted, to be taken afresh",
+                count(deleted.len(), "capture")
+            );
+            ExitCode::SUCCESS
+        }
+        Ok(_) => {
+            println!("unratified; the captures stay, so the next draft retakes none");
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("vidni: {e}");
+            ExitCode::FAILURE
         }
     }
 }

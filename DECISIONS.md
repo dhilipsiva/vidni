@@ -92,3 +92,15 @@ Added as the items are built.
 ### T2. How schema 1 reports problems
 - **2026-11-13, P2-VIDNI-01.** The project model is plain structs that deny unknown keys, not serde's tagged enums. Rules that reach across tables are checked after parsing, and each finding is placed in the file by its key path, through toml_edit's spans.
 - **Why:** a tagged enum reads its whole table before choosing a variant, so a problem inside a scene could only be reported at the scene's header. Flat structs keep each type error and unknown key at its own line and column, and the key path does the same for the cross-table rules. A key that belongs to the other kind of scene is still caught, by a rule.
+
+### T3. What a capture's key covers
+- **2026-11-13, P2-VIDNI-05.** A web line's capture is keyed by three things:
+  - its scene without the cameras;
+  - every action run on the page so far, in script order;
+  - its highlights.
+
+  A page render is keyed by its scene and its size.
+- **Why:**
+  - A still depends on the page and on how the page got there, not on how the still is framed later. So changing a camera never re-captures.
+  - The page carries state from line to line (a clicked tab, a scroll position), so a line's key has to include the actions before it.
+  - Lines that show the same state with the same highlights share one capture. The reference captured each line separately.

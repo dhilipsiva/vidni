@@ -212,6 +212,15 @@ pub struct Line {
     pub overlay: Option<String>,
 }
 
+impl Line {
+    /// The scene the line shows: its own, or the project's default.
+    pub fn scene_in<'a>(&'a self, project: &'a Project) -> Option<&'a str> {
+        self.scene
+            .as_deref()
+            .or(project.meta.default_scene.as_deref())
+    }
+}
+
 /// What lines show.
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -665,6 +674,30 @@ pub const PLATFORMS: [&str; 7] = [
 ];
 
 impl Cut {
+    /// The IDs of the lines the cut uses, in script order.
+    pub fn line_ids(&self, project: &Project) -> Vec<String> {
+        match &self.lines {
+            LineSelection::All => project.lines.iter().map(|l| l.id.clone()).collect(),
+            LineSelection::Ids(ids) => ids.clone(),
+        }
+    }
+
+    /// How the cut carries its captions, with the default for its aspect.
+    pub fn captions(&self) -> Captions {
+        self.captions.unwrap_or(match self.aspect {
+            Aspect::Landscape => Captions::Both,
+            Aspect::Portrait => Captions::Burned,
+        })
+    }
+
+    /// The frame size in pixels, with the default for its aspect.
+    pub fn size(&self) -> [u32; 2] {
+        self.size.unwrap_or(match self.aspect {
+            Aspect::Landscape => [1920, 1080],
+            Aspect::Portrait => [1080, 1920],
+        })
+    }
+
     /// The platforms the cut is made for, with the default for its aspect.
     pub fn platforms(&self) -> Vec<String> {
         self.platforms.clone().unwrap_or_else(|| {

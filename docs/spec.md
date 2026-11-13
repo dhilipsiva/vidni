@@ -259,6 +259,31 @@ An expectation is text a web scene must show. A capture stops when the page show
 
 Set `text` or `texts`, not both.
 
+## Ratification
+
+Ratifying a cut freezes what it shows and says. `vidni ratify [--cut ID]` records the following in `ratified.lock`, which is committed with the project:
+- **One hash of the cut's content:** its line order, its lines (every key, with the default scene filled in), their sections, the scenes they use, and the keys of its captures. All of it is taken from `build/resolved.json`, the project with every default filled in.
+- **A hash for each line and each scene,** so that a changed cut can say what changed.
+- **The SHA-256 of each capture file.**
+
+A cut's status is never stored; `vidni status` works it out from those hashes each time:
+- **draft:** not ratified.
+- **ratified:** every hash still holds.
+- **changed:** something the cut froze has changed since: a line, a scene, its line list or order, or a capture file on disk. The status names what changed.
+
+Gaps (`[timing]`), caption style, platforms and the theme aren't part of a cut's content; only the release hashes them. So changing them leaves a cut ratified, and editing a line regresses exactly the cuts that use it.
+
+**Captures** live in `build/captures/`, out of git, each named by a key:
+- **A web line's capture** is keyed by three things:
+  - its scene, all of it except the cameras, which only frame the still;
+  - every action that has run on the page by then: the setup, then each earlier line's `do` in script order, then its own;
+  - its highlights.
+
+  Lines that show the same page with the same highlights share one capture.
+- **A page scene's render** is keyed by the scene and the size it is rendered at.
+
+A draft takes only the captures no file holds yet, so a redraft with no scene changes takes none. `vidni unratify` keeps a cut's captures. `--refresh` deletes the ones no other ratified cut uses, so that they are taken afresh.
+
 ## Layout: `vidni fmt`
 
 `vidni fmt` rewrites a valid file in one canonical layout, and `vidni fmt --check` reports a file that isn't in it. Every comment is kept, and every value is kept as written: strings keep their quotes and escapes, and numbers keep their spelling. The rest is fixed:

@@ -163,3 +163,57 @@ fn takes_lists_each_lines_take_and_links_the_current_ones() {
     assert_eq!(out.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&out.stderr).contains("intro-2"));
 }
+
+#[test]
+fn status_ratify_and_unratify_work_from_the_hashes() {
+    let dir = tempfile::tempdir().unwrap();
+    let project = dir.path().to_str().unwrap();
+    fs::write(dir.path().join("vidni.toml"), vidni_core::TEMPLATE).unwrap();
+    let out = |args: &[&str]| {
+        let o = vidni(args);
+        (
+            o.status.code(),
+            String::from_utf8_lossy(&o.stdout).into_owned(),
+            String::from_utf8_lossy(&o.stderr).into_owned(),
+        )
+    };
+    assert_eq!(
+        out(&["status", project]).1,
+        "long      draft\nvertical  draft\n"
+    );
+    let (code, _, err) = out(&["ratify", project]);
+    assert_eq!(code, Some(1));
+    assert!(err.contains("captures aren't taken yet"), "{err}");
+    // Stand-ins for the captures a draft would take.
+    let parsed = vidni_core::validate::check(vidni_core::TEMPLATE, None).unwrap();
+    for cut in &parsed.cuts {
+        for c in vidni_core::capture::for_cut(&parsed, cut) {
+            let path = vidni_core::capture::path(dir.path(), &c.key);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(path, c.key.as_bytes()).unwrap();
+        }
+    }
+    let (code, stdout, _) = out(&["ratify", project, "--cut", "long"]);
+    assert_eq!(code, Some(0));
+    assert!(stdout.starts_with("long: ratified (content "), "{stdout}");
+    assert!(dir.path().join("build/resolved.json").is_file());
+    assert_eq!(
+        out(&["status", project]).1,
+        "long      ratified\nvertical  draft\n"
+    );
+    // New words for a line regress the ratified cut, and say which line.
+    let edited = vidni_core::TEMPLATE.replace("Hello, and welcome.", "Hello, and good evening.");
+    fs::write(dir.path().join("vidni.toml"), edited).unwrap();
+    assert_eq!(
+        out(&["status", project]).1,
+        "long      changed: line intro-1 changed\nvertical  draft\n"
+    );
+    let (code, stdout, _) = out(&["unratify", project, "--cut", "long"]);
+    assert_eq!(code, Some(0));
+    assert!(stdout.contains("the captures stay"), "{stdout}");
+    assert_eq!(
+        out(&["status", project]).1,
+        "long      draft\nvertical  draft\n"
+    );
+    assert_eq!(out(&["ratify", project, "--cut", "nope"]).0, Some(1));
+}

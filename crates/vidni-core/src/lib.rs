@@ -4,9 +4,11 @@
 //! Everything here is deterministic and does no media I/O. See `TODO.md`,
 //! milestone P2.
 
+pub mod capture;
 pub mod edit;
 pub mod fmt;
 pub mod project;
+pub mod ratify;
 pub mod spoken;
 pub mod takes;
 pub mod timeline;
