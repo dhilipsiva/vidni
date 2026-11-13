@@ -1,0 +1,52 @@
+# A project whose expectations a capture's readings are checked against.
+schema = 1
+
+[meta]
+title = "On-screen checks"
+default_scene = "page"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "Now the page answers FALSE."
+do = [{ click = "run" }]
+
+[scenes.page]
+kind = "web"
+url = "https://example.com"
+
+[scenes.page.targets]
+run = { css = "button" }
+result = { css = ".result", pick = "last" }
+rows = { css = ".row" }
+why = { css = ".why" }
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[[expectations]]
+scene = "page"
+at = "setup"
+target = "result"
+text = "TRUE"
+
+[[expectations]]
+scene = "page"
+at = "setup"
+target = "rows"
+texts = ["Adam eats", "Adam is an animal", "Adam is a dog"]
+
+[[expectations]]
+scene = "page"
+at = "main-1"
+target = "result"
+text = "FALSE"
+
+[[expectations]]
+scene = "page"
+at = "main-1"
+target = "why"
+text = "No example could be found."

@@ -191,6 +191,11 @@ pub struct Line {
     /// Where the line's facts come from.
     #[serde(default)]
     pub source: Option<String>,
+    /// Whether the line states a fact. In strict projects, every line that
+    /// does needs a `source`; set `claim = false` on a line that states none,
+    /// such as a greeting or a transition.
+    #[serde(default)]
+    pub claim: Option<bool>,
     /// The scene the line shows; `meta.default_scene` when absent.
     #[serde(default)]
     pub scene: Option<String>,

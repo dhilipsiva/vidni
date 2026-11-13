@@ -442,6 +442,14 @@
           ],
           "default": null
         },
+        "claim": {
+          "description": "Whether the line states a fact. In strict projects, every line that\ndoes needs a `source`; set `claim = false` on a line that states none,\nsuch as a greeting or a transition.",
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": null
+        },
         "do": {
           "description": "Actions on a web scene before the line is captured.",
           "type": "array",

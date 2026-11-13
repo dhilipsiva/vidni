@@ -220,6 +220,7 @@ impl Rules {
             }
         }
         self.lines(p);
+        self.honesty(p);
         for (id, scene) in &p.scenes {
             self.scene(id, scene, dir);
         }
@@ -347,6 +348,54 @@ impl Rules {
                 self.add(
                     path!["sections", id.as_str()],
                     format!("section {id:?} has no lines"),
+                );
+            }
+        }
+    }
+
+    /// The wording lint, and sources in strict projects.
+    fn honesty(&mut self, p: &Project) {
+        let banned: Vec<(&str, Regex)> = p
+            .lint
+            .banned
+            .iter()
+            .filter_map(|pattern| {
+                Some((
+                    pattern.as_str(),
+                    Regex::new(&format!("(?i){pattern}")).ok()?,
+                ))
+            })
+            .collect();
+        for (i, line) in p.lines.iter().enumerate() {
+            for (key, text) in [("show", Some(&line.show)), ("say", line.say.as_ref())] {
+                let Some(text) = text else { continue };
+                if let Some((pattern, found)) = banned
+                    .iter()
+                    .find_map(|(pattern, re)| Some((*pattern, re.find(text)?)))
+                {
+                    let verb = if key == "show" { "shows" } else { "says" };
+                    self.add(
+                        path!["lines", i, key],
+                        format!(
+                            "line {:?} {verb} banned wording: {:?} matches the lint pattern {pattern:?}",
+                            line.id,
+                            found.as_str()
+                        ),
+                    );
+                }
+            }
+            if line.source.as_deref().is_some_and(|s| s.trim().is_empty()) {
+                self.add(
+                    path!["lines", i, "source"],
+                    "source is empty; name where the line's facts come from",
+                );
+            } else if p.meta.strict && line.claim != Some(false) && line.source.is_none() {
+                self.add(
+                    path!["lines", i, "id"],
+                    format!(
+                        "line {:?} states a fact with no source, and the project is strict; add source = \"…\", or claim = false if the line states no fact",
+                        line.id
+                    ),
                 );
             }
         }

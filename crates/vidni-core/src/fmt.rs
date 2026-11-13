@@ -78,6 +78,7 @@ pub(crate) const LINE: &[&str] = &[
     "show",
     "say",
     "source",
+    "claim",
     "scene",
     "do",
     "highlight",

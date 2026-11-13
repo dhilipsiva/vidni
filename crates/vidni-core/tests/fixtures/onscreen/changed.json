@@ -1,0 +1,5 @@
+{"readings": [
+  {"scene": "page", "at": "setup", "target": "result", "texts": ["TRUE"]},
+  {"scene": "page", "at": "setup", "target": "rows", "texts": ["Adam eats", "Adam is a mammal", "Adam is a dog"]},
+  {"scene": "page", "at": "main-1", "target": "result", "texts": ["UNKNOWN"]}
+]}

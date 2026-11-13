@@ -1,0 +1,34 @@
+# expect: 24:6: line "main-3" states a fact with no source, and the project is strict; add source = "…", or claim = false if the line states no fact
+schema = 1
+
+[meta]
+title = "A strict project"
+strict = true
+default_scene = "page"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "Welcome."
+claim = false
+
+[[lines]]
+id = "main-2"
+section = "main"
+show = "Backward chaining starts from the claim."
+source = "Russell and Norvig, AIMA, 4th edition, section 9.4"
+
+[[lines]]
+id = "main-3"
+section = "main"
+show = "It always terminates."
+
+[scenes.page]
+kind = "web"
+url = "https://example.com"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

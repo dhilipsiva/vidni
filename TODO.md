@@ -145,7 +145,13 @@ Grammar, as in the workspace TODO, one line per item: `- [ ] **P<m>-VIDNI-<nn>**
     - a capture changed on disk regresses the cuts that froze it.
 
     A CLI test runs status, ratify, an edit and unratify end to end.
-- [ ] **P2-VIDNI-06** (LOW) Move the honesty checks into the core: banned-phrase lint, a required `source` on every factual line in strict projects, and checks of the text on screen. *Done when:* each check has a failing fixture with a clear message. [S]
+- [x] **P2-VIDNI-06** (LOW) Move the honesty checks into the core: banned-phrase lint, a required `source` on every factual line in strict projects, and checks of the text on screen. *Done when:* each check has a failing fixture with a clear message. [S]
+  - Evidence (2026-11-13): `vidni validate` now runs the honesty checks in the core: `lint.banned` against every line's `show` and `say`, and, in strict projects, a `source` on every line that states a fact (a new `claim = false` marks a line that states none). `vidni_core::onscreen` compares a capture's readings (`build/onscreen.json`) with `[[expectations]]`, whitespace collapsed. Each check has a failing fixture:
+    - `invalid/21-banned-wording.toml` fails at its `show` with "line \"main-1\" shows banned wording: \"guarantee\" matches the lint pattern \"guarantee\"".
+    - `invalid/22-claim-without-source.toml` fails with "line \"main-3\" states a fact with no source, and the project is strict; add source = \"…\", or claim = false if the line states no fact". Its `claim = false` line and its sourced line pass.
+    - `fixtures/onscreen/changed.json` fails with messages such as "at line \"main-1\", target \"result\" shows \"UNKNOWN\", not \"FALSE\"", while `matching.json` passes.
+
+    The nibli example passes its own wording lint.
 - [ ] **P2-VIDNI-07** (LOW) Write the platform profiles as data. Each covers aspect, resolution, `max_upload` and `max_recommended` durations, maximum size, loudness target, caption style and safe zones, with a "verified on" date and a source. The profiles are YouTube long, YouTube Shorts, Instagram Reels, TikTok, WhatsApp Status, LinkedIn and X. *Done when:* `vidni platforms` lists them with their dates and sources. [S]
 - [ ] **P2-VIDNI-08** (LOW) Add `vidni new <slug> [--from outline.md]`, where outline headings become sections and paragraphs become lines, and `vidni plan`, which prints the recording sheet. *Done when:* `vidni new demo && vidni draft demo` renders with no edits. [S]
 - [ ] **P2-VIDNI-09** (LOW) Add a content-addressed cache for every stage: a TTS clip by hash(spoken text, voice, seed, params), a still by hash(scene spec, source revision), and a render by hash(inputs). *Done when:* a second `vidni draft` with nothing changed renders nothing and finishes in under 10 s. [M]

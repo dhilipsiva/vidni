@@ -71,7 +71,7 @@ A line's ID is permanent. Takes, captions and per-cut state are keyed by it (P2-
 | `title` | string | required | The video's title. It must not be empty. |
 | `subtitle` | string | none | A short line shown with the title, such as a series name |
 | `language` | string | `"en"` | The script's language, as a BCP 47 tag |
-| `strict` | boolean | `false` | Whether every factual line must name its `source` (P2-VIDNI-06) |
+| `strict` | boolean | `false` | Whether every line that states a fact must name its `source`. Set `claim = false` on a line that states none. |
 | `default_scene` | string | none | The scene a line shows when it names none |
 
 ## `[voice]`
@@ -99,7 +99,7 @@ All values are seconds, zero or more.
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `banned` | array of strings | empty | Regular expressions, matched without regard to case, that no line may show or say. Literal strings (`'\bpublished\b'`) keep backslashes as they are. |
+| `banned` | array of strings | empty | Regular expressions, matched without regard to case against each line's `show` and `say`. A match is an error that quotes the wording and the pattern. Literal strings (`'\bpublished\b'`) keep backslashes as they are. |
 
 ## `[style]`
 
@@ -123,7 +123,8 @@ Sections come in the order of their first line, and a section's lines must be to
 | `section` | string | required | The section it belongs to |
 | `show` | string | required | The caption: the line as it is shown. It must not be empty. |
 | `say` | string | `show` | What is said, when it differs from what is shown |
-| `source` | string | none | Where the line's facts come from |
+| `source` | string | none | Where the line's facts come from. It must not be empty. |
+| `claim` | boolean | `true` | Whether the line states a fact. In a strict project, a line that does needs a `source`. |
 | `scene` | string | `meta.default_scene` | The scene the line shows |
 | `do` | array of actions | empty | Web scenes: actions before the line is captured |
 | `highlight` | array of strings | empty | Web scenes: targets boxed while the line plays |
@@ -259,6 +260,8 @@ An expectation is text a web scene must show. A capture stops when the page show
 
 Set `text` or `texts`, not both.
 
+A capture reads the target's texts at that point and writes them to `build/onscreen.json`. Texts are compared with their runs of whitespace collapsed. Each one that differs is reported with the point in the script, the target, and what was shown in place of what was expected, for example: `at line "false-1", target "result" shows "UNKNOWN", not "FALSE"`.
+
 ## Ratification
 
 Ratifying a cut freezes what it shows and says. `vidni ratify [--cut ID]` records the following in `ratified.lock`, which is committed with the project:
@@ -322,6 +325,8 @@ It checks, in order:
    - Cuts name known lines in script order, and known platforms.
    - Sizes are even and in aspect.
    - Regular expressions compile.
+   - No line shows or says wording that `lint.banned` forbids.
+   - In a strict project, every line that states a fact names its `source`.
    - Every file a scene names exists.
    - Expectations name a web scene, a target, and a line on that scene.
 

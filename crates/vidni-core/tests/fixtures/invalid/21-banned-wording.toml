@@ -1,0 +1,24 @@
+# expect: 16:8: line "main-1" shows banned wording: "guarantee" matches the lint pattern "guarantee"
+schema = 1
+
+[meta]
+title = "Banned wording"
+default_scene = "page"
+
+[lint]
+banned = ['zero[- ]hallucination', 'guarantee']
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "The engine is guaranteed to be right."
+
+[scenes.page]
+kind = "web"
+url = "https://example.com"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

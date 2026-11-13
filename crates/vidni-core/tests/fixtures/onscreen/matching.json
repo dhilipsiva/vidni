@@ -1,0 +1,6 @@
+{"readings": [
+  {"scene": "page", "at": "setup", "target": "result", "texts": ["TRUE"]},
+  {"scene": "page", "at": "setup", "target": "rows", "texts": ["Adam   eats", "Adam is an animal", "Adam is a dog"]},
+  {"scene": "page", "at": "main-1", "target": "result", "texts": ["FALSE"]},
+  {"scene": "page", "at": "main-1", "target": "why", "texts": ["No example could\n be found."]}
+]}

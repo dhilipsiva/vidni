@@ -86,6 +86,7 @@ mod tests {
             show: show.into(),
             say: None,
             source: None,
+            claim: None,
             scene: None,
             actions: Vec::new(),
             highlight: Vec::new(),
