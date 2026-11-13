@@ -1,0 +1,118 @@
+<!doctype html>
+<!-- A page for the capture runtime's tests. Every box has a fixed size and
+     place, so its geometry doesn't depend on fonts. -->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #ffffff; color: #111111; font: 16px/20px sans-serif; }
+  button, select { position: absolute; margin: 0; padding: 0; border: 0; font: inherit; background: #dddddd; }
+  #status { position: absolute; left: 10px; top: 10px; width: 300px; height: 20px; }
+  .tab { top: 40px; width: 80px; height: 30px; }
+  #tab-a { left: 10px; }
+  #tab-b { left: 100px; }
+  #choice { left: 200px; top: 40px; width: 90px; height: 30px; }
+  /* A smooth-scrolling container: capture must still scroll at once. */
+  #panel { position: absolute; left: 10px; top: 100px; width: 200px; height: 100px; overflow: auto; scroll-behavior: smooth; }
+  .row { height: 40px; background: #eeeeee; border-bottom: 1px solid #cccccc; }
+  #deep { position: static; display: block; width: 100px; height: 30px; }
+  #detail { position: absolute; left: 230px; top: 100px; width: 200px; height: 40px; }
+  .toggle { display: inline-block; width: 20px; height: 20px; background: #cccccc; }
+  #code { position: absolute; left: 230px; top: 160px; margin: 0; font: 16px/20px monospace; }
+  #late { position: absolute; left: 330px; top: 10px; width: 50px; height: 20px; display: none; }
+  #slow { left: 300px; top: 40px; width: 60px; height: 30px; }
+  #lamp { position: absolute; left: 370px; top: 40px; width: 30px; height: 30px; background: #ffffff; }
+  /* An animation that never ends and ignores reduced motion. */
+  #spinner { position: absolute; left: 410px; top: 45px; width: 20px; height: 20px; background: #888888; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #list { position: absolute; left: 450px; top: 100px; width: 180px; }
+  .item { width: 160px; height: 24px; }
+  .item .name { display: inline-block; width: 90px; }
+  #under { left: 230px; top: 250px; width: 100px; height: 30px; }
+  .cover { position: absolute; left: 230px; top: 250px; width: 100px; height: 30px; background: rgba(0, 0, 0, 0.2); }
+  #arm { left: 340px; top: 250px; width: 50px; height: 30px; }
+  #block { left: 400px; top: 250px; width: 60px; height: 30px; }
+  #go { left: 470px; top: 250px; width: 50px; height: 30px; }
+  #boom { left: 230px; top: 290px; width: 60px; height: 30px; }
+  #ask { left: 300px; top: 290px; width: 60px; height: 30px; }
+  #early { position: absolute; left: 10px; top: 320px; width: 300px; height: 20px; }
+  /* A gauge the page holds at 40 %: a paused animation, 0.4 s into its second. */
+  #gauge { position: absolute; left: 450px; top: 210px; height: 10px; background: #2060c0;
+    animation: fill 1s linear -0.4s 1 both paused; }
+  @keyframes fill { from { width: 0; } to { width: 100px; } }
+</style>
+<script>
+  // Whether vidni's style was in the document before the page's own first script ran.
+  var styledAtStart = !!document.getElementById('vidni-style');
+</script>
+</head>
+<body>
+<div id="status">ready</div>
+<button class="tab" id="tab-a" onclick="say('clicked A')">Alpha</button>
+<button class="tab" id="tab-b" title="Configure beta" onclick="say('clicked B')">Beta</button>
+<select id="choice" onchange="say('chose ' + this.value)">
+  <option value="1">One</option>
+  <option value="2">Two</option>
+</select>
+<div id="panel" onscroll="say('scrolled ' + this.scrollTop)">
+  <div class="row">row 0</div><div class="row">row 1</div><div class="row">row 2</div>
+  <div class="row">row 3</div><div class="row">row 4</div><div class="row">row 5</div>
+  <div class="row">row 6</div><div class="row">row 7</div><div class="row">row 8</div>
+  <div class="row">row 9</div>
+  <button id="deep" onclick="say('clicked deep')">Deep</button>
+</div>
+<div id="detail" aria-expanded="false"><span class="toggle" onclick="toggle()"></span> <span id="detail-state">detail closed</span></div>
+<pre id="code">first line
+second line
+third line</pre>
+<div id="late">late</div>
+<button id="slow" onclick="slow()">Slow</button>
+<div id="lamp"></div>
+<div id="spinner"></div>
+<div id="list">
+  <div class="item"><span class="name">apple pie</span><span class="kind">sweet</span></div>
+  <div class="item"><span class="name">apple tart</span><span class="kind">sweet</span></div>
+  <div class="item"><span class="name">Cheese PIE</span><span class="kind">savoury</span></div>
+  <div class="item"><span class="name">apple pie</span><span class="kind">again</span></div>
+</div>
+<button id="under" onclick="say('clicked under')">Under</button>
+<button id="arm" onclick="cover(1500)">Arm</button>
+<button id="block" onclick="cover(0)">Block</button>
+<button id="go" onclick="location.href = 'page2.html'">Go</button>
+<button id="boom" onclick="throw new Error('boom')">Boom</button>
+<button id="ask" onclick="alert('hi')">Ask</button>
+<div id="early"></div>
+<div id="gauge"></div>
+<script>
+  // By the end of the body, vidni's highlight layer is in it too.
+  document.getElementById('early').textContent =
+    (styledAtStart ? 'style at start' : 'style late') + ', ' +
+    (document.getElementById('vidni-layer') ? 'layer in body' : 'layer late');
+  // Leaving this page asks first, as an editor with unsaved work does.
+  addEventListener('beforeunload', e => { e.preventDefault(); e.returnValue = ''; });
+  function say(text) { document.getElementById('status').textContent = text; }
+  function toggle() {
+    const d = document.getElementById('detail');
+    const open = d.getAttribute('aria-expanded') !== 'true';
+    d.setAttribute('aria-expanded', String(open));
+    document.getElementById('detail-state').textContent = open ? 'detail open' : 'detail closed';
+  }
+  // The result arrives well after the click, with nothing changing meanwhile.
+  function slow() {
+    setTimeout(() => {
+      say('done');
+      document.getElementById('lamp').style.background = '#00aa00';
+    }, 1200);
+  }
+  // Covers the Under button, for `ms` milliseconds or for good.
+  function cover(ms) {
+    const c = document.createElement('div');
+    c.className = 'cover';
+    document.body.appendChild(c);
+    if (ms) setTimeout(() => c.remove(), ms);
+  }
+  setTimeout(() => { document.getElementById('late').style.display = 'block'; }, 300);
+</script>
+</body>
+</html>

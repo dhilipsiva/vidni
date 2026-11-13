@@ -96,12 +96,13 @@ Added as the items are built.
 - **Why:** a tagged enum reads its whole table before choosing a variant, so a problem inside a scene could only be reported at the scene's header. Flat structs keep each type error and unknown key at its own line and column, and the key path does the same for the cross-table rules. A key that belongs to the other kind of scene is still caught, by a rule.
 
 ### T3. What a capture's key covers
-- **2026-11-13, P2-VIDNI-05.** A web line's capture is keyed by three things:
+- **2026-11-13, P2-VIDNI-05.** A web line's capture is keyed by:
   - its scene without the cameras;
   - every action run on the page so far, in script order;
+  - every expectation waited for on the page so far (added in P3-VIDNI-04: capture waits for an expectation before it takes a still, so adding one to fix a stale still must retake it);
   - its highlights.
 
-  A page render is keyed by its scene and its size.
+  A page render is keyed by its scene, its size, and the cut's aspect, which `{aspect}` in its address becomes. (The aspect was added in P3-VIDNI-04: an overlay is wider than tall in both aspects, so the size alone can't say which to render.)
 - **Why:**
   - A still depends on the page and on how the page got there, not on how the still is framed later. So changing a camera never re-captures.
   - The page carries state from line to line (a clicked tab, a scroll position), so a line's key has to include the actions before it.
@@ -129,3 +130,30 @@ Added as the items are built.
 - The voice packs vidni ships pin each file by size and SHA-256 at one revision of rhasspy/piper-voices, and carry the licence their model card gives.
   - joe (CC0) is the default, and ryan (CC BY-NC-SA 4.0) shows the warning for a non-commercial voice.
   - libritts_r is left out. Its data is CC BY 4.0, but it was fine-tuned from lessac, whose recordings are licensed for research only (the Blizzard 2013 research licence), so its status is unclear.
+
+### T6. How capture drives Chromium
+- **2026-11-14, P3-VIDNI-04.** Capture speaks the DevTools protocol through a small client of vidni's own (`vidni_media::cdp`), not chromiumoxide.
+  - **Why:** golden's stills were taken by Playwright, so capture repeats Playwright's calls: its switches, window size, device metrics, emulated media, font families, screenshot clip and mouse events. A small synchronous client sends exactly those, without an async runtime.
+  - It talks over Chromium's pipes (`--remote-debugging-pipe`), not a WebSocket on a local port. A port would let any local user attach to the browser, and with pipes Chromium exits when vidni does. The `command-fds` crate hands Chromium the two pipes, so the workspace still has no unsafe code.
+- **Three things keep a still the same from one launch to the next.** Each was found by capturing one page many times.
+  1. **A web scene above scale 1 is loaded twice.** At an emulated scale, the first load after launch came out in one of two renderings: the layout was the same, but text in a TrueType font was painted one CSS pixel lower. A second load in the same browser gave one rendering. The first load is inert (no scripts, and its cookies cleared), so the captured load is still a first visit.
+  2. **Each layer is rastered as one tile.** Chromium placed its raster tiles differently from launch to launch, and the edge of a curve came out up to 4 levels of 255 different (an icon in the example's site header). With the tile switches, 40 captures of 40 agreed where 5 of 40 had differed.
+  3. **vidni's style and highlight layer are mounted at each document's start,** not after it has loaded. Mounted late, 9 captures of 70 differed in that icon; mounted at the start, 1 of 70, before the tile switches.
+
+  With all three, a local copy of the example's site header at scale 3 gave one still in 80 captures of 80, the test scene one in 30 of 30, and five captures of the live example agreed in every pixel.
+- **What was tried and dropped:**
+  - Starting Chromium at the scale itself (`--force-device-scale-factor`) was steady, but it lays pages out differently. Against golden, 75 of 118 checks failed, with SSIM down to 0.93.
+  - Rendering a blank page first, in place of the first load, steadied text but not the icon.
+  - `--font-render-hinting=none` and `--disable-partial-raster` made no difference to any of this.
+- **Against golden:** every still and card passes at SSIM 1.0000, and each still's frames are within 0.5 CSS px of the reference's. No still is byte-identical any more: one tile per layer moves anti-aliasing at a few edges, 548 to 812 pixels of 8.3 million in each still, at most 28 of them by more than 16 levels.
+- **The page runtime** (`capture/runtime.js`) generalizes the reference's nibli-only helpers to the scene schema, and keeps their geometry:
+  - boxes clipped to their scroll containers;
+  - a text line's box padded by 6 and 3 pixels;
+  - highlight boxes drawn 4 pixels outside their target;
+  - merged groups drawn as one box.
+
+  It runs in an isolated world, as Playwright's does, so a page can't change it.
+- **Settling** replaces the reference's fixed waits: running animations finished, fonts loaded, network quiet, and two screenshots a quarter second apart identical. Expectations are waited for, so a late result can't leave a stale still.
+- **A click** scrolls its target into view and refuses to land on anything covering it, as Playwright's does. The first port clicked a row hidden by its scroll panel, and the still that followed showed the wrong state.
+- **The sandbox stays on.** Playwright turns it off; stills are the same either way.
+- **Fonts:** the flake's fontconfig file lists only pinned fonts. `makeFontsConf` had let the host's fonts in, against D12. Golden was made with the host's fonts, so the parity recipes set the flake's file aside, and their result holds on the maintainer's desktop only.

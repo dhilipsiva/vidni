@@ -64,12 +64,13 @@ assets-check:
 # cuts, stills or all). With no candidate, the stage's Rust port builds one, as in
 # `just parity timeline`; `--candidate DIR` and `--reference-self` pick another.
 # A release build: the cuts stage renders four cuts of some 9,000 frames each.
+# Golden was made with the host's fonts, so the dev shell's pinned fontconfig is set aside.
 parity stage *args:
-    cargo run -q --release -p vidni-parity -- {{stage}} {{args}}
+    env -u FONTCONFIG_FILE cargo run -q --release -p vidni-parity -- {{stage}} {{args}}
 
 # Show that the parity harness passes the reference itself and catches a perturbed output per stage.
 parity-selftest:
-    cargo run -q --release -p vidni-parity -- selftest
+    env -u FONTCONFIG_FILE cargo run -q --release -p vidni-parity -- selftest
 
 # Render every cut twice with the Rust compositor and compare the frame streams (T1,
 # P3-VIDNI-02). The fonts are the reference's, found by fc-match, unless `--fonts` names them.
@@ -80,6 +81,17 @@ compose-t1 *args:
 # reference's nix shell: the frames where the picture changes, and every pixel (P3-VIDNI-02).
 compose-stream *args:
     cargo run -q --release -p vidni-parity -- compose-stream {{args}}
+
+# The capture runtime's tests on a local page; they need Chromium, as the dev shell has (P3-VIDNI-04).
+test-capture:
+    cargo test -p vidni-media --test capture -- --ignored
+
+# Capture the example's web scene five times, each from scratch, and compare every still's
+# pixels. It reads the live page over the network, so it measures that page as much as vidni
+# (docs/determinism.md); `just test-capture` checks five captures of a local scene.
+# VIDNI_KEEP_RUNS=DIR keeps the five captures in DIR, to compare them by hand.
+capture-repeat *args:
+    cargo run -q --release -p vidni-parity -- capture-repeat {{args}}
 
 # Encode the golden 16:9 frames and narration twice with the Rust encoder, and compare the
 # packets and bytes (T2, P3-VIDNI-01).

@@ -72,6 +72,18 @@ fn perturbations(candidate: &Path) -> Result<Vec<Perturbation>, String> {
             what: "a box drawn over the capture",
             apply: boxed_still,
         },
+        Perturbation {
+            file: format!("stills/{}", still.replace(".png", ".json")),
+            stage: "stills",
+            what: "a camera's box moved by 5 pixels",
+            apply: moved_camera,
+        },
+        Perturbation {
+            file: "cards/verdicts-16x9.png".into(),
+            stage: "stills",
+            what: "an overlay made opaque, its colours untouched",
+            apply: opaque_overlay,
+        },
     ])
 }
 
@@ -199,4 +211,26 @@ fn boxed_still(path: &Path, scratch: &Path) -> Result<(), String> {
         scratch,
         &["-vf", "drawbox=x=0:y=0:w=iw/4:h=ih/4:color=red@1:t=fill"],
     )
+}
+
+fn moved_camera(path: &Path, _: &Path) -> Result<(), String> {
+    let mut frames: Value = serde_json::from_slice(&crate::read(path)?)
+        .map_err(|e| format!("{}: {e}", path.display()))?;
+    let x = frames
+        .pointer_mut("/cameras/app/0")
+        .ok_or_else(|| format!("{}: no app camera", path.display()))?;
+    *x = Value::from(x.as_f64().unwrap_or_default() + 5.0);
+    fs::write(
+        path,
+        serde_json::to_vec_pretty(&frames).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| format!("{}: {e}", path.display()))
+}
+
+fn opaque_overlay(path: &Path, _: &Path) -> Result<(), String> {
+    let mut image = vidni_media::compose::image::Image::load_png(path)?.to_rgba();
+    for pixel in image.data.chunks_mut(4) {
+        pixel[3] = 255;
+    }
+    image.save_png(path)
 }

@@ -85,6 +85,13 @@ enum Command {
         #[arg(long)]
         refresh: bool,
     },
+    /// Take the captures the cuts need and the project folder doesn't hold
+    /// yet: a still of each web line, and each page scene at each size.
+    Capture {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+    },
     /// List the platform profiles, with the date each was checked and its sources.
     Platforms,
     /// List the draft voices vidni can fetch, with each one's licence; or fetch one.
@@ -114,6 +121,14 @@ enum VoicesAction {
 }
 
 fn main() -> ExitCode {
+    // On Ctrl-C or a termination signal, a running Chromium is asked to stop,
+    // so that the capture unwinds and leaves nothing behind. With none
+    // running, or on a second signal, vidni exits at once.
+    let _ = ctrlc::set_handler(|| {
+        if !vidni_media::cdp::interrupt() {
+            std::process::exit(130);
+        }
+    });
     match Cli::parse().command {
         Command::Validate { path } => validate(&path),
         Command::Fmt { path, check } => fmt(&path, check),
@@ -125,6 +140,7 @@ fn main() -> ExitCode {
             cuts,
             refresh,
         } => unratify(&path, &cuts, refresh),
+        Command::Capture { path } => capture(&path),
         Command::Platforms => platforms(),
         Command::Voices { action: None } => voices(),
         Command::Voices {
@@ -600,4 +616,43 @@ fn draft(path: &Path) -> ExitCode {
         );
     }
     ExitCode::SUCCESS
+}
+
+fn capture(path: &Path) -> ExitCode {
+    let (file, text) = match read(path) {
+        Ok(read) => read,
+        Err(code) => return code,
+    };
+    let dir = file
+        .parent()
+        .filter(|d| !d.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    let project = match validate::check(&text, Some(dir)) {
+        Ok(project) => project,
+        Err(problems) => return report(&file, &problems),
+    };
+    let cuts: Vec<_> = project.cuts.iter().collect();
+    let plan = vidni_core::capture::plan(&project, dir, &cuts);
+    if plan.is_empty() {
+        say!("{}: every capture is taken", file.display());
+        return ExitCode::SUCCESS;
+    }
+    match vidni_media::capture::capture(&project, dir, &plan) {
+        Ok(taken) => {
+            say!(
+                "{}: {} taken",
+                file.display(),
+                count(taken.len(), "capture")
+            );
+            ExitCode::SUCCESS
+        }
+        Err(_) if vidni_media::cdp::interrupted() => {
+            eprintln!("vidni: interrupted; no still of an unfinished scene was kept");
+            ExitCode::from(130)
+        }
+        Err(e) => {
+            eprintln!("vidni: {e}");
+            ExitCode::FAILURE
+        }
+    }
 }

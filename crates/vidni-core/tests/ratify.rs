@@ -315,3 +315,19 @@ fn lines_that_show_the_same_page_share_one_capture() {
     assert_ne!(keys["main-1"], keys["main-2"]);
     assert_eq!(draft(dir.path(), &p), 3);
 }
+
+#[test]
+fn an_expectation_retakes_the_stills_from_its_line_on() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::write(dir.path().join("card.html"), "x").unwrap();
+    let before = capture::line_keys(&project(dir.path(), PROJECT));
+    // Capture waits for an expectation before a still, so adding one to
+    // fix a stale still has to retake it, and the stills after it.
+    let expecting = format!(
+        "{PROJECT}\n[[expectations]]\nscene = \"page\"\nat = \"main-2\"\ntarget = \"title\"\ntext = \"Ready\"\n"
+    );
+    let after = capture::line_keys(&project(dir.path(), &expecting));
+    assert_eq!(before["main-1"], after["main-1"], "the line before it");
+    assert_ne!(before["main-2"], after["main-2"], "its own line");
+    assert_ne!(before["hook-1"], after["hook-1"], "a line after it");
+}

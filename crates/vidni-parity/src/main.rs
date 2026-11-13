@@ -2,6 +2,7 @@
 //! `vidni-parity selftest [--golden DIR] [--reference DIR]`
 //! `vidni-parity compose-t1 [--reference DIR] [--example DIR] [--fonts CAPTION MONO DISPLAY]`
 //! `vidni-parity compose-stream [--reference DIR] [--example DIR]`
+//! `vidni-parity capture-repeat [--example DIR]`
 //!
 //! Compares a candidate folder with the golden outputs (TODO.md, P1-VIDNI-04).
 //! The stages are timeline, narration, encode, cuts, stills and all. With
@@ -11,7 +12,9 @@
 //! reference itself and catches a deliberately perturbed output in each stage.
 //! `compose-t1` renders every cut twice and compares the frame streams, and
 //! `compose-stream` compares every picture of every cut with the reference's
-//! own (P3-VIDNI-02).
+//! own (P3-VIDNI-02). `capture-repeat` captures the example's web scene
+//! five times, each from scratch, and compares every still's pixels
+//! (P3-VIDNI-04).
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -26,7 +29,8 @@ const USAGE: &str = "usage: vidni-parity <timeline|narration|encode|cuts|stills|
                      [--candidate DIR | --reference-self] [--golden DIR] [--reference DIR]\n       \
                      vidni-parity selftest [--golden DIR] [--reference DIR]\n       \
                      vidni-parity compose-t1 [--reference DIR] [--example DIR] [--fonts CAPTION MONO DISPLAY]\n       \
-                     vidni-parity compose-stream [--reference DIR] [--example DIR]";
+                     vidni-parity compose-stream [--reference DIR] [--example DIR]\n       \
+                     vidni-parity capture-repeat [--example DIR]";
 
 fn main() -> ExitCode {
     match run() {
@@ -43,7 +47,14 @@ fn run() -> Result<bool, String> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let mut args = std::env::args().skip(1);
     let stage = args.next().ok_or(USAGE)?;
-    if !["all", "selftest", "compose-t1", "compose-stream"].contains(&stage.as_str())
+    if ![
+        "all",
+        "selftest",
+        "compose-t1",
+        "compose-stream",
+        "capture-repeat",
+    ]
+    .contains(&stage.as_str())
         && !STAGES.contains(&stage.as_str())
     {
         return Err(format!("unknown stage {stage}\n{USAGE}"));
@@ -97,6 +108,7 @@ fn run() -> Result<bool, String> {
         ("selftest", None, false) => selftest(&sources, &scratch),
         ("compose-t1", None, false) => compose_t1(&example, &sources.reference, fonts),
         ("compose-stream", None, false) => compose_stream(&example, &sources.reference),
+        ("capture-repeat", None, false) => vidni_parity::capture::repeat(&example, &scratch, 5),
         ("selftest", _, _) => Err(format!("selftest takes no candidate\n{USAGE}")),
         (_, Some(c), false) => compare(&stage, &c, &sources, &scratch),
         (_, None, true) => {

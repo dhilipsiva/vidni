@@ -6,7 +6,7 @@
 //! narrates a page that changed underneath it. Texts are compared with
 //! their runs of whitespace collapsed, as the reference did.
 
-use crate::project::Project;
+use crate::project::{Expectation, Project};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
@@ -41,12 +41,39 @@ fn collapse(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
+/// Whether `texts`, a target's texts as read from the page, are what the
+/// expectation `x` says, with runs of whitespace collapsed. Capture waits
+/// for this before it takes a line's still.
+pub fn holds(x: &Expectation, texts: &[String]) -> bool {
+    let shown: Vec<String> = texts.iter().map(|t| collapse(t)).collect();
+    match (&x.text, &x.texts) {
+        (Some(text), _) => shown == [collapse(text)],
+        (None, Some(wanted)) => shown == wanted.iter().map(|t| collapse(t)).collect::<Vec<_>>(),
+        (None, None) => true,
+    }
+}
+
 /// Compares every expectation with what the page showed; one message for
 /// each that doesn't hold. An empty list means the page shows what the
 /// script says it shows.
 pub fn check(project: &Project, readings: &Readings) -> Vec<String> {
+    problems(project.expectations.iter(), readings)
+}
+
+/// [`check`] for one scene's expectations.
+pub fn check_scene(project: &Project, scene: &str, readings: &Readings) -> Vec<String> {
+    problems(
+        project.expectations.iter().filter(|x| x.scene == scene),
+        readings,
+    )
+}
+
+fn problems<'a>(
+    expectations: impl Iterator<Item = &'a Expectation>,
+    readings: &Readings,
+) -> Vec<String> {
     let mut problems = Vec::new();
-    for x in &project.expectations {
+    for x in expectations {
         let place = if x.at == "setup" {
             format!("after scene {:?} loads", x.scene)
         } else {

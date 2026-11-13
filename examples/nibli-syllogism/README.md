@@ -29,6 +29,10 @@ After a retake, refresh the lock:
 cd examples/nibli-syllogism && find takes -type f -print0 | sort -z | xargs -0 sha256sum > assets.lock
 ```
 
+## Captures
+
+`vidni capture examples/nibli-syllogism` takes what the two cuts show into `build/captures/` (out of git): 46 stills of the live playground, one for each state a line shows, and the 8 renders of the cards and overlays. They match the reference's captures (`just parity stills`), and five captures in a row are pixel-identical (`just capture-repeat`).
+
 ## The draft voice
 
 `vidni draft examples/nibli-syllogism` speaks every line in the draft voice, piper:en_US-joe-medium, after `vidni voices fetch piper:en_US-joe-medium` has fetched it. `voice.lock` records the seed each line's take was kept at, so a redraft gives the same audio: clearing `build/` and drafting again gives the same PCM (docs/determinism.md). These are vidni's own takes, not the reference's: the reference ran Piper unseeded, so its synthetic clips can't be repeated.

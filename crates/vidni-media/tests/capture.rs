@@ -1,0 +1,598 @@
+//! The capture runtime on a local page with fixed geometry (P3-VIDNI-04).
+//! These need Chromium, so they are ignored by `cargo test`; `just
+//! test-capture` runs them, and so does CI.
+
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::time::Duration;
+use vidni_core::capture::{self, Source};
+use vidni_core::project::Project;
+use vidni_media::capture::{Frames, Limits, capture_with, frames_path};
+use vidni_media::compose::image::Image;
+
+const PROJECT: &str = r##"
+schema = 1
+
+[meta]
+title = "Capture test"
+default_scene = "page"
+
+[sections.main]
+
+[[lines]]
+id = "a"
+section = "main"
+show = "Click Alpha."
+do = [{ click = "tab-a" }]
+highlight = ["tab-a"]
+
+[[lines]]
+id = "b"
+section = "main"
+show = "Choose two."
+do = [{ select = "choice", value = "2" }]
+highlight = ["choice"]
+overlay = "badge"
+
+[[lines]]
+id = "c"
+section = "main"
+show = "Scroll the panel."
+do = [{ scroll = "panel", top = 80 }]
+highlight = ["row-3"]
+
+[[lines]]
+id = "d"
+section = "main"
+show = "Open the detail."
+do = [{ expand = "detail", control = ".toggle" }]
+highlight = ["code-line-1"]
+
+[[lines]]
+id = "e"
+section = "main"
+show = "Close it and scroll on."
+do = [
+  { collapse = "detail", control = ".toggle" },
+  { scroll_to = "row-7", within = "panel", offset = 10 },
+  { wait = "late" },
+]
+highlight = ["rows", "beta"]
+
+[[lines]]
+id = "f"
+section = "main"
+show = "Wait for a slow result."
+do = [{ click = "slow" }]
+highlight = ["slow"]
+
+[[lines]]
+id = "g"
+section = "main"
+show = "Click below the fold."
+do = [{ click = "deep" }]
+highlight = ["deep"]
+
+[[lines]]
+id = "h"
+section = "main"
+show = "Click what is covered for a moment."
+do = [{ click = "arm" }, { click = "under" }]
+highlight = ["pies"]
+
+[[lines]]
+id = "i"
+section = "main"
+show = "Point at list items."
+highlight = ["kind-again", "sweet", "gauge"]
+
+[[lines]]
+id = "j"
+section = "main"
+show = "Go to the next page."
+do = [{ click = "go" }]
+highlight = ["arrived"]
+
+[scenes.page]
+kind = "web"
+url = "page.html"
+viewport = [640, 360]
+scale = 2
+setup = [{ wait = "status" }]
+
+[scenes.page.targets]
+status = { css = "#status" }
+tab-a = { css = ".tab", text = "Alpha" }
+beta = { any = [{ css = ".tab", attr = { name = "title", matches = "(?i)configure BETA" } }] }
+choice = { css = "#choice" }
+panel = { css = "#panel" }
+row-3 = { css = ".row", text = "row 3" }
+row-7 = { css = ".row", text = "row 7" }
+rows = { css = ".row", text = { starts_with = "row" }, merge = true }
+detail = { css = "#detail" }
+detail-state = { css = "#detail-state" }
+code-line-1 = { css = "#code", line = 1 }
+late = { css = "#late" }
+slow = { css = "#slow" }
+deep = { css = "#deep" }
+arm = { css = "#arm" }
+block = { css = "#block" }
+under = { css = "#under" }
+go = { css = "#go" }
+boom = { css = "#boom" }
+ask = { css = "#ask" }
+pies = { css = ".item", text_of = ".name", text = { matches = "(?i)pie" }, exclude = { contains = "Cheese" } }
+sweet = { css = ".item", text_of = ".kind", text = "sweet", pick = "first" }
+kind-again = { css = ".item .kind", text = "again", grow = { within = "#list", max_height = 30, margin = 8 } }
+names = { css = ".item .name", unique = true }
+early = { css = "#early" }
+gauge = { css = "#gauge" }
+arrived = { css = "#arrived" }
+
+[scenes.page.cameras]
+tabs = { union = ["tab-a", "beta"] }
+all = { viewport = true }
+
+[scenes.badge]
+kind = "page"
+url = "overlay.html?r={aspect}"
+transparent = true
+size = { landscape = [200, 100], portrait = [100, 200] }
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[[cuts]]
+id = "vertical"
+aspect = "9:16"
+lines = ["b"]
+
+[[expectations]]
+scene = "page"
+at = "setup"
+target = "early"
+text = "style at start, layer in body"
+
+[[expectations]]
+scene = "page"
+at = "a"
+target = "status"
+text = "clicked A"
+
+[[expectations]]
+scene = "page"
+at = "b"
+target = "status"
+text = "chose 2"
+
+[[expectations]]
+scene = "page"
+at = "c"
+target = "status"
+text = "scrolled 80"
+
+[[expectations]]
+scene = "page"
+at = "d"
+target = "detail-state"
+text = "detail open"
+
+[[expectations]]
+scene = "page"
+at = "e"
+target = "detail-state"
+text = "detail closed"
+
+[[expectations]]
+scene = "page"
+at = "e"
+target = "status"
+text = "scrolled 270"
+
+[[expectations]]
+scene = "page"
+at = "f"
+target = "status"
+text = "done"
+
+[[expectations]]
+scene = "page"
+at = "g"
+target = "status"
+text = "clicked deep"
+
+[[expectations]]
+scene = "page"
+at = "h"
+target = "status"
+text = "clicked under"
+
+[[expectations]]
+scene = "page"
+at = "i"
+target = "names"
+texts = ["apple pie", "apple tart", "Cheese PIE"]
+
+[[expectations]]
+scene = "page"
+at = "j"
+target = "arrived"
+text = "arrived"
+"##;
+
+/// The test project in a fresh folder, with `edit` applied to its file.
+fn project(edit: impl Fn(&str) -> String) -> (tempfile::TempDir, Project) {
+    let dir = tempfile::tempdir().unwrap();
+    let fixtures = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/capture");
+    for name in ["page.html", "page2.html", "overlay.html"] {
+        fs::copy(fixtures.join(name), dir.path().join(name)).unwrap();
+    }
+    let text = edit(PROJECT);
+    assert_ne!(text, PROJECT, "the edit changed nothing");
+    fs::write(dir.path().join("vidni.toml"), &text).unwrap();
+    let project = vidni_core::validate::check(&text, Some(dir.path())).unwrap();
+    (dir, project)
+}
+
+/// The project as it is.
+fn unchanged(text: &str) -> String {
+    format!("{text}\n")
+}
+
+/// Captures everything the project's cuts need, with `patience` seconds of
+/// patience; the files, by line ID or by page scene and aspect.
+fn take(dir: &Path, project: &Project, patience: u64) -> Result<Vec<(String, PathBuf)>, String> {
+    let cuts: Vec<_> = project.cuts.iter().collect();
+    let plan = capture::plan(project, dir, &cuts);
+    let limits = Limits {
+        patience: Duration::from_secs(patience),
+    };
+    let taken = capture_with(project, dir, &plan, limits)?;
+    Ok(taken
+        .into_iter()
+        .map(|c| {
+            let name = match &c.source {
+                Source::Line(id) => id.clone(),
+                Source::Page { scene, aspect, .. } => format!("{scene}-{aspect}"),
+            };
+            (name, capture::path(dir, &c.key))
+        })
+        .collect())
+}
+
+fn frames(dir: &Path, project: &Project, line: &str) -> Frames {
+    let key = &capture::line_keys(project)[line];
+    serde_json::from_str(&fs::read_to_string(frames_path(dir, key)).unwrap()).unwrap()
+}
+
+fn picture(taken: &[(String, PathBuf)], name: &str) -> Image {
+    let (_, path) = taken.iter().find(|(n, _)| n == name).unwrap();
+    Image::load_png(path).unwrap()
+}
+
+/// How many files a failed capture left in the captures folder.
+fn left_behind(dir: &Path) -> usize {
+    fs::read_dir(dir.join(capture::DIR))
+        .map(|d| d.count())
+        .unwrap_or(0)
+}
+
+#[test]
+#[ignore = "needs Chromium: just test-capture"]
+fn a_scene_runs_its_actions_and_frames_each_line() {
+    let (dir, project) = project(unchanged);
+    let taken = take(dir.path(), &project, 30).unwrap();
+    // Ten stills, and the overlay for each of the two aspects.
+    assert_eq!(taken.len(), 12, "{taken:?}");
+    // Every expectation held, or the capture would have failed; the
+    // readings are kept.
+    let readings = fs::read_to_string(dir.path().join("build/onscreen.json")).unwrap();
+    assert!(readings.contains("Cheese PIE"), "{readings}");
+
+    let a = frames(dir.path(), &project, "a");
+    assert_eq!((a.viewport, a.scale), ([640, 360], 2));
+    assert_eq!(a.highlights["tab-a"], vec![[10.0, 40.0, 80.0, 30.0]]);
+    assert_eq!(a.cameras["tabs"], Some([10.0, 40.0, 170.0, 30.0]));
+    assert_eq!(a.cameras["all"], Some([0.0, 0.0, 640.0, 360.0]));
+    assert_eq!(a.cameras["viewport"], a.cameras["all"]);
+    assert_eq!(a.cameras["highlights"], Some([10.0, 40.0, 80.0, 30.0]));
+    let still = picture(&taken, "a");
+    assert_eq!((still.width, still.height), (1280, 720));
+
+    // Row 3 sits 120 px down the panel, which scrolled 80 px at once,
+    // though the panel asks for smooth scrolling.
+    let row = frames(dir.path(), &project, "c").highlights["row-3"][0];
+    assert_eq!((row[0], row[1], row[3]), (10.0, 140.0, 40.0));
+    assert!((190.0..=200.0).contains(&row[2]), "{row:?}");
+
+    // The second line of the <pre>, padded by 6 and 3 pixels.
+    let line = frames(dir.path(), &project, "d").highlights["code-line-1"][0];
+    assert!((line[0] - 224.0).abs() < 1.0, "{line:?}");
+    assert!((line[1] - 177.0).abs() < 3.0, "{line:?}");
+    assert!((20.0..=30.0).contains(&line[3]), "{line:?}");
+
+    // Merged rows: one box, clipped to the panel; `beta` through `any`
+    // and an attribute rule with (?i).
+    let e = frames(dir.path(), &project, "e");
+    let rows = &e.highlights["rows"];
+    assert_eq!(rows.len(), 1);
+    assert_eq!((rows[0][0], rows[0][1], rows[0][3]), (10.0, 100.0, 100.0));
+    assert_eq!(e.highlights["beta"], vec![[100.0, 40.0, 80.0, 30.0]]);
+
+    // The slow result arrived 1.2 s after its click, with nothing changing
+    // meanwhile; the still waited for the expectation, so the lamp is lit.
+    let lit = picture(&taken, "f");
+    assert_eq!(&lit.pixel(770, 110)[..3], [0x00, 0xaa, 0x00]);
+
+    // A text rule on a child, a regular expression and an exclusion: the
+    // two apple pies. Then `pick`, and a match grown to its item.
+    let h = frames(dir.path(), &project, "h");
+    assert_eq!(
+        h.highlights["pies"],
+        vec![[450.0, 100.0, 160.0, 24.0], [450.0, 172.0, 160.0, 24.0]]
+    );
+    let i = frames(dir.path(), &project, "i");
+    assert_eq!(i.highlights["sweet"], vec![[450.0, 100.0, 160.0, 24.0]]);
+    assert_eq!(
+        i.highlights["kind-again"],
+        vec![[450.0, 172.0, 160.0, 24.0]]
+    );
+    // A gauge the page holds at 40 % with a paused animation stays there.
+    assert_eq!(i.highlights["gauge"], vec![[450.0, 210.0, 40.0, 10.0]]);
+
+    // The last line's click went to another page, which asked before the
+    // first was left and then swapped its body; capture followed.
+    let j = frames(dir.path(), &project, "j");
+    assert_eq!(j.highlights["arrived"], vec![[40.0, 60.0, 200.0, 40.0]]);
+    assert_eq!(j.cameras["tabs"], None);
+
+    // The overlay, at each aspect's size, on a transparent background.
+    let wide = picture(&taken, "badge-16x9");
+    assert_eq!((wide.width, wide.height, wide.channels), (200, 100, 4));
+    assert_eq!(wide.pixel(0, 0)[3], 0);
+    assert_eq!(wide.pixel(100, 50), [0x20, 0x60, 0xc0, 0xff]);
+    let tall = picture(&taken, "badge-9x16");
+    assert_eq!((tall.width, tall.height, tall.channels), (100, 200, 4));
+    assert_eq!(tall.pixel(0, 0)[3], 0);
+    assert_eq!(tall.pixel(50, 100), [0xc0, 0x60, 0x20, 0xff]);
+}
+
+#[test]
+#[ignore = "needs Chromium: just test-capture"]
+fn five_captures_of_a_scene_are_identical() {
+    let (one, project) = project(unchanged);
+    let first = take(one.path(), &project, 30).unwrap();
+    let sidecar = |dir: &Path, name: &str| {
+        capture::line_keys(&project)
+            .get(name)
+            .map(|key| fs::read(frames_path(dir, key)).unwrap())
+    };
+    for run in 2..=5 {
+        let (again, _) = self::project(unchanged);
+        let taken = take(again.path(), &project, 30).unwrap();
+        assert_eq!(taken.len(), first.len());
+        for ((name, a), (_, b)) in first.iter().zip(&taken) {
+            assert!(
+                fs::read(a).unwrap() == fs::read(b).unwrap(),
+                "{name}: capture {run} differs from capture 1"
+            );
+            assert_eq!(
+                sidecar(one.path(), name),
+                sidecar(again.path(), name),
+                "{name}: the frames of capture {run}"
+            );
+        }
+    }
+}
+
+#[test]
+#[ignore = "needs Chromium: just test-capture"]
+fn a_page_that_shows_other_text_is_refused_and_no_still_is_kept() {
+    let (dir, project) = project(|p| p.replacen("text = \"clicked A\"", "text = \"clicked B\"", 1));
+    let error = take(dir.path(), &project, 2).unwrap_err();
+    assert!(
+        error.contains(r#"at line "a", target "status" shows "clicked A", not "clicked B""#),
+        "{error}"
+    );
+    assert_eq!(left_behind(dir.path()), 0);
+}
+
+#[test]
+#[ignore = "needs Chromium: just test-capture"]
+fn a_highlight_that_matches_nothing_names_its_line_and_target() {
+    let (dir, project) = project(|p| {
+        p.replacen(
+            "late = { css = \"#late\" }",
+            "late = { css = \"#late\" }\nnone = { css = \"#none\" }",
+            1,
+        )
+        .replacen("highlight = [\"choice\"]", "highlight = [\"none\"]", 1)
+    });
+    let error = take(dir.path(), &project, 2).unwrap_err();
+    assert!(error.contains("line b"), "{error}");
+    assert!(
+        error.contains("highlight none matches nothing on screen"),
+        "{error}"
+    );
+    assert_eq!(left_behind(dir.path()), 0);
+}
+
+#[test]
+#[ignore = "needs Chromium: just test-capture"]
+fn a_script_error_on_the_page_fails_its_line() {
+    let (dir, project) =
+        project(|p| p.replacen("{ click = \"tab-a\" }", "{ click = \"boom\" }", 1));
+    let error = take(dir.path(), &project, 2).unwrap_err();
+    assert!(error.contains("scene page, at line a"), "{error}");
+    assert!(error.contains("the page threw: Error: boom"), "{error}");
+}
+
+#[test]
+#[ignore = "needs Chromium: just test-capture"]
+fn a_dialog_is_dismissed_and_fails_its_line() {
+    let (dir, project) = project(|p| p.replacen("{ click = \"tab-a\" }", "{ click = \"ask\" }", 1));
+    let error = take(dir.path(), &project, 2).unwrap_err();
+    assert!(error.contains("scene page, at line a"), "{error}");
+    assert!(
+        error.contains("the page opened a dialog (alert), which was dismissed: hi"),
+        "{error}"
+    );
+}
+
+#[test]
+#[ignore = "needs Chromium: just test-capture"]
+fn a_click_refuses_to_land_on_what_covers_its_target() {
+    let (dir, project) = project(|p| p.replacen("{ click = \"arm\" }", "{ click = \"block\" }", 1));
+    let error = take(dir.path(), &project, 2).unwrap_err();
+    assert!(error.contains("scene page, at line h"), "{error}");
+    assert!(
+        error.contains("target under is covered where a click would land"),
+        "{error}"
+    );
+}
+
+/// A page served over HTTP, to show what a file can't: a cookie the server
+/// sets, and a network that stays busy.
+const VISIT: &str = r##"<!doctype html>
+<meta charset="utf-8">
+<style>
+  body { margin: 0; font: 16px/20px sans-serif; }
+  div, button { position: absolute; left: 10px; height: 20px; }
+  #server { top: 10px; } #local { top: 40px; } #status { top: 70px; }
+  #busy { top: 100px; width: 60px; height: 30px; border: 0; }
+</style>
+<div id="server">SERVER</div>
+<div id="local"></div>
+<div id="status">quiet</div>
+<button id="busy" onclick="start()">Busy</button>
+<script>
+  const n = Number(localStorage.getItem('n') || 0) + 1;
+  localStorage.setItem('n', n);
+  document.getElementById('local').textContent = 'local visit ' + n;
+  function start() {
+    setInterval(() => fetch('/ping?' + Date.now()), 150);
+    document.getElementById('status').textContent = 'busy';
+  }
+</script>
+"##;
+
+const SERVED: &str = r##"
+schema = 1
+
+[meta]
+title = "Served"
+default_scene = "page"
+
+[sections.main]
+
+[[lines]]
+id = "first"
+section = "main"
+show = "A first visit."
+highlight = ["server"]
+
+[[lines]]
+id = "busy"
+section = "main"
+show = "A page that keeps asking."
+do = [{ click = "busy" }]
+highlight = ["status"]
+
+[scenes.page]
+kind = "web"
+url = "http://127.0.0.1:PORT/visit"
+viewport = [320, 200]
+scale = 2
+
+[scenes.page.targets]
+server = { css = "#server" }
+local = { css = "#local" }
+status = { css = "#status" }
+busy = { css = "#busy" }
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[[expectations]]
+scene = "page"
+at = "first"
+target = "server"
+text = "first visit"
+
+[[expectations]]
+scene = "page"
+at = "first"
+target = "local"
+text = "local visit 1"
+
+[[expectations]]
+scene = "page"
+at = "busy"
+target = "status"
+text = "busy"
+"##;
+
+/// Serves [`VISIT`] at `/visit` on a local port, which it returns. The page
+/// says "first visit" to a request without the cookie it sets, and "welcome
+/// back" to one with it. `/ping` answers at once.
+fn serve() -> u16 {
+    use std::io::{BufRead, BufReader, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    std::thread::spawn(move || {
+        for stream in listener.incoming().flatten() {
+            std::thread::spawn(move || {
+                let mut reader = BufReader::new(stream.try_clone().unwrap());
+                let mut head = Vec::new();
+                loop {
+                    let mut line = String::new();
+                    if reader.read_line(&mut line).unwrap_or(0) == 0 || line == "\r\n" {
+                        break;
+                    }
+                    head.push(line);
+                }
+                let path = head
+                    .first()
+                    .and_then(|l| l.split(' ').nth(1))
+                    .unwrap_or("/");
+                let seen = head
+                    .iter()
+                    .any(|l| l.to_lowercase().starts_with("cookie:") && l.contains("seen=1"));
+                let (kind, extra, body) = if path.starts_with("/visit") {
+                    let greeting = if seen { "welcome back" } else { "first visit" };
+                    (
+                        "text/html",
+                        "Set-Cookie: seen=1; Path=/\r\n",
+                        VISIT.replace("SERVER", greeting),
+                    )
+                } else {
+                    ("text/plain", "", "ok".to_string())
+                };
+                let _ = write!(
+                    &stream,
+                    "HTTP/1.1 200 OK\r\nContent-Type: {kind}\r\nContent-Length: {}\r\n\
+                     Cache-Control: no-store\r\n{extra}Connection: close\r\n\r\n{body}",
+                    body.len()
+                );
+            });
+        }
+    });
+    port
+}
+
+#[test]
+#[ignore = "needs Chromium: just test-capture"]
+fn a_page_loaded_twice_is_still_a_first_visit_and_a_busy_network_settles() {
+    let dir = tempfile::tempdir().unwrap();
+    let text = SERVED.replace("PORT", &serve().to_string());
+    fs::write(dir.path().join("vidni.toml"), &text).unwrap();
+    let project = vidni_core::validate::check(&text, Some(dir.path())).unwrap();
+    // At scale 2 the page is loaded twice. The first load ran no script and
+    // its cookie was cleared, so the second is a first visit to the server
+    // and to the page's own storage. Then the page asks the server
+    // something every 150 ms for as long as it is shown, and still settles.
+    let taken = take(dir.path(), &project, 20).unwrap();
+    assert_eq!(taken.len(), 2, "{taken:?}");
+}

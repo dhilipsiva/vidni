@@ -12,13 +12,16 @@ authors.workspace = true
 workspace = true
 
 [dependencies]
+base64 = "0.23.1"
 cosmic-text = { version = "0.19.0", default-features = false, features = ["std", "swash"] }
 harfrust = "0.5.2"
 hound = "3.5.1"
 png = "0.18.1"
+serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
+tempfile = "3.27.0"
 ttf-parser = "0.25.1"
+command-fds = "0.3.3"
 vidni-core = { path = "../vidni-core" }
 
 [dev-dependencies]
-tempfile = "3.27.0"

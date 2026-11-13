@@ -17,6 +17,7 @@ workspace = true
 
 [dependencies]
 clap = { version = "4.6.7", features = ["derive"] }
+ctrlc = { version = "3.5.2", features = ["termination"] }
 vidni-core = { path = "../vidni-core" }
 vidni-media = { path = "../vidni-media" }
 

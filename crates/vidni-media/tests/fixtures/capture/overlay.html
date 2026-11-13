@@ -1,0 +1,19 @@
+<!doctype html>
+<!-- An overlay for the capture runtime's tests: a box on a transparent page,
+     blue for a 16:9 cut and orange for a 9:16 one (?r=16x9 or ?r=9x16). -->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: transparent; }
+  div { position: absolute; left: 25%; top: 25%; width: 50%; height: 50%; }
+</style>
+</head>
+<body>
+<div id="box"></div>
+<script>
+  const portrait = new URLSearchParams(location.search).get('r') === '9x16';
+  document.getElementById('box').style.background = portrait ? '#c06020' : '#2060c0';
+</script>
+</body>
+</html>

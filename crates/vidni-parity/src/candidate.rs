@@ -8,7 +8,8 @@
 use crate::VARIANTS;
 use std::fs;
 use std::path::{Path, PathBuf};
-use vidni_core::project::Project;
+use vidni_core::capture::{self, Source};
+use vidni_core::project::{Aspect, Project};
 use vidni_core::takes::{self, Status};
 use vidni_core::timeline::{self, Clip};
 
@@ -24,7 +25,7 @@ pub fn build(stage: &str, example: &Path, reference: &Path, dst: &Path) -> Resul
                 .into(),
         ),
         "cuts" => cuts(example, reference, dst),
-        "stills" => Err("the Rust port of stills isn't built yet (P3-VIDNI-04)".into()),
+        "stills" => stills(example, dst),
         _ => Err(format!("no Rust port to build for {stage}")),
     }
 }
@@ -132,6 +133,51 @@ fn cuts(example: &Path, reference: &Path, dst: &Path) -> Result<(), String> {
         for (_, f) in &cut.frames {
             let png = frames.join(format!("{}-{f}.png", job.name));
             job.composer.frame(*f)?.save_png(&png)?;
+        }
+    }
+    Ok(())
+}
+
+/// The example's stills and cards, captured afresh by the Rust port into a
+/// copy of the example, and laid out as the reference names them:
+/// `stills/NNN.png` by line number, each with its frames as
+/// `stills/NNN.json`, and `cards/<scene>-<aspect>.png`.
+fn stills(example: &Path, dst: &Path) -> Result<(), String> {
+    let work = dst.join("project");
+    let (project, _) = crate::capture::fresh(example, &work)?;
+    let made = |e: std::io::Error| e.to_string();
+    let copy = |from: PathBuf, to: PathBuf| {
+        fs::copy(&from, &to)
+            .map(drop)
+            .map_err(|e| format!("{}: {e}", from.display()))
+    };
+    fs::create_dir_all(dst.join("stills")).map_err(made)?;
+    fs::create_dir_all(dst.join("cards")).map_err(made)?;
+    let keys = capture::line_keys(&project);
+    for (k, line) in project.lines.iter().enumerate() {
+        if let Some(key) = keys.get(&line.id) {
+            copy(
+                capture::path(&work, key),
+                dst.join(format!("stills/{k:03}.png")),
+            )?;
+            copy(
+                vidni_media::capture::frames_path(&work, key),
+                dst.join(format!("stills/{k:03}.json")),
+            )?;
+        }
+    }
+    for cut in &project.cuts {
+        let aspect = match cut.aspect {
+            Aspect::Landscape => "16x9",
+            Aspect::Portrait => "9x16",
+        };
+        for c in capture::for_cut(&project, cut) {
+            if let Source::Page { scene, .. } = &c.source {
+                copy(
+                    capture::path(&work, &c.key),
+                    dst.join(format!("cards/{scene}-{aspect}.png")),
+                )?;
+            }
         }
     }
     Ok(())

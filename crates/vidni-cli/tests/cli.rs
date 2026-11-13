@@ -346,3 +346,25 @@ fn draft_says_how_to_fetch_a_missing_voice() {
         "{stderr}"
     );
 }
+
+#[test]
+fn capture_names_a_chromium_that_isnt_there() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = project_with_voice(dir.path(), "piper:en_US-joe-medium");
+    let out = Command::new(env!("CARGO_BIN_EXE_vidni"))
+        .args(["capture", file.to_str().unwrap()])
+        .env("VIDNI_CHROMIUM", "/nonexistent/chromium")
+        .output()
+        .unwrap();
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(out.status.code(), Some(1), "{stderr}");
+    assert!(
+        stderr.contains("vidni: /nonexistent/chromium: "),
+        "{stderr}"
+    );
+    // Nothing was kept: no still, and no staging folder.
+    let left = fs::read_dir(dir.path().join("build/captures"))
+        .map(|d| d.count())
+        .unwrap_or(0);
+    assert_eq!(left, 0);
+}

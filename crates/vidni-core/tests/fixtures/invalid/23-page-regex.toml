@@ -1,0 +1,28 @@
+# expect: 21:30: not a JavaScript regular expression: Invalid group modifier
+schema = 1
+
+[meta]
+title = "A broken project"
+default_scene = "page"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "Hello."
+
+[scenes.page]
+kind = "web"
+url = "https://example.com"
+
+[scenes.page.targets]
+# A Rust named group, which JavaScript spells (?<name>…).
+title = { css = "h1", text = { matches = '(?P<name>Welcome)' } }
+
+[scenes.page.cameras]
+heading = { union = ["title"] }
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

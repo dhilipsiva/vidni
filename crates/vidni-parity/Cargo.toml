@@ -12,6 +12,7 @@ authors.workspace = true
 [dependencies]
 flate2 = "1.1.11"
 hound = "3.5.1"
+serde = "1.0.229"
 serde_json = "1.0.154"
 vidni-core = { path = "../vidni-core" }
 vidni-media = { path = "../vidni-media" }

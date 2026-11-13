@@ -1,0 +1,22 @@
+<!doctype html>
+<!-- Where the Go button of page.html leads. Once loaded it swaps its body,
+     as some apps do when they mount, which drops anything added to the old one. -->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: #ffffff; color: #111111; font: 16px/20px sans-serif; }
+  #arrived { position: absolute; left: 40px; top: 60px; width: 200px; height: 40px; background: #cceecc; }
+</style>
+</head>
+<body>
+<div id="arrived">arriving</div>
+<script>
+  addEventListener('load', () => {
+    const body = document.createElement('body');
+    body.innerHTML = '<div id="arrived">arrived</div>';
+    document.documentElement.replaceChild(body, document.body);
+  });
+</script>
+</body>
+</html>

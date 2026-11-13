@@ -16,7 +16,8 @@
 //! `timeline-{synthetic,voice}.json`, `nibli-syllogism{,-voice}.en.srt`,
 //! `narration-{synthetic,voice}.wav`, `nibli-syllogism{,-voice}-{16x9,9x16}.mp4`,
 //! the cuts' sample frames `frames/nibli-syllogism{,-voice}-{16x9,9x16}-F.png`,
-//! `stills/*.png` and `cards/*.png`. A missing file fails its check.
+//! `stills/*.png` with each still's frames `stills/*.json`, and `cards/*.png`.
+//! A missing file fails its check.
 
 use flate2::read::GzDecoder;
 use serde_json::Value;
@@ -29,6 +30,7 @@ use vidni_media::compose::cut::FPS;
 use vidni_media::compose::image::Image;
 
 pub mod candidate;
+pub mod capture;
 pub mod compose;
 pub mod selftest;
 
@@ -512,6 +514,141 @@ pub fn largest_difference(a: &Path, b: &Path) -> Result<u8, String> {
         .unwrap_or(0))
 }
 
+/// The largest difference between two images' alpha values, or none when
+/// neither image has alpha. An image without alpha counts as opaque.
+pub fn alpha_difference(a: &Path, b: &Path) -> Result<Option<u8>, String> {
+    let (a, b) = (Image::load_png(a)?, Image::load_png(b)?);
+    if a.channels != 4 && b.channels != 4 {
+        return Ok(None);
+    }
+    let (a, b) = (a.to_rgba(), b.to_rgba());
+    if (a.width, a.height) != (b.width, b.height) {
+        return Err(format!(
+            "{}x{} against {}x{}",
+            b.width, b.height, a.width, a.height
+        ));
+    }
+    Ok(a.data
+        .chunks(4)
+        .zip(b.data.chunks(4))
+        .map(|(x, y)| x[3].abs_diff(y[3]))
+        .max())
+}
+
+/// JSON as Python's `json.dumps(data, indent=1, sort_keys=True,
+/// ensure_ascii=False)` writes it, plus a newline: what `tools/golden.py`
+/// hashes a JSON input as.
+pub fn canonical_json(value: &Value) -> Result<String, String> {
+    let mut out = Vec::new();
+    let formatter = serde_json::ser::PrettyFormatter::with_indent(b" ");
+    let mut serializer = serde_json::Serializer::with_formatter(&mut out, formatter);
+    serde::Serialize::serialize(value, &mut serializer).map_err(|e| e.to_string())?;
+    out.push(b'\n');
+    String::from_utf8(out).map_err(|e| e.to_string())
+}
+
+/// The frames of each of the reference's stills, as vidni writes a still's
+/// frames (`vidni_media::capture::Frames`), by `stills/NNN.json`. The
+/// reference names the highlights' camera `hl`, and writes `:` where
+/// vidni's target names have `-`. `capture.json` is checked against golden
+/// first.
+pub fn reference_frames_of_stills(
+    reference_build: &Path,
+    hashes: &Value,
+) -> Result<Vec<(String, Value)>, String> {
+    let path = reference_build.join("capture.json");
+    let capture = load_json(&path)?;
+    let want = golden_hash(hashes, "inputs", "build/capture.json");
+    if want != Some(sha256_hex(canonical_json(&capture)?.as_bytes()).as_str()) {
+        return Err(format!(
+            "{}: is not the golden capture.json; run `just golden`",
+            path.display()
+        ));
+    }
+    let view = [&capture["view"]["width"], &capture["view"]["height"]];
+    let mut all = Vec::new();
+    for shot in capture["shots"].as_array().into_iter().flatten() {
+        let Some(still) = shot["still"].as_str() else {
+            continue;
+        };
+        let mut cameras = serde_json::Map::new();
+        for (name, rect) in shot["cameras"].as_object().into_iter().flatten() {
+            let name = if name == "hl" { "highlights" } else { name };
+            cameras.insert(name.to_string(), rect.clone());
+        }
+        cameras.insert(
+            "viewport".into(),
+            serde_json::json!([0, 0, view[0], view[1]]),
+        );
+        let mut highlights = serde_json::Map::new();
+        for (name, boxes) in shot["hl"].as_object().into_iter().flatten() {
+            highlights.insert(name.replace(':', "-"), boxes.clone());
+        }
+        let frames = serde_json::json!({
+            "viewport": view,
+            "scale": capture["dpr"],
+            "cameras": cameras,
+            "highlights": highlights,
+            "browser": "the reference's",
+        });
+        all.push((still.replace(".png", ".json"), frames));
+    }
+    Ok(all)
+}
+
+/// How far a box of a still's frames may be from the reference's, in CSS pixels.
+pub const FRAME_TOLERANCE: f64 = 0.5;
+
+/// Where `got`, a still's frames, differ from `want`: the viewport or the
+/// scale, or a camera's box or a highlight's boxes by more than
+/// [`FRAME_TOLERANCE`]. Frames with a part missing differ.
+pub fn frames_differ(want: &Value, got: &Value) -> Option<String> {
+    let number = |a: &Value, b: &Value, tolerance: f64| matches!((a.as_f64(), b.as_f64()), (Some(a), Some(b)) if (a - b).abs() <= tolerance);
+    let boxes = |a: &Value, b: &Value, tolerance: f64| match (a.as_array(), b.as_array()) {
+        (Some(a), Some(b)) => {
+            a.len() == b.len() && a.iter().zip(b).all(|(x, y)| number(x, y, tolerance))
+        }
+        _ => a.is_null() && b.is_null(),
+    };
+    if !boxes(&want["viewport"], &got["viewport"], 0.0)
+        || !number(&want["scale"], &got["scale"], 0.0)
+    {
+        return Some(format!(
+            "its viewport and scale are {} at {}, not {} at {}",
+            got["viewport"], got["scale"], want["viewport"], want["scale"]
+        ));
+    }
+    let part = |frames: &Value, name: &str| frames[name].as_object().cloned();
+    let (Some(cameras), Some(framed)) = (part(want, "cameras"), part(got, "cameras")) else {
+        return Some("it has no cameras".into());
+    };
+    for (name, rect) in &cameras {
+        let ours = framed.get(name).unwrap_or(&Value::Null);
+        if !boxes(rect, ours, FRAME_TOLERANCE) {
+            return Some(format!("camera {name} is {ours}, not {rect}"));
+        }
+    }
+    let (Some(theirs), Some(ours)) = (part(want, "highlights"), part(got, "highlights")) else {
+        return Some("it has no highlights".into());
+    };
+    if let Some(extra) = ours.keys().find(|name| !theirs.contains_key(*name)) {
+        return Some(format!("highlight {extra} isn't in the reference's"));
+    }
+    for (name, wanted) in &theirs {
+        let drawn = ours.get(name).unwrap_or(&Value::Null);
+        let same = match (wanted.as_array(), drawn.as_array()) {
+            (Some(a), Some(b)) => {
+                a.len() == b.len() && a.iter().zip(b).all(|(x, y)| boxes(x, y, FRAME_TOLERANCE))
+            }
+            _ => false,
+        };
+        if !same {
+            return Some(format!("highlight {name} is {drawn}, not {wanted}"));
+        }
+    }
+    None
+}
+
 /// Cuts: the candidate's frames against the reference's own frames before
 /// encoding, at evenly spaced times (DECISIONS.md, A9). Golden's MP4s are
 /// lossy, so their decoded frames would measure x264 as well as the
@@ -588,10 +725,38 @@ pub fn check_stills(candidate: &Path, reference_build: &Path, hashes: &Value, re
                 continue;
             }
         }
-        match ssim(&golden, &candidate.join(rel)) {
-            Ok(s) => report.score(s, rel.to_string()),
-            Err(e) => report.fail(e),
+        let ours = candidate.join(rel);
+        match ssim(&golden, &ours).and_then(|s| Ok((s, largest_difference(&golden, &ours)?))) {
+            Ok((score, difference)) => {
+                report.difference(difference, rel);
+                report.score(score, rel.to_string());
+            }
+            Err(e) => report.fail(format!("{rel}: {e}")),
         }
+        // SSIM and the colour difference don't see alpha, and an overlay is
+        // mostly alpha.
+        match alpha_difference(&golden, &ours) {
+            Ok(Some(d)) => report.check(d <= 2, || {
+                format!("{rel}: its alpha differs from golden's by {d} of 255")
+            }),
+            Ok(None) => {}
+            Err(e) => report.fail(format!("{rel}: {e}")),
+        }
+    }
+    // Each still's frames: the compositor frames its cameras from them.
+    match reference_frames_of_stills(reference_build, hashes) {
+        Ok(stills) => {
+            for (rel, want) in stills {
+                match load_json(&candidate.join(&rel)) {
+                    Ok(got) => match frames_differ(&want, &got) {
+                        None => report.pass(),
+                        Some(d) => report.fail(format!("{rel}: {d}")),
+                    },
+                    Err(e) => report.fail(e),
+                }
+            }
+        }
+        Err(e) => report.fail(e),
     }
 }
 
@@ -662,6 +827,12 @@ pub fn reference_as_candidate(sources: &Sources, dst: &Path, scratch: &Path) -> 
             let name = format!("nibli-syllogism{suffix}-{cut}.mp4");
             copy(reference.join("out").join(&name), dst.join(&name))?;
         }
+    }
+    let hashes = load_json(&sources.golden.join("hashes.json"))?;
+    fs::create_dir_all(dst.join("stills")).map_err(|e| e.to_string())?;
+    for (rel, frames) in reference_frames_of_stills(&reference.join("build"), &hashes)? {
+        let json = serde_json::to_string_pretty(&frames).map_err(|e| e.to_string())?;
+        fs::write(dst.join(&rel), json).map_err(|e| format!("{rel}: {e}"))?;
     }
     for dir in ["stills", "cards"] {
         fs::create_dir_all(dst.join(dir)).map_err(|e| e.to_string())?;
@@ -811,5 +982,62 @@ mod tests {
         assert!(ssim(&a, &c).unwrap() < SSIM_MIN);
         assert_eq!(pixels_sha256(&a).unwrap(), pixels_sha256(&b).unwrap());
         assert_ne!(pixels_sha256(&a).unwrap(), pixels_sha256(&c).unwrap());
+    }
+
+    #[test]
+    fn frames_differ_by_a_moved_box_a_missing_part_or_another_scale() {
+        let frames = || {
+            serde_json::json!({
+                "viewport": [1280, 720],
+                "scale": 3,
+                "cameras": {"app": [0, 0, 1280, 720], "highlights": null},
+                "highlights": {"kr": [[29, 180, 588, 180]]},
+            })
+        };
+        let edited = |pointer: &str, value: Value| {
+            let mut f = frames();
+            *f.pointer_mut(pointer).unwrap() = value;
+            f
+        };
+        assert_eq!(frames_differ(&frames(), &frames()), None);
+        // Within the tolerance, and with a camera the reference doesn't have.
+        let near = edited("/highlights/kr/0/1", Value::from(180.4));
+        assert_eq!(frames_differ(&frames(), &near), None);
+        let moved = edited("/cameras/app/0", Value::from(2));
+        assert!(
+            frames_differ(&frames(), &moved)
+                .unwrap()
+                .contains("camera app")
+        );
+        let shifted = edited("/highlights/kr/0/1", Value::from(181));
+        assert!(
+            frames_differ(&frames(), &shifted)
+                .unwrap()
+                .contains("highlight kr")
+        );
+        let scaled = edited("/scale", Value::from(2));
+        assert!(frames_differ(&frames(), &scaled).unwrap().contains("scale"));
+        let mut bare = frames();
+        bare.as_object_mut().unwrap().remove("highlights");
+        assert_eq!(
+            frames_differ(&frames(), &bare).as_deref(),
+            Some("it has no highlights")
+        );
+        let mut extra = frames();
+        extra["highlights"]["why"] = serde_json::json!([[1, 2, 3, 4]]);
+        assert!(
+            frames_differ(&frames(), &extra)
+                .unwrap()
+                .contains("highlight why")
+        );
+    }
+
+    #[test]
+    fn canonical_json_is_pythons_sorted_one_space_indent() {
+        let value = serde_json::json!({"b": [1, 2.5, "é"], "a": {}, "c": []});
+        assert_eq!(
+            canonical_json(&value).unwrap(),
+            "{\n \"a\": {},\n \"b\": [\n  1,\n  2.5,\n  \"é\"\n ],\n \"c\": []\n}\n"
+        );
     }
 }

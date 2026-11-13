@@ -218,6 +218,27 @@ fn regex_problem(pattern: &str) -> Option<String> {
     })
 }
 
+/// A target's regular expression runs in the page, as JavaScript's in
+/// Unicode mode, where a leading `(?i)`, `(?m)` or `(?s)` sets that flag.
+/// So it is checked as JavaScript, not as Rust.
+fn page_regex_problem(pattern: &str) -> Option<String> {
+    let leading = pattern
+        .strip_prefix("(?")
+        .and_then(|rest| rest.split_once(')'))
+        .filter(|(flags, _)| !flags.is_empty() && flags.chars().all(|c| "ims".contains(c)));
+    let (mut flags, body): (Vec<char>, &str) = match leading {
+        Some((flags, body)) => (flags.chars().collect(), body),
+        None => (Vec::new(), pattern),
+    };
+    flags.sort_unstable();
+    flags.dedup();
+    flags.push('u');
+    let flags: String = flags.into_iter().collect();
+    regress::Regex::with_flags(body, flags.as_str())
+        .err()
+        .map(|e| format!("not a JavaScript regular expression: {e}"))
+}
+
 #[derive(Default)]
 struct Rules {
     found: Vec<(Vec<Seg>, String)>,
@@ -550,6 +571,12 @@ impl Rules {
         match verb {
             "select" if action.value.is_none() => self.add(with(verb), "select needs a value"),
             "scroll" if action.top.is_none() => self.add(with(verb), "scroll needs top"),
+            "scroll" if action.top.is_some_and(|t| !t.is_finite()) => {
+                self.add(with("top"), "top must be a finite number")
+            }
+            "scroll_to" if action.offset.is_some_and(|o| !o.is_finite()) => {
+                self.add(with("offset"), "offset must be a finite number")
+            }
             "scroll_to" => match &action.within {
                 None => self.add(with(verb), "scroll_to needs within, the scroll container"),
                 Some(w) if !scene.targets.contains_key(w) => {
@@ -731,12 +758,12 @@ impl Rules {
                         with(key),
                         "a text rule has exactly one of starts_with, contains or matches",
                     );
-                } else if let Some(problem) = rule.matches.as_deref().and_then(regex_problem) {
+                } else if let Some(problem) = rule.matches.as_deref().and_then(page_regex_problem) {
                     self.add(with(key), problem);
                 }
             }
         }
-        if let Some(problem) = t.attr.as_ref().and_then(|a| regex_problem(&a.matches)) {
+        if let Some(problem) = t.attr.as_ref().and_then(|a| page_regex_problem(&a.matches)) {
             self.add(with("attr"), problem);
         }
         if t.merge

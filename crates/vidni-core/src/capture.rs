@@ -4,8 +4,10 @@
 //! A web line's capture is keyed by its scene (all of it but the cameras,
 //! which only frame the still), every action that has run on that page by
 //! then (the scene's setup, then each earlier line's actions in script
-//! order, then its own) and its highlights. A page scene's render is keyed
-//! by the scene and the size it is rendered at.
+//! order, then its own), the expectations capture has waited for by then,
+//! and its highlights. A page scene's render is keyed
+//! by the scene, the size it is rendered at, and the cut's aspect, which
+//! `{aspect}` in its address becomes.
 
 use crate::project::{Aspect, Cut, Project, Scene, SceneKind};
 use serde_json::{Value, json};
@@ -22,6 +24,21 @@ pub struct Capture {
     pub key: String,
     /// What it shows, for people: `line <id>` or `page <scene> at <w>x<h>`.
     pub what: String,
+    pub source: Source,
+}
+
+/// What a capture is taken of.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Source {
+    /// A web line's still, by line ID.
+    Line(String),
+    /// A page scene rendered at a size, in pixels, for a cut's aspect:
+    /// `16x9` or `9x16`, which `{aspect}` in its address becomes.
+    Page {
+        scene: String,
+        size: [u32; 2],
+        aspect: &'static str,
+    },
 }
 
 /// The file of the capture with `key`.
@@ -79,7 +96,18 @@ fn web_spec(scene: &Scene) -> Value {
 
 /// The capture key of every line on a web scene, by line ID.
 pub fn line_keys(project: &Project) -> BTreeMap<String, String> {
-    let mut done: BTreeMap<&str, Vec<Value>> = BTreeMap::new();
+    // What has happened on each scene's page so far: the actions run, and
+    // the expectations waited for. A capture waits for an expectation
+    // before it takes a still, so adding one can change the still.
+    let mut done: BTreeMap<&str, (Vec<Value>, Vec<Value>)> = BTreeMap::new();
+    let expected = |scene: &str, at: &str| -> Vec<Value> {
+        project
+            .expectations
+            .iter()
+            .filter(|x| x.scene == scene && x.at == at)
+            .map(value_of)
+            .collect()
+    };
     let mut keys = BTreeMap::new();
     for line in &project.lines {
         let Some(id) = line.scene_in(project) else {
@@ -88,10 +116,17 @@ pub fn line_keys(project: &Project) -> BTreeMap<String, String> {
         let Some(scene) = project.scenes.get(id).filter(|s| s.kind == SceneKind::Web) else {
             continue;
         };
-        let steps = done.entry(id).or_default();
+        let (steps, waits) = done
+            .entry(id)
+            .or_insert_with(|| (Vec::new(), expected(id, "setup")));
         steps.extend(line.actions.iter().map(value_of));
-        let key =
-            hash(&json!({"scene": web_spec(scene), "steps": steps, "highlight": line.highlight}));
+        waits.extend(expected(id, &line.id));
+        let key = hash(&json!({
+            "scene": web_spec(scene),
+            "steps": steps,
+            "expects": waits,
+            "highlight": line.highlight,
+        }));
         keys.insert(line.id.clone(), key);
     }
     keys
@@ -112,14 +147,18 @@ pub fn for_cut(project: &Project, cut: &Cut) -> Vec<Capture> {
     let ids: BTreeSet<String> = cut.line_ids(project).into_iter().collect();
     let mut seen = BTreeSet::new();
     let mut found = Vec::new();
-    let mut add = |key: String, what: String| {
+    let mut add = |key: String, what: String, source: Source| {
         if seen.insert(key.clone()) {
-            found.push(Capture { key, what });
+            found.push(Capture { key, what, source });
         }
     };
     for line in project.lines.iter().filter(|l| ids.contains(&l.id)) {
         if let Some(key) = keys.get(&line.id) {
-            add(key.clone(), format!("line {}", line.id));
+            add(
+                key.clone(),
+                format!("line {}", line.id),
+                Source::Line(line.id.clone()),
+            );
         }
         for id in line
             .scene_in(project)
@@ -128,8 +167,18 @@ pub fn for_cut(project: &Project, cut: &Cut) -> Vec<Capture> {
         {
             if let Some(scene) = project.scenes.get(id).filter(|s| s.kind == SceneKind::Page) {
                 let size = page_size(scene, cut);
-                let key = hash(&json!({"scene": value_of(scene), "size": size}));
-                add(key, format!("page {id} at {}x{}", size[0], size[1]));
+                let aspect = match cut.aspect {
+                    Aspect::Landscape => "16x9",
+                    Aspect::Portrait => "9x16",
+                };
+                let key = hash(&json!({"scene": value_of(scene), "size": size, "aspect": aspect}));
+                let source = Source::Page {
+                    scene: id.to_string(),
+                    size,
+                    aspect,
+                };
+                let what = format!("page {id} at {}x{} for {aspect}", size[0], size[1]);
+                add(key, what, source);
             }
         }
     }

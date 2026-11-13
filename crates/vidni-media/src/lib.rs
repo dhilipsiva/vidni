@@ -2,6 +2,8 @@
 //! intelligibility check. They drive external tools pinned by version and
 //! sha256. See `TODO.md`, milestone P3.
 
+pub mod capture;
+pub mod cdp;
 pub mod compose;
 pub mod encode;
 pub mod narration;

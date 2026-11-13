@@ -21,6 +21,10 @@ Some inputs can't be made deterministic: a live web page, every Chromium render,
 | 2026-11-13 | same | the compositor's frame streams | T1 | `just compose-t1`: two renders of each cut gave the same rgb24 stream, hashed below |
 | 2026-11-13 | a clean `nixos/nix` container on the same desktop: Nix 2.35.6, vidni built from source by `nix build` | the compositor's frame streams | T1, equal to the desktop's | `vidni-parity compose-t1 --fonts …` in the container: two identical renders of each cut, with the desktop's four hashes |
 | 2026-11-13 | the maintainer's desktop | the draft voice: Piper 1.8.0 with vidni's seed patch, piper:en_US-joe-medium, on the nibli example's 57 lines | repeatable on one host | `vidni draft` chose each line's take from 3 (171 takes). With the cache cleared, a redraft from `voice.lock` gave the same PCM: the 57 clips' combined sha256 is `59359d31…ffca` both times. A redraft with the lock cleared as well chose the same seeds and gave the same PCM again |
+| 2026-11-14 | same | capture (Rust): the nibli example's 53 stills and 8 cards, taken afresh from the live page with the host's fonts | equal to golden | `just parity stills`: 118 of 118 checks. Every still and card scores SSIM 1.0000. Each still differs from golden's in 548 to 812 of its 8.3 million pixels: anti-aliasing at a few edges, from rastering each layer as one tile. Overlay alpha is equal, and each still's frames are within 0.5 CSS px of the reference's |
+| 2026-11-14 | same | capture: five captures of a local scene, each in a fresh Chromium | identical on one host | `just test-capture`: the stills and their frames are byte-identical across the five. One line of the scene, captured 30 times, gave one still |
+| 2026-11-14 | same | capture: five captures of the nibli example's live page | identical on one host | `just capture-repeat`: the pixels and frames of all 46 stills agree across the five. One still, captured 40 times, gave one result |
+| 2026-11-14 | same | capture: a local copy of the example's site header at scale 3 | identical on one host | 80 captures gave one still. Before the three fixes of T6, about 1 capture in 6 differed in a few pixels of an icon |
 
 The compositor's frame streams (rgb24, every frame in order), drawn with IBM Plex Sans Bold (sha256 `19de5aec…c316`), IBM Plex Mono Bold (`44f6da8e…a6c7`) and Space Grotesk Bold (`be8709ab…368f`):
 
@@ -58,4 +62,10 @@ nibli-syllogism-voice-9x16  8,441 frames  97cc6585c827b80c014d03e7eb9f888cc56835
 - Each line's kept seed is recorded in `voice.lock`, so a draft never depends on what the cache holds.
 - The same seed gives the same PCM on one host. Across hosts it isn't promised, since onnxruntime may take different paths on different CPUs.
 
-**Captures** (`vidni_core::capture`) aren't deterministic, because they come from a live page. Each is filed by what it shows, frozen by hash when its cut is ratified, and never retaken unless its scene changes or `--refresh` asks for it (DECISIONS.md, T3).
+**Captures** (`vidni_media::capture`) come from a page, which can change, so they aren't promised to repeat. What vidni controls is fixed:
+- the pinned Chromium, its switches, the viewport and scale, the emulated media and the font families;
+- the fonts fontconfig offers, which vidni's flake pins;
+- when a still is taken: after the page has settled, and after the line's expectations hold;
+- three things that varied from one launch to the next until they were pinned (DECISIONS.md, T6): a page above scale 1 is loaded twice, each layer is rastered as one tile, and vidni's style and highlight layer are in a document from its start.
+
+Five captures of a local scene give identical bytes, stills and frames alike (`just test-capture`, which CI runs), and so did five captures of the nibli example's live page. Each capture is filed by what it shows, frozen by hash when its cut is ratified, and never retaken unless its scene changes or `--refresh` asks for it (DECISIONS.md, T3).

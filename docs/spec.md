@@ -214,10 +214,10 @@ A target names the visible elements of a web page that match it. Highlights, cam
 | Key | Type | Meaning |
 |---|---|---|
 | `css` | string | A CSS selector. A target needs `css` or `any`. |
-| `text` | string or rule | Keep elements whose text matches. A string matches exactly, after whitespace is collapsed. A rule is one of `{ starts_with = "…" }`, `{ contains = "…" }` or `{ matches = "regex" }`. |
+| `text` | string or rule | Keep elements whose text matches. A string matches exactly, after whitespace is collapsed. A rule is one of `{ starts_with = "…" }`, `{ contains = "…" }` or `{ matches = "regex" }`. The regular expression is JavaScript's, in Unicode mode, because it runs in the page; a leading `(?i)`, `(?m)` or `(?s)` sets that flag. |
 | `text_of` | string | Match `text` and `exclude` against this child (a CSS selector) instead of the whole element |
 | `exclude` | string or rule | Drop elements whose text matches |
-| `attr` | `{ name, matches }` | Keep elements whose attribute `name` matches the regular expression |
+| `attr` | `{ name, matches }` | Keep elements whose attribute `name` matches the regular expression (JavaScript's, as for `text`) |
 | `pick` | `"all"`, `"first"` or `"last"` | Which matches to keep. Default `all`. |
 | `merge` | boolean | Draw one box around all the matches. `pick` must be `all`. |
 | `line` | integer | One line of the element's text, counted from 0 |
@@ -257,7 +257,44 @@ An action is a table with exactly one verb. Each verb names a target, and some t
 | `scroll_to` | `within` (required), `offset` | Scroll the target `within` (a scroll container) until this target is at its top, less `offset` CSS pixels |
 | `wait` | | Wait until the target is visible |
 
-Capture waits for the page to settle after every action: it takes screenshots until two in a row are identical (P3-VIDNI-04).
+How actions run:
+- **Waiting:** every action first waits, up to 30 seconds, for its target to show.
+- **Clicks:** a click moves the mouse to the middle of the target and clicks there, as a person would, so hover styles show as they would for one. A target that isn't wholly in view is first scrolled into view through its scroll containers. A click never lands on something covering its target: it waits, up to 30 seconds, for the cover to go.
+- **Scrolls** happen at once, whatever the page's `scroll-behavior` says.
+- **Settling:** after every action, capture waits for the page to settle. Its running animations are finished, and endless ones stopped; one the page holds still (paused) is left as it is. Its fonts are loaded. Then two screenshots in a row, a quarter second apart, must be identical, with the network quiet between them. A page that keeps its network busy has settled once five screenshots in a row are identical.
+- **Following:** when an action takes the page to another document, capture waits for it to load and carries on there. A page that asks before it is left (`beforeunload`) is told to go ahead.
+
+A change that arrives late, with nothing moving meanwhile, can't be seen coming: a result that shows a second after a click, say. Name what the page must show then in an [expectation](#expectations), or `wait` for its target; capture waits for both.
+
+## Capturing: `vidni capture`
+
+`vidni capture` takes the captures the cuts need that `build/captures/` doesn't hold yet.
+- **Each web scene** is loaded in a fresh Chromium, and its `setup` run. Then its lines run in script order. For each line:
+  1. Its actions run, and the focus is taken off whatever has it.
+  2. Its expectations are waited for, up to 30 seconds each, and read.
+  3. When a still is needed, the line's highlights are drawn, the page settles, and the still is taken.
+- **Beside each still**, `<key>.json` holds its frames, in CSS pixels: every camera's box (the scene's own, plus `viewport` and `highlights`), each highlight's boxes, the viewport and scale, and the browser that took it.
+- **Each page scene** is rendered at each size a cut needs, in its own Chromium, with a transparent background when it says so.
+- **A scene's stills are kept only when it passes.** They wait aside until the scene's last line is done. The readings go to `build/onscreen.json`. No still of the scene is kept, and the problem is reported with its scene and line, when:
+  - an expectation doesn't hold;
+  - a script on the page throws an error;
+  - the page opens a dialog, which is dismissed;
+  - the page's renderer crashes.
+- **Interrupting** a capture (Ctrl-C) closes Chromium, removes its temporary profile and keeps no still of the unfinished scene.
+
+A web scene with a `scale` above 1 is loaded twice, and the second load is the one captured. Chromium's first load at an emulated scale came out in one of two renderings, launch by launch (DECISIONS.md, T6). The first load is inert: none of the page's scripts run, and the cookies it sets are cleared, so the second load is still a first visit. The server does see two requests.
+
+How Chromium runs:
+- It is the `chromium` on the path, or `$VIDNI_CHROMIUM`. vidni's flake pins it, and each still's frames record its version.
+- It runs headless, on a fresh profile, with the switches Playwright 1.63 uses for headless Chrome, plus `--font-render-hinting=none` and `--force-color-profile=srgb`.
+- It rasters each layer as one tile. Left to itself it placed its tiles differently from one launch to the next, and curves came out a few levels different.
+- Its sandbox is on. `VIDNI_NO_SANDBOX=1` turns it off, for hosts whose kernel doesn't let Chromium build one (some CI runners).
+- vidni talks to it over pipes, so nothing listens on a network port, and it exits when vidni does.
+- vidni's own script runs in an isolated world, where the page's scripts can't see or change it. Its style and highlight layer are in each document from the start.
+- Pages are told to reduce motion, and a web scene gets the colour scheme it asks for.
+- Fonts are the ones fontconfig offers. vidni's flake pins them (IBM Plex, Space Grotesk, DejaVu, Liberation, Noto and Noto Color Emoji), so a page's fallback fonts don't depend on the host there. Chinese, Japanese and Korean aren't covered yet.
+
+Highlight boxes are drawn in the nibli example's look, an ember outline, until themes take them over (P5-VIDNI-01).
 
 ## `[[cuts]]`
 
@@ -290,7 +327,7 @@ An expectation is text a web scene must show. A capture stops when the page show
 
 Set `text` or `texts`, not both.
 
-A capture reads the target's texts at that point and writes them to `build/onscreen.json`. Texts are compared with their runs of whitespace collapsed. Each one that differs is reported with the point in the script, the target, and what was shown in place of what was expected, for example: `at line "false-1", target "result" shows "UNKNOWN", not "FALSE"`.
+A capture waits at that point, up to 30 seconds, for the target to show the expected texts. Then it reads them and writes them to `build/onscreen.json`. Texts are compared with their runs of whitespace collapsed. Each one that differs is reported with the point in the script, the target, and what was shown in place of what was expected, for example: `at line "false-1", target "result" shows "UNKNOWN", not "FALSE"`.
 
 ## Ratification
 
@@ -307,13 +344,14 @@ A cut's status is never stored; `vidni status` works it out from those hashes ea
 Gaps (`[timing]`), caption style, platforms and the theme aren't part of a cut's content; only the release hashes them. So changing them leaves a cut ratified, and editing a line regresses exactly the cuts that use it.
 
 **Captures** live in `build/captures/`, out of git, each named by a key:
-- **A web line's capture** is keyed by three things:
+- **A web line's capture** is keyed by four things:
   - its scene, all of it except the cameras, which only frame the still;
   - every action that has run on the page by then: the setup, then each earlier line's `do` in script order, then its own;
+  - every expectation capture has waited for by then, on that scene;
   - its highlights.
 
   Lines that show the same page with the same highlights share one capture.
-- **A page scene's render** is keyed by the scene and the size it is rendered at.
+- **A page scene's render** is keyed by the scene, the size it is rendered at, and the cut's aspect, which `{aspect}` in its address becomes.
 
 A draft takes only the captures no file holds yet, so a redraft with no scene changes takes none. `vidni unratify` keeps a cut's captures. `--refresh` deletes the ones no other ratified cut uses, so that they are taken afresh.
 
@@ -354,7 +392,8 @@ It checks, in order:
    - Overlays are transparent page scenes.
    - Cuts name known lines in script order, and known platforms.
    - Sizes are even and in aspect.
-   - Regular expressions compile.
+   - Regular expressions compile: a target's as JavaScript, `lint.banned` as Rust's `regex` crate.
+   - `scroll`'s `top` and `scroll_to`'s `offset` are finite numbers.
    - No line shows or says wording that `lint.banned` forbids.
    - In a strict project, every line that states a fact names its `source`.
    - Every file a scene names exists.

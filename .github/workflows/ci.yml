@@ -20,5 +20,10 @@ jobs:
         run: nix develop .#ci --command just lint
       - name: just test
         run: nix develop .#ci --command just test
+      - name: just test-capture
+        # The runner's kernel doesn't let Chromium build its sandbox.
+        env:
+          VIDNI_NO_SANDBOX: "1"
+        run: nix develop .#ci --command just test-capture
       - name: nix flake check
         run: nix flake check

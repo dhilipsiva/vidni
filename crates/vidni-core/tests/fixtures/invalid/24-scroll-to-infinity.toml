@@ -1,0 +1,25 @@
+# expect: 14:33: top must be a finite number
+schema = 1
+
+[meta]
+title = "A broken project"
+default_scene = "page"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "Hello."
+do = [{ scroll = "panel", top = inf }]
+
+[scenes.page]
+kind = "web"
+url = "https://example.com"
+
+[scenes.page.targets]
+panel = { css = ".panel" }
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

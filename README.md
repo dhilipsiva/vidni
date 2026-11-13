@@ -18,6 +18,7 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 - `vidni validate` checks a project file against [schema 1](docs/spec.md), and `vidni fmt` puts it in the canonical layout.
 - `vidni takes` tracks the recorded takes.
 - `vidni voices` lists the draft voices with their licences, and `vidni draft` speaks every line in the draft voice, seeded so that a redraft repeats it.
+- `vidni capture` captures web scenes and page scenes through Chromium, as the cuts need them.
 - `vidni ratify` and `vidni status` freeze cuts.
 
 Nothing renders yet.
