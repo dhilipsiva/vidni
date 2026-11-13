@@ -29,3 +29,5 @@ just golden-update   # re-derive everything and overwrite these files
 Both recipes run inside the reference's own nix shell. The reference lives in `reference/`; `VIDNI_REFERENCE` points them at another copy.
 
 The golden media are not committed: the MP4s, stills and cards are listed here only by hash. They live in the reference's `out/` and `build/` folders, and the parity harness checks their hashes before comparing against them.
+
+The harness compares MP4 packets by a fingerprint of these framemd5 logs, not by the logs' hashes (DECISIONS.md, T1). The logs were written by the reference's ffmpeg 8.1, and vidni's ffmpeg 9.0 writes the same packets with a different version line and extra side data.

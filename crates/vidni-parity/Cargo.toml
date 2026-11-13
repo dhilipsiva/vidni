@@ -1,0 +1,22 @@
+[package]
+name = "vidni-parity"
+description = "Dev tool: compares a Rust stage's outputs with the reference pipeline's golden outputs (TODO.md, P1-VIDNI-04)."
+publish = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+flate2 = "1.1.11"
+hound = "3.5.1"
+serde_json = "1.0.154"
+sha2 = "0.11.1"
+
+[dev-dependencies]
+tempfile = "3.27.0"
+
+[lints]
+workspace = true

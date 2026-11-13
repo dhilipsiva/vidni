@@ -36,6 +36,8 @@
         version = "0.1.0";
         src = self;
         cargoLock.lockFile = ./Cargo.lock;
+        # The parity harness's frame tests drive ffmpeg.
+        nativeCheckInputs = [ pkgs.ffmpeg-headless ];
       };
     in
     {
@@ -49,9 +51,10 @@
           packages = rustTools ++ mediaTools ++ [ pkgs.rust-analyzer ];
           FONTCONFIG_FILE = fontsConf;
         };
-        # CI's shell: the Rust toolchain and just, without the large media tools.
+        # CI's shell: the Rust toolchain and just, plus a headless ffmpeg for the
+        # parity tests, without the large media tools.
         ci = pkgs.mkShell {
-          packages = rustTools;
+          packages = rustTools ++ [ pkgs.ffmpeg-headless ];
           FONTCONFIG_FILE = fontsConf;
         };
       };

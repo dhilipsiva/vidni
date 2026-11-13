@@ -48,9 +48,14 @@ golden-update:
 assets-check:
     for lock in examples/*/assets.lock; do (cd "$(dirname "$lock")" && sha256sum -c --quiet --strict assets.lock) && echo "$lock: every file matches"; done
 
-# Compare a Rust stage with the golden outputs (P1-VIDNI-04).
-parity stage:
-    @echo "not built yet: P1-VIDNI-04 adds the parity harness (stage: {{stage}})" >&2; exit 2
+# Compare a Rust stage's outputs with the golden outputs (timeline, narration, encode,
+# cuts, stills or all): `just parity cuts --candidate DIR`, or `--reference-self`.
+parity stage *args:
+    cargo run -q -p vidni-parity -- {{stage}} {{args}}
+
+# Show that the parity harness passes the reference itself and catches a perturbed output per stage.
+parity-selftest:
+    cargo run -q -p vidni-parity -- selftest
 
 # Build twice under a hermetic environment and compare (P3-VIDNI-06).
 repro:

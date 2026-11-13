@@ -82,3 +82,9 @@ Every decision has a date and a ruling, or "default" where the maintainer accept
 ## Technical decisions
 
 Added as the items are built.
+
+### T1. Comparing MP4 packets across ffmpeg versions
+- **2026-11-13, P1-VIDNI-04.** The parity harness compares a cut's packets by a fingerprint of its framemd5 log, not by the log's hash.
+- The fingerprint drops the `#software` line and the side data listed after a packet's hash. It keeps the extradata, the stream parameters, and every packet's timing, size and payload MD5.
+- **Why:** the golden logs were written by the reference's ffmpeg 8.1.3, and vidni pins ffmpeg 9.0.2. For the same file, ffmpeg 9 writes a different `#software` line and lists the last AAC packet's skip-samples side data, which ffmpeg 8 doesn't. Every packet payload is identical, so the fingerprint changes only when the streams do.
+- `golden/hashes.json` keeps the hash of each whole log, and the harness checks each committed log against it before reading it.
