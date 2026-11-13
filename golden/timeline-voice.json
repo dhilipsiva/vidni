@@ -1,0 +1,1184 @@
+{
+ "rate": 48000,
+ "sentences": [
+  {
+   "card": "intro",
+   "cues": [
+    {
+     "end": 4.726,
+     "start": 0.6,
+     "text": "Language models predict the next word. A reasoner derives the next step."
+    }
+   ],
+   "end": 4.726,
+   "index": 0,
+   "k": 0,
+   "label": "",
+   "say": "Language models predict the next word. A reasoner derives the next step.",
+   "segment": "intro",
+   "show": "Language models predict the next word. A reasoner derives the next step.",
+   "start": 0.6,
+   "wav": "recordings/000.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 9.154,
+     "start": 5.006,
+     "text": "In five minutes: what symbolic reasoning is, what a theorem prover does,"
+    },
+    {
+     "end": 13.243,
+     "start": 9.154,
+     "text": "where an LLM fits around one, and a small proof in nibli, step by step."
+    }
+   ],
+   "end": 13.243,
+   "index": 1,
+   "k": 1,
+   "label": "",
+   "say": "In five minutes: what symbolic reasoning is, what a theorem proover does, where an LLM fits around one, and a small proof in nibli, step by step.",
+   "segment": "intro",
+   "show": "In five minutes: what symbolic reasoning is, what a theorem prover does, where an LLM fits around one, and a small proof in nibli, step by step.",
+   "start": 5.006,
+   "wav": "recordings/001.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 17.472,
+     "start": 13.993,
+     "text": "Symbolic reasoning works on explicit statements and explicit rules."
+    }
+   ],
+   "end": 17.472,
+   "index": 0,
+   "k": 2,
+   "label": "symbolic reasoning",
+   "say": "Symbolic reasoning works on explicit statements and explicit rules.",
+   "segment": "symbolic",
+   "show": "Symbolic reasoning works on explicit statements and explicit rules.",
+   "start": 13.993,
+   "wav": "recordings/002.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 22.006,
+     "start": 17.752,
+     "text": "Here are three: every dog is an animal, every animal eats, and Adam is a dog."
+    }
+   ],
+   "end": 22.006,
+   "index": 1,
+   "k": 3,
+   "label": "symbolic reasoning",
+   "say": "Here are three: every dog is an animal, every animal eats, and Adam is a dog.",
+   "segment": "symbolic",
+   "show": "Here are three: every dog is an animal, every animal eats, and Adam is a dog.",
+   "start": 17.752,
+   "wav": "recordings/003.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 25.313,
+     "start": 22.286,
+     "text": "Nothing is learned from examples, and nothing is guessed."
+    }
+   ],
+   "end": 25.313,
+   "index": 2,
+   "k": 4,
+   "label": "symbolic reasoning",
+   "say": "Nothing is learned from examples, and nothing is guessed.",
+   "segment": "symbolic",
+   "show": "Nothing is learned from examples, and nothing is guessed.",
+   "start": 22.286,
+   "wav": "recordings/004.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 30.33,
+     "start": 25.593,
+     "text": "A conclusion counts only if it follows from these statements by fixed rules of inference."
+    }
+   ],
+   "end": 30.33,
+   "index": 3,
+   "k": 5,
+   "label": "symbolic reasoning",
+   "say": "A conclusion counts only if it follows from these statements by fixed rules of inference.",
+   "segment": "symbolic",
+   "show": "A conclusion counts only if it follows from these statements by fixed rules of inference.",
+   "start": 25.593,
+   "wav": "recordings/005.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 33.34,
+     "start": 30.61,
+     "text": "Run it again tomorrow and you get the same answer,"
+    },
+    {
+     "end": 35.961,
+     "start": 33.34,
+     "text": "and you can inspect every step that produced it."
+    }
+   ],
+   "end": 35.961,
+   "index": 4,
+   "k": 6,
+   "label": "symbolic reasoning",
+   "say": "Run it again tomorrow and you get the same answer, and you can inspect every step that produced it.",
+   "segment": "symbolic",
+   "show": "Run it again tomorrow and you get the same answer, and you can inspect every step that produced it.",
+   "start": 30.61,
+   "wav": "recordings/006.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 38.639,
+     "start": 36.711,
+     "text": "A theorem prover automates that."
+    }
+   ],
+   "end": 38.639,
+   "index": 0,
+   "k": 7,
+   "label": "theorem proving",
+   "say": "A theorem proover automates that.",
+   "segment": "proving",
+   "show": "A theorem prover automates that.",
+   "start": 36.711,
+   "wav": "recordings/007.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 42.013,
+     "start": 38.919,
+     "text": "You give it premises and a claim, and it searches for a proof:"
+    },
+    {
+     "end": 45.006,
+     "start": 42.013,
+     "text": "a chain of rule applications from the premises to the claim."
+    }
+   ],
+   "end": 45.006,
+   "index": 1,
+   "k": 8,
+   "label": "theorem proving",
+   "say": "You give it premises and a claim, and it searches for a proof: a chain of rule applications from the premises to the claim.",
+   "segment": "proving",
+   "show": "You give it premises and a claim, and it searches for a proof: a chain of rule applications from the premises to the claim.",
+   "start": 38.919,
+   "wav": "recordings/008.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 48.649,
+     "start": 45.286,
+     "text": "If it finds one, the answer is TRUE, and it can show you the chain."
+    }
+   ],
+   "end": 48.649,
+   "index": 2,
+   "k": 9,
+   "label": "theorem proving",
+   "say": "If it finds one, the answer is TRUE, and it can show you the chain.",
+   "segment": "proving",
+   "show": "If it finds one, the answer is TRUE, and it can show you the chain.",
+   "start": 45.286,
+   "wav": "recordings/009.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 51.849,
+     "start": 48.929,
+     "text": "That answer is sound with respect to what you encoded."
+    }
+   ],
+   "end": 51.849,
+   "index": 3,
+   "k": 10,
+   "label": "theorem proving",
+   "say": "That answer is sound with respect to what you encoded.",
+   "segment": "proving",
+   "show": "That answer is sound with respect to what you encoded.",
+   "start": 48.929,
+   "wav": "recordings/010.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 55.733,
+     "start": 52.129,
+     "text": "It doesn't make your premises true. It tells you what they commit you to."
+    }
+   ],
+   "end": 55.733,
+   "index": 4,
+   "k": 11,
+   "label": "theorem proving",
+   "say": "It doesn't make your premises true. It tells you what they commit you to.",
+   "segment": "proving",
+   "show": "It doesn't make your premises true. It tells you what they commit you to.",
+   "start": 52.129,
+   "wav": "recordings/011.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 61.487,
+     "start": 56.013,
+     "text": "nibli answers with one of four verdicts: TRUE; FALSE, meaning not derivable; UNKNOWN,"
+    },
+    {
+     "end": 66.832,
+     "start": 61.487,
+     "text": "with a reason; and RESOURCE_EXCEEDED, when a depth, fuel or memory budget runs out."
+    }
+   ],
+   "end": 66.832,
+   "index": 5,
+   "k": 12,
+   "label": "theorem proving",
+   "say": "nibli answers with one of four verdicts. TRUE. FALSE, meaning not derivable. UNKNOWN, with a reason. And resource exceeded, when a depth, fuel or memory budget runs out.",
+   "segment": "proving",
+   "show": "nibli answers with one of four verdicts: TRUE; FALSE, meaning not derivable; UNKNOWN, with a reason; and RESOURCE_EXCEEDED, when a depth, fuel or memory budget runs out.",
+   "start": 56.013,
+   "wav": "recordings/012.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 71.806,
+     "start": 67.582,
+     "text": "A neuro-symbolic system pairs a neural front end with a symbolic core,"
+    },
+    {
+     "end": 73.918,
+     "start": 71.806,
+     "text": "and lets each do what it's good at."
+    }
+   ],
+   "end": 73.918,
+   "index": 0,
+   "k": 13,
+   "label": "neuro-symbolic architecture",
+   "say": "A neuro-symbolic system pairs a neural front end with a symbolic core, and lets each do what it's good at.",
+   "segment": "neurosymbolic",
+   "show": "A neuro-symbolic system pairs a neural front end with a symbolic core, and lets each do what it's good at.",
+   "start": 67.582,
+   "wav": "recordings/013.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 76.659,
+     "start": 74.198,
+     "text": "Language models are good at reading prose."
+    }
+   ],
+   "end": 76.659,
+   "index": 1,
+   "k": 14,
+   "label": "neuro-symbolic architecture",
+   "say": "Language models are good at reading prose.",
+   "segment": "neurosymbolic",
+   "show": "Language models are good at reading prose.",
+   "start": 74.198,
+   "wav": "recordings/014.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 82.615,
+     "start": 76.939,
+     "text": "So in nibli, an LLM can formalize plain English into nibli KR, the engine's rule language."
+    }
+   ],
+   "end": 82.615,
+   "index": 2,
+   "k": 15,
+   "label": "neuro-symbolic architecture",
+   "say": "So in nibli, an LLM can formalize plain English into nibli K R, the engine's rule language.",
+   "segment": "neurosymbolic",
+   "show": "So in nibli, an LLM can formalize plain English into nibli KR, the engine's rule language.",
+   "start": 76.939,
+   "wav": "recordings/015.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 85.23,
+     "start": 82.895,
+     "text": "That draft sits outside the reasoning firewall."
+    }
+   ],
+   "end": 85.23,
+   "index": 3,
+   "k": 16,
+   "label": "neuro-symbolic architecture",
+   "say": "That draft sits outside the reasoning firewall.",
+   "segment": "neurosymbolic",
+   "show": "That draft sits outside the reasoning firewall.",
+   "start": 82.895,
+   "wav": "recordings/016.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 88.878,
+     "start": 85.51,
+     "text": "Before anything reasons over it, deterministic gates check it."
+    }
+   ],
+   "end": 88.878,
+   "index": 4,
+   "k": 17,
+   "label": "neuro-symbolic architecture",
+   "say": "Before anything reasons over it, deterministic gates check it.",
+   "segment": "neurosymbolic",
+   "show": "Before anything reasons over it, deterministic gates check it.",
+   "start": 85.51,
+   "wav": "recordings/017.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 94.235,
+     "start": 89.158,
+     "text": "The grammar. A committed vocabulary, where an unknown word is an error instead of a guess."
+    },
+    {
+     "end": 97.789,
+     "start": 94.235,
+     "text": "The semantic compiler. And a round trip back to canonical text."
+    }
+   ],
+   "end": 97.789,
+   "index": 5,
+   "k": 18,
+   "label": "neuro-symbolic architecture",
+   "say": "The grammar. A committed vocabulary, where an unknown word is an error instead of a guess. The semantic compiler. And a round trip back to canonical text.",
+   "segment": "neurosymbolic",
+   "show": "The grammar. A committed vocabulary, where an unknown word is an error instead of a guess. The semantic compiler. And a round trip back to canonical text.",
+   "start": 89.158,
+   "wav": "recordings/018.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 101.262,
+     "start": 98.069,
+     "text": "Then a person reviews the rules and their back-translation:"
+    },
+    {
+     "end": 104.076,
+     "start": 101.262,
+     "text": "a fixed, mechanical reading, with no model involved."
+    }
+   ],
+   "end": 104.076,
+   "index": 6,
+   "k": 19,
+   "label": "neuro-symbolic architecture",
+   "say": "Then a person reviews the rules and their back-translation: a fixed, mechanical reading, with no model involved.",
+   "segment": "neurosymbolic",
+   "show": "Then a person reviews the rules and their back-translation: a fixed, mechanical reading, with no model involved.",
+   "start": 98.069,
+   "wav": "recordings/019.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 106.004,
+     "start": 104.356,
+     "text": "This example comes pre-encoded,"
+    },
+    {
+     "end": 109.459,
+     "start": 106.004,
+     "text": "so the Formalize button is switched off and we skip the drafting."
+    }
+   ],
+   "end": 109.459,
+   "index": 7,
+   "k": 20,
+   "label": "neuro-symbolic architecture",
+   "say": "This example comes pre-encoded, so the Formalize button is switched off and we skip the drafting.",
+   "segment": "neurosymbolic",
+   "show": "This example comes pre-encoded, so the Formalize button is switched off and we skip the drafting.",
+   "start": 104.356,
+   "wav": "recordings/020.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 112.187,
+     "start": 109.739,
+     "text": "The LLM drafts. The engine decides."
+    }
+   ],
+   "end": 112.187,
+   "index": 8,
+   "k": 21,
+   "label": "neuro-symbolic architecture",
+   "say": "The LLM drafts. The engine decides.",
+   "segment": "neurosymbolic",
+   "show": "The LLM drafts. The engine decides.",
+   "start": 109.739,
+   "wav": "recordings/021.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 115.194,
+     "start": 112.937,
+     "text": "nibli is the engine I build in Rust."
+    }
+   ],
+   "end": 115.194,
+   "index": 0,
+   "k": 22,
+   "label": "nibli",
+   "say": "nibli is the engine I build in Rust.",
+   "segment": "nibli",
+   "show": "nibli is the engine I build in Rust.",
+   "start": 112.937,
+   "wav": "recordings/022.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 117.588,
+     "start": 115.474,
+     "text": "It's a theorem prover, and it's open source."
+    }
+   ],
+   "end": 117.588,
+   "index": 1,
+   "k": 23,
+   "label": "nibli",
+   "say": "It's a theorem proover, and it's open source.",
+   "segment": "nibli",
+   "show": "It's a theorem prover, and it's open source.",
+   "start": 115.474,
+   "wav": "recordings/023.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 120.365,
+     "start": 117.868,
+     "text": "It compiles nibli KR into first-order logic,"
+    },
+    {
+     "end": 123.656,
+     "start": 120.365,
+     "text": "and answers claims by backward chaining over a fact store."
+    }
+   ],
+   "end": 123.656,
+   "index": 2,
+   "k": 24,
+   "label": "nibli",
+   "say": "It compiles nibli K R into first-order logic, and answers claims by backward chaining over a fact store.",
+   "segment": "nibli",
+   "show": "It compiles nibli KR into first-order logic, and answers claims by backward chaining over a fact store.",
+   "start": 117.868,
+   "wav": "recordings/024.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 127.015,
+     "start": 123.936,
+     "text": "The whole pipeline, parser, compiler and reasoner,"
+    },
+    {
+     "end": 132.679,
+     "start": 127.015,
+     "text": "runs right here in the browser as WebAssembly, and also under Wasmtime or as a native crate."
+    }
+   ],
+   "end": 132.679,
+   "index": 3,
+   "k": 25,
+   "label": "nibli",
+   "say": "The whole pipeline, parser, compiler and reasoner, runs right here in the browser as WebAssembly, and also under Wasmtime or as a native crate.",
+   "segment": "nibli",
+   "show": "The whole pipeline, parser, compiler and reasoner, runs right here in the browser as WebAssembly, and also under Wasmtime or as a native crate.",
+   "start": 123.936,
+   "wav": "recordings/025.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 135.904,
+     "start": 132.959,
+     "text": "It never invents a fact, a rule or a proof step."
+    }
+   ],
+   "end": 135.904,
+   "index": 4,
+   "k": 26,
+   "label": "nibli",
+   "say": "It never invents a fact, a rule or a proof step.",
+   "segment": "nibli",
+   "show": "It never invents a fact, a rule or a proof step.",
+   "start": 132.959,
+   "wav": "recordings/026.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 140.029,
+     "start": 136.654,
+     "text": "Here's the syllogism example: three lines of nibli KR."
+    }
+   ],
+   "end": 140.029,
+   "index": 0,
+   "k": 27,
+   "label": "the syllogism",
+   "say": "Here's the syllogism example: three lines of nibli K R.",
+   "segment": "syllogism",
+   "show": "Here's the syllogism example: three lines of nibli KR.",
+   "start": 136.654,
+   "wav": "recordings/027.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 145.224,
+     "start": 140.309,
+     "text": "The first reads: for every X, if X is a dog, then X is an animal."
+    }
+   ],
+   "end": 145.224,
+   "index": 1,
+   "k": 28,
+   "label": "the syllogism",
+   "say": "The first reads: for every X, if X is a dog, then X is an animal.",
+   "segment": "syllogism",
+   "show": "The first reads: for every X, if X is a dog, then X is an animal.",
+   "start": 140.309,
+   "wav": "recordings/028.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 150.086,
+     "start": 145.504,
+     "text": "The second: for every X, if X is an animal, then X eats."
+    }
+   ],
+   "end": 150.086,
+   "index": 2,
+   "k": 29,
+   "label": "the syllogism",
+   "say": "The second: for every X, if X is an animal, then X eats.",
+   "segment": "syllogism",
+   "show": "The second: for every X, if X is an animal, then X eats.",
+   "start": 145.504,
+   "wav": "recordings/029.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 152.128,
+     "start": 150.366,
+     "text": "The third: Adam is a dog."
+    }
+   ],
+   "end": 152.128,
+   "index": 3,
+   "k": 30,
+   "label": "the syllogism",
+   "say": "The third: Adam is a dog.",
+   "segment": "syllogism",
+   "show": "The third: Adam is a dog.",
+   "start": 150.366,
+   "wav": "recordings/030.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 156.467,
+     "start": 152.408,
+     "text": "We don't ask a question. We state the claim to check: Adam eats."
+    }
+   ],
+   "end": 156.467,
+   "index": 4,
+   "k": 31,
+   "label": "the syllogism",
+   "say": "We don't ask a question. We state the claim to check: Adam eats.",
+   "segment": "syllogism",
+   "show": "We don't ask a question. We state the claim to check: Adam eats.",
+   "start": 152.408,
+   "wav": "recordings/031.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 159.968,
+     "start": 157.217,
+     "text": "The engine starts from the claim and works backward."
+    }
+   ],
+   "end": 159.968,
+   "index": 0,
+   "k": 32,
+   "label": "reasoning backward",
+   "say": "The engine starts from the claim and works backward.",
+   "segment": "reasoning",
+   "show": "The engine starts from the claim and works backward.",
+   "start": 157.217,
+   "wav": "recordings/032.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 163.715,
+     "start": 160.248,
+     "text": "The goal is: Adam eats. No stored fact says so."
+    }
+   ],
+   "end": 163.715,
+   "index": 1,
+   "k": 33,
+   "label": "reasoning backward",
+   "say": "The goal is: Adam eats. No stored fact says so.",
+   "segment": "reasoning",
+   "show": "The goal is: Adam eats. No stored fact says so.",
+   "start": 160.248,
+   "wav": "recordings/033.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 169.225,
+     "start": 163.995,
+     "text": "So it looks for a rule whose conclusion is eats: line two, every animal eats."
+    }
+   ],
+   "end": 169.225,
+   "index": 2,
+   "k": 34,
+   "label": "reasoning backward",
+   "say": "So it looks for a rule whose conclusion is eats: line two, every animal eats.",
+   "segment": "reasoning",
+   "show": "So it looks for a rule whose conclusion is eats: line two, every animal eats.",
+   "start": 163.995,
+   "wav": "recordings/034.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 172.707,
+     "start": 169.505,
+     "text": "Matching that conclusion to the goal binds X to Adam,"
+    },
+    {
+     "end": 175.184,
+     "start": 172.707,
+     "text": "and leaves a new goal: Adam is an animal."
+    }
+   ],
+   "end": 175.184,
+   "index": 3,
+   "k": 35,
+   "label": "reasoning backward",
+   "say": "Matching that conclusion to the goal binds X to Adam, and leaves a new goal: Adam is an animal.",
+   "segment": "reasoning",
+   "show": "Matching that conclusion to the goal binds X to Adam, and leaves a new goal: Adam is an animal.",
+   "start": 169.505,
+   "wav": "recordings/035.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 180.181,
+     "start": 175.464,
+     "text": "Again there's no stored fact, so it looks for a rule that concludes animal:"
+    },
+    {
+     "end": 182.257,
+     "start": 180.181,
+     "text": "line one, every dog is an animal."
+    }
+   ],
+   "end": 182.257,
+   "index": 4,
+   "k": 36,
+   "label": "reasoning backward",
+   "say": "Again there's no stored fact, so it looks for a rule that concludes animal: line one, every dog is an animal.",
+   "segment": "reasoning",
+   "show": "Again there's no stored fact, so it looks for a rule that concludes animal: line one, every dog is an animal.",
+   "start": 175.464,
+   "wav": "recordings/036.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 186.767,
+     "start": 182.537,
+     "text": "That leaves one goal, Adam is a dog, and that one is stored."
+    }
+   ],
+   "end": 186.767,
+   "index": 5,
+   "k": 37,
+   "label": "reasoning backward",
+   "say": "That leaves one goal, Adam is a dog, and that one is stored.",
+   "segment": "reasoning",
+   "show": "That leaves one goal, Adam is a dog, and that one is stored.",
+   "start": 182.537,
+   "wav": "recordings/037.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 189.312,
+     "start": 187.047,
+     "text": "The chain closes in two rule steps."
+    }
+   ],
+   "end": 189.312,
+   "index": 6,
+   "k": 38,
+   "label": "reasoning backward",
+   "say": "The chain closes in two rule steps.",
+   "segment": "reasoning",
+   "show": "The chain closes in two rule steps.",
+   "start": 187.047,
+   "wav": "recordings/038.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 193.9,
+     "start": 189.592,
+     "text": "To find the shortest chain, the engine first runs a cheap search without recording,"
+    },
+    {
+     "end": 197.43,
+     "start": 193.9,
+     "text": "raising the depth limit one step at a time until the claim resolves."
+    }
+   ],
+   "end": 197.43,
+   "index": 7,
+   "k": 39,
+   "label": "reasoning backward",
+   "say": "To find the shortest chain, the engine first runs a cheap search without recording, raising the depth limit one step at a time until the claim resolves.",
+   "segment": "reasoning",
+   "show": "To find the shortest chain, the engine first runs a cheap search without recording, raising the depth limit one step at a time until the claim resolves.",
+   "start": 189.592,
+   "wav": "recordings/039.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 201.073,
+     "start": 198.18,
+     "text": "Then it runs the search once more at that depth,"
+    },
+    {
+     "end": 204.87,
+     "start": 201.073,
+     "text": "this time recording every step. That record is the proof trace."
+    }
+   ],
+   "end": 204.87,
+   "index": 0,
+   "k": 40,
+   "label": "building the proof trace",
+   "say": "Then it runs the search once more at that depth, this time recording every step. That record is the proof trace.",
+   "segment": "trace",
+   "show": "Then it runs the search once more at that depth, this time recording every step. That record is the proof trace.",
+   "start": 198.18,
+   "wav": "recordings/040.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 207.915,
+     "start": 205.15,
+     "text": "The stored fact becomes a leaf, marked given."
+    }
+   ],
+   "end": 207.915,
+   "index": 1,
+   "k": 41,
+   "label": "building the proof trace",
+   "say": "The stored fact becomes a leaf, marked given.",
+   "segment": "trace",
+   "show": "The stored fact becomes a leaf, marked given.",
+   "start": 205.15,
+   "wav": "recordings/041.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 211.917,
+     "start": 208.195,
+     "text": "Each rule step becomes a node that cites the source line it used."
+    }
+   ],
+   "end": 211.917,
+   "index": 2,
+   "k": 42,
+   "label": "building the proof trace",
+   "say": "Each rule step becomes a node that cites the source line it used.",
+   "segment": "trace",
+   "show": "Each rule step becomes a node that cites the source line it used.",
+   "start": 208.195,
+   "wav": "recordings/042.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 217.141,
+     "start": 212.197,
+     "text": "“Adam eats” cites recorded source #1: every animal eats."
+    }
+   ],
+   "end": 217.141,
+   "index": 3,
+   "k": 43,
+   "label": "building the proof trace",
+   "say": "“Adam eats” cites recorded source number one: every animal eats.",
+   "segment": "trace",
+   "show": "“Adam eats” cites recorded source #1: every animal eats.",
+   "start": 212.197,
+   "wav": "recordings/043.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 222.498,
+     "start": 217.421,
+     "text": "“Adam is an animal” cites recorded source #0: every dog is an animal."
+    }
+   ],
+   "end": 222.498,
+   "index": 4,
+   "k": 44,
+   "label": "building the proof trace",
+   "say": "“Adam is an animal” cites recorded source number zero: every dog is an animal.",
+   "segment": "trace",
+   "show": "“Adam is an animal” cites recorded source #0: every dog is an animal.",
+   "start": 217.421,
+   "wav": "recordings/044.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 226.178,
+     "start": 222.778,
+     "text": "Open the role-level detail, and you see what those lines are made of."
+    }
+   ],
+   "end": 226.178,
+   "index": 5,
+   "k": 45,
+   "label": "building the proof trace",
+   "say": "Open the role-level detail, and you see what those lines are made of.",
+   "segment": "trace",
+   "show": "Open the role-level detail, and you see what those lines are made of.",
+   "start": 222.778,
+   "wav": "recordings/045.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 229.432,
+     "start": 226.458,
+     "text": "The fact is stored as an event with named roles:"
+    },
+    {
+     "end": 232.159,
+     "start": 229.432,
+     "text": "the dog, Adam, and a breed nobody specified."
+    }
+   ],
+   "end": 232.159,
+   "index": 6,
+   "k": 46,
+   "label": "building the proof trace",
+   "say": "The fact is stored as an event with named roles: the dog, Adam, and a breed nobody specified.",
+   "segment": "trace",
+   "show": "The fact is stored as an event with named roles: the dog, Adam, and a breed nobody specified.",
+   "start": 226.458,
+   "wav": "recordings/046.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 234.584,
+     "start": 232.439,
+     "text": "When the same sub-goal comes up again,"
+    },
+    {
+     "end": 238.817,
+     "start": 234.584,
+     "text": "the trace says “proved above” and points back, instead of proving it twice."
+    }
+   ],
+   "end": 238.817,
+   "index": 7,
+   "k": 47,
+   "label": "building the proof trace",
+   "say": "When the same sub-goal comes up again, the trace says “proved above” and points back, instead of proving it twice.",
+   "segment": "trace",
+   "show": "When the same sub-goal comes up again, the trace says “proved above” and points back, instead of proving it twice.",
+   "start": 232.439,
+   "wav": "recordings/047.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 242.765,
+     "start": 239.097,
+     "text": "The playground folds the whole record into the three lines you saw,"
+    },
+    {
+     "end": 244.133,
+     "start": 242.765,
+     "text": "with a plain-English why."
+    }
+   ],
+   "end": 244.133,
+   "index": 8,
+   "k": 48,
+   "label": "building the proof trace",
+   "say": "The playground folds the whole record into the three lines you saw, with a plain-English why.",
+   "segment": "trace",
+   "show": "The playground folds the whole record into the three lines you saw, with a plain-English why.",
+   "start": 239.097,
+   "wav": "recordings/048.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 247.071,
+     "start": 244.883,
+     "text": "Now the claim that Adam is a bird."
+    }
+   ],
+   "end": 247.071,
+   "index": 0,
+   "k": 49,
+   "label": "a real FALSE",
+   "say": "Now the claim that Adam is a bird.",
+   "segment": "false",
+   "show": "Now the claim that Adam is a bird.",
+   "start": 244.883,
+   "wav": "recordings/049.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 250.566,
+     "start": 247.351,
+     "text": "Nothing in the knowledge base supports it, so the answer is FALSE."
+    }
+   ],
+   "end": 250.566,
+   "index": 1,
+   "k": 50,
+   "label": "a real FALSE",
+   "say": "Nothing in the knowledge base supports it, so the answer is FALSE.",
+   "segment": "false",
+   "show": "Nothing in the knowledge base supports it, so the answer is FALSE.",
+   "start": 247.351,
+   "wav": "recordings/050.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 254.686,
+     "start": 250.846,
+     "text": "The why line says no example could be found that satisfies the claim."
+    }
+   ],
+   "end": 254.686,
+   "index": 2,
+   "k": 51,
+   "label": "a real FALSE",
+   "say": "The why line says no example could be found that satisfies the claim.",
+   "segment": "false",
+   "show": "The why line says no example could be found that satisfies the claim.",
+   "start": 250.846,
+   "wav": "recordings/051.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 258.362,
+     "start": 254.966,
+     "text": "Here, FALSE means not derivable from what we asserted."
+    },
+    {
+     "end": 260.877,
+     "start": 258.362,
+     "text": "It isn't a proof that Adam isn't a bird."
+    }
+   ],
+   "end": 260.877,
+   "index": 3,
+   "k": 52,
+   "label": "a real FALSE",
+   "say": "Here, FALSE means not derivable from what we asserted. It isn't a proof that Adam isn't a bird.",
+   "segment": "false",
+   "show": "Here, FALSE means not derivable from what we asserted. It isn't a proof that Adam isn't a bird.",
+   "start": 254.966,
+   "wav": "recordings/052.wav"
+  },
+  {
+   "card": null,
+   "cues": [
+    {
+     "end": 264.04,
+     "start": 261.157,
+     "text": "nibli won't claim more than its premises support."
+    }
+   ],
+   "end": 264.04,
+   "index": 4,
+   "k": 53,
+   "label": "a real FALSE",
+   "say": "nibli won't claim more than its premises support.",
+   "segment": "false",
+   "show": "nibli won't claim more than its premises support.",
+   "start": 261.157,
+   "wav": "recordings/053.wav"
+  },
+  {
+   "card": "end",
+   "cues": [
+    {
+     "end": 269.609,
+     "start": 264.79,
+     "text": "Try it at dhilipsiva.dev/nibli-playground. The code is on GitHub."
+    }
+   ],
+   "end": 269.609,
+   "index": 0,
+   "k": 54,
+   "label": "",
+   "say": "Try it at Dhilip Siva dot dev, slash nibli playground. The code is on GitHub.",
+   "segment": "end",
+   "show": "Try it at dhilipsiva.dev/nibli-playground. The code is on GitHub.",
+   "start": 264.79,
+   "wav": "recordings/054.wav"
+  },
+  {
+   "card": "end",
+   "cues": [
+    {
+     "end": 272.48,
+     "start": 269.889,
+     "text": "It's also the running example in my book,"
+    },
+    {
+     "end": 277.535,
+     "start": 272.48,
+     "text": "Ultimate Neuro-Symbolic Reasoning for AI Engineers, scheduled for December 2026."
+    }
+   ],
+   "end": 277.535,
+   "index": 1,
+   "k": 55,
+   "label": "",
+   "say": "It's also the running example in my book, Ultimate Neuro-Symbolic Reasoning for A I Engineers, scheduled for December 2026.",
+   "segment": "end",
+   "show": "It's also the running example in my book, Ultimate Neuro-Symbolic Reasoning for AI Engineers, scheduled for December 2026.",
+   "start": 269.889,
+   "wav": "recordings/055.wav"
+  },
+  {
+   "card": "end",
+   "cues": [
+    {
+     "end": 278.965,
+     "start": 277.815,
+     "text": "I'm dhilipsiva."
+    }
+   ],
+   "end": 278.965,
+   "index": 2,
+   "k": 56,
+   "label": "",
+   "say": "I'm Dhilip Siva.",
+   "segment": "end",
+   "show": "I'm dhilipsiva.",
+   "start": 277.815,
+   "wav": "recordings/056.wav"
+  }
+ ],
+ "total": 281.365
+}

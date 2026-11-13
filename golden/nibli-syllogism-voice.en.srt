@@ -1,0 +1,304 @@
+1
+00:00:00,600 --> 00:00:04,726
+Language models predict the next word. A reasoner derives the next step.
+
+2
+00:00:05,006 --> 00:00:09,154
+In five minutes: what symbolic reasoning is, what a theorem prover does,
+
+3
+00:00:09,154 --> 00:00:13,243
+where an LLM fits around one, and a small proof in nibli, step by step.
+
+4
+00:00:13,993 --> 00:00:17,472
+Symbolic reasoning works on explicit statements and explicit rules.
+
+5
+00:00:17,752 --> 00:00:22,006
+Here are three: every dog is an animal, every animal eats, and Adam is a dog.
+
+6
+00:00:22,286 --> 00:00:25,313
+Nothing is learned from examples, and nothing is guessed.
+
+7
+00:00:25,593 --> 00:00:30,330
+A conclusion counts only if it follows from these statements by fixed rules of inference.
+
+8
+00:00:30,610 --> 00:00:33,340
+Run it again tomorrow and you get the same answer,
+
+9
+00:00:33,340 --> 00:00:35,961
+and you can inspect every step that produced it.
+
+10
+00:00:36,711 --> 00:00:38,639
+A theorem prover automates that.
+
+11
+00:00:38,919 --> 00:00:42,013
+You give it premises and a claim, and it searches for a proof:
+
+12
+00:00:42,013 --> 00:00:45,006
+a chain of rule applications from the premises to the claim.
+
+13
+00:00:45,286 --> 00:00:48,649
+If it finds one, the answer is TRUE, and it can show you the chain.
+
+14
+00:00:48,929 --> 00:00:51,849
+That answer is sound with respect to what you encoded.
+
+15
+00:00:52,129 --> 00:00:55,733
+It doesn't make your premises true. It tells you what they commit you to.
+
+16
+00:00:56,013 --> 00:01:01,487
+nibli answers with one of four verdicts: TRUE; FALSE, meaning not derivable; UNKNOWN,
+
+17
+00:01:01,487 --> 00:01:06,832
+with a reason; and RESOURCE_EXCEEDED, when a depth, fuel or memory budget runs out.
+
+18
+00:01:07,582 --> 00:01:11,806
+A neuro-symbolic system pairs a neural front end with a symbolic core,
+
+19
+00:01:11,806 --> 00:01:13,918
+and lets each do what it's good at.
+
+20
+00:01:14,198 --> 00:01:16,659
+Language models are good at reading prose.
+
+21
+00:01:16,939 --> 00:01:22,615
+So in nibli, an LLM can formalize plain English into nibli KR, the engine's rule language.
+
+22
+00:01:22,895 --> 00:01:25,230
+That draft sits outside the reasoning firewall.
+
+23
+00:01:25,510 --> 00:01:28,878
+Before anything reasons over it, deterministic gates check it.
+
+24
+00:01:29,158 --> 00:01:34,235
+The grammar. A committed vocabulary, where an unknown word is an error instead of a guess.
+
+25
+00:01:34,235 --> 00:01:37,789
+The semantic compiler. And a round trip back to canonical text.
+
+26
+00:01:38,069 --> 00:01:41,262
+Then a person reviews the rules and their back-translation:
+
+27
+00:01:41,262 --> 00:01:44,076
+a fixed, mechanical reading, with no model involved.
+
+28
+00:01:44,356 --> 00:01:46,004
+This example comes pre-encoded,
+
+29
+00:01:46,004 --> 00:01:49,459
+so the Formalize button is switched off and we skip the drafting.
+
+30
+00:01:49,739 --> 00:01:52,187
+The LLM drafts. The engine decides.
+
+31
+00:01:52,937 --> 00:01:55,194
+nibli is the engine I build in Rust.
+
+32
+00:01:55,474 --> 00:01:57,588
+It's a theorem prover, and it's open source.
+
+33
+00:01:57,868 --> 00:02:00,365
+It compiles nibli KR into first-order logic,
+
+34
+00:02:00,365 --> 00:02:03,656
+and answers claims by backward chaining over a fact store.
+
+35
+00:02:03,936 --> 00:02:07,015
+The whole pipeline, parser, compiler and reasoner,
+
+36
+00:02:07,015 --> 00:02:12,679
+runs right here in the browser as WebAssembly, and also under Wasmtime or as a native crate.
+
+37
+00:02:12,959 --> 00:02:15,904
+It never invents a fact, a rule or a proof step.
+
+38
+00:02:16,654 --> 00:02:20,029
+Here's the syllogism example: three lines of nibli KR.
+
+39
+00:02:20,309 --> 00:02:25,224
+The first reads: for every X, if X is a dog, then X is an animal.
+
+40
+00:02:25,504 --> 00:02:30,086
+The second: for every X, if X is an animal, then X eats.
+
+41
+00:02:30,366 --> 00:02:32,128
+The third: Adam is a dog.
+
+42
+00:02:32,408 --> 00:02:36,467
+We don't ask a question. We state the claim to check: Adam eats.
+
+43
+00:02:37,217 --> 00:02:39,968
+The engine starts from the claim and works backward.
+
+44
+00:02:40,248 --> 00:02:43,715
+The goal is: Adam eats. No stored fact says so.
+
+45
+00:02:43,995 --> 00:02:49,225
+So it looks for a rule whose conclusion is eats: line two, every animal eats.
+
+46
+00:02:49,505 --> 00:02:52,707
+Matching that conclusion to the goal binds X to Adam,
+
+47
+00:02:52,707 --> 00:02:55,184
+and leaves a new goal: Adam is an animal.
+
+48
+00:02:55,464 --> 00:03:00,181
+Again there's no stored fact, so it looks for a rule that concludes animal:
+
+49
+00:03:00,181 --> 00:03:02,257
+line one, every dog is an animal.
+
+50
+00:03:02,537 --> 00:03:06,767
+That leaves one goal, Adam is a dog, and that one is stored.
+
+51
+00:03:07,047 --> 00:03:09,312
+The chain closes in two rule steps.
+
+52
+00:03:09,592 --> 00:03:13,900
+To find the shortest chain, the engine first runs a cheap search without recording,
+
+53
+00:03:13,900 --> 00:03:17,430
+raising the depth limit one step at a time until the claim resolves.
+
+54
+00:03:18,180 --> 00:03:21,073
+Then it runs the search once more at that depth,
+
+55
+00:03:21,073 --> 00:03:24,870
+this time recording every step. That record is the proof trace.
+
+56
+00:03:25,150 --> 00:03:27,915
+The stored fact becomes a leaf, marked given.
+
+57
+00:03:28,195 --> 00:03:31,917
+Each rule step becomes a node that cites the source line it used.
+
+58
+00:03:32,197 --> 00:03:37,141
+“Adam eats” cites recorded source #1: every animal eats.
+
+59
+00:03:37,421 --> 00:03:42,498
+“Adam is an animal” cites recorded source #0: every dog is an animal.
+
+60
+00:03:42,778 --> 00:03:46,178
+Open the role-level detail, and you see what those lines are made of.
+
+61
+00:03:46,458 --> 00:03:49,432
+The fact is stored as an event with named roles:
+
+62
+00:03:49,432 --> 00:03:52,159
+the dog, Adam, and a breed nobody specified.
+
+63
+00:03:52,439 --> 00:03:54,584
+When the same sub-goal comes up again,
+
+64
+00:03:54,584 --> 00:03:58,817
+the trace says “proved above” and points back, instead of proving it twice.
+
+65
+00:03:59,097 --> 00:04:02,765
+The playground folds the whole record into the three lines you saw,
+
+66
+00:04:02,765 --> 00:04:04,133
+with a plain-English why.
+
+67
+00:04:04,883 --> 00:04:07,071
+Now the claim that Adam is a bird.
+
+68
+00:04:07,351 --> 00:04:10,566
+Nothing in the knowledge base supports it, so the answer is FALSE.
+
+69
+00:04:10,846 --> 00:04:14,686
+The why line says no example could be found that satisfies the claim.
+
+70
+00:04:14,966 --> 00:04:18,362
+Here, FALSE means not derivable from what we asserted.
+
+71
+00:04:18,362 --> 00:04:20,877
+It isn't a proof that Adam isn't a bird.
+
+72
+00:04:21,157 --> 00:04:24,040
+nibli won't claim more than its premises support.
+
+73
+00:04:24,790 --> 00:04:29,609
+Try it at dhilipsiva.dev/nibli-playground. The code is on GitHub.
+
+74
+00:04:29,889 --> 00:04:32,480
+It's also the running example in my book,
+
+75
+00:04:32,480 --> 00:04:37,535
+Ultimate Neuro-Symbolic Reasoning for AI Engineers, scheduled for December 2026.
+
+76
+00:04:37,815 --> 00:04:38,965
+I'm dhilipsiva.
+

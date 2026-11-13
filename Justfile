@@ -32,9 +32,16 @@ app:
 check:
     nix flake check
 
-# Recompute the golden outputs from the reference pipeline (P1-VIDNI-01).
+# Where the reference pipeline lives (it moves to reference/ in P1-VIDNI-03).
+reference := env_var_or_default("VIDNI_REFERENCE", "../talks/bengaluru-2026/video")
+
+# Re-derive the reference's golden outputs and compare them with golden/ (~25 min).
 golden:
-    @echo "not built yet: P1-VIDNI-01 adds the golden outputs" >&2; exit 2
+    ref="$(realpath {{reference}})"; env -u LD_LIBRARY_PATH nix develop "path:$ref" --command python3 -I tools/golden.py verify "$ref"
+
+# Re-derive the golden outputs and overwrite golden/.
+golden-update:
+    ref="$(realpath {{reference}})"; env -u LD_LIBRARY_PATH nix develop "path:$ref" --command python3 -I tools/golden.py update "$ref"
 
 # Compare a Rust stage with the golden outputs (P1-VIDNI-04).
 parity stage:
