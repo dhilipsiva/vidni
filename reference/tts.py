@@ -108,17 +108,24 @@ def duration(path):
 
 
 def heard(path):
-    """Whisper's transcript of a clip, or None when whisper isn't available."""
+    """Whisper's transcript of a clip: "" for a clip too short to hold speech,
+    None when whisper isn't available or fails. Never raises; whisper-cli
+    crashes (exit 11) on empty audio."""
     if not os.path.exists(WHISPER_MODEL):
         return None
-    with tempfile.TemporaryDirectory() as tmp:
-        pcm = os.path.join(tmp, "in.wav")
-        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", path, "-ar", "16000",
-                        "-ac", "1", pcm], check=True)
-        subprocess.run(["whisper-cli", "-m", WHISPER_MODEL, "-f", pcm, "-nt", "-np", "-otxt",
-                        "-of", os.path.join(tmp, "out")], check=True,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        return open(os.path.join(tmp, "out.txt")).read().strip()
+    try:
+        if duration(path)[0] < 0.3:
+            return ""
+        with tempfile.TemporaryDirectory() as tmp:
+            pcm = os.path.join(tmp, "in.wav")
+            subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", path, "-ar", "16000",
+                            "-ac", "1", pcm], check=True)
+            subprocess.run(["whisper-cli", "-m", WHISPER_MODEL, "-f", pcm, "-nt", "-np", "-otxt",
+                            "-of", os.path.join(tmp, "out")], check=True,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return open(os.path.join(tmp, "out.txt")).read().strip()
+    except (OSError, EOFError, wave.Error, subprocess.CalledProcessError):
+        return None
 
 
 def closeness(script, transcript):

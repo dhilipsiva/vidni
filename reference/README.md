@@ -66,12 +66,23 @@ Narration is normalized in two loudnorm passes. One pass measured −18.1 LUFS o
 ./build.sh own                  # build out/nibli-syllogism-voice-{16x9,9x16}.mp4
 ```
 
-**Recording a line:**
+**Recording a line.** Single keys; no Enter needed.
 - Each line shows its section, the line before it, and a pace guide: how long the synthetic voice took.
-- Press Enter, pause a beat, read the line, pause a beat, then press Enter.
-- The take is cleaned up automatically: the keypresses and the silence around the words are trimmed.
+- Press space, read when the level meter moves, then press space again. Esc cancels the take.
+- If a take is too short or has no speech, it's discarded with a message and you stay on the same line.
+- A second keypress straight after you start or stop is ignored.
+- A take you keep is trimmed: the keypresses and the silence around the words go.
 - Its levels are checked and it's transcribed, so a misread line shows up straight away.
-- After each take you can play it back, redo it, or keep it.
+
+**After each take:**
+- Enter keeps it and moves to the next missing line.
+- p plays it.
+- r records it again.
+- Esc discards it.
+
+**On a line's ready screen,** ← and → move between lines, and p plays the take saved for that line.
+
+**If something fails,** you get a message instead of a crash, and every take you kept stays saved. Unexpected errors go to `recordings/record-error.log`.
 
 **Where takes go:**
 - Kept takes go to `recordings/NNN.wav`, at 48 kHz, 16-bit mono.
