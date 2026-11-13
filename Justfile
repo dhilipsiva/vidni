@@ -32,16 +32,21 @@ app:
 check:
     nix flake check
 
-# Where the reference pipeline lives (it moves to reference/ in P1-VIDNI-03).
-reference := env_var_or_default("VIDNI_REFERENCE", "../talks/bengaluru-2026/video")
+# Where the reference pipeline lives. Its flake is entered by path, so inside this
+# checkout Nix sees only tracked files and never copies build/ or out/ to the store.
+reference := env_var_or_default("VIDNI_REFERENCE", "reference")
 
-# Re-derive the reference's golden outputs and compare them with golden/ (~25 min).
+# Re-derive the reference's golden outputs and compare them with golden/ (about 5 minutes).
 golden:
-    ref="$(realpath {{reference}})"; env -u LD_LIBRARY_PATH nix develop "path:$ref" --command python3 -I tools/golden.py verify "$ref"
+    ref="$(realpath {{reference}})"; env -u LD_LIBRARY_PATH nix develop "$ref" --command python3 -I tools/golden.py verify "$ref"
 
 # Re-derive the golden outputs and overwrite golden/.
 golden-update:
-    ref="$(realpath {{reference}})"; env -u LD_LIBRARY_PATH nix develop "path:$ref" --command python3 -I tools/golden.py update "$ref"
+    ref="$(realpath {{reference}})"; env -u LD_LIBRARY_PATH nix develop "$ref" --command python3 -I tools/golden.py update "$ref"
+
+# Check every example's out-of-git assets (takes) against its assets.lock.
+assets-check:
+    for lock in examples/*/assets.lock; do (cd "$(dirname "$lock")" && sha256sum -c --quiet --strict assets.lock) && echo "$lock: every file matches"; done
 
 # Compare a Rust stage with the golden outputs (P1-VIDNI-04).
 parity stage:

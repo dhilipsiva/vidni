@@ -10,14 +10,16 @@ once for the synthetic variant and once for the creator's voice ("voice"):
 
 1. tts.py builds the timeline, the narration and the captions. Synthetic audio
    comes from the cached Piper takes in build/audio; voice audio comes from
-   the creator's takes in recordings/.
+   the creator's takes in examples/nibli-syllogism/recordings.
 2. compose.py renders both cuts (16x9 and 9x16).
 
 Some things are frozen inputs rather than re-made outputs: the live page's
 captures and Chromium's renders (stills, cards), the synthetic takes, the
 creator's takes and the script. They are hashed, never regenerated.
 Whisper's `heard` and `score` fields are dropped from the timeline, because
-whisper never feeds an output (TODO.md, rule 2).
+whisper never feeds an output (TODO.md, rule 2). Clip paths are made
+independent of where the takes are stored: the synthetic takes relative to
+the reference, the creator's as recordings/NNN.wav.
 """
 
 import gzip
@@ -35,6 +37,7 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GOLDEN = os.path.join(os.path.dirname(HERE), "golden")
+TAKES = os.path.join(os.path.dirname(HERE), "examples", "nibli-syllogism", "recordings")
 VARIANTS = {"synthetic": "", "voice": "voice"}
 CUTS = ("16x9", "9x16")
 
@@ -76,8 +79,11 @@ def normalized_json(path, drop=()):
 def normalized_timeline(path, ref):
     data = normalized_json(path)
     for e in data["sentences"]:
-        if os.path.isabs(e["wav"]):  # relative since P1-VIDNI-02
-            e["wav"] = os.path.relpath(e["wav"], ref)
+        wav = os.path.normpath(os.path.join(ref, e["wav"]))  # relative since P1-VIDNI-02
+        if os.path.dirname(wav) == os.path.normpath(TAKES):
+            e["wav"] = "recordings/" + os.path.basename(wav)
+        else:
+            e["wav"] = os.path.relpath(wav, ref)
         e.pop("heard", None)
         e.pop("score", None)
     return data
@@ -110,8 +116,8 @@ def derive(ref, stage):
         suffix = f"-{tag}" if tag else ""
         if tag:
             env["VARIANT"] = tag
-            env["OWN_AUDIO_DIR"] = os.path.join(ref, "recordings")
-        how = f"VARIANT={tag} OWN_AUDIO_DIR=recordings " if tag else ""
+            env["OWN_AUDIO_DIR"] = TAKES
+        how = f"VARIANT={tag} OWN_AUDIO_DIR={os.path.relpath(TAKES, ref)} " if tag else ""
         print(f"[{variant}] narration, timeline and captions", flush=True)
         run(["python3", "-I", "tts.py"], ref, env)
         timeline = canonical(normalized_timeline(os.path.join(ref, "build", f"timeline{suffix}.json"), ref))
@@ -140,11 +146,13 @@ def derive(ref, stage):
     print("[frozen inputs] hashing", flush=True)
     ins = manifest["inputs"]
     ins["segments.json"] = sha256_file(os.path.join(ref, "segments.json"))
-    for folder, kind in (("build/audio", "wav"), ("recordings", "wav"), ("build/stills", "png"),
-                         ("build/cards", "png")):
-        names = sorted(n for n in os.listdir(os.path.join(ref, folder)) if n.endswith("." + kind))
+    # The creator's takes are listed as recordings/, wherever they are stored.
+    for folder, where, kind in (("build/audio", None, "wav"), ("recordings", TAKES, "wav"),
+                                ("build/stills", None, "png"), ("build/cards", None, "png")):
+        where = where or os.path.join(ref, folder)
+        names = sorted(n for n in os.listdir(where) if n.endswith("." + kind))
         for n in names:
-            p = os.path.join(ref, folder, n)
+            p = os.path.join(where, n)
             ins[f"{folder}/{n}"] = {"file": sha256_file(p),
                                      "decoded": pcm_sha256(p) if kind == "wav" else pixels_sha256(p)}
     ins["build/capture.json"] = sha256_bytes(canonical(

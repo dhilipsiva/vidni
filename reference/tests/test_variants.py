@@ -10,7 +10,8 @@ Run it from this folder inside its nix shell:
 
     python3 -I tests/test_variants.py
 
-The creator's takes are read from RECORDINGS_DIR (default: recordings/).
+The creator's takes are read from RECORDINGS_DIR (default:
+../examples/nibli-syllogism/recordings).
 """
 
 import hashlib
@@ -22,7 +23,8 @@ import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BUILD = os.path.join(ROOT, "build")
-RECORDINGS = os.path.abspath(os.environ.get("RECORDINGS_DIR", os.path.join(ROOT, "recordings")))
+RECORDINGS = os.path.abspath(os.environ.get("RECORDINGS_DIR") or
+                             os.path.join(ROOT, "..", "examples", "nibli-syllogism", "recordings"))
 
 
 def run(args, **env):

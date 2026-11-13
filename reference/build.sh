@@ -2,7 +2,9 @@
 # Build the nibli syllogism explainer: narration, playground capture, both cuts.
 # Usage: ./build.sh [voices|tts|capture|compose [16x9|9x16|--remux]|qa|all]   (default: all)
 #        ./build.sh record [--test|--only N,M|--from N]   record your own narration (interactive)
-#        ./build.sh own                                   build the cuts from recordings/
+#        ./build.sh own                                   build the cuts from your takes
+# Your takes live in ../examples/nibli-syllogism/recordings (out of git);
+# RECORDINGS_DIR moves them and OWN_AUDIO_DIR reads another folder for one build.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -18,7 +20,7 @@ VOICE=en_US-joe-medium
 VOICE_URL=https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/joe/medium
 WHISPER_URL=https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin
 
-in_shell() { nix develop path:. --command bash -c "unset LD_LIBRARY_PATH; $*"; }
+in_shell() { nix develop . --command bash -c "unset LD_LIBRARY_PATH; $*"; }
 
 fetch() { # url dest sha256
   [ -s "$2" ] || curl -fL --retry 3 -o "$2" "$1"
@@ -40,7 +42,7 @@ record() { voices; in_shell python3 -I record.py "$@"; }
 
 # Your recordings instead of Piper; outputs are named nibli-syllogism-voice-*.
 own() {
-  export VARIANT=voice OWN_AUDIO_DIR="$PWD/recordings"
+  export VARIANT=voice OWN_AUDIO_DIR="${OWN_AUDIO_DIR:-${RECORDINGS_DIR:-$PWD/../examples/nibli-syllogism/recordings}}"
   voices
   tts
   [ -s build/capture.json ] || capture

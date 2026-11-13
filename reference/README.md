@@ -1,5 +1,7 @@
 # nibli explainer video: the Syllogism walkthrough
 
+> **vidni's reference pipeline.** This Python and Node pipeline made the first vidni video. It moved here from the maintainer's workspace with its history (P1-VIDNI-03). It stays the reference implementation until the Rust port matches its golden outputs (`just golden`, `just parity`). Run every command below from this folder. The creator's takes live in [`../examples/nibli-syllogism/recordings/`](../examples/nibli-syllogism/), out of git.
+
 A five-minute narrated video of the live nibli playground. It covers:
 
 - symbolic reasoning
@@ -82,12 +84,13 @@ Narration is normalized in two loudnorm passes. One pass measured −18.1 LUFS o
 
 **On a line's ready screen,** ← and → move between lines, and p plays the take saved for that line.
 
-**If something fails,** you get a message instead of a crash, and every take you kept stays saved. Unexpected errors go to `recordings/record-error.log`.
+**If something fails,** you get a message instead of a crash, and every take you kept stays saved. Unexpected errors go to `record-error.log` in the takes folder.
 
 **Where takes go:**
-- Kept takes go to `recordings/NNN.wav`, at 48 kHz, 16-bit mono.
-- Every raw take stays in `recordings/raw/`.
-- `recordings/` is kept out of git, so back it up.
+- The takes folder is `../examples/nibli-syllogism/recordings/`. Set `RECORDINGS_DIR` to use another one.
+- Kept takes go to `NNN.wav` there, at 48 kHz, 16-bit mono.
+- Every raw take stays in its `raw/` folder.
+- The takes are kept out of git, so back them up. `examples/nibli-syllogism/assets.lock` lists their sha256.
 
 **Choosing a microphone.** `wpctl status` lists the microphones. To use one, either make it the default with `wpctl set-default <id>` or set `MIC` to its node name.
 

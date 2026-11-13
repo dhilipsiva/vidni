@@ -15,6 +15,16 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 
 **Status:** being built, item by item, from [`TODO.md`](TODO.md). The decisions behind it are in [`DECISIONS.md`](DECISIONS.md). Nothing is usable yet.
 
+## Layout
+
+| Path | What it holds |
+|---|---|
+| `crates/` | The Rust workspace: `vidni-core`, `vidni-media`, `vidni-record`, `vidni-cli` and `vidni-app` |
+| `reference/` | The Python and Node pipeline that made the first video. Each Rust stage must match its golden outputs before it replaces its counterpart. |
+| `golden/` | The reference's golden outputs: hashes, timelines, captions and framemd5 logs |
+| `examples/` | Example projects. `nibli-syllogism/` is the first video; its takes are kept out of git and listed in `assets.lock`. |
+| `tools/` | Development scripts |
+
 ## Develop
 
 ```sh

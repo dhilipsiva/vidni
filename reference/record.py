@@ -17,8 +17,9 @@ guide (how long the synthetic voice took). A take that is too short or has
 no speech is discarded with a message and you stay on the same line. Kept
 takes are trimmed (keypresses and the silence around the words), checked
 for level and transcribed, so a misread line shows up straight away. Takes
-go to recordings/NNN.wav (48 kHz, 16-bit mono); every raw take stays in
-recordings/raw/. recordings/ is kept out of git, so back it up.
+go to NNN.wav in the takes folder, ../examples/nibli-syllogism/recordings
+(RECORDINGS_DIR overrides it), at 48 kHz, 16-bit mono; every raw take stays
+in its raw/ folder. The takes are kept out of git, so back them up.
 Set MIC to a PipeWire node name to use a microphone other than the default.
 """
 
@@ -45,7 +46,9 @@ sys.path.insert(0, ROOT)
 sys.dont_write_bytecode = True
 from tts import SPOKEN, closeness, heard, spoken  # noqa: E402  (the narration build's whisper check)
 
-REC = os.path.join(ROOT, "recordings")
+# The creator's takes live with the example, out of git (assets.lock lists them).
+REC = os.path.abspath(os.environ.get("RECORDINGS_DIR")
+                      or os.path.join(ROOT, "..", "examples", "nibli-syllogism", "recordings"))
 RAW = os.path.join(REC, "raw")
 GUIDE = os.path.join(ROOT, "build", "audio")
 RATE = 48000
@@ -453,7 +456,7 @@ def main():
                         note = f"{AMBER}Back to the first line still missing.{RESET}"
 
     done = sum(os.path.exists(take_path(i)) for i in range(len(script)))
-    print(f"{done} of {len(script)} lines recorded in recordings/.")
+    print(f"{done} of {len(script)} lines recorded in {os.path.relpath(REC)}/.")
     if done == len(script):
         print("Build the voiced cuts with ./build.sh own")
     else:
@@ -465,7 +468,7 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("Stopped. Every take you kept is saved in recordings/.")
+        print(f"Stopped. Every take you kept is saved in {os.path.relpath(REC)}/.")
     except Exception:
         log = os.path.join(REC, "record-error.log")
         os.makedirs(REC, exist_ok=True)

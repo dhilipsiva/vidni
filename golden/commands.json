@@ -2,6 +2,6 @@
  "framemd5": "ffmpeg -i <cut>.mp4 -map 0 -c copy -f framemd5 -",
  "synthetic: cuts": "python3 -I compose.py",
  "synthetic: timeline, narration, captions": "python3 -I tts.py",
- "voice: cuts": "VARIANT=voice OWN_AUDIO_DIR=recordings python3 -I compose.py",
- "voice: timeline, narration, captions": "VARIANT=voice OWN_AUDIO_DIR=recordings python3 -I tts.py"
+ "voice: cuts": "VARIANT=voice OWN_AUDIO_DIR=../examples/nibli-syllogism/recordings python3 -I compose.py",
+ "voice: timeline, narration, captions": "VARIANT=voice OWN_AUDIO_DIR=../examples/nibli-syllogism/recordings python3 -I tts.py"
 }

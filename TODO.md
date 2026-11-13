@@ -2,7 +2,7 @@
 
 Maintainer: dhilipsiva. Written 2026-11-13. *vidni* is Lojban for "video screen".
 
-Nothing here is built yet. vidni starts from the pipeline that made the nibli syllogism explainer: Python and Node, at `~/projects/dhilipsiva/talks/bengaluru-2026/video`, workspace commits 63472ce … 5f3768e. That pipeline stays the reference implementation until the Rust port matches it.
+vidni starts from the pipeline that made the nibli syllogism explainer: Python and Node, now in `reference/` with its history. It began at `talks/bengaluru-2026/video` in the maintainer's workspace, commits 63472ce … 6759f16. That pipeline stays the reference implementation until the Rust port matches it. Items are ticked as they are built, each with its evidence.
 
 ## What vidni is
 
@@ -105,7 +105,8 @@ Grammar, as in the workspace TODO, one line per item: `- [ ] **P<m>-VIDNI-<nn>**
   - Evidence (2026-11-13): `just golden-update` derived 178 inputs and 14 outputs in 320 s. An independent re-derivation, `just golden`, printed "golden verified: 178 inputs and 14 outputs match (311 s)". The match covers the byte-identical MP4 files and their framemd5 hashes for all four cuts, so the reference is already T2-deterministic on this host. `golden/README.md` lists each file and the command that makes it.
 - [x] **P1-VIDNI-02** (LOW) Fix the variant leak in the reference, where running `compose` after `own` puts the creator's voice into the synthetic-named cut: make `timeline.json`, `narration.wav` and `narration-norm.wav` per variant, and make the paths relative. *Done when:* a test runs `own` and then a plain `compose`, and the synthetic cut keeps its own timeline. [S]
   - Evidence (2026-11-13): each variant now writes its own `build/timeline{,-voice}.json`, `build/narration{,-voice}.wav` and `narration{,-voice}-norm.wav`, with clip paths relative to the reference (workspace commit 6759f16, which P1-VIDNI-03 moves in). `tests/test_variants.py` builds the voice variant after the synthetic one, then checks with `compose.py --plan` that a plain compose reads the synthetic timeline and narration: 4 tests OK. End to end, `own`'s voice build followed by a plain `compose.py 16x9` re-rendered the synthetic cut with framemd5 `3d6323ed…` (the golden value), and `just golden` printed "golden verified: 178 inputs and 14 outputs match (318 s)".
-- [ ] **P1-VIDNI-03** (LOW) Move the reference into vidni with its history (`git subtree split` of `talks/bengaluru-2026/video`, merged with `--allow-unrelated-histories`) as `reference/`, and the nibli video as `examples/nibli-syllogism/`, with its takes moved rather than copied and a pointer left in the old folder. *Done when:* `just golden` passes from the new location. [M]
+- [x] **P1-VIDNI-03** (LOW) Move the reference into vidni with its history (`git subtree split` of `talks/bengaluru-2026/video`, merged with `--allow-unrelated-histories`) as `reference/`, and the nibli video as `examples/nibli-syllogism/`, with its takes moved rather than copied and a pointer left in the old folder. *Done when:* `just golden` passes from the new location. [M]
+  - Evidence (2026-11-13): merge commit 1e57618 brings in the reference's four commits from `git subtree split`, rewritten under `reference/` so that `git log reference/tts.py` lists all four, and merged with `--allow-unrelated-histories`. 403 files were copied: `build/` and `out/` into `reference/`, and the takes (57 kept, 104 raw) into `examples/nibli-syllogism/recordings/`. Every sha256 matched at the new location before the originals were removed. `assets.lock` lists the 161 takes, and `just assets-check` passes. The old folder holds only a pointer README (workspace commit 106f220, local). From the new location, `just golden` printed "golden verified: 178 inputs and 14 outputs match (322 s)"; `golden/` changed only in `commands.json`'s takes path.
 - [ ] **P1-VIDNI-04** (LOW) Build the parity harness: `just parity <stage>` compares a Rust stage with the golden outputs, by exact equality for logic outputs and SSIM ≥ 0.995 for rendered frames while the port is in progress. *Done when:* the harness fails on a deliberately perturbed output and passes on the reference itself. [M]
 - [ ] **P1-VIDNI-05** (LOW) Specify the reference's behaviour as tests before porting it: cue splitting, camera framing, timeline assembly, and the recorder's pty scenarios (silent take, double press, Esc, keep) using the `NIBLI_RECORD_SOURCE` hook. *Done when:* `just test-reference` passes in under 2 minutes, with no microphone and no network. [M]
 
@@ -178,7 +179,7 @@ Grammar, as in the workspace TODO, one line per item: `- [ ] **P<m>-VIDNI-<nn>**
 - [ ] **P9-VIDNI-03** (LOW) Support other languages: per-line translations and dubbed cuts, with the creator's voice per language. The second language is Tamil: the assistant prepares the translations, and the maintainer corrects them and records the takes (amended A6). *Done when:* the nibli example has a Tamil cut built from its own takes. [L]
 - [ ] **P9-VIDNI-04** (LOW) Evaluate more draft voices, starting with Kokoro, seeded, with pinned weights and offline loading, measuring repeatability, intelligibility and licence; naturalness is not judged (amended A7). *Done when:* `docs/voices.md` records the results, and an accepted voice is pinned by sha256. [M]
 
-## Where the reference pieces go (`talks/bengaluru-2026/video`)
+## Where the reference pieces go (`reference/`)
 
 | Reference file | What it holds | Destination |
 |---|---|---|
