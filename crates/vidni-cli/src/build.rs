@@ -267,6 +267,7 @@ pub fn finish(path: &Path, cuts: &[String], again: bool) -> ExitCode {
             return Err(stopped(Stop::Refused(refusals)));
         }
         let setup = setup(&loaded, again)?;
+        let mut unexported = 0;
         // Sessions that differ in level are worth a listen; they stop nothing.
         for jump in crate::takes::jumps(project, dir) {
             eprintln!("vidni: warning: {jump}");
@@ -277,9 +278,14 @@ pub fn finish(path: &Path, cuts: &[String], again: bool) -> ExitCode {
                 .map_err(stopped)?;
             built(&record, dir);
             // What goes with the cut where it is uploaded, made afresh.
-            for warning in build::exports(project, dir, cut, &setup).map_err(stopped)? {
+            let exports = build::exports(project, dir, cut, &setup).map_err(stopped)?;
+            for warning in &exports.warnings {
                 eprintln!("vidni: warning: {warning}");
             }
+            for refusal in &exports.refused {
+                eprintln!("vidni: {refusal}");
+            }
+            unexported += exports.refused.len();
             say!(
                 "{}: delivered to {}; `vidni approve --cut {}` releases it",
                 cut.id,
@@ -287,16 +293,20 @@ pub fn finish(path: &Path, cuts: &[String], again: bool) -> ExitCode {
                 cut.id
             );
             for platform in cut.platforms() {
-                say!(
-                    "  {}: the upload for {platform}, with its metadata.md",
-                    dir.join(release::OUT)
-                        .join(&platform)
-                        .join(&cut.id)
-                        .display()
-                );
+                let folder = dir.join(release::OUT).join(&platform).join(&cut.id);
+                if folder.is_dir() {
+                    say!(
+                        "  {}: the upload for {platform}, with its metadata.md",
+                        folder.display()
+                    );
+                }
             }
         }
-        Ok(())
+        // A cut that a platform wouldn't take is delivered, and not exported there.
+        match unexported {
+            0 => Ok(()),
+            _ => Err(ExitCode::FAILURE),
+        }
     });
     match made {
         Ok(()) => ExitCode::SUCCESS,

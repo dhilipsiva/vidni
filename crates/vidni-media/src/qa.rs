@@ -6,6 +6,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use vidni_core::chapters::{self, Chapter};
+use vidni_core::platforms::Upload;
 
 /// What a cut must be.
 #[derive(Debug, Clone, PartialEq)]
@@ -201,10 +202,57 @@ pub fn check(mp4: &Path, expect: &Expect) -> Result<Report, String> {
     Ok(Report { summary, problems })
 }
 
+/// A file as a platform would see it: its shape, its codecs, its length,
+/// its size and its sound.
+pub fn upload(mp4: &Path, aspect: vidni_core::project::Aspect) -> Result<Upload, String> {
+    let probe = run(Command::new("ffprobe")
+        .args([
+            "-v",
+            "error",
+            "-show_streams",
+            "-show_format",
+            "-of",
+            "json",
+        ])
+        .arg(mp4))?;
+    let info: Value = serde_json::from_slice(&probe.stdout).map_err(|e| e.to_string())?;
+    let streams = info["streams"].as_array().cloned().unwrap_or_default();
+    let of = |kind: &str| {
+        streams
+            .iter()
+            .find(|s| s["codec_type"] == kind)
+            .cloned()
+            .unwrap_or(Value::Null)
+    };
+    let (video, audio) = (of("video"), of("audio"));
+    let text = |value: &Value| value.as_str().unwrap_or("none").to_string();
+    let sound = measure(mp4)?;
+    Ok(Upload {
+        aspect,
+        size: [
+            video["width"].as_u64().unwrap_or(0) as u32,
+            video["height"].as_u64().unwrap_or(0) as u32,
+        ],
+        duration: info["format"]["duration"]
+            .as_str()
+            .and_then(|d| d.parse().ok())
+            .unwrap_or(0.0),
+        bytes: fs::metadata(mp4).map_or(0, |m| m.len()),
+        video: [
+            text(&video["codec_name"]),
+            text(&video["profile"]),
+            text(&video["pix_fmt"]),
+        ],
+        audio: text(&audio["codec_name"]),
+        loudness: sound.loudness,
+        true_peak: sound.true_peak,
+    })
+}
+
 /// How the cues of an SRT file miss a picture of `duration` seconds: a
 /// cue that ends before it starts, starts before the one before it ends,
 /// or runs past the end of the picture.
-fn captions(srt: &str, duration: f64) -> Vec<String> {
+pub fn captions(srt: &str, duration: f64) -> Vec<String> {
     let seconds = |clock: &str| -> Option<f64> {
         let (hms, ms) = clock.trim().split_once(',')?;
         let mut parts = hms.split(':').map(|p| p.parse::<f64>().ok());

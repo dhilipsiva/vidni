@@ -471,8 +471,24 @@ pub fn master(track: &mut [i16], rate: u32, target: f64) -> Option<f64> {
         *s *= second;
     }
     limit(&mut x, fs, factor(CEILING));
+    // Holding peaks takes a little loudness too. It is given back, and
+    // the peaks held again, until the narration is within a tenth of an
+    // LU of its target, or three times at most.
+    let mut gain = first * second;
+    for _ in 0..3 {
+        let short = target - loudness(&quantized(&x), rate)?;
+        if short.abs() <= 0.1 {
+            break;
+        }
+        let more = factor(short);
+        for s in x.iter_mut() {
+            *s *= more;
+        }
+        limit(&mut x, fs, factor(CEILING));
+        gain *= more;
+    }
     track.copy_from_slice(&quantized(&x));
-    Some(first * second)
+    Some(gain)
 }
 
 /// The samples of the 16-bit mono WAV at `path`, and its rate.

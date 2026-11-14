@@ -55,7 +55,7 @@ long.mp4            8,441 frames  frames b2e1cdb1530e8a0b66178c07f56b8b487d1c4bc
 
 The files differ from `long-r1`'s because chapters are written into them; the vertical cut's file is the one above still.
 
-The voice chain (P4-VIDNI-03, 2026-11-14) changed every cut's sound and none of its frames: `long-r4` and `vertical-r3` have the frame hashes above and new files. The narration is now made by vidni's own arithmetic, with no ffmpeg filter before the resampling, so its samples are held to T1. `vidni repro examples/hello --draft` built both cuts twice with every hash equal, and a unit test pins the hash of a clip through the chain, which CI checks on another machine.
+The voice chain (P4-VIDNI-03, 2026-11-14) changed every cut's sound and none of its frames: `long-r4` and `vertical-r3` have the frame hashes above and new files. (`long-r5` and `vertical-r4`, the same day, have captions cut into shorter cues, so the frames of the pictures with captions drawn in differ from the ones above: `long.captioned.mp4` is `ebfc5c3a3d2618d0…` and `vertical.mp4` is `3ef14319f57bac35…`. The clean master, `long.mp4`, still has the frames above.) The narration is now made by vidni's own arithmetic, with no ffmpeg filter before the resampling, so its samples are held to T1. `vidni repro examples/hello --draft` built both cuts twice with every hash equal, and a unit test pins the hash of a clip through the chain, which CI checks on another machine.
 
 The compositor's frame streams (rgb24, every frame in order) on the reference's captures, drawn with IBM Plex Sans Bold (sha256 `19de5aec…c316`), IBM Plex Mono Bold (`44f6da8e…a6c7`) and Space Grotesk Bold (`be8709ab…368f`):
 

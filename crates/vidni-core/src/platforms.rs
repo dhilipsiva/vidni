@@ -177,6 +177,137 @@ pub fn insets(platforms: &[String], size: [u32; 2]) -> Option<Insets> {
         .filter(|covered| !covered.is_none())
 }
 
+/// The loudness a cut for `platforms` is mastered to: the quietest of
+/// their targets, in LUFS, so that none turns it down. `None` for a cut
+/// made for no platform.
+pub fn loudness(platforms: &[String]) -> Option<f64> {
+    let profiles = all();
+    platforms
+        .iter()
+        .filter_map(|id| profiles.iter().find(|p| &p.id == id))
+        .map(|p| p.loudness.integrated)
+        .min_by(f64::total_cmp)
+}
+
+/// A file to upload, as measured (TODO.md, P6-VIDNI-05).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Upload {
+    pub aspect: Aspect,
+    /// The picture's width and height, in pixels.
+    pub size: [u32; 2],
+    /// How long it lasts, in seconds, and how large its file is, in bytes.
+    pub duration: f64,
+    pub bytes: u64,
+    /// Its video codec, that codec's profile and its pixel format, as
+    /// ffprobe names them; and its audio codec.
+    pub video: [String; 3],
+    pub audio: String,
+    /// Its integrated loudness, in LUFS, and its true peak, in dBTP.
+    pub loudness: Option<f64>,
+    pub true_peak: Option<f64>,
+}
+
+/// How far a file's loudness may be from a platform's, in LU.
+pub const LOUDNESS: f64 = 1.0;
+
+impl Profile {
+    /// Why the platform wouldn't take `upload`, or would play it wrong:
+    /// each a reason not to export it. Empty when it would do.
+    pub fn refusals(&self, upload: &Upload) -> Vec<String> {
+        let mut found = Vec::new();
+        let shape = |aspect: Aspect| match aspect {
+            Aspect::Landscape => "16:9",
+            Aspect::Portrait => "9:16",
+        };
+        if upload.aspect != self.aspect {
+            found.push(format!(
+                "it is {}, and {} takes {}",
+                shape(upload.aspect),
+                self.name,
+                shape(self.aspect)
+            ));
+        }
+        let ([w, h], [least_w, least_h]) = (upload.size, self.resolution);
+        if upload.aspect == self.aspect && (w < least_w || h < least_h) {
+            found.push(format!(
+                "it is {w}x{h}, smaller than the {least_w}x{least_h} that {} is made for",
+                self.name
+            ));
+        }
+        if let Some(most) = self.max_upload
+            && upload.duration > f64::from(most)
+        {
+            found.push(format!(
+                "it lasts {}, and {} takes {}",
+                clock(upload.duration.ceil() as u32),
+                self.name,
+                clock(most)
+            ));
+        }
+        if let Some(most) = self.max_size_mb
+            && upload.bytes > u64::from(most) * 1_000_000
+        {
+            found.push(format!(
+                "its file is {:.0} MB, and {} takes {most} MB",
+                upload.bytes as f64 / 1e6,
+                self.name
+            ));
+        }
+        let [codec, profile, pixels] = &upload.video;
+        if codec != "h264" || !matches!(profile.as_str(), "High" | "Main") || pixels != "yuv420p" {
+            found.push(format!(
+                "its video is {codec} {profile} {pixels}, not H.264 High in yuv420p, which every platform plays"
+            ));
+        }
+        if upload.audio != "aac" {
+            found.push(format!("its audio is {}, not AAC", upload.audio));
+        }
+        match upload.loudness {
+            Some(l) if (l - self.loudness.integrated).abs() <= LOUDNESS => {}
+            Some(l) => found.push(format!(
+                "its loudness is {l} LUFS, more than {LOUDNESS} LU from the {} LUFS that {} plays at",
+                self.loudness.integrated, self.name
+            )),
+            None => found.push("its loudness couldn't be measured".to_string()),
+        }
+        match upload.true_peak {
+            Some(peak) if peak <= self.loudness.true_peak => {}
+            Some(peak) => found.push(format!(
+                "its true peak is {peak} dBTP, above {} dBTP",
+                self.loudness.true_peak
+            )),
+            None => found.push("its true peak couldn't be measured".to_string()),
+        }
+        found
+    }
+
+    /// What the platform takes of `upload` and doesn't do its best by.
+    pub fn advice(&self, upload: &Upload) -> Vec<String> {
+        let mut found = Vec::new();
+        if let Some(best) = self.max_recommended
+            && upload.duration > f64::from(best)
+            && self
+                .max_upload
+                .is_none_or(|most| upload.duration <= f64::from(most))
+        {
+            found.push(format!(
+                "it lasts {}, and {} recommends {} or less",
+                clock(upload.duration.ceil() as u32),
+                self.name,
+                clock(best)
+            ));
+        }
+        let ([w, h], [best_w, best_h]) = (upload.size, self.resolution);
+        if upload.aspect == self.aspect && (w > best_w || h > best_h) {
+            found.push(format!(
+                "it is {w}x{h}, and {} recommends {best_w}x{best_h}",
+                self.name
+            ));
+        }
+        found
+    }
+}
+
 /// `seconds` as `h:mm:ss` or `m:ss`.
 pub fn clock(seconds: u32) -> String {
     let (h, m, s) = (seconds / 3600, seconds / 60 % 60, seconds % 60);
@@ -271,6 +402,123 @@ mod tests {
         assert_eq!(insets(&[], [1080, 1920]), None);
         assert_eq!(insets(&ids(&["youtube"]), [1920, 1080]), None);
         assert_eq!(insets(&ids(&["whatsapp-status"]), [1080, 1920]), None);
+    }
+
+    #[test]
+    fn a_broken_upload_fails_each_check_and_a_good_one_none() {
+        let shorts = get("youtube-shorts").unwrap();
+        let good = Upload {
+            aspect: Aspect::Portrait,
+            size: [1080, 1920],
+            duration: 54.0,
+            bytes: 8_000_000,
+            video: ["h264".into(), "High".into(), "yuv420p".into()],
+            audio: "aac".into(),
+            loudness: Some(-14.3),
+            true_peak: Some(-1.2),
+        };
+        assert_eq!(shorts.refusals(&good), Vec::<String>::new());
+        assert_eq!(shorts.advice(&good), Vec::<String>::new());
+        // One thing wrong at a time, and the reason it gives.
+        let broken: [(Upload, &str); 9] = [
+            (
+                Upload {
+                    aspect: Aspect::Landscape,
+                    size: [1920, 1080],
+                    ..good.clone()
+                },
+                "it is 16:9, and YouTube Shorts takes 9:16",
+            ),
+            (
+                Upload {
+                    size: [720, 1280],
+                    ..good.clone()
+                },
+                "it is 720x1280, smaller than the 1080x1920 that YouTube Shorts is made for",
+            ),
+            (
+                Upload {
+                    duration: 200.5,
+                    ..good.clone()
+                },
+                "it lasts 3:21, and YouTube Shorts takes 3:00",
+            ),
+            (
+                Upload {
+                    bytes: 300_000_000_000,
+                    ..good.clone()
+                },
+                "its file is 300000 MB, and YouTube Shorts takes 256000 MB",
+            ),
+            (
+                Upload {
+                    video: ["hevc".into(), "Main".into(), "yuv420p".into()],
+                    ..good.clone()
+                },
+                "its video is hevc Main yuv420p, not H.264 High in yuv420p, which every platform plays",
+            ),
+            (
+                Upload {
+                    video: [
+                        "h264".into(),
+                        "High 4:4:4 Predictive".into(),
+                        "yuv444p".into(),
+                    ],
+                    ..good.clone()
+                },
+                "its video is h264 High 4:4:4 Predictive yuv444p, not H.264 High in yuv420p, which every platform plays",
+            ),
+            (
+                Upload {
+                    audio: "mp3".into(),
+                    ..good.clone()
+                },
+                "its audio is mp3, not AAC",
+            ),
+            (
+                Upload {
+                    loudness: Some(-16.5),
+                    ..good.clone()
+                },
+                "its loudness is -16.5 LUFS, more than 1 LU from the -14 LUFS that YouTube Shorts plays at",
+            ),
+            (
+                Upload {
+                    true_peak: Some(-0.3),
+                    ..good.clone()
+                },
+                "its true peak is -0.3 dBTP, above -1 dBTP",
+            ),
+        ];
+        for (upload, reason) in broken {
+            assert_eq!(shorts.refusals(&upload), [reason]);
+        }
+        // What a platform takes but doesn't recommend is advice, not a refusal.
+        let reels = get("instagram-reels").unwrap();
+        let long = Upload {
+            duration: 200.0,
+            ..good.clone()
+        };
+        assert_eq!(reels.refusals(&long), Vec::<String>::new());
+        assert_eq!(
+            reels.advice(&long),
+            ["it lasts 3:20, and Instagram Reels recommends 3:00 or less"]
+        );
+        let x = get("x").unwrap();
+        let wide = Upload {
+            aspect: Aspect::Landscape,
+            size: [1920, 1080],
+            duration: 100.0,
+            ..good.clone()
+        };
+        assert_eq!(x.refusals(&wide), Vec::<String>::new());
+        assert_eq!(
+            x.advice(&wide),
+            ["it is 1920x1080, and X recommends 1280x720"]
+        );
+        // The quietest platform sets a cut's loudness.
+        assert_eq!(loudness(&defaults(Aspect::Portrait)), Some(-14.0));
+        assert_eq!(loudness(&[]), None);
     }
 
     #[test]

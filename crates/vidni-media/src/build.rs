@@ -27,6 +27,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use vidni_core::captions;
 use vidni_core::capture::{self, sha256_hex};
 use vidni_core::chapters::{self, Chapter};
 use vidni_core::project::{Aspect, Captions, Cut, Line, Project, Scene};
@@ -247,6 +248,8 @@ pub struct Plan<'p> {
     room: Option<Vec<i16>>,
     /// The music under the narration, when the project plays a track.
     music: Option<voice::Bed>,
+    /// The loudness the cut is mastered to, in LUFS.
+    loudness: f64,
     tools: Tools,
     pub sources: Sources,
     /// Everything the build depends on, as one hash.
@@ -480,6 +483,10 @@ pub fn plan<'p>(
         chapters,
         room,
         music,
+        // A cut is as loud as the quietest of its platforms plays it; a
+        // cut for none is as loud as the reference's were.
+        loudness: vidni_core::platforms::loudness(&cut.platforms())
+            .unwrap_or(Target::default().integrated),
         tools,
         sources,
         inputs,
@@ -536,6 +543,26 @@ impl Plan<'_> {
                 )
             })
             .collect())
+    }
+
+    /// Whether the captions drawn into the picture stand out from what is
+    /// behind them: the panel in a 16:9 cut, over the lightest and the
+    /// darkest picture, and the frame's colour under a 9:16 view.
+    fn contrast(&self) -> Option<String> {
+        let ink = self.look.ink;
+        let least = match self.cut.aspect {
+            Aspect::Landscape => [[255; 3], [0; 3]]
+                .map(|behind| captions::contrast(ink, captions::over(self.look.panel, behind)))
+                .into_iter()
+                .fold(f64::INFINITY, f64::min),
+            Aspect::Portrait => captions::contrast(ink, self.look.frame),
+        };
+        (least < captions::CONTRAST).then(|| {
+            format!(
+                "its captions stand out from what is behind them by {least:.1} to 1, and {} to 1 is the least that reads",
+                captions::CONTRAST
+            )
+        })
     }
 
     /// The caption files' names: `<cut>.<language>.srt` and `.vtt`.
@@ -683,7 +710,7 @@ pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<
         &plan.clips(),
         plan.room.as_deref(),
         plan.music.as_ref(),
-        Target::default().integrated,
+        plan.loudness,
         &narration_path,
     )?;
     encode::stereo(&narration_path, &normalized)?;
@@ -693,9 +720,9 @@ pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<
     let (width, height) = plan.layout.size;
     let cues = plan.timeline.sentences.iter().map(|e| e.cues.len()).sum();
     let mut outputs = BTreeMap::new();
-    for (name, captions) in &plan.pictures {
+    for (name, captions_drawn) in &plan.pictures {
         progress(Step::Stage(name));
-        let mut composer = plan.composer(*captions)?;
+        let mut composer = plan.composer(*captions_drawn)?;
         // ffmpeg picks its container by the name's ending.
         let part = at(&format!("{name}.part.mp4"));
         let mp4 = at(name);
@@ -730,20 +757,25 @@ pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<
                 height,
                 fps: FPS as u32,
                 duration: plan.timeline.total,
-                loudness: Target::default().integrated,
+                loudness: plan.loudness,
                 tolerance: LOUDNESS_TOLERANCE,
                 true_peak: TRUE_PEAK,
                 captions: Some((srt_path.clone(), cues)),
                 chapters: plan.chapters.clone(),
             },
         )?;
-        // What the picture draws where an app would cover it fails QA too.
+        // What the picture draws where an app would cover it fails QA too,
+        // and so do captions that can't be read.
         let mut problems = report.problems;
         problems.extend(plan.covered(&mut composer)?);
+        problems.extend(captions::problems(&captions::of(&plan.timeline)));
+        if *captions_drawn {
+            problems.extend(plan.contrast());
+        }
         outputs.insert(
             name.clone(),
             Output {
-                captions: *captions,
+                captions: *captions_drawn,
                 frames,
                 frame_count,
                 packets: sha256_hex(&crate::framemd5(&mp4)?),
@@ -830,14 +862,13 @@ pub fn final_build(
 /// captions where the platform takes them, its images and `metadata.md`
 /// (TODO.md, P6-VIDNI-04). The cut's final build must be delivered. The
 /// folders are made afresh from it and from `[publish]`, and nothing is
-/// rendered again but the images. Returns what an upload would be
-/// refused or cut short for, as warnings.
-pub fn exports(
-    project: &Project,
-    dir: &Path,
-    cut: &Cut,
-    setup: &Setup,
-) -> Result<Vec<String>, Stop> {
+/// rendered again but the images.
+///
+/// Each platform's folder is written only when the platform would take
+/// the cut and play it right (TODO.md, P6-VIDNI-05): its length, size,
+/// shape, codecs, loudness and captions are held to the platform's
+/// profile first, and a cut that fails isn't exported for that platform.
+pub fn exports(project: &Project, dir: &Path, cut: &Cut, setup: &Setup) -> Result<Exports, Stop> {
     let plan = plan(project, dir, cut, Voice::Takes, None, setup)?;
     let record = Record::read(dir, Voice::Takes, &cut.id)
         .map_err(Stop::Failed)?
@@ -845,7 +876,16 @@ pub fn exports(
     export(&plan, dir, &record).map_err(Stop::Failed)
 }
 
-fn export(plan: &Plan, dir: &Path, record: &Record) -> Result<Vec<String>, String> {
+/// What exporting a cut found.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Exports {
+    /// Each platform the cut wasn't exported for, with every reason.
+    pub refused: Vec<String>,
+    /// What an upload would be cut short for, or isn't at its best with.
+    pub warnings: Vec<String>,
+}
+
+fn export(plan: &Plan, dir: &Path, record: &Record) -> Result<Exports, String> {
     use vidni_core::platforms::{self, CaptionStyle};
     use vidni_core::publish::{self, Upload};
     let out = dir.join(release::OUT);
@@ -865,7 +905,7 @@ fn export(plan: &Plan, dir: &Path, record: &Record) -> Result<Vec<String>, Strin
         }
     }
     if wanted.is_empty() {
-        return Ok(Vec::new());
+        return Ok(Exports::default());
     }
     let mut fonts = Fonts::new();
     let faces = Type {
@@ -881,17 +921,47 @@ fn export(plan: &Plan, dir: &Path, record: &Record) -> Result<Vec<String>, Strin
             .map(|(name, _)| name.clone())
     };
     let ids = cut.line_ids(project);
-    let mut warnings = Vec::new();
+    let (mut warnings, mut refused) = (Vec::new(), Vec::new());
+    // Each picture is measured once, however many platforms take it.
+    let mut measured: BTreeMap<String, vidni_core::platforms::Upload> = BTreeMap::new();
     for profile in profiles.iter().filter(|p| wanted.contains(&p.id)) {
         let folder = out.join(&profile.id).join(&cut.id);
         if folder.is_dir() {
             fs::remove_dir_all(&folder).map_err(made(&folder))?;
         }
-        fs::create_dir_all(&folder).map_err(made(&folder))?;
         // The video: the clean master where the platform takes a caption
         // file, and the picture with its captions in where it doesn't.
         let takes_file = profile.captions == CaptionStyle::File;
         let video = picture(!takes_file).ok_or("a cut has a picture")?;
+        // Would the platform take it, and play it right?
+        if !measured.contains_key(&video) {
+            let upload = qa::upload(&out.join(&video), cut.aspect)?;
+            measured.insert(video.clone(), upload);
+        }
+        let upload = &measured[&video];
+        let mut reasons = profile.refusals(upload);
+        if takes_file {
+            let [srt, _] = plan.caption_files();
+            let text = fs::read_to_string(out.join(&srt)).map_err(made(&out.join(&srt)))?;
+            reasons.extend(qa::captions(&text, upload.duration));
+        }
+        if !reasons.is_empty() {
+            let _ = fs::remove_dir(out.join(&profile.id));
+            refused.push(format!(
+                "cut {} isn't exported for {}: {}",
+                cut.id,
+                profile.id,
+                reasons.join("; ")
+            ));
+            continue;
+        }
+        warnings.extend(
+            profile
+                .advice(upload)
+                .into_iter()
+                .map(|advice| format!("cut {} for {}: {advice}", cut.id, profile.id)),
+        );
+        fs::create_dir_all(&folder).map_err(made(&folder))?;
         let mut copied = vec![video.clone()];
         let captions: Vec<String> = match takes_file {
             true => plan.caption_files().to_vec(),
@@ -974,7 +1044,7 @@ fn export(plan: &Plan, dir: &Path, record: &Record) -> Result<Vec<String>, Strin
                 .map(|problem| format!("cut {}: {problem}", cut.id)),
         );
     }
-    Ok(warnings)
+    Ok(Exports { refused, warnings })
 }
 
 /// Copies a final build's pictures and captions to `out/`. A file that

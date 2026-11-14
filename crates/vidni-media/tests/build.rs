@@ -1223,7 +1223,7 @@ fn each_platform_gets_a_folder_with_the_video_its_metadata_and_its_images() {
         )
     };
     let (long, warnings) = build_and_export(&p, "long");
-    assert_eq!(warnings, Vec::<String>::new());
+    assert_eq!(warnings, build::Exports::default());
     // The long cut holds its last picture 6 s, where its tail was 0.2 s.
     let lasts = long.outputs["long.mp4"].frame_count as f64 / 30.0;
     assert!((lasts - 37.5).abs() < 1.0, "{lasts} s");
@@ -1274,7 +1274,7 @@ fn each_platform_gets_a_folder_with_the_video_its_metadata_and_its_images() {
 
     // The short: a folder for each of its three apps.
     let (_, warnings) = build_and_export(&p, "short");
-    assert_eq!(warnings, Vec::<String>::new());
+    assert_eq!(warnings, build::Exports::default());
     assert_eq!(
         names(&dir.join("out/youtube-shorts/short")),
         ["metadata.md", "short.mp4"]
@@ -1336,4 +1336,43 @@ fn each_platform_gets_a_folder_with_the_video_its_metadata_and_its_images() {
         before
     );
     let _ = built;
+}
+
+#[test]
+fn a_cut_a_platform_wouldnt_take_isnt_exported_for_it() {
+    // 36 lines of 2.5 s each: 97 s, which Shorts takes and a Status doesn't.
+    let mut text = String::from(
+        "schema = 1\n\n[meta]\ntitle = \"A long short\"\ndefault_scene = \"card\"\n\n\
+         [timing]\nlead_in = 0.1\nline_gap = 0.2\nsection_gap = 0.2\ntail = 0.2\n\n\
+         [[cuts]]\nid = \"short\"\naspect = \"9:16\"\nplatforms = [\"youtube-shorts\", \"whatsapp-status\"]\n\n\
+         [sections.main]\n\n",
+    );
+    for n in 0..36 {
+        text.push_str(&format!(
+            "[[lines]]\nid = \"main-{n}\"\nsection = \"main\"\nshow = \"Line {n}.\"\n\n"
+        ));
+    }
+    text.push_str("[scenes.card]\nkind = \"page\"\nurl = \"card.html\"\n");
+    let (dir, p) = drafted(&text);
+    let dir = dir.path();
+    record_takes(dir, &p, None);
+    let lock = ratified(dir, &p);
+    let short = cut(&p, "short");
+    let record = build::final_build(&p, dir, &lock, short, &setup(), &mut quiet()).unwrap();
+    assert_eq!(record.problems(), Vec::<String>::new());
+    let exports = build::exports(&p, dir, short, &setup()).unwrap();
+    assert_eq!(
+        exports.refused,
+        [
+            "cut short isn't exported for whatsapp-status: it lasts 1:38, and WhatsApp Status takes 1:30"
+        ]
+    );
+    assert_eq!(exports.warnings, Vec::<String>::new());
+    // It is delivered, and exported where it is taken.
+    assert!(dir.join("out/short.mp4").is_file());
+    assert_eq!(
+        names(&dir.join("out/youtube-shorts/short")),
+        ["metadata.md", "short.mp4"]
+    );
+    assert!(!dir.join("out/whatsapp-status").exists());
 }

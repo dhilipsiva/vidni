@@ -606,6 +606,31 @@ A draft prints it as a warning, and a final build that has one isn't delivered.
 
 **Measuring an app.** `vidni platforms --grid DIR` writes `grid-1080x1920.png` and a 15-second clip of it, `grid-1080x1920.mp4`. The picture is in squares of 120 px, each with the place of its top left corner written in it. Upload the clip privately, take a screenshot while it plays, and the squares the app's buttons and labels hide say what it covers.
 
+## `[captions]`
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `split` | `"readable"` or `"reference"` | `"readable"` | How a line's caption is cut into cues |
+
+A line's caption is its `show`, cut into cues that share the time the line is said in, by their length.
+- **`readable`** makes the fewest cues that each fit two lines of 42 characters, cutting at punctuation where it can. A line said faster than 20 characters a second keeps its captions up into the pause after it, as far as the next line, and a cue is shown for 0.83 s or more where the next line leaves room.
+- **`reference`** cuts as the first pipeline did: cues of up to 108 characters, timed to the speech alone. The parity checks use it.
+
+**QA checks the cues of every build** against the rules subtitlers work to:
+
+| Rule | Limit |
+|---|---|
+| Length | At most 2 lines of 42 characters |
+| Reading speed | At most 20 characters a second |
+| Time on screen | At least 0.83 s |
+| Contrast | Captions drawn into the picture stand out from what is behind them by at least 4.5 to 1: the theme's `ink` against its `panel` over the lightest and the darkest picture in a 16:9 cut, and against its `frame` in a 9:16 one |
+
+```text
+long.mp4: caption 12 (and 6 more) is faster than 20 characters a second: 22.4 characters a second
+```
+
+A cue that is read too fast means a line said too fast for its length: say it slower, or say less.
+
 ## `[music]`
 
 A video has no music unless you say so, and then only a track whose licence you have written down.
@@ -688,7 +713,23 @@ After a cut is delivered, `vidni final` writes a folder for each platform the cu
 - **The folders are made afresh on every `vidni final`,** from the delivered build and from `[publish]`. With nothing to render, that takes under a second, so a description is changed by editing it and running `vidni final` again.
 - **`metadata.md` says what each app asks for:** the caption file and the end screen on YouTube, the related video of a Short (the project's 16:9 cut for YouTube), the cover of a reel.
 - **A folder for a platform the cut is no longer made for is removed.** A cut with `platforms = []` has none.
-- **What an upload would be refused for is a warning:** a description over YouTube's 5,000 characters or Instagram's 2,200, a thumbnail over 2 MB, an end screen on a video under 25 seconds.
+- **A cut is held to each platform's profile before its folder is written** (`vidni platforms`). It isn't exported for a platform that wouldn't take it or would play it wrong, and `vidni final` says why and exits with 1; the cut is delivered all the same, and exported for its other platforms.
+
+  | Check | Refused when |
+  |---|---|
+  | Length | Longer than the platform takes |
+  | Size | A larger file than the platform takes |
+  | Shape | Not the platform's aspect, or smaller than the size it is made for |
+  | Codecs | Not H.264 (High or Main) in yuv420p with AAC |
+  | Loudness | More than 1 LU from the platform's, or a true peak above its limit |
+  | Captions | Where a caption file is uploaded: a cue out of order, or one that ends after the video does |
+
+  ```text
+  vidni: cut short isn't exported for whatsapp-status: it lasts 1:38, and WhatsApp Status takes 1:30
+  ```
+
+  Longer than a platform recommends, or larger than the size it recommends, is a warning.
+- **What an upload would be cut short for is a warning too:** a description over YouTube's 5,000 characters or Instagram's 2,200, a thumbnail over 2 MB, an end screen on a video under 25 seconds.
 - **A synthetic voice is said.** Should a final cut ever hold one, its description says so, and the steps name Meta's Add AI label, which Meta asks for on a reel narrated with a realistic synthetic voice. Today a final cut is always in your own voice.
 
 ## `[[expectations]]`
@@ -822,19 +863,19 @@ Every build, draft or final, puts the lines' clips through the same chain. It is
 | High-pass | Takes out what is below 80 Hz: rumble under the voice |
 | De-click | Draws over a sample or two that stand far out of their neighbourhood, such as a mouth click |
 | De-ess | Turns the band around 6.5 kHz down while it is loud, where an "s" hisses |
-| Level | One gain brings the whole narration to −16 LUFS |
+| Level | One gain brings the whole narration to the cut's loudness: −14 LUFS for a cut made for platforms, which is what they play at, and −16 LUFS for a cut made for none |
 | Compress | Brings syllables more than 4 dB above that loudness nearer it (2.5 to 1), then sets the gain again |
-| Limit | Holds the few peaks still above −2.5 dBFS under it |
+| Limit | Holds the few peaks still above −2.5 dBFS under it, and gives back the loudness that took |
 | Room tone | Fills every pause with the room |
 
 - **The first three are done to each clip,** the next three to the narration as a whole. So a line sounds the same in every cut that uses it, and no line is made louder than its neighbours.
 - **The pauses hold the room, not digital silence.** A final build fills them with `takes/_room/tone.wav`, which `vidni record --test` keeps, given the gain the takes were given. Without one, and in a draft, they hold a faint noise at −70 dBFS made from a fixed seed. Between lines recorded in a room, digital silence is heard as the sound dropping out.
 - **The same clips give the same narration,** to the byte, on any machine: the chain is arithmetic done in one order, and its measure of loudness is vidni's own, as ITU-R BS.1770 defines it.
 
-**QA checks the sound of each file:** its loudness is within 1 LU of −16 LUFS, its true peak is at or below −1 dBTP, and it has no stretch of digital silence longer than 50 ms.
+**QA checks the sound of each file:** its loudness is within 1 LU of the cut's, its true peak is at or below −1 dBTP, and it has no stretch of digital silence longer than 50 ms.
 
 ```text
-long.mp4: its loudness is -17.2 LUFS, more than 1 LU from -16 LUFS
+long.mp4: its loudness is -15.2 LUFS, more than 1 LU from -14 LUFS
 long.mp4: it has 2 stretches of digital silence longer than 50 ms; the first is 0.25 s long, at 12.40 s
 ```
 

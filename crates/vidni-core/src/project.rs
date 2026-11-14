@@ -45,6 +45,9 @@ pub struct Project {
     pub scenes: BTreeMap<String, Scene>,
     /// The videos made from the script.
     pub cuts: Vec<Cut>,
+    /// How captions are cut into cues.
+    #[serde(default, skip_serializing_if = "Captioning::is_default")]
+    pub captions: Captioning,
     /// Background music.
     #[serde(default)]
     pub music: Music,
@@ -55,6 +58,31 @@ pub struct Project {
     /// Text that must be on screen when a scene is captured.
     #[serde(default)]
     pub expectations: Vec<Expectation>,
+}
+
+/// How captions are cut into cues (TODO.md, P6-VIDNI-05).
+#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize, JsonSchema)]
+#[serde(default, deny_unknown_fields)]
+pub struct Captioning {
+    /// `readable`: cues of at most two lines of 42 characters, each shown
+    /// for 0.83 s or more where the next cue leaves room. `reference`:
+    /// cues as the first pipeline cut them, of up to 108 characters.
+    pub split: Split,
+}
+
+impl Captioning {
+    fn is_default(&self) -> bool {
+        self == &Self::default()
+    }
+}
+
+/// How a line's caption is cut into cues.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum Split {
+    #[default]
+    Readable,
+    Reference,
 }
 
 /// What goes with the video where it is uploaded (TODO.md, P6-VIDNI-04).

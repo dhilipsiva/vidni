@@ -6,6 +6,7 @@
 //! milestone P2.
 
 pub mod assets;
+pub mod captions;
 pub mod capture;
 pub mod chapters;
 pub mod edit;

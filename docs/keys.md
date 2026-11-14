@@ -72,6 +72,14 @@ The videos made from the script.
 | `platforms` | array of string |  | The platform profiles the cut is made for. Default: `youtube` for 16:9; `youtube-shorts`, `instagram-reels` and `whatsapp-status` for 9:16. |
 | `size` | array of whole number |  | The frame size in pixels. Default `[1920, 1080]` or `[1080, 1920]`. |
 
+## `[captions]`
+
+How captions are cut into cues.
+
+| Key | Value | Required | Meaning |
+|---|---|---|---|
+| `split` | `"readable"` or `"reference"` |  | `readable`: cues of at most two lines of 42 characters, each shown for 0.83 s or more where the next cue leaves room. `reference`: cues as the first pipeline cut them, of up to 108 characters. |
+
 ## `[music]`
 
 Background music.

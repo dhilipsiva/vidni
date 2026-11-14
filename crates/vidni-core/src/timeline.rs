@@ -8,7 +8,8 @@
 //! reference pipeline rounds them, so that the timeline matches its golden
 //! output exactly (TODO.md, P2-VIDNI-04).
 
-use crate::project::{Line, Project, SceneKind};
+use crate::captions;
+use crate::project::{Line, Project, SceneKind, Split};
 use crate::release::Voice;
 use crate::spoken::{spoken, synthetic};
 use serde::{Deserialize, Serialize};
@@ -134,18 +135,46 @@ pub fn build_for(
             } else {
                 timing.line_gap
             };
-        let chunks = cues_for(&line.show);
+        let chunks = cues_for(&line.show, project.captions.split);
         let total_chars: usize = chunks.iter().map(|c| c.chars().count()).sum();
+        // The cues share the time the line is said in, by their length. A
+        // line said faster than a reader reads keeps its captions up into
+        // the pause after it, as far as the next line.
+        let shown = match project.captions.split {
+            Split::Reference => dur,
+            Split::Readable => {
+                let next = if k + 1 < lines.len() {
+                    t
+                } else {
+                    end + timing.tail
+                };
+                let to_read = total_chars as f64 / captions::SPEED + 0.002;
+                dur.max(to_read.min(next - start))
+            }
+        };
         let mut cues = Vec::with_capacity(chunks.len());
         let mut c0 = start;
         for chunk in chunks {
-            let c1 = c0 + dur * chunk.chars().count() as f64 / total_chars as f64;
+            let c1 = c0 + shown * chunk.chars().count() as f64 / total_chars as f64;
             cues.push(Cue {
                 start: round(c0, 3),
                 end: round(c1, 3),
                 text: chunk,
             });
             c0 = c1;
+        }
+        // A line said in under 0.83 s is shown that long all the same,
+        // up to where the next line begins.
+        if project.captions.split == Split::Readable
+            && let Some(last) = cues.last_mut()
+            && last.end - last.start < captions::SHORTEST
+        {
+            let next = if k + 1 < lines.len() {
+                t
+            } else {
+                end + timing.tail
+            };
+            last.end = round((last.start + captions::SHORTEST).min(next).max(last.end), 3);
         }
         let card = line
             .scene_in(project)
@@ -190,16 +219,51 @@ pub fn build_for(
     })
 }
 
+/// Cuts a line's caption into cues, as `split` says.
+pub fn cues_for(text: &str, split: Split) -> Vec<String> {
+    match split {
+        Split::Reference => reference_cues(text),
+        Split::Readable => readable_cues(text),
+    }
+}
+
 /// Splits a caption longer than [`CUE_CHARS`] into the fewest cues of about
 /// that length, cutting at punctuation near each ideal point when there is
-/// any. Lengths are in characters, and words are separated by single spaces.
-pub fn cues_for(text: &str) -> Vec<String> {
+/// any, as the reference pipeline does. Lengths are in characters, and
+/// words are separated by single spaces.
+fn reference_cues(text: &str) -> Vec<String> {
     let len = text.chars().count();
     if len <= CUE_CHARS {
         return vec![text.to_string()];
     }
+    cut(text, len.div_ceil(CUE_CHARS), CUE_CHARS + 16)
+}
+
+/// Splits a caption into the fewest cues that each fit two lines of 42
+/// characters ([`captions::fits`]), cutting at punctuation near each ideal
+/// point when there is any. A caption that fits is one cue.
+fn readable_cues(text: &str) -> Vec<String> {
+    let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    let (len, words) = (text.chars().count(), text.split(' ').count());
+    let most = captions::LINE * captions::LINES;
+    for n in len.div_ceil(most).max(1)..=words.max(1) {
+        let cues = match n {
+            1 => vec![text.clone()],
+            _ => cut(&text, n, most),
+        };
+        if cues.iter().all(|cue| captions::fits(cue)) {
+            return cues;
+        }
+    }
+    // A word too long for a line can't be helped: each word is a cue.
+    text.split(' ').map(str::to_string).collect()
+}
+
+/// Cuts `text` into `n` cues of about equal length, none longer than
+/// `reach` characters where a word ends in reach.
+fn cut(text: &str, n: usize, reach: usize) -> Vec<String> {
+    let len = text.chars().count();
     let words: Vec<&str> = text.split(' ').collect();
-    let n = len.div_ceil(CUE_CHARS);
     // Where each word but the last ends, counting the space after it.
     let mut ends: Vec<(usize, usize, &str)> = Vec::new();
     let mut pos = 0;
@@ -219,7 +283,7 @@ pub fn cues_for(text: &str) -> Vec<String> {
         let start = cuts.last().map_or(0, |c| c.0);
         let best = ends
             .iter()
-            .filter(|(p, i, _)| cuts.last().is_none_or(|c| *i > c.1) && p - start <= CUE_CHARS + 16)
+            .filter(|(p, i, _)| cuts.last().is_none_or(|c| *i > c.1) && p - start <= reach)
             .map(|(p, i, w)| (((*p as f64) - ideal).abs() - bonus(w), *p, *i))
             .min_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)).then(a.2.cmp(&b.2)));
         match best {
@@ -292,16 +356,62 @@ mod tests {
 
     #[test]
     fn short_captions_stay_whole_and_long_ones_split_at_punctuation() {
-        assert_eq!(cues_for("Adam is a dog."), ["Adam is a dog."]);
+        assert_eq!(
+            cues_for("Adam is a dog.", Split::Reference),
+            ["Adam is a dog."]
+        );
         let text = "The engine starts from the claim and works backward through every rule it knows, \
                     and it stops when the chain closes on a stored fact.";
         assert_eq!(
-            cues_for(text),
+            cues_for(text, Split::Reference),
             [
                 "The engine starts from the claim and works backward through every rule it knows,",
                 "and it stops when the chain closes on a stored fact."
             ]
         );
+    }
+
+    #[test]
+    fn readable_cues_each_fit_two_lines_of_42_characters() {
+        assert_eq!(
+            cues_for("Adam is a dog.", Split::Readable),
+            ["Adam is a dog."]
+        );
+        let text = "The engine starts from the claim and works backward through every rule it knows, \
+                    and it stops when the chain closes on a stored fact.";
+        let cues = cues_for(text, Split::Readable);
+        assert!(cues.iter().all(|cue| captions::fits(cue)), "{cues:?}");
+        assert_eq!(cues.join(" "), text);
+        assert_eq!(cues.len(), 2, "{cues:?}");
+        // 100 characters with no good place to cut: the reference keeps
+        // them as one cue of three lines, and a readable cut makes two.
+        let run = "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen more";
+        assert_eq!(cues_for(run, Split::Reference).len(), 2);
+        assert!(captions::fits(&cues_for(run, Split::Readable)[0]));
+        let plain = "word ".repeat(18);
+        assert_eq!(cues_for(plain.trim(), Split::Reference), [plain.trim()]);
+        assert!(!captions::fits(plain.trim()));
+        let cues = cues_for(plain.trim(), Split::Readable);
+        assert!(
+            cues.len() == 2 && cues.iter().all(|cue| captions::fits(cue)),
+            "{cues:?}"
+        );
+        // Every line of the nibli example, cut readably, fits.
+        let example = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../examples/nibli-syllogism/vidni.toml");
+        let project: Project = toml::from_str(&std::fs::read_to_string(example).unwrap()).unwrap();
+        for line in &project.lines {
+            let cues = cues_for(&line.show, Split::Readable);
+            assert!(
+                cues.iter().all(|cue| captions::fits(cue)),
+                "{}: {cues:?}",
+                line.id
+            );
+            assert_eq!(cues.join(" "), line.show, "{}", line.id);
+        }
+        // A word too long for a line is a cue of its own, and nothing is lost.
+        let long = format!("See {} now", "x".repeat(50));
+        assert_eq!(cues_for(&long, Split::Readable).join(" "), long);
     }
 
     #[test]

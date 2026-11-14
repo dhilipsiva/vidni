@@ -58,6 +58,7 @@ pub(crate) const ROOT: &[&str] = &[
     "lint",
     "style",
     "cuts",
+    "captions",
     "music",
     "publish",
     "sections",

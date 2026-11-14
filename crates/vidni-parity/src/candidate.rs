@@ -9,7 +9,7 @@ use crate::VARIANTS;
 use std::fs;
 use std::path::{Path, PathBuf};
 use vidni_core::capture::{self, Source};
-use vidni_core::project::{Aspect, LineSelection, Project};
+use vidni_core::project::{Aspect, LineSelection, Project, Split};
 use vidni_core::takes::{self, Status};
 use vidni_core::timeline::{self, Clip};
 
@@ -45,6 +45,11 @@ pub(crate) fn project(example: &Path) -> Result<Project, String> {
     })?;
     project.cuts.retain(|c| c.lines == LineSelection::All);
     project.lines.retain(|l| l.only.is_empty());
+    // The reference cut its captions its own way, and held no last picture.
+    project.captions.split = Split::Reference;
+    for cut in &mut project.cuts {
+        cut.end_hold = None;
+    }
     Ok(project)
 }
 

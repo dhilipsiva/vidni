@@ -4,6 +4,10 @@
   "description": "One video: its script, what each line shows, and the cuts made from it.",
   "type": "object",
   "properties": {
+    "captions": {
+      "description": "How captions are cut into cues.",
+      "$ref": "#/$defs/Captioning"
+    },
     "cuts": {
       "description": "The videos made from the script.",
       "type": "array",
@@ -264,6 +268,18 @@
           "description": "Frame the whole viewport.",
           "type": "boolean",
           "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "Captioning": {
+      "description": "How captions are cut into cues (TODO.md, P6-VIDNI-05).",
+      "type": "object",
+      "properties": {
+        "split": {
+          "description": "`readable`: cues of at most two lines of 42 characters, each shown\nfor 0.83 s or more where the next cue leaves room. `reference`:\ncues as the first pipeline cut them, of up to 108 characters.",
+          "$ref": "#/$defs/Split",
+          "default": "readable"
         }
       },
       "additionalProperties": false
@@ -960,6 +976,14 @@
         }
       },
       "additionalProperties": false
+    },
+    "Split": {
+      "description": "How a line's caption is cut into cues.",
+      "type": "string",
+      "enum": [
+        "readable",
+        "reference"
+      ]
     },
     "Style": {
       "description": "The look of every cut.",
