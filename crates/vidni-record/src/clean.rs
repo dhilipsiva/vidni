@@ -219,11 +219,90 @@ pub fn clean(raw: &[i16], rate: u32) -> Result<Kept, Refused> {
     })
 }
 
+/// The level of the speech in a take, in dBFS: the RMS of its 20 ms
+/// stretches that are above [`SILENCE`], so that the pauses in a take and
+/// the margins around it don't count. [`FLOOR`] for a take with none.
+pub fn speech_db(samples: &[i16], rate: u32) -> f64 {
+    let window = samples_in(WINDOW, rate).max(1);
+    let (mut sum, mut count) = (0.0, 0usize);
+    for stretch in samples.chunks(window) {
+        if rms_db(stretch) > SILENCE {
+            sum += stretch.iter().map(|s| f64::from(*s).powi(2)).sum::<f64>();
+            count += stretch.len();
+        }
+    }
+    match count {
+        0 => FLOOR,
+        _ => db((sum / count as f64).sqrt() / 32768.0),
+    }
+}
+
+/// Cuts a raw take where the creator says: from `from` to `to`, in
+/// samples of the raw take. The keypresses at its ends are still dropped
+/// and the rumble still filtered out, exactly as [`clean`] does it, so a
+/// take cut where `clean` would cut it is the same take. Ends outside what
+/// is left after the keypresses are brought inside it.
+pub fn cut(raw: &[i16], rate: u32, from: usize, to: usize) -> Result<Kept, Refused> {
+    let (down, up) = (samples_in(KEY_DOWN, rate), samples_in(KEY_UP, rate));
+    let end = raw.len().saturating_sub(up);
+    let spoken = raw.get(down..end).unwrap_or_default();
+    let filtered = high_pass(spoken, rate, HIGH_PASS);
+    let (from, to) = (
+        from.clamp(down, end.max(down)),
+        to.clamp(down, end.max(down)),
+    );
+    if to.saturating_sub(from) < samples_in(MIN_KEPT, rate) {
+        return Err(Refused::NothingLeft);
+    }
+    Ok(Kept {
+        samples: filtered[from - down..to - down].to_vec(),
+        from,
+        to,
+        words: (from, to - 1),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     const RATE: u32 = 48000;
+
+    #[test]
+    fn a_takes_speech_is_measured_without_its_pauses() {
+        // Half full scale: an RMS of -9 dB, however much silence is around it.
+        let mut take = silence(0.5);
+        take.extend(tone(1.0, 440.0, 0.5));
+        let bare = speech_db(&tone(1.0, 440.0, 0.5), RATE);
+        assert!((bare - -9.03).abs() < 0.05, "{bare}");
+        assert!((speech_db(&take, RATE) - bare).abs() < 0.05);
+        take.extend(silence(2.0));
+        assert!((speech_db(&take, RATE) - bare).abs() < 0.05);
+        assert!(rms_db(&take) < bare - 5.0);
+        assert_eq!(speech_db(&silence(1.0), RATE), FLOOR);
+        assert_eq!(speech_db(&[], RATE), FLOOR);
+    }
+
+    #[test]
+    fn a_take_cut_where_the_trim_cuts_it_is_the_same_take() {
+        // A second of silence, a second of tone, a second of silence.
+        let mut raw = silence(1.0);
+        raw.extend(tone(1.0, 440.0, 0.3));
+        raw.extend(silence(1.0));
+        let auto = clean(&raw, RATE).unwrap();
+        let same = cut(&raw, RATE, auto.from, auto.to).unwrap();
+        assert_eq!(same.samples, auto.samples);
+        assert_eq!((same.from, same.to), (auto.from, auto.to));
+        // A wider cut holds the narrower one, and its ends stay inside
+        // what the keypresses leave: 0.2 s at the start and 0.1 s at the end.
+        let wide = cut(&raw, RATE, 0, raw.len()).unwrap();
+        assert_eq!((wide.from, wide.to), (9600, raw.len() - 4800));
+        let at = auto.from - wide.from;
+        assert_eq!(wide.samples[at..at + auto.samples.len()], auto.samples[..]);
+        // Under 0.4 s is no take.
+        assert_eq!(cut(&raw, RATE, 48000, 60000), Err(Refused::NothingLeft));
+        assert_eq!(cut(&raw, RATE, 60000, 48000), Err(Refused::NothingLeft));
+    }
 
     /// `seconds` of a tone at `hz`, at `level` of full scale.
     fn tone(seconds: f64, hz: f64, level: f64) -> Vec<i16> {

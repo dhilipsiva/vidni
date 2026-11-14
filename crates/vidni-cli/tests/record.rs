@@ -335,6 +335,45 @@ fn a_double_press_esc_keep_and_resume_on_a_project_with_two_cuts() {
         "{takes:?}"
     );
     assert_eq!(wavs(&dir.join("takes/main-1/raw")).len(), 2);
+    // P4-VIDNI-04: beside the kept take is the record of which raw take
+    // it is cut from, and beside each raw take what it was recorded with.
+    let records = |folder: &str| -> Vec<(String, String)> {
+        let mut found: Vec<(String, String)> = fs::read_dir(dir.join(folder))
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .filter(|p| p.extension().is_some_and(|x| x == "json"))
+            .map(|p| {
+                (
+                    p.file_name().unwrap().to_string_lossy().into_owned(),
+                    fs::read_to_string(&p).unwrap(),
+                )
+            })
+            .collect();
+        found.sort();
+        found
+    };
+    let picks = records("takes/main-1");
+    assert_eq!(picks.len(), 1);
+    assert_eq!(picks[0].0, takes[0].replace(".wav", ".json"));
+    assert!(
+        picks[0].1.contains("\"raw\": 2") && picks[0].1.contains("\"trim\": \"auto\""),
+        "{picks:?}"
+    );
+    // Both raw takes that were stopped have a session; the cancelled one left nothing.
+    let sessions = records("takes/main-1/raw");
+    assert_eq!(sessions.len(), 2, "{sessions:?}");
+    let named = |text: &str, key: &str| -> String {
+        let at = text.find(&format!("\"{key}\": \"")).unwrap() + key.len() + 5;
+        text[at..at + text[at..].find('"').unwrap()].to_string()
+    };
+    let first_session = named(&sessions[1].1, "session");
+    assert_eq!(named(&sessions[0].1, "session"), first_session);
+    assert!(
+        first_session.ends_with('Z') && first_session.len() == 20,
+        "{first_session}"
+    );
+    assert!(sessions[1].1.contains("\"rate\": 48000"), "{sessions:?}");
+    assert!(!named(&sessions[1].1, "microphone").is_empty());
 
     // Back to the first line: its take is shown, and plays, alone and as
     // its section.
@@ -364,6 +403,17 @@ fn a_double_press_esc_keep_and_resume_on_a_project_with_two_cuts() {
     assert_eq!(code, 0, "{all}");
     assert!(all.contains("2 of 3 lines recorded, in "), "{all}");
     assert_eq!(kept("main-2").len(), 1);
+    // That take is of another session, named by a later moment.
+    let later = fs::read_dir(dir.join("takes/main-2/raw"))
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .find(|p| p.extension().is_some_and(|x| x == "json"))
+        .map(|p| fs::read_to_string(p).unwrap())
+        .unwrap();
+    assert!(
+        later.contains("\"session\": \"") && !later.contains(&first_session),
+        "{later}"
+    );
 
     // The short cut alone: the line it shares with the long cut was
     // recorded once, for both, so only its own line is left.

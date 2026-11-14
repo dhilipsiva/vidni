@@ -538,15 +538,32 @@ pub fn standing(project: &Project, project_dir: &Path, releases: &Releases, cut:
     }
 }
 
-/// Today's date in UTC, as `2026-11-14`, for a release's record. It is the
-/// one place vidni reads the clock, and no build output depends on it.
-/// `SOURCE_DATE_EPOCH` isn't consulted: Nix shells set it to 1980, which no
-/// release was approved in.
+/// Today's date in UTC, as `2026-11-14`, for a release's record. With
+/// [`now`] it is where vidni reads the clock, and no build output depends
+/// on either. `SOURCE_DATE_EPOCH` isn't consulted: Nix shells set it to
+/// 1980, which no release was approved in.
 pub fn today() -> String {
-    let seconds = std::time::SystemTime::now()
+    date(clock() / 86_400)
+}
+
+/// This moment in UTC, as `2026-11-14T10:22:03Z`, for a take's record.
+pub fn now() -> String {
+    let seconds = clock();
+    let of_day = seconds % 86_400;
+    format!(
+        "{}T{:02}:{:02}:{:02}Z",
+        date(seconds / 86_400),
+        of_day / 3600,
+        of_day / 60 % 60,
+        of_day % 60
+    )
+}
+
+/// Seconds since 1970-01-01, by the system's clock.
+fn clock() -> u64 {
+    std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |d| d.as_secs());
-    date(seconds / 86_400)
+        .map_or(0, |d| d.as_secs())
 }
 
 /// The date `days` after 1970-01-01, in the Gregorian calendar.

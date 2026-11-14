@@ -25,6 +25,7 @@ mod build;
 mod offline;
 mod record;
 mod repro;
+mod takes;
 
 #[derive(Parser)]
 #[command(
@@ -105,6 +106,18 @@ enum Command {
         /// The cut whose lines to list; repeat for more. Default: every line.
         #[arg(long = "cut", value_name = "ID")]
         cuts: Vec<String>,
+        /// Instead, list one line's raw takes, with the one its kept take
+        /// is cut from.
+        #[arg(long, value_name = "ID", conflicts_with_all = ["cuts", "link"])]
+        line: Option<String>,
+        /// With --line: make raw take N the line's kept take, trimmed as
+        /// vidni trims a new take.
+        #[arg(long, value_name = "N", requires = "line")]
+        pick: Option<u32>,
+        /// With --line: cut the kept take from FROM to TO seconds of its
+        /// raw take (or of the one --pick names), as `0.35:2.8`.
+        #[arg(long, value_name = "FROM:TO", requires = "line")]
+        trim: Option<String>,
         /// Instead, lay the current takes out in DIR as 000.wav, 001.wav … in
         /// script order, as symbolic links, for tools that read numbered files.
         #[arg(long, value_name = "DIR")]
@@ -340,7 +353,20 @@ fn main() -> ExitCode {
         ),
         Command::Validate { path } => validate(&path),
         Command::Fmt { path, check } => fmt(&path, check),
-        Command::Takes { path, cuts, link } => takes(&path, &cuts, link.as_deref()),
+        Command::Takes {
+            path,
+            cuts,
+            line: Some(line),
+            pick,
+            trim,
+            ..
+        } => {
+            let _ = cuts;
+            takes::line(&path, &line, pick, trim.as_deref())
+        }
+        Command::Takes {
+            path, cuts, link, ..
+        } => takes(&path, &cuts, link.as_deref()),
         Command::Status { path } => status(&path),
         Command::Ratify { path, cuts } => ratify(&path, &cuts),
         Command::Unratify {
@@ -486,6 +512,9 @@ fn takes(path: &Path, cuts: &[String], link: Option<&Path>) -> ExitCode {
         say!("{:width$}  {state:7}  {}{note}", line.id, shown(&line.path));
     }
     say!("{current} current, {stale} stale, {missing} missing");
+    for jump in takes::jumps(&project, dir) {
+        eprintln!("vidni: warning: {jump}");
+    }
     ExitCode::SUCCESS
 }
 

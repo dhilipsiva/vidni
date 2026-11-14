@@ -267,6 +267,10 @@ pub fn finish(path: &Path, cuts: &[String], again: bool) -> ExitCode {
             return Err(stopped(Stop::Refused(refusals)));
         }
         let setup = setup(&loaded, again)?;
+        // Sessions that differ in level are worth a listen; they stop nothing.
+        for jump in crate::takes::jumps(project, dir) {
+            eprintln!("vidni: warning: {jump}");
+        }
         for cut in cuts {
             let mut progress = progress(&cut.id);
             let record = build::final_build(project, dir, &lock, cut, &setup, &mut progress)

@@ -1001,3 +1001,201 @@ fn nothing_vidni_ships_runs_python_or_node() {
         }
     }
 }
+
+/// A raw take: half a second of silence, `seconds` of a tone at `hz` and
+/// `level` of full scale, and half a second of silence, at 48 kHz.
+fn raw_take(path: &Path, hz: f64, level: f64, seconds: f64) {
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    let spec = hound::WavSpec {
+        channels: 1,
+        sample_rate: 48000,
+        bits_per_sample: 16,
+        sample_format: hound::SampleFormat::Int,
+    };
+    let mut writer = hound::WavWriter::create(path, spec).unwrap();
+    let tone = (seconds * 48000.0) as u32;
+    for n in 0..24000 + tone + 24000 {
+        let t = f64::from(n) / 48000.0;
+        let sample = match (24000..24000 + tone).contains(&n) {
+            true => (t * hz * std::f64::consts::TAU).sin() * level * 32767.0,
+            false => 0.0,
+        };
+        writer.write_sample(sample as i16).unwrap();
+    }
+    writer.finalize().unwrap();
+}
+
+#[test]
+fn picking_an_older_take_changes_only_its_line() {
+    // P4-VIDNI-04: a kept take is cut from a raw one, by a record beside it.
+    let dir = tempfile::tempdir().unwrap();
+    let project = dir.path().to_str().unwrap();
+    fs::write(dir.path().join("vidni.toml"), vidni_core::TEMPLATE).unwrap();
+    fs::write(dir.path().join("page.html"), "<!doctype html>").unwrap();
+    let run = |args: &[&str]| {
+        let mut all = vec!["takes", project];
+        all.extend(args);
+        let out = vidni(&all);
+        (
+            out.status.code(),
+            String::from_utf8_lossy(&out.stdout).into_owned(),
+            String::from_utf8_lossy(&out.stderr).into_owned(),
+        )
+    };
+    // Where each line's kept take goes says where its raw takes go.
+    let listing = run(&[]).1;
+    let kept: Vec<PathBuf> = listing
+        .lines()
+        .take(2)
+        .map(|l| dir.path().join(l.split_whitespace().nth(2).unwrap()))
+        .collect();
+    let raw = |line: usize, n: u32| {
+        let stem = kept[line].file_stem().unwrap().to_str().unwrap();
+        kept[line]
+            .parent()
+            .unwrap()
+            .join(format!("raw/{stem}-{n}.wav"))
+    };
+    // Two raw takes of the first line, and one of the second.
+    raw_take(&raw(0, 1), 300.0, 0.3, 1.0);
+    raw_take(&raw(0, 2), 500.0, 0.3, 1.5);
+    raw_take(&raw(1, 1), 400.0, 0.3, 1.0);
+    let (code, said, err) = run(&["--line", "intro-1", "--pick", "2"]);
+    assert_eq!(code, Some(0), "{err}");
+    // vidni keeps 0.15 s before the words and 0.25 s after them.
+    assert!(
+        said.starts_with("intro-1: its kept take is raw take 2, from 0.35 s to 2.25 s: 1.90 s\n"),
+        "{said}"
+    );
+    assert_eq!(run(&["--line", "intro-2", "--pick", "1"]).0, Some(0));
+    assert!(run(&[]).1.ends_with("2 current, 0 stale, 0 missing\n"));
+
+    // Every file among the takes, with its bytes.
+    let files = || -> Vec<(String, Vec<u8>)> {
+        let mut found = Vec::new();
+        let mut folders = vec![dir.path().join("takes")];
+        while let Some(folder) = folders.pop() {
+            for entry in fs::read_dir(&folder).unwrap() {
+                let path = entry.unwrap().path();
+                match path.is_dir() {
+                    true => folders.push(path),
+                    false => found.push((
+                        path.strip_prefix(dir.path()).unwrap().display().to_string(),
+                        fs::read(&path).unwrap(),
+                    )),
+                }
+            }
+        }
+        found.sort();
+        found
+    };
+    let changed = |before: &[(String, Vec<u8>)], after: &[(String, Vec<u8>)]| -> Vec<String> {
+        assert_eq!(before.len(), after.len());
+        before
+            .iter()
+            .zip(after)
+            .filter(|(b, a)| b != a)
+            .map(|(b, _)| b.0.rsplit('/').next().unwrap().to_string())
+            .collect()
+    };
+    let with_the_second = files();
+    assert_eq!(
+        with_the_second.len(),
+        7,
+        "three raw takes, two kept, two records"
+    );
+    let name = |path: &Path| path.file_name().unwrap().to_str().unwrap().to_string();
+    let (take, record) = (name(&kept[0]), name(&kept[0].with_extension("json")));
+
+    // Pick the older take: the line's kept take and its record change,
+    // and nothing else among the takes does.
+    let (code, said, _) = run(&["--line", "intro-1", "--pick", "1"]);
+    assert_eq!(code, Some(0));
+    assert!(
+        said.contains("raw take 1, from 0.35 s to 1.75 s: 1.40 s"),
+        "{said}"
+    );
+    let with_the_first = files();
+    assert_eq!(
+        changed(&with_the_second, &with_the_first),
+        [record.clone(), take.clone()]
+    );
+    // The kept take is the raw one's samples, with nothing done to them
+    // but the cut and the rumble filter: picked again, it is the same bytes.
+    assert_eq!(run(&["--line", "intro-1", "--pick", "2"]).0, Some(0));
+    assert_eq!(files(), with_the_second);
+
+    // Cut it elsewhere: the same raw take, other ends, on record as set.
+    let (code, said, _) = run(&["--line", "intro-1", "--trim", "0.6:1.4"]);
+    assert_eq!(code, Some(0));
+    assert!(
+        said.contains("raw take 2, from 0.60 s to 1.40 s: 0.80 s"),
+        "{said}"
+    );
+    assert_eq!(
+        changed(&with_the_second, &files()),
+        [record.clone(), take.clone()]
+    );
+    let pick = fs::read_to_string(kept[0].with_extension("json")).unwrap();
+    assert!(
+        pick.contains("\"raw\": 2") && pick.contains("\"trim\": \"set\""),
+        "{pick}"
+    );
+    let (_, said, _) = run(&["--line", "intro-1"]);
+    let rows: Vec<&str> = said.lines().collect();
+    assert!(rows[0].starts_with("intro-1: "), "{said}");
+    assert!(rows[1].starts_with("   1  takes/intro-1/raw/") && rows[1].contains("2.00 s, peak "));
+    assert!(rows[2].starts_with("*  2  takes/intro-1/raw/") && rows[2].contains("2.50 s, peak "));
+    assert!(
+        rows[2].ends_with("recorded before sessions were noted"),
+        "{said}"
+    );
+    assert!(
+        rows[3].ends_with("raw take 2 from 0.60 s to 1.40 s (where --trim put its ends)"),
+        "{said}"
+    );
+
+    // What can't be done says why, and changes nothing.
+    let before = files();
+    let (code, _, err) = run(&["--line", "intro-1", "--pick", "9"]);
+    assert_eq!(code, Some(1));
+    assert_eq!(err, "vidni: line intro-1 has no raw take 9; it has 1, 2\n");
+    let (code, _, err) = run(&["--line", "intro-1", "--trim", "soon"]);
+    assert_eq!(code, Some(1));
+    assert!(err.contains("--trim takes FROM:TO in seconds"), "{err}");
+    let (code, _, err) = run(&["--line", "intro-1", "--trim", "1.0:1.2"]);
+    assert_eq!(code, Some(1));
+    assert!(err.contains("nothing was left"), "{err}");
+    let (code, _, err) = run(&["--line", "nowhere"]);
+    assert_eq!(
+        (code, err.as_str()),
+        (Some(1), "vidni: there is no line \"nowhere\"\n")
+    );
+    assert_eq!(files(), before);
+
+    // Sessions: a line recorded on another day, 12 dB quieter, is named.
+    let session = |day: &str| {
+        format!(
+            "{{\"session\": \"{day}T10:00:00Z\", \"recorded\": \"{day}T10:05:00Z\", \
+             \"microphone\": \"a microphone\", \"rate\": 48000}}"
+        )
+    };
+    fs::write(raw(0, 2).with_extension("json"), session("2026-11-10")).unwrap();
+    raw_take(&raw(1, 2), 400.0, 0.075, 1.0);
+    fs::write(raw(1, 2).with_extension("json"), session("2026-11-12")).unwrap();
+    assert_eq!(run(&["--line", "intro-2", "--pick", "2"]).0, Some(0));
+    let (code, _, err) = run(&[]);
+    assert_eq!(code, Some(0));
+    assert!(
+        err.starts_with(
+            "vidni: warning: the takes of the session of 2026-11-12T10:00:00Z are 12.1 dB \
+             quieter than those of 2026-11-10T10:00:00Z: intro-2; "
+        ),
+        "{err}"
+    );
+    let (_, said, _) = run(&["--line", "intro-2"]);
+    assert!(
+        said.contains("recorded 2026-11-12T10:05:00Z from a microphone"),
+        "{said}"
+    );
+}

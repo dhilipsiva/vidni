@@ -248,6 +248,8 @@ struct Studio {
     speaker: Option<Result<Speaker, String>>,
     /// The listening check, where it is at hand and knows the language.
     listener: Option<Listener>,
+    /// The session's name: the moment it began.
+    session: String,
 }
 
 impl Studio {
@@ -267,6 +269,7 @@ impl Studio {
             input,
             speaker: None,
             listener,
+            session: vidni_core::release::now(),
         })
     }
 
@@ -538,6 +541,16 @@ impl Session<'_> {
                     )));
                 }
             };
+            // What the take was recorded with goes beside it.
+            takes::write_session(
+                &raw,
+                &takes::Session {
+                    session: studio.session.clone(),
+                    recorded: vidni_core::release::now(),
+                    microphone: studio.input.name(),
+                    rate: studio.input.rate(),
+                },
+            )?;
             status(&format!("  {DIM}checking the take…{RESET}"));
             let candidate = match take::candidate(&raw, &line.kept)? {
                 Ok(candidate) => candidate,

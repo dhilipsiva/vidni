@@ -44,6 +44,19 @@ A video recorded over several sessions sounds like one only if the sessions soun
 - **Same room, same time of day** if the room has traffic or a neighbour.
 - **Run `vidni record --test` at the start of every session,** and compare its numbers with last time's.
 - **Listen across the joins.** `s` plays a section's kept takes one after another. A line that stands out gets read again: `vidni record --only <line-id>`.
+- **vidni says when a session differs.** Each take is filed with the session it was recorded in, and `vidni takes` and `vidni final` warn when one session's takes are more than 3 dB louder or quieter than the main one's.
+
+## Changing your mind about a take
+
+Every take you stopped is still there, and the kept one is only a cut of one of them:
+
+```sh
+vidni takes --line intro-1                    # its raw takes, and the one that is kept
+vidni takes --line intro-1 --pick 1           # keep the first one after all
+vidni takes --line intro-1 --trim 0.4:2.6     # cut the kept one from 0.4 s to 2.6 s of its raw take
+```
+
+Only that line changes. Use `--trim` when vidni's own trim cut a soft first consonant or left a breath in.
 
 ## After the session
 
@@ -75,9 +88,11 @@ Every other line keeps its take.
 ## Where things are
 
 ```text
-takes/<line-id>/<hash>.wav          the kept take for that wording
-takes/<line-id>/raw/<hash>-<n>.wav  every raw take for it, numbered from 1
-takes/_room/tone.wav                the room, from the last mic check
+takes/<line-id>/<hash>.wav           the kept take for that wording
+takes/<line-id>/<hash>.json          which raw take it is cut from, and where
+takes/<line-id>/raw/<hash>-<n>.wav   every raw take for it, numbered from 1
+takes/<line-id>/raw/<hash>-<n>.json  the session it was recorded in
+takes/_room/tone.wav                 the room, from the last mic check
 ```
 
 The takes stay out of git. The microphone is the system's default input, or the one whose name holds `$VIDNI_MIC`; takes play through the default output, or the one whose name holds `$VIDNI_SPEAKER`.

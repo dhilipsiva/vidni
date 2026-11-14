@@ -14,6 +14,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::BufWriter;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
+use vidni_core::takes::{Pick, Trim};
 
 /// How much of the newest sound a meter's level is taken over, in seconds.
 pub const METER: f64 = 0.12;
@@ -267,6 +268,10 @@ pub struct Candidate {
     /// Where in the raw take it begins and ends, in samples.
     pub from: usize,
     pub to: usize,
+    /// The raw take it is cut from, by number, when it is one of a line's
+    /// raw takes; and who chose its ends.
+    pub raw: Option<u32>,
+    pub trim: Trim,
 }
 
 /// Where the candidate for the kept take at `kept` waits. It doesn't end
@@ -281,11 +286,27 @@ pub fn candidate_path(kept: &Path) -> PathBuf {
 /// kept take at `kept`. The raw take isn't changed, and neither is the
 /// kept take. A take with nothing in it is refused, and leaves no candidate.
 pub fn candidate(raw: &Path, kept: &Path) -> Result<Result<Candidate, Refused>, String> {
+    cut(raw, kept, None)
+}
+
+/// As [`candidate`], cut where `ends` says, in seconds of the raw take,
+/// when it says; or where vidni finds the words.
+pub fn cut(
+    raw: &Path,
+    kept: &Path,
+    ends: Option<(f64, f64)>,
+) -> Result<Result<Candidate, Refused>, String> {
     let (samples, rate) = read(raw)?;
-    let trimmed = match clean::clean(&samples, rate) {
+    let at = |seconds: f64| (seconds.max(0.0) * f64::from(rate)).round() as usize;
+    let trimmed = match ends {
+        None => clean::clean(&samples, rate),
+        Some((from, to)) => clean::cut(&samples, rate, at(from), at(to)),
+    };
+    let trimmed = match trimmed {
         Ok(trimmed) => trimmed,
         Err(refused) => return Ok(Err(refused)),
     };
+    let number = vidni_core::takes::raw_number(raw);
     let path = candidate_path(kept);
     write(&path, &trimmed.samples, rate)?;
     Ok(Ok(Candidate {
@@ -295,16 +316,32 @@ pub fn candidate(raw: &Path, kept: &Path) -> Result<Result<Candidate, Refused>, 
         peak: clean::peak_db(&trimmed.samples),
         from: trimmed.from,
         to: trimmed.to,
+        raw: number,
+        trim: match ends {
+            None => Trim::Auto,
+            Some(_) => Trim::Set,
+        },
     }))
 }
 
 impl Candidate {
     /// Keeps it: it becomes the line's kept take, in the place of the one
     /// before it.
+    /// The record of which raw take it is, and where it was cut, is
+    /// written beside it, so that the take can be made again or another
+    /// picked in its place.
     pub fn keep(self) -> Result<PathBuf, String> {
-        fs::rename(&self.path, &self.kept)
-            .map(|()| self.kept.clone())
-            .map_err(|e| format!("{}: {e}", self.kept.display()))
+        fs::rename(&self.path, &self.kept).map_err(|e| format!("{}: {e}", self.kept.display()))?;
+        if let Some(raw) = self.raw {
+            let pick = Pick {
+                raw,
+                from: self.from,
+                to: self.to,
+                trim: self.trim,
+            };
+            vidni_core::takes::write_pick(&self.kept, &pick)?;
+        }
+        Ok(self.kept)
     }
 
     /// Discards it: the line is as it was.

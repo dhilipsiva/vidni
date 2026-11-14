@@ -204,9 +204,11 @@ So an edit to a line's punctuation or capitals keeps its audio, and an edit to i
 The creator's takes live in the project folder, out of git (DECISIONS.md, D4):
 
 ```text
-takes/<line-id>/<hash>.wav          the kept take for that wording
-takes/<line-id>/raw/<hash>-<n>.wav  every raw take for it, numbered from 1
-takes/_room/                        room tone from the mic check
+takes/<line-id>/<hash>.wav           the kept take for that wording
+takes/<line-id>/<hash>.json          which raw take it is cut from, and where
+takes/<line-id>/raw/<hash>-<n>.wav   every raw take for it, numbered from 1
+takes/<line-id>/raw/<hash>-<n>.json  what that take was recorded with
+takes/_room/                         room tone from the mic check
 ```
 
 `vidni takes` lists each line's take as one of:
@@ -227,6 +229,36 @@ A recording goes straight into a raw take: 16-bit PCM with one channel, at the m
 4. **The silence.** The words begin where the level first rises above −45 dBFS, and end where it last does. The level is the RMS over the 20 ms up to each sample. 0.15 s is kept before the words and 0.25 s after them. A take with less than 0.4 s left is discarded.
 
 The trimmed take waits beside the kept one as `<hash>.wav.new` until it is kept or discarded, so a line's take is replaced only by one you chose.
+
+### Picking another take, or cutting one elsewhere
+
+A kept take is a cut of a raw take, and the record beside it says which, and from which sample to which. So the choice can be changed at any time, and nothing is lost by changing it: raw takes are never altered.
+
+```text
+$ vidni takes --line intro-1
+intro-1: Hello, and welcome.
+   1  takes/intro-1/raw/9c7860728053867b-1.wav  2.00 s, peak -10.5 dB; recorded 2026-11-14T10:22:03Z from USB Microphone
+*  2  takes/intro-1/raw/9c7860728053867b-2.wav  2.50 s, peak -10.5 dB; recorded 2026-11-14T10:22:41Z from USB Microphone
+kept: takes/intro-1/9c7860728053867b.wav, raw take 2 from 0.35 s to 2.25 s (where vidni found the words)
+```
+
+| Command | What it does |
+|---|---|
+| `vidni takes --line ID` | Lists the line's raw takes of its present words, and marks the one its kept take is cut from |
+| `vidni takes --line ID --pick N` | Makes raw take N the kept take, trimmed as a new take is |
+| `vidni takes --line ID --trim FROM:TO` | Cuts the kept take from FROM to TO seconds of its raw take; with `--pick N`, of that one |
+
+- **Only that line changes:** its kept take and the record beside it. A cut that uses the line stays ratified, and its next final build is made again.
+- **A cut where you put it** still drops the keypresses and the rumble, so its ends stay inside what is left of the raw take, and a take under 0.4 s is refused.
+- **A take kept before picks were recorded** has no record; `--pick N` gives it one.
+
+**Sessions.** Each raw take's record names the session it was recorded in (the moment `vidni record` started), when it was stopped, the microphone and its rate. The records describe the takes and decide nothing: no output depends on them. `vidni takes` and `vidni final` warn when the takes of one session are more than 3 dB louder or quieter than those of the session with the most takes, measured on the speech in each take:
+
+```text
+vidni: warning: the takes of the session of 2026-11-12T10:00:00Z are 4.2 dB quieter than those of 2026-11-10T10:00:00Z: intro-2, intro-3; listen across the join, and record them again if it is heard
+```
+
+It is a warning, and stops nothing: the narration isn't levelled line by line, so a session recorded further from the microphone is heard as one.
 
 **Room tone.** The mic check records the room for 3 s with nobody speaking. Its middle, without the first 0.3 s and the last 0.2 s, is kept as `takes/_room/tone.wav`, in the place of the one before. A room louder than −55 dBFS is called noisy.
 
