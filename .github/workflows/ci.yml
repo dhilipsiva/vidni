@@ -27,6 +27,8 @@ jobs:
         run: nix develop .#ci --command just test-capture
       - name: just test-hear
         run: nix develop .#ci --command just test-hear
+      - name: just test-record
+        run: nix develop .#ci --command just test-record
       - name: just test-build
         env:
           VIDNI_NO_SANDBOX: "1"

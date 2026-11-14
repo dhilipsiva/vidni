@@ -32,6 +32,7 @@ Some inputs can't be made deterministic: a live web page, every Chromium render,
 | 2026-11-14 | same | the example's 54 captures, taken from the live page twice, two hours apart, with the fonts the flake pins | identical where the cuts show them | the final cuts built from each set have the same frame streams: the two hashes listed below, both times |
 | 2026-11-14 | same | the example's drafts (`vidni repro --draft`), with the draft voice speaking all 57 lines again in each build | T1 and T2 on one host, on 2, 3 and 32 cores | three builds of each cut agree in every hash, the narration's among them: Piper, seeded, gave the same PCM on 2 cores, on 3 and on 32 |
 | 2026-11-14 | same | the nibli example's eight card renders, taken again by `vidni draft` over an hour after the first, in a fresh Chromium each | identical on one host | each PNG has the SHA-256 that `ratified.lock` froze and `assets.lock` lists, so both cuts stayed ratified and their drafts were kept |
+| 2026-11-14 | same | the recorder's trim (Rust) on the nibli example's raw takes | equal to the reference's kept takes | `just parity takes`: 57 of 57. Each kept take is, sample for sample, the trim of one of its line's raw takes, with the two samples ffmpeg's `silenceremove` misplaces at each splice put where it put them |
 | 2026-11-14 | same | the product against the reference: the example's final build, planned as `vidni final` plans it from fresh captures and the creator's takes | equal to golden, and to the reference's frames before encoding | `just parity product`: 46 of 46 checks. Each cut's timeline, captions and narration equal golden's, and its 20 sampled frames score SSIM 1.0000 against the reference's, with no channel more than 49 of 255 apart. The captures were taken with the maintainer's fonts and the frames drawn with the reference's faces, as golden's were |
 
 The nibli example's final cuts, as approved (`long-r1` and `vertical-r1`), drawn with the fonts vidni pins and from captures taken with the flake's fonts:
@@ -94,6 +95,8 @@ Five captures of a local scene give identical bytes, stills and frames alike (`j
 - A build takes no captures. They are inputs, frozen with each still's frames when a cut is ratified.
 - A build is kept, not made again, when its record has the `inputs` the cut has now and every file it names still has the hash it records (DECISIONS.md, T9). Keeping a build rests on the same claim that `vidni repro` checks: the same inputs give the same files. A record names vidni by its version, so between versions a change to what vidni draws must raise the compositor's count, as it must for a release to notice it.
 - The day a release is approved is read from the clock. It goes into `release.json` and into no output.
+
+**Takes** (`vidni_record::clean`): a kept take is trimmed from its raw take once, when it is recorded, and is an input from then on, frozen by its hash. The trim itself repeats: it is integer and single-precision arithmetic in a fixed order, and the filter's five coefficients are rounded to single precision from sines and cosines worked out in double (DECISIONS.md, T10).
 
 **The listening check** (`vidni_media::hear`) is held to no tier, because no output depends on it (DECISIONS.md, T7):
 - It writes no file, and no build step reads what it hears.

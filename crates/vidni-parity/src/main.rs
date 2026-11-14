@@ -4,6 +4,7 @@
 //! `vidni-parity compose-stream [--reference DIR] [--example DIR]`
 //! `vidni-parity capture-repeat [--example DIR]`
 //! `vidni-parity product [--example DIR] [--golden DIR] [--reference DIR]`
+//! `vidni-parity takes [--example DIR]`
 //!
 //! Compares a candidate folder with the golden outputs (TODO.md, P1-VIDNI-04).
 //! The stages are timeline, narration, encode, cuts, stills and all. With
@@ -17,7 +18,9 @@
 //! five times, each from scratch, and compares every still's pixels
 //! (P3-VIDNI-04). `product` checks the example's final build, as `vidni
 //! final` plans it from the example's own captures and takes, against the
-//! reference's cuts in the creator's voice (P3-VIDNI-06).
+//! reference's cuts in the creator's voice (P3-VIDNI-06). `takes` trims
+//! the example's raw takes as the recorder does, and compares each with
+//! the take the reference's recorder kept (P4-VIDNI-01).
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -33,7 +36,8 @@ const USAGE: &str = "usage: vidni-parity <timeline|narration|encode|cuts|stills|
                      vidni-parity compose-t1 [--reference DIR] [--example DIR] [--fonts CAPTION MONO DISPLAY]\n       \
                      vidni-parity compose-stream [--reference DIR] [--example DIR]\n       \
                      vidni-parity capture-repeat [--example DIR]\n       \
-                     vidni-parity product [--example DIR] [--golden DIR] [--reference DIR]";
+                     vidni-parity product [--example DIR] [--golden DIR] [--reference DIR]\n       \
+                     vidni-parity takes [--example DIR]";
 
 fn main() -> ExitCode {
     match run() {
@@ -57,6 +61,7 @@ fn run() -> Result<bool, String> {
         "compose-stream",
         "capture-repeat",
         "product",
+        "takes",
     ]
     .contains(&stage.as_str())
         && !STAGES.contains(&stage.as_str())
@@ -117,6 +122,11 @@ fn run() -> Result<bool, String> {
             let mut report = vidni_parity::Report::default();
             vidni_parity::product::check(&example, &sources, &scratch, &mut report);
             Ok(print("product", &report))
+        }
+        ("takes", None, false) => {
+            let mut report = vidni_parity::Report::default();
+            vidni_parity::takes::check(&example, &mut report);
+            Ok(print("takes", &report))
         }
         ("selftest", _, _) => Err(format!("selftest takes no candidate\n{USAGE}")),
         (_, Some(c), false) => compare(&stage, &c, &sources, &scratch),

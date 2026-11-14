@@ -8,5 +8,19 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+[features]
+default = ["mic"]
+# The microphone, through cpal. Without it the recorder is driven by a
+# made-up input only, as its tests drive it, and needs no sound library.
+mic = ["dep:cpal"]
+
+[dependencies]
+cpal = { version = "0.17.3", optional = true }
+hound = "3.5.1"
+vidni-core = { path = "../vidni-core" }
+
+[dev-dependencies]
+tempfile = "3.27.0"
+
 [lints]
 workspace = true

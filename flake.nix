@@ -128,6 +128,10 @@
         sha256 = "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002";
       };
 
+      # The recorder reads the microphone through cpal, which on Linux talks
+      # to ALSA; PipeWire and PulseAudio stand behind it (P4-VIDNI-01).
+      soundLibs = [ pkgs.alsa-lib ];
+
       # The external tools vidni drives, pinned by this flake (DECISIONS D3).
       mediaTools = [
         pkgs.ffmpeg-full
@@ -143,6 +147,8 @@
         version = "0.1.0";
         src = self;
         cargoLock.lockFile = ./Cargo.lock;
+        nativeBuildInputs = [ pkgs.pkg-config ];
+        buildInputs = soundLibs;
         # The parity harness's frame tests and the build's tests drive ffmpeg.
         nativeCheckInputs = [ pkgs.ffmpeg-headless ];
         VIDNI_FONTS = fontDirs;
@@ -157,6 +163,8 @@
       devShells.${system} = {
         default = pkgs.mkShell {
           packages = rustTools ++ mediaTools ++ [ pkgs.rust-analyzer ];
+          nativeBuildInputs = [ pkgs.pkg-config ];
+          buildInputs = soundLibs;
           FONTCONFIG_FILE = fontsConf;
           VIDNI_FONTS = fontDirs;
           VIDNI_PINNED_VOICES = pinnedVoices;
@@ -173,6 +181,8 @@
             pkgs.whisper-cpp
             piper
           ];
+          nativeBuildInputs = [ pkgs.pkg-config ];
+          buildInputs = soundLibs;
           FONTCONFIG_FILE = fontsConf;
           VIDNI_FONTS = fontDirs;
           VIDNI_PINNED_VOICES = pinnedVoices;

@@ -252,7 +252,19 @@ Grammar, as in the workspace TODO, one line per item: `- [ ] **P<m>-VIDNI-<nn>**
 - [ ] **P3-VIDNI-07** (LOW) Retire the reference once every stage passes parity: it stays read-only in `reference/`, and `just parity` keeps running against it. *Done when:* no Python or Node remains on the build path, and `just parity` is green. [S]
 
 ### P4. Recording, in Rust
-- [ ] **P4-VIDNI-01** (LOW) Build the recorder core on cpal: capture, a level meter, raw takes that are never modified, the guard against silent or too-short takes, trimming of keypresses and silence, and room tone recorded during the mic check. *Done when:* tests driven by a synthetic input device cover a silent take, a short take, a normal take and room tone. [M]
+- [x] **P4-VIDNI-01** (LOW) Build the recorder core on cpal: capture, a level meter, raw takes that are never modified, the guard against silent or too-short takes, trimming of keypresses and silence, and room tone recorded during the mic check. *Done when:* tests driven by a synthetic input device cover a silent take, a short take, a normal take and room tone. [M]
+  - Evidence (2026-11-14): `crates/vidni-record/tests/recorder.rs` records from a made-up input (`input::Synthetic`) through the same path a microphone's samples take, and covers:
+    - **a normal take:** a click, room noise, two seconds of a voice-like tone, room noise and a click. The raw take is what the input gave, sample for sample. The trimmed take is the words with 0.15 s before them and 0.25 s after, and neither click. Kept, it is the line's take; a second take replaces it only when it is kept, and the raw take's hash never changes;
+    - **a silent take:** three seconds of a room's hum is refused as having no speech (peak −54 dB), and so is digital silence. Nothing is kept;
+    - **a short take:** half a second is refused, and a cancelled take leaves no file;
+    - **room tone:** three seconds of a room are recorded, its middle is kept as `takes/_room/tone.wav`, and its level is measured (−60 dB, quiet; −43 dB, noisy).
+
+    It also covers the level meter, and an input that stops on its own.
+    - **The microphone** is `mic::Mic`, through cpal on ALSA. `just test-record`, which CI runs, records from ALSA's `null` device, which gives zeros and needs no sound card: the maintainer's microphone was not recorded from. `cargo run -p vidni-record --example inputs` lists the inputs and says which one vidni would use, without opening a stream; here that is the default device at 48 kHz.
+    - **The trim is the reference's, sample for sample** (DECISIONS.md, T10). `just parity takes` passes 57 of 57: each kept take of the nibli example is vidni's trim of one of its line's raw takes, with the two samples ffmpeg's `silenceremove` misplaces at each splice put where it put them. With the filter's result rounded, or with another margin, none passes.
+    - **Found on the way:** the reference's chain meant to drop 0.30 s for the stop key and dropped 0.10 s, because its second `atrim` read timestamps that started at 0.20 s. The 57 takes were made that way, so vidni drops 0.10 s.
+
+    `vidni record`, the terminal front end, is P4-VIDNI-02.
 - [ ] **P4-VIDNI-02** (LOW) Port the terminal recorder `vidni record` with crossterm: the single-key flow (space, Enter, Esc, p, r, arrow keys), resuming, reviewing a section, recording a line shared by several cuts once, and showing stale takes. *Done when:* pty tests cover a silent take, a double press, Esc, keep and resume on a two-cut project. [M]
 - [ ] **P4-VIDNI-03** (LOW) Add a deterministic voice chain before loudness: high-pass, de-click, compression and de-esser. Gaps are filled with room tone instead of digital silence. *Done when:* QA reports every cut within ±1 LU of its target with true peak at or below −1 dBTP, and no digital-silence stretch longer than 50 ms. [M]
 - [ ] **P4-VIDNI-04** (LOW) Make takes non-destructive: trims are stored as data, `vidni takes <line>` re-picks or re-trims a take, each take records its session metadata, and QA flags level jumps between sessions. *Done when:* re-picking an older take changes only that line. [M]

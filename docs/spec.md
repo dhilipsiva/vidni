@@ -181,6 +181,20 @@ takes/_room/                        room tone from the mic check
 
 `vidni takes --link DIR` lays the current takes out as `000.wav`, `001.wav` … in script order, as symbolic links, for tools that read numbered files.
 
+### What is kept of a take
+
+A recording goes straight into a raw take: 16-bit PCM with one channel, at the microphone's rate, which is 48 kHz where the microphone offers it. A raw take is written once and never changed. The kept take is made from it:
+1. **The guard.** A raw take shorter than 0.8 s is discarded, and so is one that never gets louder than −40 dBFS: it has no speech in it. The raw file stays either way.
+2. **The keypresses.** The first 0.20 s and the last 0.10 s are dropped, where the keys that started and stopped the take are heard.
+3. **The rumble.** What is below 70 Hz is filtered out.
+4. **The silence.** The words begin where the level first rises above −45 dBFS, and end where it last does. The level is the RMS over the 20 ms up to each sample. 0.15 s is kept before the words and 0.25 s after them. A take with less than 0.4 s left is discarded.
+
+The trimmed take waits beside the kept one as `<hash>.wav.new` until it is kept or discarded, so a line's take is replaced only by one you chose.
+
+**Room tone.** The mic check records the room for 3 s with nobody speaking. Its middle, without the first 0.3 s and the last 0.2 s, is kept as `takes/_room/tone.wav`, in the place of the one before. A room louder than −55 dBFS is called noisy.
+
+The trim is the one the reference's recorder did with ffmpeg, worked out in ffmpeg's arithmetic, so the same raw take gives the same samples (DECISIONS.md, T10).
+
 ## The draft voice
 
 `vidni draft` begins by speaking every line in the draft voice, `voice.draft`, so that a cut can be watched before any take is recorded. `vidni speak` does that step alone.

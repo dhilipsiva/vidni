@@ -25,7 +25,7 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 - `vidni ratify` and `vidni status` freeze cuts.
 - `vidni final` builds each ratified cut from your takes, `vidni approve` records it as a release, and `vidni repro` checks that a build repeats.
 
-The nibli example goes from draft to approved through these commands ([docs/spec.md](docs/spec.md#from-draft-to-release)). Recording (`vidni record`) and the desktop app aren't built yet.
+The nibli example goes from draft to approved through these commands ([docs/spec.md](docs/spec.md#from-draft-to-release)). The recorder's core is built (`vidni-record`: capture, the level meter, the trim and room tone); its terminal front end, `vidni record`, and the desktop app aren't yet.
 
 ## Layout
 

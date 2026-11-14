@@ -63,6 +63,8 @@ assets-check:
 # Compare a Rust stage's outputs with the golden outputs (timeline, narration, encode,
 # cuts, stills or all). With no candidate, the stage's Rust port builds one, as in
 # `just parity timeline`; `--candidate DIR` and `--reference-self` pick another.
+# `just parity takes` trims the example's raw takes as the recorder does, and compares
+# each with the take the reference's recorder kept.
 # A release build: the cuts stage renders four cuts of some 9,000 frames each.
 # Golden was made with the host's fonts, so the dev shell's pinned fontconfig is set aside.
 parity stage *args:
@@ -90,6 +92,11 @@ test-capture:
 # (P3-VIDNI-05): the library on its own, and `vidni hear` on a small project.
 test-hear:
     cargo test -p vidni-media -p vidni-cli --test hear -- --ignored
+
+# The microphone's path through cpal, on ALSA's null device, which gives zeros: nothing is
+# heard (P4-VIDNI-01).
+test-record:
+    cargo test -p vidni-record --test mic -- --ignored
 
 # Capture the example's web scene five times, each from scratch, and compare every still's
 # pixels. It reads the live page over the network, so it measures that page as much as vidni

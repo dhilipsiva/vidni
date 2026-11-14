@@ -238,3 +238,16 @@ Added as the items are built.
   - **Where it isn't:** a record names vidni and ffmpeg by their versions (T8, limits). While vidni is being changed, a build from before the change is kept unless the compositor's count is raised, and so is one made by another ffmpeg that prints the same version. `--again` is for that, and the tests build in fresh folders.
   - A final build that is kept is still delivered: a file missing from `out/` is copied again, and one that is there byte for byte is left alone.
 - **Reading files once.** A status or a draft hashes each of the project's files once, however many captures were made from it.
+
+### T10. How the recorder keeps a take
+- **2026-11-14, P4-VIDNI-01.** The recorder knows its sound only as an input: blocks of samples with one channel. The microphone is one input, through cpal; a made-up signal is another, and the tests record from that one through the same path. cpal's own custom devices need `unsafe`, which the workspace forbids.
+- **The trim is the reference's, sample for sample.** The reference's recorder trimmed a take with ffmpeg: `atrim`, `highpass=f=70` and `silenceremove` at each end. vidni does the same in Rust, in ffmpeg's arithmetic:
+  - the high-pass is ffmpeg's biquad for 16-bit samples: single precision, its order of operations, a sharpness of 0.707, and a result cut off towards zero;
+  - the level is `silenceremove`'s: the RMS of the window so far, from a running sum of squares in single precision.
+
+  `just parity takes` holds this against the nibli example. Each of its 57 kept takes is, sample for sample, vidni's trim of one of the line's raw takes with ffmpeg's splice applied. With the filter's result rounded instead of cut off, or with 0.16 s kept instead of 0.15 s, none of the 57 passes.
+- **The one difference is ffmpeg's splice.** Where `silenceremove` joins the silence it keeps to the sound, it writes the oldest sample in its buffer, from 0.15 s before, and then repeats the sample the sound begins at. vidni keeps the stretch whole. The two samples sit in the silence around the words, so nothing can be heard of them, and a take is as long either way. When the words begin less than 0.15 s into a take, ffmpeg's take is one sample longer.
+- **The stop key's trim is 0.10 s, not the 0.30 s the reference asked for.** Its chain reads `atrim=start=0.20,areverse,atrim=start=0.30,areverse`. After the first trim the sound's timestamps start at 0.20 s, and reversing keeps them, so the second trim drops what is before 0.30 s: a tenth of a second. The 57 takes were made that way and sound right, so vidni drops 0.10 s.
+- **A raw take is written once.** Its file is created new and never opened for writing again. The trimmed take waits as `<hash>.wav.new`, a name no take has, until it is kept or discarded.
+- **The microphone is asked for 48 kHz** when it offers that, with as few channels as it has, and is mixed down to one. The takes so far are at 48 kHz, and it is the rate the cuts are encoded at.
+- **The microphone's path is tested on ALSA's `null` device,** an input that gives zeros and needs no sound card, so the test hears nobody (`just test-record`). The maintainer's microphone was not recorded from in this work.

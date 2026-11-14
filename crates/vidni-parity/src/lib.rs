@@ -34,6 +34,7 @@ pub mod capture;
 pub mod compose;
 pub mod product;
 pub mod selftest;
+pub mod takes;
 
 /// The lowest SSIM a rendered frame may reach against its golden frame.
 pub const SSIM_MIN: f64 = 0.995;
