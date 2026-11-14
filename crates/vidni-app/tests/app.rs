@@ -191,6 +191,65 @@ fn a_project_is_drafted_from_the_app() {
         "{log:#?}"
     );
     assert!(harness.query_by_label("Finished.").is_some());
+    // The draft plays in the preview: its picture, and its lines by their IDs.
+    harness.get_by_label("Preview").click();
+    harness.step();
+    let began = std::time::Instant::now();
+    loop {
+        harness.step();
+        let player = harness.state().preview.player.as_ref().expect("a player");
+        if player.shown == Some(player.position) {
+            break;
+        }
+        assert!(
+            began.elapsed() < std::time::Duration::from_secs(20),
+            "no frame came"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    assert!(harness.query_by_label("The cut's picture").is_some());
+    assert!(harness.query_by_label_contains("[intro-2]").is_some());
+    harness
+        .query_by_label_contains("[intro-2]")
+        .unwrap()
+        .click();
+    harness.step();
+    let player = harness.state().preview.player.as_ref().unwrap();
+    assert_eq!(player.line_at(), Some(1));
+    assert!(player.position > 0);
+    assert_eq!(harness.state().preview.cut, "long");
+    // A cut that is built again while it is open is opened afresh, at
+    // the place the player was.
+    let at = player.position;
+    let picture = project.join("build/draft/long.mp4");
+    std::thread::sleep(std::time::Duration::from_millis(20));
+    std::fs::write(&picture, std::fs::read(&picture).unwrap()).unwrap();
+    let began = std::time::Instant::now();
+    loop {
+        harness.step();
+        let player = harness.state().preview.player.as_ref().expect("a player");
+        if player.decodes > 0 && player.shown == Some(at) {
+            break;
+        }
+        assert!(
+            began.elapsed() < std::time::Duration::from_secs(20),
+            "it didn't come back"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    assert_eq!(
+        harness.state().preview.player.as_ref().unwrap().position,
+        at
+    );
+    // Playing stops when the preview is left.
+    harness.get_by_label("Play").click();
+    harness.step();
+    assert!(harness.state().preview.player.as_ref().unwrap().playing());
+    harness.get_by_label("Cuts").click();
+    harness.step();
+    harness.step();
+    assert!(!harness.state().preview.player.as_ref().unwrap().playing());
+
     // One cut alone, drafted again: nothing has changed, so nothing is rendered.
     harness.get_by_label("Draft vertical").click();
     harness.step();

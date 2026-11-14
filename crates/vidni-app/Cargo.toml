@@ -31,6 +31,7 @@ eframe = { version = "0.37.0", default-features = false, features = [
 ] }
 vidni-cli = { path = "../vidni-cli" }
 vidni-core = { path = "../vidni-core" }
+vidni-media = { path = "../vidni-media" }
 
 [dev-dependencies]
 egui = "0.37.0"

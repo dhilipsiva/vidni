@@ -54,7 +54,8 @@ app-shot out="app.png" *args:
 # The app's tests that draft a project (P7-VIDNI-01): they need Piper and its voice, Chromium
 # and ffmpeg, as the dev shell has them. The rest of the app's tests run in `just test`.
 test-app:
-    VIDNI_VOICES="${VIDNI_VOICES:-$VIDNI_PINNED_VOICES}" cargo test -p vidni-app --test app -- --ignored
+    VIDNI_PREVIEW_MUTE=1 VIDNI_VOICES="${VIDNI_VOICES:-$VIDNI_PINNED_VOICES}" cargo test -p vidni-app --test app -- --ignored
+    VIDNI_PREVIEW_MUTE=1 cargo test -p vidni-app --test preview -- --ignored
 
 # Build the flake's checks (the workspace build and its tests).
 check:

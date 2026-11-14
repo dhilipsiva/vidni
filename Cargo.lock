@@ -4035,6 +4035,7 @@ dependencies = [
  "tempfile",
  "vidni-cli",
  "vidni-core",
+ "vidni-media",
 ]
 
 [[package]]

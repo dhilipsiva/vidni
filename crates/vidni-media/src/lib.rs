@@ -11,6 +11,7 @@ pub mod encode;
 pub mod export;
 pub mod hear;
 pub mod narration;
+pub mod preview;
 pub mod qa;
 pub mod review;
 pub mod sheet;

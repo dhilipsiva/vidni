@@ -5,10 +5,12 @@
 use crate::actions::{self, Action};
 use crate::editor::Editor;
 use crate::jobs::{self, Job};
+use crate::preview::{self, Player};
 use crate::recent;
 use eframe::egui;
 use std::path::{Path, PathBuf};
 use vidni_cli::console::Stream;
+use vidni_core::release::Voice;
 
 /// A project, as the app shows it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -69,6 +71,35 @@ pub enum Tab {
     Cuts,
     /// Its script and scenes, in the editor.
     Script,
+    /// A built cut, in the player.
+    Preview,
+}
+
+/// Which build of which cut the preview shows.
+pub struct Preview {
+    pub cut: String,
+    pub voice: Voice,
+    /// Whether the picture with captions drawn in is wanted.
+    pub captions: bool,
+    /// The player, once the picture is open; or why there is none.
+    pub player: Option<Player>,
+    why: String,
+    /// What the player has open: the cut, the build, the picture, and
+    /// when that file was written.
+    open: Option<(String, Voice, PathBuf, Option<std::time::SystemTime>)>,
+}
+
+impl Default for Preview {
+    fn default() -> Self {
+        Self {
+            cut: String::new(),
+            voice: Voice::Draft,
+            captions: true,
+            player: None,
+            why: String::new(),
+            open: None,
+        }
+    }
 }
 
 /// The app.
@@ -83,6 +114,8 @@ pub struct App {
     pub editor: Option<Editor>,
     /// Whether the open project shows its cuts or its script.
     pub tab: Tab,
+    /// The preview of the open project's cuts.
+    pub preview: Preview,
     /// The job that is running, or the last one that ran.
     pub job: Option<Job>,
     /// What the forms hold.
@@ -105,6 +138,7 @@ impl App {
             project: None,
             editor: None,
             tab: Tab::Cuts,
+            preview: Preview::default(),
             job: None,
             new_name: String::new(),
             new_parent: home,
@@ -126,6 +160,7 @@ impl App {
             }
         }
         self.editor = Some(Editor::open(folder));
+        self.preview = Preview::default();
         self.project = Some(project);
     }
 
@@ -146,7 +181,9 @@ impl App {
         let was_running = job.running();
         job.poll();
         if was_running && !job.running() {
-            // Whatever the job did, the project is read again.
+            // Whatever the job did, the project is read again. A picture
+            // the job built again is another file, which the preview
+            // sees for itself and opens where it was.
             if let Some(folder) = self.project.as_ref().map(|p| p.folder.clone()) {
                 self.project = Some(Project::read(&folder));
             }
@@ -156,6 +193,12 @@ impl App {
     /// Draws the app.
     pub fn show(&mut self, ui: &mut egui::Ui) {
         self.poll();
+        // A cut plays only while its preview is in front.
+        if (self.project.is_none() || self.tab != Tab::Preview)
+            && let Some(player) = &mut self.preview.player
+        {
+            player.pause();
+        }
         egui::Frame::central_panel(ui.style()).show(ui, |ui| {
             // The panel is the whole window, however little is in it.
             ui.set_min_size(ui.available_size());
@@ -181,10 +224,12 @@ impl App {
                         ui.horizontal(|ui| {
                             ui.selectable_value(&mut self.tab, Tab::Cuts, "Cuts");
                             ui.selectable_value(&mut self.tab, Tab::Script, "Script");
+                            ui.selectable_value(&mut self.tab, Tab::Preview, "Preview");
                         });
                         match self.tab {
                             Tab::Cuts => self.cuts(ui, &project),
                             Tab::Script => self.script(ui, &project),
+                            Tab::Preview => self.show_preview(ui, &project),
                         }
                     }
                 }
@@ -321,6 +366,120 @@ impl App {
         editor.ui(ui);
         if editor.text != before {
             self.project = Some(Project::read(&project.folder));
+        }
+    }
+
+    /// A built cut in the player: which cut, which build of it, and with
+    /// or without its captions where the build made both pictures.
+    fn show_preview(&mut self, ui: &mut egui::Ui, project: &Project) {
+        let folder = &project.folder;
+        let built = |cut: &str, voice: Voice| !preview::pictures(folder, voice, cut).is_empty();
+        let preview = &mut self.preview;
+        // The first cut that has a build, until one is picked.
+        if !project.cuts.iter().any(|(id, _)| *id == preview.cut) {
+            preview.cut = project
+                .cuts
+                .iter()
+                .map(|(id, _)| id.clone())
+                .find(|id| built(id, Voice::Draft) || built(id, Voice::Takes))
+                .unwrap_or_default();
+        }
+        ui.horizontal(|ui| {
+            ui.label("Cut");
+            for (id, _) in &project.cuts {
+                ui.selectable_value(&mut preview.cut, id.clone(), id);
+            }
+        });
+        let (draft, last) = (
+            built(&preview.cut, Voice::Draft),
+            built(&preview.cut, Voice::Takes),
+        );
+        if !draft && !last {
+            ui.label("This cut isn't built yet. Draft it from the Cuts tab, and it plays here.");
+            preview.player = None;
+            preview.open = None;
+            return;
+        }
+        if !built(&preview.cut, preview.voice) {
+            preview.voice = if draft { Voice::Draft } else { Voice::Takes };
+        }
+        let pictures = preview::pictures(folder, preview.voice, &preview.cut);
+        let both =
+            pictures.iter().any(|(_, drawn)| *drawn) && pictures.iter().any(|(_, drawn)| !*drawn);
+        ui.horizontal(|ui| {
+            ui.label("Build");
+            ui.add_enabled_ui(draft, |ui| {
+                ui.selectable_value(&mut preview.voice, Voice::Draft, "Draft");
+            });
+            ui.add_enabled_ui(last, |ui| {
+                ui.selectable_value(&mut preview.voice, Voice::Takes, "Final");
+            });
+            // A build with one picture has its captions in it, or it hasn't.
+            let captions = ui.add_enabled(both, egui::Checkbox::new(&mut preview.captions, "Captions"));
+            if !both {
+                captions.on_disabled_hover_text(
+                    "This build made one picture. A final build of a cut with captions = \"both\" makes one with and one without.",
+                );
+            }
+        });
+        let picture = pictures
+            .iter()
+            .find(|(_, drawn)| *drawn == preview.captions)
+            .or(pictures.first())
+            .map(|(path, _)| path.clone());
+        let Some(picture) = picture else { return };
+        // The file's own time is part of what is open: a cut built
+        // again, here or on the command line, is opened afresh.
+        let written = std::fs::metadata(&picture).and_then(|m| m.modified()).ok();
+        let wanted = (preview.cut.clone(), preview.voice, picture.clone(), written);
+        if preview.open.as_ref() != Some(&wanted) {
+            // Another picture of the same cut opens where this one was,
+            // with the contact sheet up if it was.
+            let same_cut = preview.open.as_ref().is_some_and(|open| open.0 == wanted.0);
+            let at = preview
+                .player
+                .as_ref()
+                .filter(|_| same_cut)
+                .map(|player| (player.position, player.sheet));
+            let timeline = folder
+                .join(preview.voice.dir())
+                .join(format!("{}.timeline.json", preview.cut));
+            let ids = self
+                .editor
+                .as_ref()
+                .and_then(|editor| editor.project.as_ref())
+                .and_then(|p| {
+                    p.cuts
+                        .iter()
+                        .find(|c| c.id == preview.cut)
+                        .map(|c| c.line_ids(p))
+                })
+                .unwrap_or_default();
+            let lines = vidni_core::timeline::Timeline::read(&timeline)
+                .map(|timeline| preview::lines(&timeline, &ids))
+                .unwrap_or_default();
+            let ctx = ui.ctx().clone();
+            match Player::open(&picture, lines, move || ctx.request_repaint()) {
+                Ok(mut player) => {
+                    if let Some((at, sheet)) = at {
+                        player.seek(at);
+                        player.sheet = sheet;
+                    }
+                    preview.player = Some(player);
+                    preview.why.clear();
+                }
+                Err(why) => {
+                    preview.player = None;
+                    preview.why = why;
+                }
+            }
+            preview.open = Some(wanted);
+        }
+        if !preview.why.is_empty() {
+            ui.colored_label(ui.visuals().error_fg_color, &preview.why);
+        }
+        if let Some(player) = &mut preview.player {
+            player.ui(ui);
         }
     }
 
