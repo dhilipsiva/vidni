@@ -35,6 +35,7 @@ pub mod console;
 
 mod backup;
 mod build;
+pub mod exports;
 mod offline;
 mod published;
 mod record;
@@ -254,6 +255,29 @@ enum Command {
         /// The cut to approve; repeat for more. Default: every cut.
         #[arg(long = "cut", value_name = "ID")]
         cuts: Vec<String>,
+    },
+    /// List the platforms each cut is made for, what its final build's QA
+    /// and its last export found, and each platform's upload folder; or,
+    /// with --cut and --add or --remove, make a cut for one platform more
+    /// or less.
+    Exports {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// The cut to list or change; repeat to list more. Default: every cut.
+        #[arg(long = "cut", value_name = "ID")]
+        cuts: Vec<String>,
+        /// Make the cut for this platform as well.
+        #[arg(
+            long,
+            value_name = "PLATFORM",
+            requires = "cuts",
+            conflicts_with = "remove"
+        )]
+        add: Option<String>,
+        /// Make the cut for this platform no longer.
+        #[arg(long, value_name = "PLATFORM", requires = "cuts")]
+        remove: Option<String>,
     },
     /// List what each ratified cut froze: its content, lines, scenes and
     /// capture files, each with its hash.
@@ -515,6 +539,19 @@ fn dispatch(command: Command) -> ExitCode {
         Command::Notes { path, line, set } => notes(&path, line.as_deref().zip(set.as_deref())),
         Command::Changes { path } => changes(&path),
         Command::Frozen { path, cuts } => frozen(&path, &cuts),
+        Command::Exports {
+            path,
+            cuts,
+            add,
+            remove,
+        } => match (add.or(remove.clone()), cuts.as_slice()) {
+            (None, _) => exports::list(&path, &cuts),
+            (Some(platform), [cut]) => exports::target(&path, cut, &platform, remove.is_none()),
+            (Some(_), _) => {
+                tell!("vidni: --add and --remove change one cut: name it with one --cut");
+                ExitCode::from(2)
+            }
+        },
         Command::Backup { path, to } => backup::backup(&path, &to),
         Command::Verify { path, to } => backup::verify(&path, &to),
         Command::Restore { path, from } => backup::restore(&path, &from),

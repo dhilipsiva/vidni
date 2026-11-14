@@ -713,6 +713,7 @@ After a cut is delivered, `vidni final` writes a folder for each platform the cu
 - **The folders are made afresh on every `vidni final`,** from the delivered build and from `[publish]`. With nothing to render, that takes under a second, so a description is changed by editing it and running `vidni final` again.
 - **`metadata.md` says what each app asks for:** the caption file and the end screen on YouTube, the related video of a Short (the project's 16:9 cut for YouTube), the cover of a reel.
 - **A folder for a platform the cut is no longer made for is removed.** A cut with `platforms = []` has none.
+- **`vidni exports [--cut ID]`** lists, for each cut, the platforms it is made for, what QA measured of its final build, each platform's folder or why there is none, and the last export's warnings. It builds nothing. `vidni exports --cut long --add linkedin` makes the cut for one platform more, by writing its `platforms` key, and `--remove` for one less; the next `vidni final` then makes or removes that folder. A platform that takes another shape than the cut's is refused.
 - **A cut is held to each platform's profile before its folder is written** (`vidni platforms`). It isn't exported for a platform that wouldn't take it or would play it wrong, and `vidni final` says why and exits with 1; the cut is delivered all the same, and exported for its other platforms.
 
   | Check | Refused when |

@@ -1223,7 +1223,7 @@ fn each_platform_gets_a_folder_with_the_video_its_metadata_and_its_images() {
         )
     };
     let (long, warnings) = build_and_export(&p, "long");
-    assert_eq!(warnings, build::Exports::default());
+    assert_eq!((&warnings.refused, &warnings.warnings), (&vec![], &vec![]));
     // The long cut holds its last picture 6 s, where its tail was 0.2 s.
     let lasts = long.outputs["long.mp4"].frame_count as f64 / 30.0;
     assert!((lasts - 37.5).abs() < 1.0, "{lasts} s");
@@ -1274,7 +1274,7 @@ fn each_platform_gets_a_folder_with_the_video_its_metadata_and_its_images() {
 
     // The short: a folder for each of its three apps.
     let (_, warnings) = build_and_export(&p, "short");
-    assert_eq!(warnings, build::Exports::default());
+    assert_eq!((&warnings.refused, &warnings.warnings), (&vec![], &vec![]));
     assert_eq!(
         names(&dir.join("out/youtube-shorts/short")),
         ["metadata.md", "short.mp4"]

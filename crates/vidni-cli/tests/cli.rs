@@ -1238,3 +1238,89 @@ fn notes_are_kept_by_line_and_changes_name_the_lines() {
          since each cut was ratified:\n  long: not ratified\n  vertical: not ratified\n"
     );
 }
+
+#[test]
+fn exports_lists_each_cuts_platforms_and_adds_and_removes_one() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().to_str().unwrap();
+    assert!(vidni(&["new", "demo", "--in", path]).status.success());
+    let project = dir.path().join("demo");
+    let demo = project.to_str().unwrap();
+    let said = |args: &[&str]| {
+        let out = vidni(args);
+        (
+            out.status.code(),
+            String::from_utf8_lossy(&out.stdout).into_owned(),
+            String::from_utf8_lossy(&out.stderr).into_owned(),
+        )
+    };
+    let before = fs::read_to_string(project.join("vidni.toml")).unwrap();
+    assert_eq!(
+        said(&["exports", demo]).1,
+        "long (16:9), for youtube\n  \
+         no final build yet; `vidni final --cut long` builds and exports it\n\
+         vertical (9:16), for youtube-shorts, instagram-reels, whatsapp-status\n  \
+         no final build yet; `vidni final --cut vertical` builds and exports it\n"
+    );
+    // One platform more: that key, and every other byte as it was.
+    assert_eq!(
+        said(&["exports", demo, "--cut", "long", "--add", "linkedin"]),
+        (
+            Some(0),
+            "long: now for youtube, linkedin; the next `vidni final` exports it for linkedin\n"
+                .into(),
+            String::new()
+        )
+    );
+    assert_eq!(
+        fs::read_to_string(project.join("vidni.toml")).unwrap(),
+        before.replace(
+            "id = \"long\"\naspect = \"16:9\"\n",
+            "id = \"long\"\naspect = \"16:9\"\nplatforms = [\"youtube\", \"linkedin\"]\n"
+        )
+    );
+    assert_eq!(
+        said(&["exports", demo, "--cut", "long", "--add", "linkedin"]).1,
+        "long: already for linkedin\n"
+    );
+    // One less; and a cut may be for none.
+    assert_eq!(
+        said(&["exports", demo, "--cut", "long", "--remove", "youtube"]).1,
+        "long: now for linkedin; the next `vidni final` removes out/youtube/long\n"
+    );
+    assert_eq!(
+        said(&["exports", demo, "--cut", "long", "--remove", "linkedin"]).1,
+        "long: now for no platform; the next `vidni final` removes out/linkedin/long\n"
+    );
+    assert!(
+        said(&["exports", demo, "--cut", "long"])
+            .1
+            .starts_with("long (16:9), for no platform\n")
+    );
+    // What can't be is refused, and the file stays.
+    let held = fs::read_to_string(project.join("vidni.toml")).unwrap();
+    for (args, why) in [
+        (
+            vec!["--cut", "long", "--add", "tiktok"],
+            "vidni: tiktok takes 9:16 and cut long is 16:9\n",
+        ),
+        (
+            vec!["--cut", "wide", "--add", "x"],
+            "vidni: there is no cut \"wide\"\n",
+        ),
+    ] {
+        let (code, _, err) = said(&[&["exports", demo][..], &args[..]].concat());
+        assert_eq!((code, err.as_str()), (Some(1), why));
+    }
+    let (code, _, err) = said(&["exports", demo, "--cut", "long", "--add", "nope"]);
+    assert_eq!(code, Some(1));
+    assert!(
+        err.starts_with("vidni: there is no platform \"nope\"; the platforms are youtube, "),
+        "{err}"
+    );
+    assert_eq!(
+        fs::read_to_string(project.join("vidni.toml")).unwrap(),
+        held
+    );
+    assert_eq!(said(&["exports", demo, "--add", "x"]).0, Some(2));
+}

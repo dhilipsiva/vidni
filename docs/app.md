@@ -37,6 +37,9 @@ The app keeps the list of projects you opened in `recent`, in its folder of sett
 | Approve `<cut>` | `vidni approve <project> --cut <cut>` | Releases one cut's final build |
 | Use take `<n>` | `vidni takes <project> --line <line> --pick <n>` | Makes another raw take the line's kept take, trimmed where vidni finds the words |
 | Trim | `vidni takes <project> --line <line> --trim <from>:<to>` | Cuts the line's kept take from other seconds of its raw take |
+| Exports | `vidni exports <project> --cut <cut>` | Lists a cut's platforms, what its final build's QA and its last export found, and its upload folders |
+| Tick a platform | `vidni exports <project> --cut <cut> --add <platform>` | Makes the cut for the platform as well: its next final build exports it there |
+| Untick a platform | `vidni exports <project> --cut <cut> --remove <platform>` | Makes the cut for the platform no longer: its next final build removes that folder |
 
 - **The projects.** The first screen starts a project, opens one by its folder, and lists the ones opened lately.
 - **A project.** Its title, its folder, and each cut with where it stands, in `vidni status`'s own words.
@@ -90,6 +93,15 @@ The **Record** tab records your takes, one line at a time. It is `vidni record` 
 - **The microphone** is the one `VIDNI_MIC` names, or the system's default input; takes play through the output `VIDNI_SPEAKER` names, or the default one. These are `vidni record`'s settings.
 
 What the terminal has and the studio hasn't yet: the listening check of a new take against the script, the mic check's reading of your level (`vidni record --test` does both), and the warning when a session is louder or quieter than the one before.
+
+## The export panel
+
+The **Export** tab is where a cut's platforms are chosen, and where its upload folders are.
+
+- **A box for each platform** that takes the cut's shape. Ticking one writes the cut's `platforms` in the project's file, and leaves the rest of the file as it is. Nothing is built by a tick.
+- **The next final build** (Final `<cut>`, here or on the Cuts tab) makes the folder `out/<platform>/<cut>/` for each ticked platform, and removes the folder of one that was unticked. A cut's platforms aren't part of what it says, so it stays ratified. They do decide how loud the cut is and what its layout keeps clear of, so the cut is built again; where they decide the same, the build is the same bytes, and only the platform's folder changes.
+- **What was found.** Under each cut: what QA measured of each picture and anything it found wrong; each platform's folder, or why the cut wasn't exported for it; and what an upload wouldn't be at its best with. These are `vidni exports`'s words.
+- **Open `out/<platform>/<cut>`** opens that folder in the system's file manager (`xdg-open`), with the video, its captions, `metadata.md` and its images, ready to upload by hand.
 
 ## The preview
 

@@ -5,7 +5,7 @@
 //! and blank line. A changed value keeps the comment after it, a new key goes
 //! where `vidni fmt` would put it, and a moved line takes its comments along.
 
-use crate::fmt::{LINE, META, SCENE, rank};
+use crate::fmt::{CUT, LINE, META, SCENE, rank};
 use crate::validate::{self, Diagnostic};
 use std::fmt;
 use toml_edit::{Array, ArrayOfTables, DocumentMut, Item, Table, Value};
@@ -27,6 +27,8 @@ pub enum EditError {
     LastLine,
     /// The table is written inline, so it has no place for the key.
     Inline(&'static str),
+    /// There is no cut with this ID.
+    UnknownCut(String),
 }
 
 impl fmt::Display for EditError {
@@ -45,6 +47,7 @@ impl fmt::Display for EditError {
                 "line {id:?} has tables of its own in the file, such as [[lines.do]]; add, move or remove around it in the file's own text"
             ),
             EditError::LastLine => write!(f, "a script needs a line"),
+            EditError::UnknownCut(id) => write!(f, "there is no cut {id:?}"),
             EditError::Inline(table) => write!(
                 f,
                 "{table} is written on one line in the file, which this can't edit; edit it in the file's own text"
@@ -299,6 +302,23 @@ impl ProjectFile {
             .and_then(Item::as_table_mut)
             .ok_or(EditError::Inline("meta"))?;
         set_value(meta, "title", Value::from(title), META);
+        Ok(())
+    }
+
+    /// Sets the platforms that cut `cut` is made for.
+    pub fn set_cut_platforms(&mut self, cut: &str, platforms: &[String]) -> Result<(), EditError> {
+        let cuts = self
+            .doc
+            .get_mut("cuts")
+            .and_then(Item::as_array_of_tables_mut)
+            .ok_or(EditError::Inline("cuts"))?;
+        let table = cuts
+            .iter_mut()
+            .find(|table| table.get("id").and_then(Item::as_str) == Some(cut))
+            .ok_or_else(|| EditError::UnknownCut(cut.into()))?;
+        let mut listed = toml_edit::Array::new();
+        listed.extend(platforms.iter().map(String::as_str));
+        set_value(table, "platforms", Value::Array(listed), CUT);
         Ok(())
     }
 

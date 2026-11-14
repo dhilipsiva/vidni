@@ -150,7 +150,7 @@ const ACTION: &[&str] = &[
     "offset",
     "wait",
 ];
-const CUT: &[&str] = &[
+pub(crate) const CUT: &[&str] = &[
     "id",
     "aspect",
     "lines",

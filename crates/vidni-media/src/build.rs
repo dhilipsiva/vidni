@@ -22,6 +22,7 @@ use crate::compose::cut::{Composer, FPS, LANDSCAPE, Layout, Look, PORTRAIT, Pict
 use crate::compose::text::Fonts;
 use crate::encode::{self, Encoder, Settings, Target};
 use crate::{compose, qa, review, run, voice};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -877,12 +878,44 @@ pub fn exports(project: &Project, dir: &Path, cut: &Cut, setup: &Setup) -> Resul
 }
 
 /// What exporting a cut found.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Exports {
+    /// The platforms the cut was made for when it was exported.
+    #[serde(default)]
+    pub platforms: Vec<String>,
     /// Each platform the cut wasn't exported for, with every reason.
     pub refused: Vec<String>,
     /// What an upload would be cut short for, or isn't at its best with.
     pub warnings: Vec<String>,
+}
+
+impl Exports {
+    /// Where what the last export of `cut` found is kept: beside its
+    /// final build's record, out of what is delivered.
+    pub fn path(project_dir: &Path, cut: &str) -> PathBuf {
+        project_dir
+            .join(Voice::Takes.dir())
+            .join(format!("{cut}.exports.json"))
+    }
+
+    /// What the last export of `cut` found; `None` when it was never
+    /// exported.
+    pub fn read(project_dir: &Path, cut: &str) -> Result<Option<Self>, String> {
+        let path = Self::path(project_dir, cut);
+        match fs::read_to_string(&path) {
+            Ok(text) => serde_json::from_str(&text)
+                .map(Some)
+                .map_err(|e| format!("{}: {e}", path.display())),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+            Err(e) => Err(format!("{}: {e}", path.display())),
+        }
+    }
+
+    fn write(&self, project_dir: &Path, cut: &str) -> Result<(), String> {
+        let path = Self::path(project_dir, cut);
+        let text = serde_json::to_string_pretty(self).expect("JSON serializes") + "\n";
+        fs::write(&path, text).map_err(|e| format!("{}: {e}", path.display()))
+    }
 }
 
 fn export(plan: &Plan, dir: &Path, record: &Record) -> Result<Exports, String> {
@@ -905,7 +938,9 @@ fn export(plan: &Plan, dir: &Path, record: &Record) -> Result<Exports, String> {
         }
     }
     if wanted.is_empty() {
-        return Ok(Exports::default());
+        let found = Exports::default();
+        found.write(dir, &cut.id)?;
+        return Ok(found);
     }
     let mut fonts = Fonts::new();
     let faces = Type {
@@ -1096,7 +1131,13 @@ fn export(plan: &Plan, dir: &Path, record: &Record) -> Result<Exports, String> {
         let file = folder.join("UPLOAD.md");
         fs::write(&file, publish::upload_md(profile, &listed)).map_err(made(&file))?;
     }
-    Ok(Exports { refused, warnings })
+    let found = Exports {
+        platforms: wanted,
+        refused,
+        warnings,
+    };
+    found.write(dir, &cut.id)?;
+    Ok(found)
 }
 
 /// Copies a final build's pictures and captions to `out/`. A file that

@@ -4,6 +4,7 @@
 
 use crate::actions::{self, Action};
 use crate::editor::Editor;
+use crate::export::Export;
 use crate::jobs::{self, Job};
 use crate::preview::{self, Player};
 use crate::recent;
@@ -76,6 +77,8 @@ pub enum Tab {
     Preview,
     /// Its lines, to record.
     Record,
+    /// Its cuts' platforms and upload folders.
+    Export,
 }
 
 /// Which build of which cut the preview shows.
@@ -121,6 +124,8 @@ pub struct App {
     pub preview: Preview,
     /// The recording studio, once its tab has been opened.
     pub studio: Option<Studio>,
+    /// The export panel, once its tab has been opened.
+    pub export: Option<Export>,
     /// The job that is running, or the last one that ran.
     pub job: Option<Job>,
     /// Whether what the last job changed has been read.
@@ -153,6 +158,7 @@ impl App {
             tab: Tab::Cuts,
             preview: Preview::default(),
             studio: None,
+            export: None,
             job: None,
             taken_in: true,
             frozen: None,
@@ -179,6 +185,7 @@ impl App {
         self.editor = Some(Editor::open(folder));
         self.preview = Preview::default();
         self.studio = None;
+        self.export = None;
         // The same project read again keeps its list open, read afresh.
         if self
             .project
@@ -261,6 +268,7 @@ impl App {
                             ui.selectable_value(&mut self.tab, Tab::Script, "Script");
                             ui.selectable_value(&mut self.tab, Tab::Preview, "Preview");
                             ui.selectable_value(&mut self.tab, Tab::Record, "Record");
+                            ui.selectable_value(&mut self.tab, Tab::Export, "Export");
                         });
                         match self.tab {
                             Tab::Cuts => self.cuts(ui, &project),
@@ -270,6 +278,17 @@ impl App {
                                 .studio
                                 .get_or_insert_with(|| Studio::open(&project.folder))
                                 .ui(ui),
+                            Tab::Export => {
+                                let busy = self.busy();
+                                let asked = self
+                                    .export
+                                    .get_or_insert_with(|| Export::open(&project.folder))
+                                    .ui(ui, busy);
+                                if let Some(action) = asked {
+                                    let ctx = ui.ctx().clone();
+                                    self.start(&action, &ctx);
+                                }
+                            }
                         }
                     }
                 }

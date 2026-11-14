@@ -60,6 +60,7 @@ test-app:
     cargo build -p vidni-cli
     VIDNI_BIN="$PWD/target/debug/vidni" VIDNI_VOICES="${VIDNI_VOICES:-$VIDNI_PINNED_VOICES}" cargo test -p vidni-app --test gates -- --ignored
     VIDNI_BIN="$PWD/target/debug/vidni" cargo test -p vidni-app --test interchange -- --ignored
+    VIDNI_VOICES="${VIDNI_VOICES:-$VIDNI_PINNED_VOICES}" cargo test -p vidni-app --test export -- --ignored
 
 # Build the flake's checks (the workspace build and its tests).
 check:

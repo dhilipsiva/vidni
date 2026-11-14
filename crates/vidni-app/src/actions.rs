@@ -45,6 +45,15 @@ pub enum Action {
         project: PathBuf,
         cut: Option<String>,
     },
+    /// Say where a cut stands with its platforms.
+    Exports { project: PathBuf, cut: String },
+    /// Make a cut for a platform as well, or no longer.
+    Target {
+        project: PathBuf,
+        cut: String,
+        platform: String,
+        on: bool,
+    },
     /// Make another raw take a line's kept take, or cut its kept take
     /// elsewhere: one of the two, or both.
     Retake {
@@ -67,7 +76,7 @@ pub struct Usage {
 }
 
 /// Every kind of action, in the order the help lists them.
-pub const ALL: [Usage; 17] = [
+pub const ALL: [Usage; 20] = [
     Usage {
         name: "New project",
         command: "vidni new <name> --in <folder>",
@@ -153,6 +162,21 @@ pub const ALL: [Usage; 17] = [
         command: "vidni takes <project> --line <line> --trim <from>:<to>",
         does: "Cuts the line's kept take from other seconds of its raw take",
     },
+    Usage {
+        name: "Exports",
+        command: "vidni exports <project> --cut <cut>",
+        does: "Lists a cut's platforms, what its final build's QA and its last export found, and its upload folders",
+    },
+    Usage {
+        name: "Tick a platform",
+        command: "vidni exports <project> --cut <cut> --add <platform>",
+        does: "Makes the cut for the platform as well: its next final build exports it there",
+    },
+    Usage {
+        name: "Untick a platform",
+        command: "vidni exports <project> --cut <cut> --remove <platform>",
+        does: "Makes the cut for the platform no longer: its next final build removes that folder",
+    },
 ];
 
 impl Action {
@@ -196,6 +220,18 @@ impl Action {
             Self::Frozen { project, cut } => on("frozen", project, Some(cut)),
             Self::Final { project, cut } => on("final", project, cut.as_ref()),
             Self::Approve { project, cut } => on("approve", project, cut.as_ref()),
+            Self::Exports { project, cut } => on("exports", project, Some(cut)),
+            Self::Target {
+                project,
+                cut,
+                platform,
+                on: add,
+            } => {
+                let mut args = on("exports", project, Some(cut));
+                let flag = if *add { "--add" } else { "--remove" };
+                args.extend([flag.to_string(), platform.clone()]);
+                args
+            }
             Self::Retake {
                 project,
                 line,
@@ -239,6 +275,9 @@ impl Action {
             Self::Approve { cut: Some(_), .. } => 14,
             Self::Retake { trim: None, .. } => 15,
             Self::Retake { trim: Some(_), .. } => 16,
+            Self::Exports { .. } => 17,
+            Self::Target { on: true, .. } => 18,
+            Self::Target { on: false, .. } => 19,
         }]
     }
 }
@@ -330,10 +369,26 @@ mod tests {
                 trim: None,
             },
             Action::Retake {
-                project,
+                project: project.clone(),
                 line: "intro-1".into(),
                 pick: None,
                 trim: Some("0.35:2.8".into()),
+            },
+            Action::Exports {
+                project: project.clone(),
+                cut: "long".into(),
+            },
+            Action::Target {
+                project: project.clone(),
+                cut: "long".into(),
+                platform: "x".into(),
+                on: true,
+            },
+            Action::Target {
+                project,
+                cut: "long".into(),
+                platform: "x".into(),
+                on: false,
             },
         ];
         // Each kind of action has its own line in the help, and no line is spare.
@@ -361,6 +416,9 @@ mod tests {
                 "vidni approve '/videos/my talk' --cut long",
                 "vidni takes '/videos/my talk' --line intro-1 --pick 2",
                 "vidni takes '/videos/my talk' --line intro-1 --trim 0.35:2.8",
+                "vidni exports '/videos/my talk' --cut long",
+                "vidni exports '/videos/my talk' --cut long --add x",
+                "vidni exports '/videos/my talk' --cut long --remove x",
             ]
         );
         for (action, typed) in actions.iter().zip(&typed) {
