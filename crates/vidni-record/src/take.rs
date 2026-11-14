@@ -19,6 +19,22 @@ use vidni_core::takes::{Pick, Trim};
 /// How much of the newest sound a meter's level is taken over, in seconds.
 pub const METER: f64 = 0.12;
 
+/// How much of a take one bar of its waveform stands for, in seconds.
+pub const BAR: f64 = 0.02;
+
+/// The waveform of `samples`: the loudest sample of each [`BAR`], as a
+/// part of full scale. What is left over at the end is a bar too.
+pub fn envelope(samples: &[i16], rate: u32) -> Vec<f32> {
+    let per_bar = ((BAR * f64::from(rate)).round() as usize).max(1);
+    samples
+        .chunks(per_bar)
+        .map(|bar| {
+            let peak = bar.iter().map(|s| s.unsigned_abs()).max().unwrap_or(0);
+            f32::from(peak) / 32768.0
+        })
+        .collect()
+}
+
 /// What a meter reads.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Level {
@@ -39,6 +55,12 @@ pub struct Meter {
     span: usize,
     count: u64,
     peak: u16,
+    /// The waveform so far: each whole [`BAR`]'s loudest sample.
+    bars: Vec<f32>,
+    /// How many samples a bar is, and the bar being filled: how many it
+    /// has, and the loudest of them.
+    per_bar: usize,
+    filling: (usize, u16),
 }
 
 impl Meter {
@@ -50,6 +72,9 @@ impl Meter {
             span,
             count: 0,
             peak: 0,
+            bars: Vec::new(),
+            per_bar: ((BAR * f64::from(rate)).round() as usize).max(1),
+            filling: (0, 0),
         }
     }
 
@@ -57,11 +82,24 @@ impl Meter {
         self.count += samples.len() as u64;
         for sample in samples {
             self.peak = self.peak.max(sample.unsigned_abs());
+            self.filling = (
+                self.filling.0 + 1,
+                self.filling.1.max(sample.unsigned_abs()),
+            );
+            if self.filling.0 == self.per_bar {
+                self.bars.push(f32::from(self.filling.1) / 32768.0);
+                self.filling = (0, 0);
+            }
             if self.recent.len() == self.span {
                 self.recent.pop_front();
             }
             self.recent.push_back(*sample);
         }
+    }
+
+    /// The waveform so far, as [`envelope`] gives it for the whole bars.
+    pub fn envelope(&self) -> &[f32] {
+        &self.bars
     }
 
     pub fn level(&self) -> Level {
@@ -171,6 +209,11 @@ impl Recording {
     /// What the meter reads now.
     pub fn level(&self) -> Level {
         locked(&self.shared).meter.level()
+    }
+
+    /// The waveform of what is recorded so far.
+    pub fn envelope(&self) -> Vec<f32> {
+        locked(&self.shared).meter.envelope().to_vec()
     }
 
     /// Why the recording can't go on, when it can't: the input stopped on

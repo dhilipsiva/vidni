@@ -7,6 +7,7 @@ use crate::editor::Editor;
 use crate::jobs::{self, Job};
 use crate::preview::{self, Player};
 use crate::recent;
+use crate::studio::Studio;
 use eframe::egui;
 use std::path::{Path, PathBuf};
 use vidni_cli::console::Stream;
@@ -73,6 +74,8 @@ pub enum Tab {
     Script,
     /// A built cut, in the player.
     Preview,
+    /// Its lines, to record.
+    Record,
 }
 
 /// Which build of which cut the preview shows.
@@ -116,6 +119,8 @@ pub struct App {
     pub tab: Tab,
     /// The preview of the open project's cuts.
     pub preview: Preview,
+    /// The recording studio, once its tab has been opened.
+    pub studio: Option<Studio>,
     /// The job that is running, or the last one that ran.
     pub job: Option<Job>,
     /// Whether what the last job changed has been read.
@@ -147,6 +152,7 @@ impl App {
             editor: None,
             tab: Tab::Cuts,
             preview: Preview::default(),
+            studio: None,
             job: None,
             taken_in: true,
             frozen: None,
@@ -172,6 +178,7 @@ impl App {
         }
         self.editor = Some(Editor::open(folder));
         self.preview = Preview::default();
+        self.studio = None;
         // The same project read again keeps its list open, read afresh.
         if self
             .project
@@ -220,6 +227,13 @@ impl App {
         {
             player.pause();
         }
+        // A take is recorded, and waits to be kept, only while the studio
+        // is in front.
+        if (self.project.is_none() || self.tab != Tab::Record)
+            && let Some(studio) = &mut self.studio
+        {
+            studio.settle();
+        }
         egui::Frame::central_panel(ui.style()).show(ui, |ui| {
             // The panel is the whole window, however little is in it.
             ui.set_min_size(ui.available_size());
@@ -246,11 +260,16 @@ impl App {
                             ui.selectable_value(&mut self.tab, Tab::Cuts, "Cuts");
                             ui.selectable_value(&mut self.tab, Tab::Script, "Script");
                             ui.selectable_value(&mut self.tab, Tab::Preview, "Preview");
+                            ui.selectable_value(&mut self.tab, Tab::Record, "Record");
                         });
                         match self.tab {
                             Tab::Cuts => self.cuts(ui, &project),
                             Tab::Script => self.script(ui, &project),
                             Tab::Preview => self.show_preview(ui, &project),
+                            Tab::Record => self
+                                .studio
+                                .get_or_insert_with(|| Studio::open(&project.folder))
+                                .ui(ui),
                         }
                     }
                 }

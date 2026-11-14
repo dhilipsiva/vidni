@@ -35,6 +35,8 @@ The app keeps the list of projects you opened in `recent`, in its folder of sett
 | Final `<cut>` | `vidni final <project> --cut <cut>` | Builds one cut from your takes |
 | Approve every cut | `vidni approve <project>` | Records every cut's final build in release.json, as a release with its hashes |
 | Approve `<cut>` | `vidni approve <project> --cut <cut>` | Releases one cut's final build |
+| Use take `<n>` | `vidni takes <project> --line <line> --pick <n>` | Makes another raw take the line's kept take, trimmed where vidni finds the words |
+| Trim | `vidni takes <project> --line <line> --trim <from>:<to>` | Cuts the line's kept take from other seconds of its raw take |
 
 - **The projects.** The first screen starts a project, opens one by its folder, and lists the ones opened lately.
 - **A project.** Its title, its folder, and each cut with where it stands, in `vidni status`'s own words.
@@ -72,6 +74,22 @@ Both are in the **Script** tab.
 - **A note on a line.** Pick a line, write what to change about it under **Note**, and press Save note. The line's row then ends in `(note)`. An emptied note, saved, is taken away.
 - **Notes are a file.** They are in `notes.md`, in the project folder, each under a heading that is its line's ID. So they are there the next time the app is started, they go into git with the script, and they can be written by hand or with `vidni notes`; the app shows such a change at once. A note is no part of the video: writing one changes no cut.
 - **What changed** lists, in `vidni changes`'s words, each line that is new, gone or changed since the last build, with the keys that changed, and for each ratified cut what has changed since it was ratified. While it is open it follows the file, so an edit shows in it as it is made.
+
+## The recording studio
+
+The **Record** tab records your takes, one line at a time. It is `vidni record` in a window: the same recorder, the same folders, the same records beside each take. A session can start in one and go on in the other.
+
+- **The prompter.** The line to read, in large type, with its ID, its section, the cuts it is in, and how long the draft voice takes over it. It opens on the first line that has no take of its present words. Previous line, Next line and Next line to record move it, and so does a click on any line in the list at the bottom.
+- **Record a take.** While you read, a meter shows the level, a waveform grows, and a timer runs beside the draft voice's pace. Stop ends the take; Cancel ends it and saves nothing.
+- **The new take** is trimmed to your words, measured, and held beside the line's kept take. Play A plays the kept take and Play B the new one, so the two can be compared. Keep makes the new take the line's take and goes on to the next line with none. Record again and Discard leave the line as it was. A take with no speech in it, or one too short to be a take, is refused in the recorder's words.
+- **The line's takes.** Every raw take of the line's present words, with its length, its level, and when and from what it was recorded. Play take `<n>` plays one. Use take `<n>` makes it the kept take.
+- **Another trim.** Under the takes, the kept take's raw take is drawn with the kept part marked. From and To are its ends in seconds of the raw take; Trim cuts it there, and Trim where vidni finds the words puts it back.
+- **Room tone.** Record room tone records three seconds of the room with nobody speaking, and keeps the middle as the sound of the project's pauses. Its level is shown; a room louder than -55 dB is said to be noisy.
+- **Nothing is left half done.** A recording is cancelled, and a take that waits to be kept is discarded, when you leave the tab or close the app; a take that waits is discarded when you go to another line too. A cancelled recording leaves no file. A discarded take's raw take stays in the list, as does what was recorded before an input failed.
+- **Record in one place at a time.** The terminal and the studio hold a new take in the same place while it waits to be kept, so a line under review in one shouldn't be recorded in the other. Raw takes and kept takes are safe either way.
+- **The microphone** is the one `VIDNI_MIC` names, or the system's default input; takes play through the output `VIDNI_SPEAKER` names, or the default one. These are `vidni record`'s settings.
+
+What the terminal has and the studio hasn't yet: the listening check of a new take against the script, the mic check's reading of your level (`vidni record --test` does both), and the warning when a session is louder or quieter than the one before.
 
 ## The preview
 

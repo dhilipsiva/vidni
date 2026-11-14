@@ -2,6 +2,8 @@
 
 How to record a video's narration with `vidni record`, and get takes you won't have to redo. [The spec](spec.md#recording-vidni-record) has every key and flag; this page is the order to do things in, and why.
 
+This guide records in the terminal, with `vidni record`. The desktop app's **Record** tab is the same recorder in a window ([the app](app.md#the-recording-studio)): its takes and the terminal's are stored alike, so everything here about takes holds for both, and a session can move between them.
+
 ## Before you record
 
 1. **Finish the script first.** Draft it, watch it, change it, and ratify it (`vidni ratify`). A take belongs to a line's words: change a word and the take goes stale, and you read the line again. Punctuation and capitals don't count.

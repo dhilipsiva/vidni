@@ -284,3 +284,28 @@ fn an_input_that_stops_on_its_own_is_reported() {
     recording.cancel().unwrap();
     assert_eq!(paced.name(), "a made-up input");
 }
+
+#[test]
+fn the_waveform_of_a_recording_is_the_waveform_of_its_take() {
+    let dir = tempfile::tempdir().unwrap();
+    let raw = dir.path().join("raw-1.wav");
+    let input = Synthetic::samples(RATE, spoken(1.0)).lasting(2.5);
+    let recording = take::record(&input, &raw).unwrap();
+    wait_for(&recording, 2.5);
+    // While it is recorded: a bar for each 20 ms so far.
+    let live = recording.envelope();
+    assert_eq!(live.len(), 125);
+    let raw = recording.stop().unwrap();
+    // The stored take's waveform is the same bars.
+    let (samples, rate) = take::read(&raw).unwrap();
+    assert_eq!(take::envelope(&samples, rate), live);
+    // The clicks are the loudest bars, the voice is at its level, and the
+    // room is far below it.
+    assert!(live[0] > 0.9, "{}", live[0]);
+    let voice = live[at(1.0) / at(take::BAR)];
+    assert!((voice - 9000.0 / 32768.0).abs() < 0.01, "{voice}");
+    assert!(live[10] < 0.001, "{}", live[10]);
+    // A take that ends inside a bar has that part as its last bar.
+    assert_eq!(take::envelope(&samples[..at(0.05)], rate).len(), 3);
+    assert!(take::envelope(&[], rate).is_empty());
+}

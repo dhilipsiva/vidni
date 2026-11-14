@@ -45,6 +45,14 @@ pub enum Action {
         project: PathBuf,
         cut: Option<String>,
     },
+    /// Make another raw take a line's kept take, or cut its kept take
+    /// elsewhere: one of the two, or both.
+    Retake {
+        project: PathBuf,
+        line: String,
+        pick: Option<u32>,
+        trim: Option<String>,
+    },
 }
 
 /// What the app's help says of a kind of action.
@@ -59,7 +67,7 @@ pub struct Usage {
 }
 
 /// Every kind of action, in the order the help lists them.
-pub const ALL: [Usage; 15] = [
+pub const ALL: [Usage; 17] = [
     Usage {
         name: "New project",
         command: "vidni new <name> --in <folder>",
@@ -135,6 +143,16 @@ pub const ALL: [Usage; 15] = [
         command: "vidni approve <project> --cut <cut>",
         does: "Releases one cut's final build",
     },
+    Usage {
+        name: "Use take <n>",
+        command: "vidni takes <project> --line <line> --pick <n>",
+        does: "Makes another raw take the line's kept take, trimmed where vidni finds the words",
+    },
+    Usage {
+        name: "Trim",
+        command: "vidni takes <project> --line <line> --trim <from>:<to>",
+        does: "Cuts the line's kept take from other seconds of its raw take",
+    },
 ];
 
 impl Action {
@@ -178,6 +196,26 @@ impl Action {
             Self::Frozen { project, cut } => on("frozen", project, Some(cut)),
             Self::Final { project, cut } => on("final", project, cut.as_ref()),
             Self::Approve { project, cut } => on("approve", project, cut.as_ref()),
+            Self::Retake {
+                project,
+                line,
+                pick,
+                trim,
+            } => {
+                let mut args = vec![
+                    "takes".to_string(),
+                    path(project),
+                    "--line".to_string(),
+                    line.clone(),
+                ];
+                if let Some(pick) = pick {
+                    args.extend(["--pick".to_string(), pick.to_string()]);
+                }
+                if let Some(trim) = trim {
+                    args.extend(["--trim".to_string(), trim.clone()]);
+                }
+                args
+            }
         }
     }
 
@@ -199,6 +237,8 @@ impl Action {
             Self::Final { cut: Some(_), .. } => 12,
             Self::Approve { cut: None, .. } => 13,
             Self::Approve { cut: Some(_), .. } => 14,
+            Self::Retake { trim: None, .. } => 15,
+            Self::Retake { trim: Some(_), .. } => 16,
         }]
     }
 }
@@ -280,8 +320,20 @@ mod tests {
                 cut: None,
             },
             Action::Approve {
-                project,
+                project: project.clone(),
                 cut: Some("long".into()),
+            },
+            Action::Retake {
+                project: project.clone(),
+                line: "intro-1".into(),
+                pick: Some(2),
+                trim: None,
+            },
+            Action::Retake {
+                project,
+                line: "intro-1".into(),
+                pick: None,
+                trim: Some("0.35:2.8".into()),
             },
         ];
         // Each kind of action has its own line in the help, and no line is spare.
@@ -307,6 +359,8 @@ mod tests {
                 "vidni final '/videos/my talk' --cut long",
                 "vidni approve '/videos/my talk'",
                 "vidni approve '/videos/my talk' --cut long",
+                "vidni takes '/videos/my talk' --line intro-1 --pick 2",
+                "vidni takes '/videos/my talk' --line intro-1 --trim 0.35:2.8",
             ]
         );
         for (action, typed) in actions.iter().zip(&typed) {

@@ -11,3 +11,4 @@ pub mod editor;
 pub mod jobs;
 pub mod preview;
 pub mod recent;
+pub mod studio;

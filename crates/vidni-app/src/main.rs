@@ -16,6 +16,7 @@ fn main() -> eframe::Result {
     {
         Some("--script") => Tab::Script,
         Some("--preview") => Tab::Preview,
+        Some("--record") => Tab::Record,
         _ => Tab::Cuts,
     };
     let options = eframe::NativeOptions {
