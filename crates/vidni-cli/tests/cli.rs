@@ -1324,3 +1324,152 @@ fn exports_lists_each_cuts_platforms_and_adds_and_removes_one() {
     );
     assert_eq!(said(&["exports", demo, "--add", "x"]).0, Some(2));
 }
+
+#[test]
+fn an_assistants_session_is_held_to_the_protocol() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().to_str().unwrap();
+    assert!(vidni(&["new", "demo", "--in", path]).status.success());
+    let project = dir.path().join("demo");
+    let demo = project.to_str().unwrap();
+    // The same command, run by an assistant.
+    let assistant = |args: &[&str]| {
+        let out = Command::new(env!("CARGO_BIN_EXE_vidni"))
+            .args(args)
+            .env("VIDNI_ASSISTANT", "1")
+            .output()
+            .unwrap();
+        (
+            out.status.code(),
+            String::from_utf8_lossy(&out.stdout).into_owned(),
+            String::from_utf8_lossy(&out.stderr).into_owned(),
+        )
+    };
+    // Without a session, validate says to start one.
+    let (code, _, err) = assistant(&["validate", demo]);
+    assert_eq!(code, Some(1));
+    assert!(
+        err.contains("there is no assistant's session on this project"),
+        "{err}"
+    );
+    let started = vidni(&["assistant", demo]);
+    assert!(started.status.success());
+    let said = String::from_utf8_lossy(&started.stdout);
+    assert!(said.contains("3 files noted as they are"), "{said}");
+    assert_eq!(assistant(&["validate", demo]).0, Some(0));
+
+    // What an assistant may change: the script, and the notes.
+    let file = project.join("vidni.toml");
+    let text = fs::read_to_string(&file).unwrap();
+    fs::write(
+        &file,
+        text.replace("Hello, and welcome.", "Hello, everyone."),
+    )
+    .unwrap();
+    let (code, ..) = assistant(&["notes", demo, "--line", "intro-1", "--set", "Warmer."]);
+    assert_eq!(code, Some(0));
+    let (code, _, err) = assistant(&["validate", demo]);
+    assert_eq!((code, err.as_str()), (Some(0), ""));
+
+    // What it may not: another file changed, one added, one removed, and
+    // a gate's own file written by hand. Each is said, and validate fails.
+    let page = fs::read_to_string(project.join("page.html")).unwrap();
+    fs::write(project.join("page.html"), page.clone() + "<!-- more -->\n").unwrap();
+    fs::write(project.join("extra.html"), "<p>new</p>").unwrap();
+    fs::write(project.join("ratified.lock"), "cuts = {}\n").unwrap();
+    let (code, _, err) = assistant(&["validate", demo]);
+    assert_eq!(code, Some(1));
+    for said in [
+        "vidni: page.html was changed: an assistant changes vidni.toml and notes.md only\n",
+        "vidni: extra.html is new, and an assistant adds no file\n",
+        "vidni: ratified.lock is new, and an assistant adds no file\n",
+        "3 changes that the assistant protocol forbids (docs/assistant.md)\n",
+    ] {
+        assert!(err.contains(said), "{said}\n{err}");
+    }
+    // A person's validate doesn't look at any of it.
+    assert!(vidni(&["validate", demo]).status.success());
+    // Put back, the session is whole again.
+    fs::write(project.join("page.html"), page).unwrap();
+    fs::remove_file(project.join("extra.html")).unwrap();
+    fs::remove_file(project.join("ratified.lock")).unwrap();
+    assert_eq!(assistant(&["validate", demo]).0, Some(0));
+    let ignore = fs::read(project.join(".gitignore")).unwrap();
+    fs::remove_file(project.join(".gitignore")).unwrap();
+    let (code, _, err) = assistant(&["validate", demo]);
+    assert_eq!(code, Some(1));
+    assert!(err.contains("vidni: .gitignore was removed"), "{err}");
+    fs::write(project.join(".gitignore"), ignore).unwrap();
+
+    // The commands that are a person's refuse, and say whose they are.
+    for (args, why) in [
+        (
+            vec!["ratify", demo],
+            "ratifying a cut is a person's decision",
+        ),
+        (
+            vec!["unratify", demo],
+            "ratifying a cut is a person's decision",
+        ),
+        (
+            vec!["approve", demo],
+            "approving a release is a person's decision",
+        ),
+        (vec!["record", demo], "recording is the creator's own voice"),
+        (
+            vec!["takes", demo, "--line", "intro-1", "--pick", "1"],
+            "choosing and trimming takes is the creator's",
+        ),
+        (
+            vec![
+                "published",
+                demo,
+                "--cut",
+                "long",
+                "--platform",
+                "youtube",
+                "--url",
+                "https://x",
+            ],
+            "an assistant never uploads",
+        ),
+        (
+            vec!["gc", demo],
+            "moving and deleting assets is a person's to do",
+        ),
+    ] {
+        let (code, out, err) = assistant(&args);
+        assert_eq!((code, out.as_str()), (Some(1), ""), "{args:?}: {err}");
+        assert!(
+            err.starts_with(&format!("vidni: {why}")) && err.contains("VIDNI_ASSISTANT is set"),
+            "{args:?}: {err}"
+        );
+    }
+    assert!(!project.join("ratified.lock").exists());
+    // What only reads is an assistant's too.
+    for args in [
+        vec!["status", demo],
+        vec!["takes", demo],
+        vec!["published", demo],
+    ] {
+        assert_eq!(assistant(&args).0, Some(0), "{args:?}");
+    }
+    // It can't start the session again, to pass off what it changed.
+    let (code, _, err) = assistant(&["assistant", demo]);
+    assert_eq!(code, Some(1));
+    assert!(err.contains("only a person starts another"), "{err}");
+
+    // A person ratifies meanwhile (here the lock is written as the command
+    // would): the session notes the command's file, and stays whole.
+    let (code, _, err) = {
+        let out = vidni(&["ratify", demo]);
+        (
+            out.status.code(),
+            String::new(),
+            String::from_utf8_lossy(&out.stderr).into_owned(),
+        )
+    };
+    // With no captures the cut can't be ratified; nothing was written.
+    assert_eq!(code, Some(1), "{err}");
+    assert_eq!(assistant(&["validate", demo]).0, Some(0));
+}

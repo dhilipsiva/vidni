@@ -21,6 +21,7 @@ The first release.
 - **Determinism you can check.** A build records every input and tool. `vidni repro` builds a cut twice in clean environments and compares every hash; `--offline` builds with no network. Frames, sound and captions are the same bytes on any host with the pinned tools.
 - **Assets out of git:** takes and captures are locked by hash, and `vidni backup`, `verify`, `restore` and `gc` look after them.
 - **A desktop app,** `vidni-app`: projects, a script editor that keeps every comment, a preview player, review notes, the gates, a recording studio and an export panel. Everything it does is a `vidni` command, shown in its help.
+- **A protocol for assistants.** An LLM may edit `vidni.toml` and `notes.md` and nothing else, and the gates stay a person's: with `VIDNI_ASSISTANT` set, those commands refuse and `vidni validate` fails on any other change.
 - **Two ways to install on Linux:** `nix run github:dhilipsiva/vidni`, and a portable bundle whose `vidni setup` fetches the pinned tools by their SHA-256, with no root. Both draft the same bytes.
 - **Scenes of many kinds:** web pages, local pages, cards from templates, pictures (PNG and SVG), a terminal session from a transcript, and code at a git commit with its syntax in colour, all under the same virtual camera.
 - **Themes and card templates,** with a neutral default in IBM Plex.

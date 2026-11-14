@@ -487,3 +487,12 @@ Added as the items are built.
 - **2026-11-14, P5-VIDNI-04.** `url = "x.mmd"` on an image scene has `mmdc` draw the diagram to a PNG, which is then a picture like any other: targets by rectangle, cameras, a capture that is frozen with its cut and taken again when the file changes.
 - **PNG, not SVG.** Mermaid's SVG holds its labels as HTML inside the SVG, which resvg doesn't draw. Its PNG comes from the same Chromium that vidni pins for web scenes, with the same fonts, and two drawings of one diagram are the same bytes.
 - **The pin is nixpkgs' `mermaid-cli`,** in the flake's shells and in what `nix run` starts. It isn't in the portable bundle: it brings Node with it, for a kind of scene few videos have. A bundle user names their own `mmdc` and takes the difference in pins.
+
+### T34. The assistant protocol is held by a marked session
+- **2026-11-14, P8-VIDNI-08.** `docs/assistant.md` is the protocol. An assistant's commands run with `VIDNI_ASSISTANT` set, and vidni then does two things:
+  - **the person's commands refuse** (ratify, unratify, record, picking and trimming takes, approve, recording an upload, backup, restore, gc, setup), each saying whose it is;
+  - **`vidni validate` holds the folder to the session's start,** which `vidni assistant` noted file by file: only `vidni.toml` and `notes.md` may differ.
+- **"Blocks anything the protocol forbids" is read as that.** The protocol forbids three kinds of thing: editing other files, running a person's command, and uploading. The first is what validate checks; the second is refused at the command; the third has no command to refuse yet, and the upload of P9-VIDNI-01 will refuse for an assistant.
+- **A command's own file is noted again by the command,** so a person who ratifies while the assistant works, or the assistant's own draft writing `voice.lock`, doesn't fail the check.
+- **It is a guard, not a sandbox,** and the document says so. An assistant that unsets the variable isn't stopped by vidni; a person who needs that runs the assistant where it can write two files.
+- **`vidni final` is the assistant's to run.** It builds only what a person ratified and recorded, and releases nothing: approval is the gate after it.

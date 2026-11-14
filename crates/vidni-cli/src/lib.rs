@@ -33,6 +33,7 @@ macro_rules! tell {
 
 pub mod console;
 
+mod assistant;
 mod backup;
 mod build;
 pub mod exports;
@@ -293,6 +294,14 @@ enum Command {
         #[arg(long, value_name = "PLATFORM", requires = "cuts")]
         remove: Option<String>,
     },
+    /// Start an assistant's session on a project: note every file as it
+    /// is, so that `vidni validate`, run with VIDNI_ASSISTANT set, can say
+    /// what was changed that an assistant may not change.
+    Assistant {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+    },
     /// List what each ratified cut froze: its content, lines, scenes and
     /// capture files, each with its hash.
     Frozen {
@@ -470,7 +479,63 @@ pub fn run<S: AsRef<str>>(args: &[S]) -> u8 {
         .unwrap_or(1)
 }
 
+/// Why `command` isn't an assistant's to run, when it isn't.
+fn a_persons(command: &Command) -> Option<&'static str> {
+    Some(match command {
+        Command::Ratify { .. } | Command::Unratify { .. } => {
+            "ratifying a cut is a person's decision: ask them to run it"
+        }
+        Command::Approve { .. } => "approving a release is a person's decision: ask them to run it",
+        Command::Record { .. } => "recording is the creator's own voice",
+        Command::Takes { pick: Some(_), .. } | Command::Takes { trim: Some(_), .. } => {
+            "choosing and trimming takes is the creator's"
+        }
+        Command::Published { cut: Some(_), .. } => {
+            "an assistant never uploads, and doesn't record that something was uploaded"
+        }
+        Command::Backup { .. } | Command::Restore { .. } | Command::Gc { .. } => {
+            "moving and deleting assets is a person's to do"
+        }
+        Command::Setup { .. } => "setting vidni up is a person's to do",
+        _ => return None,
+    })
+}
+
+/// The files of the project that `command` writes when it succeeds, and
+/// the project it was given: an assistant's session notes them again.
+fn writes(command: &Command) -> Option<(PathBuf, &'static [&'static str])> {
+    Some(match command {
+        Command::Ratify { path, .. } | Command::Unratify { path, .. } => {
+            (path.clone(), &["ratified.lock"])
+        }
+        Command::Approve { path, .. } => (path.clone(), &["release.json"]),
+        Command::Published { path, .. } => (path.clone(), &["published.json"]),
+        Command::Draft { path, .. } | Command::Speak { path } | Command::Hear { path, .. } => {
+            (path.clone(), &["voice.lock"])
+        }
+        _ => return None,
+    })
+}
+
 fn dispatch(command: Command) -> ExitCode {
+    // An assistant runs what is an assistant's to run (docs/assistant.md).
+    if assistant::on()
+        && let Some(why) = a_persons(&command)
+    {
+        tell!("vidni: {why} ({} is set)", assistant::VAR);
+        return ExitCode::FAILURE;
+    }
+    let written = writes(&command);
+    let code = dispatch_one(command);
+    if code == ExitCode::SUCCESS
+        && let Some((path, names)) = written
+    {
+        assistant::wrote(&path, names);
+    }
+    code
+}
+
+fn dispatch_one(command: Command) -> ExitCode {
     // A command that says it runs with no network is held to it.
     if offline::inside()
         && let Err(e) = offline::verify()
@@ -554,6 +619,7 @@ fn dispatch(command: Command) -> ExitCode {
         Command::Notes { path, line, set } => notes(&path, line.as_deref().zip(set.as_deref())),
         Command::Changes { path } => changes(&path),
         Command::Frozen { path, cuts } => frozen(&path, &cuts),
+        Command::Assistant { path } => assistant::start(&path),
         Command::Exports {
             path,
             cuts,
@@ -1127,6 +1193,20 @@ fn validate(path: &Path) -> ExitCode {
                     w.column,
                     w.message
                 );
+            }
+            // For an assistant, the folder is held to its session's start.
+            if assistant::on() {
+                let broken = assistant::broken(path);
+                for problem in &broken {
+                    tell!("vidni: {problem}");
+                }
+                if !broken.is_empty() {
+                    tell!(
+                        "{} that the assistant protocol forbids (docs/assistant.md)",
+                        count(broken.len(), "change")
+                    );
+                    return ExitCode::FAILURE;
+                }
             }
             ExitCode::SUCCESS
         }
