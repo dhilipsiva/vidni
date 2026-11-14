@@ -116,6 +116,7 @@ pub(crate) const SCENE: &[&str] = &[
     "items",
     "quote",
     "by",
+    "parts",
     "viewport",
     "scale",
     "prompt",

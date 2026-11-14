@@ -696,17 +696,58 @@ template = "end"
 title = "Run the proof yourself"
 subtitle = "dhilipsiva.dev/nibli-playground"
 
+# Overlays, drawn by vidni from their parts.
 [scenes.verdicts]
-kind = "page"
-url = "cards/card.html?v=verdicts&r={aspect}"
-transparent = true
-size = { landscape = [1600, 150], portrait = [1000, 330] }
+kind = "overlay"
+template = "chips"
+
+[[scenes.verdicts.parts]]
+label = "TRUE"
+text = "a proof exists"
+sign = "⊤"
+tone = "good"
+
+[[scenes.verdicts.parts]]
+label = "FALSE"
+text = "not derivable"
+sign = "⊥"
+tone = "bad"
+
+[[scenes.verdicts.parts]]
+label = "UNKNOWN"
+text = "with a reason"
+sign = "?"
+tone = "warn"
+
+[[scenes.verdicts.parts]]
+label = "RESOURCE_EXCEEDED"
+text = "a budget ran out"
+sign = "◴"
+tone = "accent"
 
 [scenes.firewall]
-kind = "page"
-url = "cards/card.html?v=firewall&r={aspect}"
-transparent = true
-size = { landscape = [1600, 190], portrait = [1000, 330] }
+kind = "overlay"
+template = "flow"
+
+[[scenes.firewall.parts]]
+label = "formalize"
+text = "An LLM drafts nibli KR"
+
+[[scenes.firewall.parts]]
+wall = "reasoning firewall"
+
+[[scenes.firewall.parts]]
+label = "gates"
+text = "grammar · vocabulary · semantics · round trip"
+
+[[scenes.firewall.parts]]
+label = "review"
+text = "a person reads the back-translation"
+
+[[scenes.firewall.parts]]
+label = "derive"
+text = "backward chaining → verdict + proof"
+tone = "accent"
 
 # The pinned output of nibli-wasm's syllogism test. A capture stops when the
 # page shows anything else.

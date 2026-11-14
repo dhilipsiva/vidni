@@ -23,6 +23,10 @@ pub struct Card {
 impl Card {
     /// The card a card scene describes; none for a scene with no template.
     pub fn of(scene: &Scene) -> Option<Self> {
+        // A card scene only: an overlay has a template too.
+        if scene.kind != vidni_core::project::SceneKind::Card {
+            return None;
+        }
         Some(Self {
             template: scene.template?,
             title: scene.title.clone().unwrap_or_default(),
@@ -190,6 +194,8 @@ pub fn render(card: &Card, layout: &Layout, fonts: &mut Fonts, faces: &Type, loo
             }
             (blocks, 56.0)
         }
+        // An overlay's templates draw no card.
+        Template::Chips | Template::Flow | Template::Callout => (Vec::new(), 0.0),
         Template::Quote => (
             vec![
                 block(
@@ -231,6 +237,8 @@ pub fn render(card: &Card, layout: &Layout, fonts: &mut Fonts, faces: &Type, loo
         // A rule down the side of the quotation.
         Template::Quote => accent(&mut img, (margin, top, margin + 9.0, top + total)),
         Template::Section | Template::Bullets => {}
+        // An overlay's templates draw no card.
+        Template::Chips | Template::Flow | Template::Callout => {}
     }
     let mut y = top;
     for (i, block) in blocks.iter().enumerate() {

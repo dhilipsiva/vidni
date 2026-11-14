@@ -750,6 +750,52 @@
         "portrait"
       ]
     },
+    "Part": {
+      "description": "One part of an overlay: a chip, a box, or a wall between boxes.",
+      "type": "object",
+      "properties": {
+        "label": {
+          "description": "A chip's word, or a box's small heading.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sign": {
+          "description": "A chip's sign, before its word: one character, such as `?`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "text": {
+          "description": "The line under a chip's word, or a box's words.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tone": {
+          "description": "The colour of a chip's sign and word, or of a box's top edge.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Tone"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "wall": {
+          "description": "In a `flow`: a wall between the boxes before it and after it,\nwith these words on it. A wall has no other key.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "Pick": {
       "description": "Which of a target's matches to keep.",
       "type": "string",
@@ -873,7 +919,7 @@
           }
         },
         "kind": {
-          "description": "`web`: a page captured at a fixed viewport and framed by the virtual\ncamera. `page`: an HTML file rendered at each cut's own size, for\ncards and overlays. `card`: a card drawn from one of the theme's\ntemplates. `image`: a picture in the project folder, PNG or SVG,\nframed by the virtual camera. `terminal`: a transcript of commands\nand what they printed, drawn as a terminal. `code`: an excerpt of\na source file, drawn with its syntax in colour.",
+          "description": "`web`: a page captured at a fixed viewport and framed by the virtual\ncamera. `page`: an HTML file rendered at each cut's own size, for\ncards and overlays. `card`: a card drawn from one of the theme's\ntemplates. `overlay`: a strip drawn over a line's picture, from a\ntemplate and the scene's `parts`. `image`: a picture in the project\nfolder, PNG or SVG, framed by the virtual camera. `terminal`: a transcript of commands\nand what they printed, drawn as a terminal. `code`: an excerpt of\na source file, drawn with its syntax in colour.",
           "$ref": "#/$defs/SceneKind"
         },
         "language": {
@@ -896,6 +942,13 @@
           },
           "maxItems": 2,
           "minItems": 2
+        },
+        "parts": {
+          "description": "overlay: its chips, or its boxes and walls, in order.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Part"
+          }
         },
         "prompt": {
           "description": "terminal: what a command's line starts with. Default `$ `.",
@@ -1039,7 +1092,8 @@
         "card",
         "image",
         "terminal",
-        "code"
+        "code",
+        "overlay"
       ]
     },
     "Section": {
@@ -1246,6 +1300,21 @@
           "description": "A closing card: a title and a line under it, centred.",
           "type": "string",
           "const": "end"
+        },
+        {
+          "description": "An overlay: a row of chips, each a sign, a word and a line under it.",
+          "type": "string",
+          "const": "chips"
+        },
+        {
+          "description": "An overlay: boxes joined by arrows, with walls between groups of them.",
+          "type": "string",
+          "const": "flow"
+        },
+        {
+          "description": "An overlay: one box of words.",
+          "type": "string",
+          "const": "callout"
         }
       ]
     },
@@ -1340,6 +1409,25 @@
         }
       },
       "additionalProperties": false
+    },
+    "Tone": {
+      "description": "What a part of an overlay is coloured as.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "good",
+            "bad",
+            "warn",
+            "info"
+          ]
+        },
+        {
+          "description": "The theme's accent.",
+          "type": "string",
+          "const": "accent"
+        }
+      ]
     },
     "Track": {
       "description": "A piece of music the project may use, with what allows it.",

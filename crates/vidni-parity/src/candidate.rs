@@ -9,7 +9,7 @@ use crate::VARIANTS;
 use std::fs;
 use std::path::{Path, PathBuf};
 use vidni_core::capture::{self, Source};
-use vidni_core::project::{Aspect, LineSelection, Project, Split};
+use vidni_core::project::{Aspect, LineSelection, Project, SceneKind, Split};
 use vidni_core::takes::{self, Status};
 use vidni_core::timeline::{self, Clip};
 
@@ -43,6 +43,24 @@ pub(crate) fn project(example: &Path) -> Result<Project, String> {
             .unwrap_or_default();
         format!("{}: {first}", file.display())
     })?;
+    // The reference drew its two overlays as pages, from `cards/card.html`.
+    // The example has them as data now (P5-VIDNI-05); here they are pages
+    // again, so that the reference's frames are still what is compared.
+    for (id, height) in [("verdicts", 150), ("firewall", 190)] {
+        let drawn = project
+            .scenes
+            .get_mut(id)
+            .filter(|scene| scene.kind == SceneKind::Overlay);
+        if let Some(scene) = drawn {
+            let page = serde_json::json!({
+                "kind": "page",
+                "url": format!("cards/card.html?v={id}&r={{aspect}}"),
+                "transparent": true,
+                "size": { "landscape": [1600, height], "portrait": [1000, 330] },
+            });
+            *scene = serde_json::from_value(page).map_err(|e| e.to_string())?;
+        }
+    }
     project.cuts.retain(|c| c.lines == LineSelection::All);
     project.lines.retain(|l| l.only.is_empty());
     // The reference cut its captions its own way, and held no last picture.

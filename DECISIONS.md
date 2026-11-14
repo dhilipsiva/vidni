@@ -474,3 +474,11 @@ Added as the items are built.
 - **DejaVu Sans Mono is pinned for them** (Book and Bold). IBM Plex Mono lacks the signs a prover's session prints (⊢, ↦, ∀, ▣), and a missing glyph would be a box. Pinning a font is a change to what a video may be drawn with, so it is recorded here: DejaVu's licence is Bitstream Vera's, which the notices now state beside the Open Font License.
 - **The window's colours are fixed,** not the theme's. A capture doesn't depend on the theme today (a web page's doesn't either), and a still that changed with the theme would regress every ratified cut that shows it when the theme is edited.
 - **The terminal example's session is nibli's README's,** copied as printed there at a named commit, and its narration says only what the transcript shows.
+
+### T32. Overlays are drawn from parts, like cards
+- **2026-11-14, P5-VIDNI-05.** An overlay scene has a template (`chips`, `flow`, `callout`) and a list of parts, and vidni draws it when the cut is composed, as it draws a card. The nibli example's two overlays were views of one hand-written HTML file, rendered by Chromium; they are now a `chips` and a `flow`, in the example's `vidni.toml`.
+- **One list of parts for all three templates.** A part is a label, words, a sign and a tone; in a flow, a part that is only `wall` stands between two boxes. A flow's rows on a 9:16 cut are what its walls part, so the same data gives one row on a wide cut and stacked rows on a tall one, as the hand-written overlay did with two layouts.
+- **Tones.** `accent` is the theme's. `good`, `bad`, `warn` and `info` are fixed colours: they say something (a verdict is TRUE or FALSE) that a theme shouldn't be able to turn round.
+- **Transparent page scenes stay** as overlays, for a strip nobody's template draws.
+- **The example was ratified, built and approved again** as `long-r6` and `vertical-r5`: an overlay is part of what a cut shows. Its sound is the same; its frames differ where an overlay shows.
+- **The parity harness turns the two overlays back into pages,** since the reference drew them from `cards/card.html`, which stays in the example for that. What it compares is still the reference's own frames.

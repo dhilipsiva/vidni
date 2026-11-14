@@ -320,7 +320,10 @@ Grammar, as in the workspace TODO, one line per item: `- [ ] **P<m>-VIDNI-<nn>**
   - Evidence (2026-11-14), for PNG and SVG (the v0.1 half; Mermaid is still to do, so the item stays open): `examples/images` shows an SVG diagram and a PNG chart under the camera, with cards around them, and `vidni repro examples/images --draft` gives equal T1 and T2 hashes across two clean builds.
     - `kind = "image"` scenes name a file; targets are rectangles; cameras frame them. A picture is a capture taken with no browser (DECISIONS.md, T13), so it is frozen, backed up and taken again as a still is.
     - A media test captures an SVG twice with the same bytes, builds a cut from it twice with the same record, and sees the capture go out of date when the file changes.
-- [ ] **P5-VIDNI-05** (LOW) Make overlays templates (chip rows, flow diagrams, callouts) instead of the two hard-coded ones. *Done when:* the nibli verdict and firewall overlays are expressed as data. [S]
+- [x] **P5-VIDNI-05** (LOW) Make overlays templates (chip rows, flow diagrams, callouts) instead of the two hard-coded ones. *Done when:* the nibli verdict and firewall overlays are expressed as data. [S]
+    - **Done 2026-11-14** (DECISIONS T32). `kind = "overlay"` draws a strip over a line's picture from a template (`chips`, `flow`, `callout`) and the scene's `parts`, in the theme's colours and faces, with no browser and no capture.
+    - **The nibli overlays are data:** `scenes.verdicts` is a `chips` of four parts and `scenes.firewall` a `flow` of four boxes and a wall, in `examples/nibli-syllogism/vidni.toml`; neither names `cards/card.html` any more. The example was ratified, built and approved again as `long-r6` and `vertical-r5`.
+    - **Checked:** `crates/vidni-media/tests/overlay.rs` draws each template in both shapes twice and holds the pictures to each other, to their sizes and to their parts' tones. `just parity cuts` still passes 80 of 80 against the reference, with the two overlays turned back into pages for that comparison.
 
 ### P6. Cuts, shorts and exports
 - [x] **P6-VIDNI-01** (LOW) Allow several cuts per project: a long cut plus any number of shorts, each picking scenes and lines and adding its own hook lines. *Done when:* the nibli example defines a short of 60 s or less built from shared and short-only lines. [M]

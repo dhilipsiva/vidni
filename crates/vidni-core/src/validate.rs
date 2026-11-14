@@ -438,11 +438,12 @@ impl Rules {
                         let names = one_of(p.scenes.keys().map(String::as_str));
                         self.add(at("overlay"), format!("unknown scene {overlay:?}{names}"));
                     }
+                    Some(s) if s.kind == SceneKind::Overlay => {}
                     Some(s) if s.kind != SceneKind::Page || s.transparent != Some(true) => {
                         self.add(
                             at("overlay"),
                             format!(
-                                "overlay {overlay:?} must be a page scene with transparent = true"
+                                "overlay {overlay:?} must be an overlay scene, or a page scene with transparent = true"
                             ),
                         );
                     }
@@ -531,6 +532,13 @@ impl Rules {
             return;
         };
         match scene.kind {
+            SceneKind::Overlay => {
+                let key = if line.scene.is_some() { "scene" } else { "id" };
+                self.add(
+                    at(key),
+                    format!("{id:?} is an overlay; show it with overlay = {id:?}"),
+                );
+            }
             SceneKind::Image => {
                 for (key, set) in [
                     ("do", !line.actions.is_empty()),
@@ -704,7 +712,7 @@ impl Rules {
         if !valid_id(id) {
             self.add(path!["scenes", id], id_rule("scene", id));
         }
-        if s.kind != SceneKind::Card && s.url.trim().is_empty() {
+        if !matches!(s.kind, SceneKind::Card | SceneKind::Overlay) && s.url.trim().is_empty() {
             self.add(at("url"), "url is empty");
         }
         let card_only = [
@@ -715,11 +723,18 @@ impl Rules {
             ("quote", s.quote.is_some()),
             ("by", s.by.is_some()),
         ];
-        // A window of text has a title too.
+        // A window of text has a title too, and an overlay has a template.
         let card_only: Vec<(&str, bool)> = card_only
             .into_iter()
             .filter(|(key, _)| !(s.is_text() && *key == "title"))
+            .filter(|(key, _)| !(s.kind == SceneKind::Overlay && *key == "template"))
             .collect();
+        if s.kind != SceneKind::Overlay && !s.parts.is_empty() {
+            self.add(
+                at("parts"),
+                format!("parts is for overlay scenes, and {id:?} isn't one"),
+            );
+        }
         let text_only = [
             ("prompt", s.prompt.is_some()),
             ("repo", s.repo.is_some()),
@@ -843,6 +858,81 @@ impl Rules {
             SceneKind::Card => self.card(id, s, &web_only, &page_only),
             SceneKind::Image => self.image(id, s, dir, &page_only),
             SceneKind::Terminal | SceneKind::Code => self.text(id, s, dir, &page_only),
+            SceneKind::Overlay => self.overlay(id, s, &web_only, &page_only),
+        }
+    }
+
+    /// An overlay scene: a template, and the parts that template draws.
+    fn overlay(
+        &mut self,
+        id: &str,
+        s: &Scene,
+        web_only: &[(&str, bool)],
+        page_only: &[(&str, bool)],
+    ) {
+        use crate::project::Template;
+        let at = |key: &str| path!["scenes", id, key];
+        let others = [("url", !s.url.is_empty())];
+        for (key, set) in others.iter().chain(web_only).chain(page_only) {
+            if *set {
+                self.add(
+                    at(key),
+                    format!(
+                        "{key} isn't for overlay scenes: an overlay is drawn from its template"
+                    ),
+                );
+            }
+        }
+        let template = match s.template {
+            Some(template @ (Template::Chips | Template::Flow | Template::Callout)) => template,
+            _ => {
+                self.add(
+                    at("template"),
+                    "an overlay's template is chips, flow or callout",
+                );
+                return;
+            }
+        };
+        if s.parts.is_empty() {
+            self.add(
+                path!["scenes", id],
+                "an overlay needs parts: [[scenes.<id>.parts]]",
+            );
+        }
+        if template == Template::Callout && s.parts.len() > 1 {
+            self.add(at("parts"), "a callout is one part");
+        }
+        let empty = |text: &Option<String>| text.as_deref().is_none_or(|t| t.trim().is_empty());
+        for (n, part) in s.parts.iter().enumerate() {
+            let here = path!["scenes", id, "parts", n];
+            if part.wall.is_some() {
+                let only_wall = crate::project::Part {
+                    wall: part.wall.clone(),
+                    ..Default::default()
+                };
+                if template != Template::Flow {
+                    self.add(here, "a wall is a part of a flow");
+                } else if *part != only_wall {
+                    self.add(here, "a wall has no other key: it stands between boxes");
+                } else if n == 0 || n + 1 == s.parts.len() || s.parts[n - 1].wall.is_some() {
+                    self.add(here, "a wall stands between two boxes");
+                }
+                continue;
+            }
+            let problem = match template {
+                Template::Chips if empty(&part.label) => Some("a chip needs a label"),
+                Template::Chips if part.sign.as_deref().is_some_and(|s| s.chars().count() != 1) => {
+                    Some("a chip's sign is one character")
+                }
+                Template::Flow | Template::Callout if empty(&part.text) => Some("a box needs text"),
+                Template::Flow | Template::Callout if part.sign.is_some() => {
+                    Some("sign is for chips")
+                }
+                _ => None,
+            };
+            if let Some(problem) = problem {
+                self.add(here, problem);
+            }
         }
     }
 
@@ -1033,7 +1123,8 @@ impl Rules {
                 );
             }
         }
-        let Some(template) = s.template else {
+        let overlays = [Template::Chips, Template::Flow, Template::Callout];
+        let Some(template) = s.template.filter(|t| !overlays.contains(t)) else {
             self.add(
                 at("kind"),
                 "a card scene needs a template: title, section, bullets, quote or end",
@@ -1045,6 +1136,8 @@ impl Rules {
             Template::Title | Template::Section | Template::End => (true, true, false, false),
             Template::Bullets => (true, false, true, false),
             Template::Quote => (false, false, false, true),
+            // An overlay's templates were turned away above.
+            Template::Chips | Template::Flow | Template::Callout => return,
         };
         let name = format!("{template:?}").to_lowercase();
         let fields = [

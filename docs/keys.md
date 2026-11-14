@@ -147,7 +147,7 @@ What the lines show, by ID.
 
 | Key | Value | Required | Meaning |
 |---|---|---|---|
-| `kind` | `"web"` or `"page"` or `"card"` or `"image"` or `"terminal"` or `"code"` | yes | `web`: a page captured at a fixed viewport and framed by the virtual camera. `page`: an HTML file rendered at each cut's own size, for cards and overlays. `card`: a card drawn from one of the theme's templates. `image`: a picture in the project folder, PNG or SVG, framed by the virtual camera. `terminal`: a transcript of commands and what they printed, drawn as a terminal. `code`: an excerpt of a source file, drawn with its syntax in colour. |
+| `kind` | `"web"` or `"page"` or `"card"` or `"image"` or `"terminal"` or `"code"` or `"overlay"` | yes | `web`: a page captured at a fixed viewport and framed by the virtual camera. `page`: an HTML file rendered at each cut's own size, for cards and overlays. `card`: a card drawn from one of the theme's templates. `overlay`: a strip drawn over a line's picture, from a template and the scene's `parts`. `image`: a picture in the project folder, PNG or SVG, framed by the virtual camera. `terminal`: a transcript of commands and what they printed, drawn as a terminal. `code`: an excerpt of a source file, drawn with its syntax in colour. |
 | `by` | string |  | card: whose words a `quote` card's are. |
 | `cameras` | table of [Camera](#camera), by name |  | web: named framings. `viewport` and `highlights` are always defined. |
 | `color_scheme` | `"light"` or `"dark"` |  | web: the colour scheme the page is asked for. |
@@ -156,6 +156,7 @@ What the lines show, by ID.
 | `items` | array of string |  | card: the points of a `bullets` card. |
 | `language` | string |  | code: the language its syntax is coloured as. Default: by the file's name. |
 | `lines` | array of whole number |  | terminal, code: the first and last line of the file to show, counted from 1. Default: all of it. |
+| `parts` | array of [Part](#part) |  | overlay: its chips, or its boxes and walls, in order. |
 | `prompt` | string |  | terminal: what a command's line starts with. Default `$ `. |
 | `quote` | string |  | card: the words of a `quote` card. |
 | `repo` | string |  | code: the git repository `rev` is in, from the project folder. Default: the project folder's own. |
@@ -165,7 +166,7 @@ What the lines show, by ID.
 | `size` | [PageSize](#pagesize) |  | page: the rendered size for each orientation. Default: the cut's size. |
 | `subtitle` | string |  | card: a second, smaller line (`title`, `section`, `end`). |
 | `targets` | table of [Target](#target), by name |  | web: named parts of the page, for highlights, cameras, actions and expectations. |
-| `template` | `"title"` or `"section"` or `"bullets"` or `"quote"` or `"end"` |  | card: the template it is drawn from. |
+| `template` | `"title"` or `"section"` or `"bullets"` or `"quote"` or `"end"` or `"chips"` or `"flow"` or `"callout"` |  | card: the template it is drawn from. |
 | `title` | string |  | card: its title (`title`, `section`, `bullets`, `end`). terminal, code: the words in the window's bar; default: the file's name. |
 | `transparent` | boolean |  | page: rendered on a transparent background, as an overlay. |
 | `url` | string |  | web: the page's address. page: a file in the project folder; `{aspect}` becomes `16x9` or `9x16`. image: the picture's file. terminal: the transcript's file. code: the source file, in the project folder, or in `repo` at `rev`. |
@@ -266,6 +267,18 @@ A named framing of a web scene.
 | `union` | array of string |  | Frame the union of these targets. |
 | `vertical` | string |  | The camera vertical cuts use instead, when this one is too wide. |
 | `viewport` | boolean |  | Frame the whole viewport. |
+
+### Part
+
+One part of an overlay: a chip, a box, or a wall between boxes.
+
+| Key | Value | Required | Meaning |
+|---|---|---|---|
+| `label` | string |  | A chip's word, or a box's small heading. |
+| `sign` | string |  | A chip's sign, before its word: one character, such as `?`. |
+| `text` | string |  | The line under a chip's word, or a box's words. |
+| `tone` | `"good"` or `"bad"` or `"warn"` or `"info"` or `"accent"` |  | The colour of a chip's sign and word, or of a box's top edge. |
+| `wall` | string |  | In a `flow`: a wall between the boxes before it and after it, with these words on it. A wall has no other key. |
 
 ### PageSize
 

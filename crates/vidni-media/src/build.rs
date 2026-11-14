@@ -31,7 +31,7 @@ use std::process::Command;
 use vidni_core::captions;
 use vidni_core::capture::{self, sha256_hex};
 use vidni_core::chapters::{self, Chapter};
-use vidni_core::project::{Aspect, Captions, Cut, Line, Project, Scene};
+use vidni_core::project::{Aspect, Captions, Cut, Line, Project, Scene, SceneKind};
 use vidni_core::ratify;
 use vidni_core::release::{self, Approval, Output, Record, Sources, T1, Tools, Voice};
 use vidni_core::theme::{self, Theme};
@@ -300,6 +300,13 @@ fn shots(project: &Project, dir: &Path, cut: &Cut, lines: &[&Line]) -> Result<Ve
                 .map(|s| s.label.clone())
                 .unwrap_or_default();
             let overlay = line.overlay.as_deref().and_then(page);
+            // An overlay scene is data: the compositor draws it.
+            let strip = line
+                .overlay
+                .as_deref()
+                .and_then(|id| project.scenes.get(id))
+                .filter(|scene| scene.kind == SceneKind::Overlay)
+                .cloned();
             let scene_id = line
                 .scene_in(project)
                 .ok_or_else(|| format!("line {} shows no scene", line.id))?;
@@ -343,6 +350,7 @@ fn shots(project: &Project, dir: &Path, cut: &Cut, lines: &[&Line]) -> Result<Ve
                 label,
                 picture,
                 overlay,
+                strip,
             })
         })
         .collect()

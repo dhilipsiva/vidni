@@ -1,0 +1,27 @@
+# expect: 23:12: an overlay's template is chips, flow or callout
+schema = 1
+
+[meta]
+title = "Pictures"
+default_scene = "diagram"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "A picture."
+
+
+[scenes.diagram]
+kind = "card"
+template = "title"
+title = "A card"
+
+[scenes.strip]
+kind = "overlay"
+template = "title"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

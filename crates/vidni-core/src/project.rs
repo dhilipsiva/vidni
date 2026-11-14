@@ -383,7 +383,8 @@ impl Scene {
     pub fn file(&self) -> Option<&str> {
         // A file read at a revision is the repository's, not the folder's.
         let elsewhere = self.kind == SceneKind::Code && self.rev.is_some();
-        match self.on_the_web() || self.kind == SceneKind::Card || elsewhere {
+        let drawn = matches!(self.kind, SceneKind::Card | SceneKind::Overlay);
+        match self.on_the_web() || drawn || elsewhere {
             true => None,
             false => self.url.split(['?', '#']).next(),
         }
@@ -411,8 +412,9 @@ pub struct Scene {
     /// `web`: a page captured at a fixed viewport and framed by the virtual
     /// camera. `page`: an HTML file rendered at each cut's own size, for
     /// cards and overlays. `card`: a card drawn from one of the theme's
-    /// templates. `image`: a picture in the project folder, PNG or SVG,
-    /// framed by the virtual camera. `terminal`: a transcript of commands
+    /// templates. `overlay`: a strip drawn over a line's picture, from a
+    /// template and the scene's `parts`. `image`: a picture in the project
+    /// folder, PNG or SVG, framed by the virtual camera. `terminal`: a transcript of commands
     /// and what they printed, drawn as a terminal. `code`: an excerpt of
     /// a source file, drawn with its syntax in colour.
     pub kind: SceneKind,
@@ -441,6 +443,9 @@ pub struct Scene {
     /// card: whose words a `quote` card's are.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub by: Option<String>,
+    /// overlay: its chips, or its boxes and walls, in order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parts: Vec<Part>,
     /// web: the viewport in CSS pixels. Default `[1280, 720]`.
     #[serde(default)]
     pub viewport: Option<[u32; 2]>,
@@ -510,6 +515,7 @@ pub enum SceneKind {
     Image,
     Terminal,
     Code,
+    Overlay,
 }
 
 /// The templates a card scene is drawn from.
@@ -526,6 +532,46 @@ pub enum Template {
     Quote,
     /// A closing card: a title and a line under it, centred.
     End,
+    /// An overlay: a row of chips, each a sign, a word and a line under it.
+    Chips,
+    /// An overlay: boxes joined by arrows, with walls between groups of them.
+    Flow,
+    /// An overlay: one box of words.
+    Callout,
+}
+
+/// What a part of an overlay is coloured as.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum Tone {
+    /// The theme's accent.
+    Accent,
+    Good,
+    Bad,
+    Warn,
+    Info,
+}
+
+/// One part of an overlay: a chip, a box, or a wall between boxes.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Part {
+    /// A chip's word, or a box's small heading.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    /// The line under a chip's word, or a box's words.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    /// A chip's sign, before its word: one character, such as `?`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sign: Option<String>,
+    /// The colour of a chip's sign and word, or of a box's top edge.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tone: Option<Tone>,
+    /// In a `flow`: a wall between the boxes before it and after it,
+    /// with these words on it. A wall has no other key.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wall: Option<String>,
 }
 
 /// A colour scheme a web scene can ask for.

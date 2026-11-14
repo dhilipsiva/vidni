@@ -188,6 +188,7 @@ fn shots(
                 label,
                 picture,
                 overlay,
+                strip: None,
             })
         })
         .collect()

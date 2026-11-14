@@ -379,7 +379,7 @@ examples/nibli-syllogism/vidni.toml: 55 heard as scripted, 2 worth a listen (bel
 
 | Key | Type | Kinds | Meaning |
 |---|---|---|---|
-| `kind` | `"web"`, `"page"`, `"card"` or `"image"` | all | `web`: a page captured at a fixed viewport and framed by the virtual camera. `page`: an HTML file rendered at each cut's own size, for cards and overlays. `card`: a card drawn from one of the theme's templates; see [Cards](#cards). `image`: a picture in the project folder, framed by the virtual camera; see [Images](#images). |
+| `kind` | `"web"`, `"page"`, `"card"`, `"overlay"`, `"image"`, `"terminal"` or `"code"` | all | `web`: a page captured at a fixed viewport and framed by the virtual camera. `page`: an HTML file rendered at each cut's own size, for cards and overlays of your own making. `card`: a card drawn from one of the theme's templates; see [Cards](#cards). `overlay`: a strip drawn over a line's picture from a template; see [Overlays](#overlays). `image`: a picture in the project folder, framed by the virtual camera; see [Images](#images). `terminal`: a transcript drawn as a terminal; see [Terminals](#terminals). `code`: a source file's excerpt; see [Code](#code). |
 | `url` | string | web, page, image | `web`: the page's address, or a file in the project folder. `page`: a file in the project folder, where `{aspect}` becomes `16x9` or `9x16`. `image`: a PNG or SVG file in the project folder |
 | `viewport` | `[width, height]` | web | CSS pixels. Default `[1280, 720]`. |
 | `scale` | integer | web, image | `web`: device pixels per CSS pixel. `image`: how many times its size an SVG is drawn at. Default 1. |
@@ -422,6 +422,41 @@ subtitle = "a five-minute tour"
 ```
 
 Long text wraps, and the whole card sits in the middle of the frame, or of the part of it that the cut's apps leave free ([What the apps cover](#what-the-apps-cover)). A line on a card scene takes no `do`, `highlight` or `camera`. A card's words are part of what its cut shows, so changing them after the cut is ratified makes it `changed`.
+
+### Overlays
+
+An overlay is a strip drawn over a line's picture: under the section label on a 16:9 cut, and in the title band's place on a 9:16 one. A line shows it with `overlay = "<scene>"`. vidni draws it from a template and the scene's parts, in the theme's colours and faces, so it needs no browser and no capture.
+
+```toml
+[scenes.verdicts]
+kind = "overlay"
+template = "chips"
+
+[[scenes.verdicts.parts]]
+label = "TRUE"
+text = "a proof exists"
+sign = "⊤"
+tone = "good"
+
+[[scenes.verdicts.parts]]
+label = "FALSE"
+text = "not derivable"
+sign = "⊥"
+tone = "bad"
+```
+
+| Template | What it draws | A part's keys |
+|---|---|---|
+| `chips` | A chip for each part: a sign, a word, and a line under them. One row on a 16:9 cut, two to a row on a 9:16 one. | `label` (needed), `text`, `sign` (one character), `tone` |
+| `flow` | Boxes joined by arrows, each with a small heading and words. A part that is `wall = "words"` stands between two boxes in the place of the arrow: two dashed lines on a 16:9 cut, and on a 9:16 cut a new row, with the wall's words between the lines. | `text` (needed), `label`, `tone`; or `wall` alone |
+| `callout` | One box of words, as wide as the strip. | `text` (needed), `label`, `tone` |
+
+- **`tone`** colours a chip's sign and word, or a box's top edge: `accent` is the theme's accent, and `good`, `bad`, `warn` and `info` are a green, a red, an amber and a violet that don't change with the theme.
+- **Signs and arrows** are set in DejaVu Sans Mono, which has them ([Fonts](#fonts)); everything else is in the theme's faces.
+- **An overlay is part of what a cut shows:** changing its parts regresses the ratified cuts whose lines show it.
+- **A page scene with `transparent = true`** is still an overlay too, for a strip of your own design in HTML.
+
+The nibli example's two overlays are a `chips` and a `flow`.
 
 ### Images
 

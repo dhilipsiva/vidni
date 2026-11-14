@@ -173,6 +173,8 @@ pub struct Shot {
     pub picture: Picture,
     /// An RGBA overlay for this cut's aspect.
     pub overlay: Option<PathBuf>,
+    /// An overlay scene to draw over the picture, in the place of a file.
+    pub strip: Option<vidni_core::project::Scene>,
 }
 
 /// What a line shows: a crop of a web capture, or a full-frame card.
@@ -298,6 +300,8 @@ impl Composer {
         let aspect = vw / vh;
         let height = f64::from(layout.size.1);
         let mut items = Vec::with_capacity(shots.len());
+        // The face an overlay's signs are set in, loaded when one is drawn.
+        let mut signs: Option<Font> = None;
         for shot in shots {
             let overlay = shot
                 .overlay
@@ -305,6 +309,20 @@ impl Composer {
                 .map(Image::load_png)
                 .transpose()?
                 .map(|o| o.to_rgba());
+            // An overlay scene is drawn here, in the theme's faces.
+            let overlay = match (&shot.strip, overlay) {
+                (Some(strip), _) => {
+                    if signs.is_none() {
+                        signs = Some(sign_face(fonts)?);
+                    }
+                    let face = signs.as_ref().expect("it was just loaded");
+                    let portrait = layout.size.1 > layout.size.0;
+                    Some(super::overlay::render(
+                        strip, portrait, fonts, faces, face, look,
+                    ))
+                }
+                (None, overlay) => overlay,
+            };
             let item = match shot.picture {
                 Picture::Drawn(card) => Item {
                     label: shot.label,
@@ -691,6 +709,14 @@ pub enum FrameKey {
     Moving(u64),
 }
 
+/// The pinned face that has the signs an overlay's chips are given
+/// (the signs of true and false, a clock) and its arrows.
+fn sign_face(fonts: &mut Fonts) -> Result<Font, String> {
+    let id = "dejavu-sans-mono-bold";
+    let font = vidni_core::fonts::get(id).ok_or_else(|| format!("no pinned font {id}"))?;
+    fonts.load(&vidni_core::fonts::find(&font, &vidni_core::fonts::dirs())?)
+}
+
 /// Greedy word wrap at `width` pixels, as the reference wraps.
 pub(crate) fn wrap(
     fonts: &mut Fonts,
@@ -1008,6 +1034,7 @@ mod tests {
                 label: String::new(),
                 picture: Picture::Card(path),
                 overlay: None,
+                strip: None,
             }
         };
         let timeline = Timeline {
