@@ -69,9 +69,11 @@
           <dir>${pkgs.liberation_ttf}/share/fonts</dir>
           <dir>${pkgs.noto-fonts}/share/fonts</dir>
           <dir>${pkgs.noto-fonts-color-emoji}/share/fonts</dir>
-        ${pkgs.lib.concatMapStrings (
-          rule: "  <include>${pkgs.fontconfig.out}/etc/fonts/conf.d/${rule}.conf</include>\n"
-        ) fontRules}  <cachedir prefix="xdg">fontconfig</cachedir>
+        ${
+          pkgs.lib.concatMapStrings (
+            rule: "  <include>${pkgs.fontconfig.out}/etc/fonts/conf.d/${rule}.conf</include>\n"
+          ) fontRules
+        }  <cachedir prefix="xdg">fontconfig</cachedir>
         </fontconfig>
       '';
 
@@ -171,9 +173,56 @@
           install -Dm644 -t $out/share/doc/vidni LICENSE-MIT LICENSE-APACHE THIRD-PARTY-NOTICES.md
         '';
       };
+
+      # vidni with the tools it drives: what `nix run` starts (P8-VIDNI-03).
+      # The commands find the pinned tools first on their PATH, and the
+      # pinned fonts and listening model where they look for them; the
+      # desktop app finds the libraries it opens its window with. The build
+      # and its tests stay the plain package above, which needs none of this.
+      vidniWithTools = pkgs.symlinkJoin {
+        name = "vidni-with-tools-${vidni.version}";
+        paths = [ vidni ];
+        nativeBuildInputs = [ pkgs.makeWrapper ];
+        postBuild = ''
+          for program in vidni vidni-app; do
+            wrapProgram $out/bin/$program \
+              --prefix PATH : ${
+                pkgs.lib.makeBinPath (
+                  mediaTools
+                  ++ [
+                    pkgs.util-linux
+                    pkgs.xdg-utils
+                  ]
+                )
+              } \
+              --set-default FONTCONFIG_FILE ${fontsConf} \
+              --set-default VIDNI_FONTS ${fontDirs} \
+              --set-default VIDNI_WHISPER_MODEL ${whisperModel}
+          done
+          wrapProgram $out/bin/vidni-app --prefix LD_LIBRARY_PATH : ${windowLibs}
+        '';
+        meta.mainProgram = "vidni";
+      };
     in
     {
-      packages.${system}.default = vidni;
+      # `nix run github:dhilipsiva/vidni -- draft my-video` is the command
+      # line, and `nix run github:dhilipsiva/vidni#app` the desktop app.
+      packages.${system} = {
+        default = vidniWithTools;
+        inherit vidni;
+      };
+      apps.${system} = {
+        default = {
+          type = "app";
+          program = "${vidniWithTools}/bin/vidni";
+          meta.description = "vidni's command line, with its pinned tools";
+        };
+        app = {
+          type = "app";
+          program = "${vidniWithTools}/bin/vidni-app";
+          meta.description = "vidni's desktop app, with its pinned tools";
+        };
+      };
 
       # `nix flake check` builds the workspace and runs its tests.
       checks.${system}.default = vidni;

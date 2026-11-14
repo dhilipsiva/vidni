@@ -4,6 +4,8 @@ This takes you from nothing to a draft video you can watch, in about 15 minutes,
 
 vidni has no installer yet. For now you build it from its source, inside a shell that provides the exact tools it needs.
 
+**In a hurry, and you have Nix?** `nix run github:dhilipsiva/vidni -- <command>` is vidni with every tool it needs, built for you: `nix run github:dhilipsiva/vidni -- new my-video`, then `… -- voices fetch piper:en_US-joe-medium` and `… -- draft my-video`. `nix run github:dhilipsiva/vidni#app` is the desktop app. The steps below build vidni from its source, which is what you want for working on it.
+
 ## What you need
 
 - **Linux on x86_64.**
