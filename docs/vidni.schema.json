@@ -848,6 +848,15 @@
           ],
           "default": null
         },
+        "columns": {
+          "description": "terminal, code: how many characters wide the text is; a longer\nline goes on in the next row. Default: 80 for a terminal, and the\nlongest line's length for code, between 40 and 100.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
         "default_camera": {
           "description": "web: the camera of a line that names none. Default `viewport`.",
           "type": [
@@ -864,8 +873,36 @@
           }
         },
         "kind": {
-          "description": "`web`: a page captured at a fixed viewport and framed by the virtual\ncamera. `page`: an HTML file rendered at each cut's own size, for\ncards and overlays. `card`: a card drawn from one of the theme's\ntemplates. `image`: a picture in the project folder, PNG or SVG,\nframed by the virtual camera.",
+          "description": "`web`: a page captured at a fixed viewport and framed by the virtual\ncamera. `page`: an HTML file rendered at each cut's own size, for\ncards and overlays. `card`: a card drawn from one of the theme's\ntemplates. `image`: a picture in the project folder, PNG or SVG,\nframed by the virtual camera. `terminal`: a transcript of commands\nand what they printed, drawn as a terminal. `code`: an excerpt of\na source file, drawn with its syntax in colour.",
           "$ref": "#/$defs/SceneKind"
+        },
+        "language": {
+          "description": "code: the language its syntax is coloured as. Default: by the\nfile's name.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lines": {
+          "description": "terminal, code: the first and last line of the file to show,\ncounted from 1. Default: all of it.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "maxItems": 2,
+          "minItems": 2
+        },
+        "prompt": {
+          "description": "terminal: what a command's line starts with. Default `$ `.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "quote": {
           "description": "card: the words of a `quote` card.",
@@ -874,8 +911,22 @@
             "null"
           ]
         },
+        "repo": {
+          "description": "code: the git repository `rev` is in, from the project folder.\nDefault: the project folder's own.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rev": {
+          "description": "code: the git revision the file is read at, as a commit's hash.\nWithout it the file is read as it is in the project folder.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "scale": {
-          "description": "web: device pixels per CSS pixel. Default 1.",
+          "description": "web: device pixels per CSS pixel. Default 1. image, terminal,\ncode: how many times its own size the picture is drawn.",
           "type": [
             "integer",
             "null"
@@ -931,7 +982,7 @@
           ]
         },
         "title": {
-          "description": "card: its title (`title`, `section`, `bullets`, `end`).",
+          "description": "card: its title (`title`, `section`, `bullets`, `end`). terminal,\ncode: the words in the window's bar; default: the file's name.",
           "type": [
             "string",
             "null"
@@ -946,7 +997,7 @@
           "default": null
         },
         "url": {
-          "description": "web: the page's address. page: a file in the project folder;\n`{aspect}` becomes `16x9` or `9x16`. image: the picture's file.",
+          "description": "web: the page's address. page: a file in the project folder;\n`{aspect}` becomes `16x9` or `9x16`. image: the picture's file.\nterminal: the transcript's file. code: the source file, in the\nproject folder, or in `repo` at `rev`.",
           "type": "string"
         },
         "vertical_follows_highlights": {
@@ -986,7 +1037,9 @@
         "web",
         "page",
         "card",
-        "image"
+        "image",
+        "terminal",
+        "code"
       ]
     },
     "Section": {
@@ -1093,6 +1146,20 @@
           "format": "uint32",
           "default": null,
           "minimum": 0
+        },
+        "lines": {
+          "description": "On a terminal or code scene: the first and last line of the file\nthat the target is, counted from 1.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "maxItems": 2,
+          "minItems": 2
         },
         "merge": {
           "description": "Draw one box around all the matches.",

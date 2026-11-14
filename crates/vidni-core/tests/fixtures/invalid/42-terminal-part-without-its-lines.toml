@@ -1,0 +1,25 @@
+# expect: 21:7: a part of a terminal scene is lines = [first, last], counted from 1 in its file
+schema = 1
+
+[meta]
+title = "Pictures"
+default_scene = "diagram"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "A picture."
+
+
+[scenes.diagram]
+kind = "terminal"
+url = "diagram.svg"
+
+[scenes.diagram.targets]
+box = { rect = [0, 0, 10, 10] }
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

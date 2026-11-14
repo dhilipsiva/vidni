@@ -446,6 +446,62 @@ draft = { union = ["draft"] }
 
 [`examples/images`](../examples/images) has an SVG diagram and a PNG chart.
 
+### Terminals
+
+A terminal scene is a transcript, drawn as a terminal's window: what was typed and what was printed, read from a text file. Nothing is run.
+
+```toml
+[scenes.session]
+kind = "terminal"
+url = "session.txt"        # the transcript
+title = "nibli"            # in the window's bar; default: the file's name
+prompt = "~/nibli> "       # what a command's line starts with; default "$ "
+scale = 2                  # drawn at twice its size, to stay sharp under the camera
+columns = 84               # the width in characters; default 80
+
+[scenes.session.targets]
+question = { lines = [14, 14] }   # the file's lines, counted from 1
+answer = { lines = [14, 18] }
+
+[scenes.session.cameras]
+answer = { union = ["answer"] }
+```
+
+- **A line that starts with the prompt is a command,** drawn bright, with the prompt in green. Every other line is output.
+- **Colours are kept.** The escape codes a program prints for the eight colours, their bright forms and bold are drawn as colours. Every other escape code is left out.
+- **`lines = [first, last]`** on the scene shows only that part of the file. A line longer than `columns` goes on in the next row.
+- **A part of the session** is a target with `lines`, in the file's own numbering. A line's `highlight` marks its targets with a band, and cameras frame them, as on a web scene. A line takes no `do`.
+- **The window is drawn by vidni,** in DejaVu Sans Mono, one of the fonts it pins ([Fonts](#fonts)), so it is the same picture on every machine. It has the arrows, boxes and signs of logic that a program may print.
+- **The picture is a capture** like any other: one for each set of marked lines, taken by `vidni draft` with no browser, frozen when its cut is ratified, and taken again when the transcript changes.
+
+[`examples/terminal`](../examples/terminal) draws a session at nibli's prompt.
+
+### Code
+
+A code scene is an excerpt of a source file, with its syntax in colour and its lines numbered as the file numbers them.
+
+```toml
+[scenes.notes]
+kind = "code"
+url = "crates/vidni-core/src/notes.rs"   # the file's path in the repository
+repo = "../.."                           # the repository, from the project folder; default: the project's own
+rev = "897a8bb7265612ccac898c7c1c9eaac7853b2c2a"
+lines = [30, 66]                         # the excerpt, as the file numbers it
+scale = 2
+
+[scenes.notes.targets]
+heading = { lines = [30, 35] }
+```
+
+- **With `rev`, the file is read from git as it was at that commit** (`git show`), so the excerpt stays what it was however the file changes later. `rev` is a commit's hash, of 7 to 40 digits: a branch or a tag is refused, since it can move. The capture's record names the commit in full.
+- **Without `rev`,** `url` is a file of the project folder, shown as it is now and drawn again when it changes.
+- **The language** is told from the file's ending; `language = "rust"` names it. The colours are those of syntect's `base16-ocean.dark`.
+- **`columns`** is the width in characters; by default the longest line's, between 40 and 100.
+- **Targets, highlights and cameras** are as on a terminal scene.
+- **git is needed only to take the capture.** Once the cut is ratified, the picture is frozen with it.
+
+[`examples/code`](../examples/code) shows Rust from vidni's own history.
+
 ### Targets
 
 A target names the visible elements of a web page that match it. Highlights, cameras, actions and expectations refer to targets by name.

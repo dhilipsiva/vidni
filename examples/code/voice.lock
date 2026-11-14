@@ -1,0 +1,23 @@
+# Written by `vidni speak` and `vidni draft`: the seed each line's draft take was kept at.
+# Commit it, so that a redraft gives the same audio. To hear another take of
+# a line, give it another seed (docs/spec.md, The draft voice).
+
+[lines.code-1]
+key = "ebe5ed4a8ff28002"
+seed = 1821874212
+
+[lines.code-2]
+key = "122759f879a8e7bc"
+seed = 561320758
+
+[lines.code-3]
+key = "cd454e9684fd738e"
+seed = 291569071
+
+[lines.end-1]
+key = "d872a651da091d52"
+seed = 3898759
+
+[lines.open-1]
+key = "7d8b7cc07e39c7f2"
+seed = 658668305

@@ -20,14 +20,15 @@ vidni runs these as separate programs. None of them is part of the `vidni` binar
 | ONNX Runtime | 1.27.1 | MIT | runs Piper's voice models | https://github.com/microsoft/onnxruntime |
 | whisper.cpp | 1.9.5 | MIT | listens to takes for `vidni hear` | https://github.com/ggerganov/whisper.cpp |
 | curl | 8.22.0 | curl | downloads a voice for `vidni voices fetch` | https://curl.se/ |
+| git | 2.56.0 | GPL-2.0-only | reads a code scene's file at a commit | https://git-scm.com/ |
 
 ### The GPL programs, and their source
 
-ffmpeg, x264, Piper, eSpeak NG are under the GNU General Public License. The ffmpeg that vidni pins is built with `--enable-gpl` and libx264, which makes the whole of that ffmpeg GPL-3.0-or-later.
+ffmpeg, x264, Piper, eSpeak NG, git are under the GNU General Public License. The ffmpeg that vidni pins is built with `--enable-gpl` and libx264, which makes the whole of that ffmpeg GPL-3.0-or-later.
 
 - **Running them changes nothing for you.** vidni starts each as a program of its own, so their licence covers neither vidni nor your videos.
 - **Passing them on does.** Anyone who gives another person a copy of one of these programs, alone or inside a bundle with vidni, must give that person its complete corresponding source as well, or a written offer of it, under the same licence (GPL version 3, section 6).
-- **Where the source is.** Each program is built from the recipe in nixpkgs at revision `27eb89b729375903ba8e21c79a19e408e432531e`. `nix build --inputs-from . nixpkgs#<name>.src` fetches the exact source, with <name> one of: `ffmpeg-full`, `x264`, `piper-tts`, `espeak-ng`. The recipes and their patches are at <https://github.com/NixOS/nixpkgs/tree/27eb89b729375903ba8e21c79a19e408e432531e>, and vidni's one patch to Piper is [`nix/piper-seed.patch`](nix/piper-seed.patch).
+- **Where the source is.** Each program is built from the recipe in nixpkgs at revision `27eb89b729375903ba8e21c79a19e408e432531e`. `nix build --inputs-from . nixpkgs#<name>.src` fetches the exact source, with <name> one of: `ffmpeg-full`, `x264`, `piper-tts`, `espeak-ng`, `git`. The recipes and their patches are at <https://github.com/NixOS/nixpkgs/tree/27eb89b729375903ba8e21c79a19e408e432531e>, and vidni's one patch to Piper is [`nix/piper-seed.patch`](nix/piper-seed.patch).
 
 Chromium is under a BSD-style licence and includes many other projects; its own list is at `chrome://credits` in the browser.
 
@@ -48,12 +49,17 @@ Many of these packages are under the GPL or the LGPL (the C library, GCC's runti
 
 ## Fonts
 
-vidni draws text in these fonts, and their outlines end up in your video's frames. All are under the SIL Open Font License 1.1 (<https://openfontlicense.org>), which allows that, for any purpose, and asks that the font files themselves are passed on only with their licence and under their own names.
+vidni draws text in these fonts, and their outlines end up in your video's frames. Their licences allow that, for any purpose.
+
+- **OFL-1.1** is the SIL Open Font License 1.1 (<https://openfontlicense.org>). It asks that the font files themselves are passed on only with their licence and under their own names.
+- **Bitstream-Vera** is the licence of the Bitstream Vera fonts, which DejaVu is made from (<https://dejavu-fonts.github.io/License.html>). It asks the same of the font files, and that a changed font isn't called Bitstream or Vera. DejaVu's own changes are in the public domain.
 
 | Font | Version | Licence | Copyright | Source |
 |---|---|---|---|---|
 | IBM Plex Sans Bold | 1.1.0 | OFL-1.1 | Copyright 2018 IBM Corp. All rights reserved. | https://github.com/IBM/plex |
 | IBM Plex Mono Bold | 2.5.0 | OFL-1.1 | Copyright 2017 IBM Corp. All rights reserved. | https://github.com/IBM/plex |
+| DejaVu Sans Mono Book | 2.37 | Bitstream-Vera | Copyright (c) 2003 by Bitstream, Inc. All Rights Reserved. DejaVu changes are in public domain | https://dejavu-fonts.github.io |
+| DejaVu Sans Mono Bold | 2.37 | Bitstream-Vera | Copyright (c) 2003 by Bitstream, Inc. All Rights Reserved. DejaVu changes are in public domain | https://dejavu-fonts.github.io |
 | Space Grotesk Bold | 2.0.0 | OFL-1.1 | Copyright 2020 The Space Grotesk Project Authors (https://github.com/floriankarsten/space-grotesk) | https://github.com/floriankarsten/space-grotesk |
 
 ## Draft voices
@@ -75,7 +81,7 @@ A draft voice is a model trained on recordings of a person, and its licence is i
 
 ## Rust crates
 
-The `vidni` binaries are built from these 324 crates, each under the licence its authors chose (22 licence expressions in all). Each crate's own licence files are in its source, at the address given.
+The `vidni` binaries are built from these 342 crates, each under the licence its authors chose (24 licence expressions in all). Each crate's own licence files are in its source, at the address given.
 
 | Crate | Version | Licence | Source |
 |---|---|---|---|
@@ -112,7 +118,10 @@ The `vidni` binaries are built from these 324 crates, each under the licence its
 | atspi-common | 0.13.0 | Apache-2.0 OR MIT | https://github.com/odilia-app/atspi |
 | atspi-proxies | 0.13.0 | Apache-2.0 OR MIT | https://github.com/odilia-app/atspi |
 | base64 | 0.23.1 | MIT OR Apache-2.0 | https://github.com/marshallpierce/rust-base64 |
+| bincode | 1.3.3 | MIT | https://github.com/servo/bincode |
 | bit-set | 0.10.0 | Apache-2.0 OR MIT | https://github.com/contain-rs/bit-set |
+| bit-set | 0.8.0 | Apache-2.0 OR MIT | https://github.com/contain-rs/bit-set |
+| bit-vec | 0.8.0 | Apache-2.0 OR MIT | https://github.com/contain-rs/bit-vec |
 | bit-vec | 0.9.1 | Apache-2.0 OR MIT | https://github.com/contain-rs/bit-vec |
 | bitflags | 2.13.2 | MIT OR Apache-2.0 | https://github.com/bitflags/bitflags |
 | block-buffer | 0.12.1 | MIT OR Apache-2.0 | https://github.com/RustCrypto/utils |
@@ -146,6 +155,7 @@ The `vidni` binaries are built from these 324 crates, each under the licence its
 | cursor-icon | 1.2.0 | MIT OR Apache-2.0 OR Zlib | https://github.com/rust-windowing/cursor-icon |
 | dasp_sample | 0.11.0 | MIT OR Apache-2.0 | https://github.com/rustaudio/sample.git |
 | data-url | 0.3.2 | MIT OR Apache-2.0 | https://github.com/servo/rust-url |
+| deranged | 0.5.9 | MIT OR Apache-2.0 | https://github.com/jhpratt/deranged |
 | derive_more | 2.1.1 | MIT | https://github.com/JelteF/derive_more |
 | derive_more-impl | 2.1.1 | MIT | https://github.com/JelteF/derive_more |
 | digest | 0.11.3 | MIT OR Apache-2.0 | https://github.com/RustCrypto/traits |
@@ -172,6 +182,7 @@ The `vidni` binaries are built from these 324 crates, each under the licence its
 | euclid | 0.22.14 | MIT OR Apache-2.0 | https://github.com/servo/euclid |
 | event-listener | 5.4.2 | Apache-2.0 OR MIT | https://github.com/smol-rs/event-listener |
 | event-listener-strategy | 0.5.4 | Apache-2.0 OR MIT | https://github.com/smol-rs/event-listener-strategy |
+| fancy-regex | 0.16.2 | MIT | https://github.com/fancy-regex/fancy-regex |
 | fastrand | 2.5.0 | Apache-2.0 OR MIT | https://github.com/smol-rs/fastrand |
 | fax | 0.2.7 | MIT | https://github.com/pdf-rs/fax |
 | fdeflate | 0.3.7 | MIT OR Apache-2.0 | https://github.com/image-rs/fdeflate |
@@ -180,6 +191,7 @@ The `vidni` binaries are built from these 324 crates, each under the licence its
 | fixedbitset | 0.5.9 | MIT OR Apache-2.0 | https://github.com/petgraph/fixedbitset |
 | flate2 | 1.1.11 | MIT OR Apache-2.0 | https://github.com/rust-lang/flate2-rs |
 | float-cmp | 0.9.0 | MIT | https://github.com/mikedilger/float-cmp |
+| fnv | 1.0.7 | Apache-2.0 / MIT | https://github.com/servo/rust-fnv |
 | foldhash | 0.1.5 | Zlib | https://github.com/orlp/foldhash |
 | foldhash | 0.2.0 | Zlib | https://github.com/orlp/foldhash |
 | font-types | 0.11.3 | MIT OR Apache-2.0 | https://github.com/googlefonts/fontations |
@@ -222,6 +234,7 @@ The `vidni` binaries are built from these 324 crates, each under the licence its
 | libloading | 0.8.9 | ISC | https://github.com/nagisa/rust_libloading/ |
 | libm | 0.2.16 | MIT | https://github.com/rust-lang/compiler-builtins |
 | linebender_resource_handle | 0.1.1 | Apache-2.0 OR MIT | https://github.com/linebender/raw_resource_handle |
+| linked-hash-map | 0.5.6 | MIT/Apache-2.0 | https://github.com/contain-rs/linked-hash-map |
 | linux-raw-sys | 0.12.1 | Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT | https://github.com/sunfishcode/linux-raw-sys |
 | linux-raw-sys | 0.4.15 | Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT | https://github.com/sunfishcode/linux-raw-sys |
 | litrs | 1.0.1 | MIT OR Apache-2.0 | https://github.com/LukasKalbertodt/litrs |
@@ -238,6 +251,7 @@ The `vidni` binaries are built from these 324 crates, each under the licence its
 | nix | 0.31.3 | MIT | https://github.com/nix-rust/nix |
 | nohash-hasher | 0.2.0 | Apache-2.0 OR MIT | https://github.com/paritytech/nohash-hasher |
 | nom | 8.0.0 | MIT | https://github.com/rust-bakery/nom |
+| num-conv | 0.2.2 | MIT OR Apache-2.0 | https://github.com/jhpratt/num-conv |
 | num-traits | 0.2.19 | MIT OR Apache-2.0 | https://github.com/rust-num/num-traits |
 | once_cell | 1.21.4 | MIT OR Apache-2.0 | https://github.com/matklad/once_cell |
 | ordered-stream | 0.2.0 | MIT OR Apache-2.0 | https://github.com/danieldg/ordered-stream |
@@ -255,15 +269,18 @@ The `vidni` binaries are built from these 324 crates, each under the licence its
 | pico-args | 0.5.0 | MIT | https://github.com/RazrFalcon/pico-args |
 | pin-project-lite | 0.2.17 | Apache-2.0 OR MIT | https://github.com/taiki-e/pin-project-lite |
 | piper | 0.2.5 | MIT OR Apache-2.0 | https://github.com/smol-rs/piper |
+| plist | 1.10.3 | MIT | https://github.com/ebarnard/rust-plist/ |
 | png | 0.18.1 | MIT OR Apache-2.0 | https://github.com/image-rs/image-png |
 | polling | 3.11.0 | Apache-2.0 OR MIT | https://github.com/smol-rs/polling |
 | polycool | 0.4.0 | MIT OR Apache-2.0 | https://github.com/linebender/kurbo |
+| powerfmt | 0.2.1 | MIT OR Apache-2.0 | https://github.com/jhpratt/powerfmt |
 | proc-macro-crate | 3.5.0 | MIT OR Apache-2.0 | https://github.com/bkchr/proc-macro-crate |
 | proc-macro2 | 1.0.107 | MIT OR Apache-2.0 | https://github.com/dtolnay/proc-macro2 |
 | profiling | 1.0.18 | MIT OR Apache-2.0 | https://github.com/aclysma/profiling |
 | pxfm | 0.1.30 | BSD-3-Clause OR Apache-2.0 | https://github.com/awxkee/pxfm |
 | quick-error | 2.0.1 | MIT/Apache-2.0 | http://github.com/tailhook/quick-error |
 | quick-xml | 0.41.0 | MIT | https://github.com/tafia/quick-xml |
+| quick-xml | 0.42.0 | MIT | https://github.com/tafia/quick-xml |
 | quote | 1.0.47 | MIT OR Apache-2.0 | https://github.com/dtolnay/quote |
 | rand_core | 0.10.1 | MIT OR Apache-2.0 | https://github.com/rust-random/rand_core |
 | rangemap | 1.8.0 | MIT/Apache-2.0 | https://github.com/jeffparsons/rangemap |
@@ -285,6 +302,7 @@ The `vidni` binaries are built from these 324 crates, each under the licence its
 | rustix | 0.38.44 | Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT | https://github.com/bytecodealliance/rustix |
 | rustix | 1.1.6 | Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT | https://github.com/bytecodealliance/rustix |
 | ruzstd | 0.8.3 | MIT | https://github.com/KillingSpark/zstd-rs |
+| same-file | 1.0.6 | Unlicense/MIT | https://github.com/BurntSushi/same-file |
 | schemars | 1.2.3 | MIT | https://github.com/GREsau/schemars |
 | schemars_derive | 1.2.3 | MIT | https://github.com/GREsau/schemars |
 | scoped-tls | 1.0.1 | MIT/Apache-2.0 | https://github.com/alexcrichton/scoped-tls |
@@ -319,6 +337,7 @@ The `vidni` binaries are built from these 324 crates, each under the licence its
 | swash | 0.2.10 | Apache-2.0 OR MIT | https://github.com/dfrg/swash |
 | syn | 2.0.119 | MIT OR Apache-2.0 | https://github.com/dtolnay/syn |
 | syn | 3.0.10 | MIT OR Apache-2.0 | https://github.com/dtolnay/syn |
+| syntect | 5.3.0 | MIT | https://github.com/trishume/syntect |
 | sys-locale | 0.3.2 | MIT OR Apache-2.0 | https://github.com/1Password/sys-locale |
 | tar | 0.4.46 | MIT OR Apache-2.0 | https://github.com/composefs/tar-rs |
 | tempfile | 3.27.0 | MIT OR Apache-2.0 | https://github.com/Stebalien/tempfile |
@@ -327,6 +346,9 @@ The `vidni` binaries are built from these 324 crates, each under the licence its
 | thiserror-impl | 1.0.69 | MIT OR Apache-2.0 | https://github.com/dtolnay/thiserror |
 | thiserror-impl | 2.0.21 | MIT OR Apache-2.0 | https://github.com/dtolnay/thiserror |
 | tiff | 0.11.3 | MIT | https://github.com/image-rs/image-tiff |
+| time | 0.3.55 | MIT OR Apache-2.0 | https://github.com/time-rs/time |
+| time-core | 0.1.9 | MIT OR Apache-2.0 | https://github.com/time-rs/time |
+| time-macros | 0.2.32 | MIT OR Apache-2.0 | https://github.com/time-rs/time |
 | tiny-skia | 0.12.0 | BSD-3-Clause | https://github.com/linebender/tiny-skia |
 | tiny-skia-path | 0.12.0 | BSD-3-Clause | https://github.com/linebender/tiny-skia/tree/master/path |
 | tinyvec | 1.13.3 | Zlib OR Apache-2.0 OR MIT | https://github.com/Lokathor/tinyvec |
@@ -357,6 +379,7 @@ The `vidni` binaries are built from these 324 crates, each under the licence its
 | uuid | 1.29.2 | Apache-2.0 OR MIT | https://github.com/uuid-rs/uuid |
 | vello_common | 0.2.0 | Apache-2.0 OR MIT | https://github.com/linebender/vello |
 | vello_cpu | 0.2.0 | Apache-2.0 OR MIT | https://github.com/linebender/vello |
+| walkdir | 2.5.0 | Unlicense/MIT | https://github.com/BurntSushi/walkdir |
 | wayland-backend | 0.3.17 | MIT | https://github.com/smithay/wayland-rs |
 | wayland-client | 0.31.15 | MIT | https://github.com/smithay/wayland-rs |
 | wayland-csd-frame | 0.3.0 | MIT | https://github.com/rust-windowing/wayland-csd-frame |
@@ -385,6 +408,7 @@ The `vidni` binaries are built from these 324 crates, each under the licence its
 | xkbcommon-dl | 0.4.2 | MIT | https://github.com/rust-windowing/xkbcommon-dl |
 | xkeysym | 0.2.1 | MIT OR Apache-2.0 OR Zlib | https://github.com/notgull/xkeysym |
 | xmlwriter | 0.1.0 | MIT | https://github.com/RazrFalcon/xmlwriter |
+| yaml-rust | 0.4.5 | MIT/Apache-2.0 | https://github.com/chyh1990/yaml-rust |
 | yazi | 0.2.2 | Apache-2.0 OR MIT | https://github.com/dfrg/yazi |
 | zbus | 5.19.0 | MIT | https://github.com/z-galaxy/zbus/ |
 | zbus-lockstep | 0.5.2 | MIT | https://github.com/luukvanderduim/zbus-lockstep |

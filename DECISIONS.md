@@ -464,3 +464,13 @@ Added as the items are built.
 - **The workflow drafts; a person publishes (R4).** It runs on a `v<version>` tag, checks that the tag is the version in `Cargo.toml`, and leaves a draft release with the changelog's section as its text.
 - **The first release is 0.1.0, with everything built so far.** The TODO's "v0.1" and "v0.2" were lines of work; neither was released by itself.
 - **What a version promises** is in `docs/releasing.md`: the project file, the commands and the files vidni reads back. The bytes of a video are promised within a version, not across versions, since a version may move a pin.
+
+### T31. Terminal and code scenes are text that vidni draws
+- **2026-11-14, P5-VIDNI-02 and P5-VIDNI-03.** Both are a window of monospaced text, drawn by vidni's own text code into a still, with the boxes of its lines as its frames. From there they are an image scene: the virtual camera, ratification and staleness work as they do for any capture, and no browser is started.
+  - **A capture for each set of marked lines.** A line's highlights are drawn into the still, as a web scene's are, so two lines that mark other things have two stills.
+- **A transcript is recorded text.** The item allows "recorded text, or a pinned command run in a sandbox". Running a command would make the picture depend on a program that vidni doesn't pin, and on the sandbox that runs it; a transcript depends on a file. A creator records the session once, with `script` or by copying it, and the file is the source.
+- **Code at a revision is read with `git show`.** git's answer for a blob doesn't depend on git's version, so git isn't pinned; it is on the path in the flake, and the system's own in the portable bundle. A revision is a commit's hash and nothing that can move.
+- **Syntax colours come from syntect,** with its bundled grammars and one of its bundled themes. The file is coloured from its top, so that an excerpt inside a comment or a string is coloured as one.
+- **DejaVu Sans Mono is pinned for them** (Book and Bold). IBM Plex Mono lacks the signs a prover's session prints (⊢, ↦, ∀, ▣), and a missing glyph would be a box. Pinning a font is a change to what a video may be drawn with, so it is recorded here: DejaVu's licence is Bitstream Vera's, which the notices now state beside the Open Font License.
+- **The window's colours are fixed,** not the theme's. A capture doesn't depend on the theme today (a web page's doesn't either), and a still that changed with the theme would regress every ratified cut that shows it when the theme is edited.
+- **The terminal example's session is nibli's README's,** copied as printed there at a named commit, and its narration says only what the transcript shows.

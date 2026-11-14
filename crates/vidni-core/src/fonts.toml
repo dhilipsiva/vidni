@@ -27,6 +27,30 @@ sha256 = "27a69e26eb871f52431f45fef5e938acd45e752d9132faaf38aa4a045168b3b6"
 licence = "OFL-1.1"
 source = "https://github.com/IBM/plex"
 
+# A monospaced face with the symbols a terminal prints (arrows, boxes,
+# the signs of logic), for terminal and code scenes.
+[[font]]
+id = "dejavu-sans-mono"
+family = "DejaVu Sans Mono"
+style = "Book"
+version = "2.37"
+file = "DejaVuSansMono.ttf"
+size = 343096
+sha256 = "9d9bfebceb1c3f6f4ad383ded568a6926086208f43f7f92f92f7e93a1383fa38"
+licence = "Bitstream-Vera"
+source = "https://dejavu-fonts.github.io"
+
+[[font]]
+id = "dejavu-sans-mono-bold"
+family = "DejaVu Sans Mono"
+style = "Bold"
+version = "2.37"
+file = "DejaVuSansMono-Bold.ttf"
+size = 334224
+sha256 = "b15cfba08019d57dddc0e4c61ba21d7907245411ba17525d3d2405c0b858798a"
+licence = "Bitstream-Vera"
+source = "https://dejavu-fonts.github.io"
+
 [[font]]
 id = "space-grotesk-bold"
 family = "Space Grotesk"

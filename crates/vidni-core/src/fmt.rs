@@ -118,6 +118,12 @@ pub(crate) const SCENE: &[&str] = &[
     "by",
     "viewport",
     "scale",
+    "prompt",
+    "repo",
+    "rev",
+    "language",
+    "lines",
+    "columns",
     "color_scheme",
     "default_camera",
     "vertical_follows_highlights",
@@ -129,8 +135,8 @@ pub(crate) const SCENE: &[&str] = &[
 ];
 const PAGE_SIZE: &[&str] = &["landscape", "portrait"];
 const TARGET: &[&str] = &[
-    "css", "rect", "any", "text_of", "text", "exclude", "attr", "pick", "merge", "line", "grow",
-    "unique",
+    "css", "rect", "lines", "any", "text_of", "text", "exclude", "attr", "pick", "merge", "line",
+    "grow", "unique",
 ];
 const TEXT_RULE: &[&str] = &["starts_with", "contains", "matches"];
 const ATTR: &[&str] = &["name", "matches"];

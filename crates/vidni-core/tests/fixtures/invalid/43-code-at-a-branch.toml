@@ -1,0 +1,23 @@
+# expect: 19:7: rev is a commit's hash, 7 to 40 hexadecimal digits: a branch or a tag can move
+schema = 1
+
+[meta]
+title = "Pictures"
+default_scene = "diagram"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "A picture."
+
+
+[scenes.diagram]
+kind = "code"
+url = "src/main.rs"
+rev = "main"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

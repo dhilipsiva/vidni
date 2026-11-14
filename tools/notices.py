@@ -32,6 +32,7 @@ TOOLS = [
     ("onnxruntime", "ONNX Runtime", "runs Piper's voice models"),
     ("whisper-cpp", "whisper.cpp", "listens to takes for `vidni hear`"),
     ("curl", "curl", "downloads a voice for `vidni voices fetch`"),
+    ("git", "git", "reads a code scene's file at a commit"),
 ]
 
 # The listening model, as flake.nix fetches it.
@@ -193,7 +194,10 @@ Many of these packages are under the GPL or the LGPL (the C library, GCC's runti
 
     parts.append("""## Fonts
 
-vidni draws text in these fonts, and their outlines end up in your video's frames. All are under the SIL Open Font License 1.1 (<https://openfontlicense.org>), which allows that, for any purpose, and asks that the font files themselves are passed on only with their licence and under their own names.
+vidni draws text in these fonts, and their outlines end up in your video's frames. Their licences allow that, for any purpose.
+
+- **OFL-1.1** is the SIL Open Font License 1.1 (<https://openfontlicense.org>). It asks that the font files themselves are passed on only with their licence and under their own names.
+- **Bitstream-Vera** is the licence of the Bitstream Vera fonts, which DejaVu is made from (<https://dejavu-fonts.github.io/License.html>). It asks the same of the font files, and that a changed font isn't called Bitstream or Vera. DejaVu's own changes are in the public domain.
 
 """ + table(
         ["Font", "Version", "Licence", "Copyright", "Source"],

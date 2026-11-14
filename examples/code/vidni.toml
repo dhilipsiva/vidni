@@ -1,0 +1,90 @@
+#:schema ../../docs/vidni.schema.json
+# A code scene: an excerpt of a source file as it was at a commit, with
+# its syntax in colour. The file is read from git, so the excerpt stays
+# what it was however the file changes later.
+
+schema = 1
+
+[meta]
+title = "Code at a commit"
+subtitle = "an example"
+language = "en"
+default_scene = "notes"
+
+[voice]
+draft = "piper:en_US-joe-medium"
+respell = [{ text = "vidni", say = "vid nee" }]
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[[cuts]]
+id = "vertical"
+aspect = "9:16"
+
+[sections.main]
+label = "code"
+
+[[lines]]
+id = "open-1"
+section = "main"
+show = "A scene can be a piece of code."
+scene = "open"
+
+[[lines]]
+id = "code-1"
+section = "main"
+show = "This is Rust from vidni itself, as it was at one commit."
+
+[[lines]]
+id = "code-2"
+section = "main"
+show = "A heading in the notes file names a line of the script."
+highlight = ["heading"]
+camera = "heading"
+
+[[lines]]
+id = "code-3"
+section = "main"
+show = "And this function collects each line's note, in the file's order."
+highlight = ["all"]
+camera = "all"
+
+[[lines]]
+id = "end-1"
+section = "main"
+show = "The file may change. The excerpt can't."
+scene = "end"
+
+[scenes.open]
+kind = "card"
+template = "title"
+title = "Code at a commit"
+subtitle = "a code scene"
+
+[scenes.notes]
+kind = "code"
+# The file's path in the repository, and the commit to read it at. The
+# repository is vidni's own, two folders up from this project.
+url = "crates/vidni-core/src/notes.rs"
+scale = 2
+repo = "../.."
+rev = "897a8bb7265612ccac898c7c1c9eaac7853b2c2a"
+# The lines to show, as the file numbers them.
+lines = [30, 66]
+
+# A part of the code is some of the file's lines.
+[scenes.notes.targets]
+heading = { lines = [30, 35] }
+all = { lines = [50, 66] }
+
+[scenes.notes.cameras]
+heading = { union = ["heading"] }
+all = { union = ["all"] }
+
+[scenes.end]
+kind = "card"
+template = "end"
+title = "That is all"
+subtitle = "examples/code"

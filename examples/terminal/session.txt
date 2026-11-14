@@ -1,0 +1,21 @@
+~/nibli> big(some dog).
+[Skolem] 3 variable(s) → _ev0 ↦ sk_2, _ev1 ↦ sk_1, _v0 ↦ sk_0
+[Fact #0] Asserted.
+
+~/nibli> animal(every dog).
+[Skolem] 2 variable(s) → _ev0 ↦ sk_4(∀-dependent), _ev1 ↦ sk_3(∀-dependent)
+[Rule] Compiled ∀_v0 to backward-chaining rule
+[Fact #1] Asserted.
+
+~/nibli> dog(Adam).
+[Skolem] 1 variable(s) → _ev0 ↦ sk_7
+[Fact #2] Asserted.
+
+~/nibli> ? animal(Adam).
+[Query] TRUE
+[Why] Because adam is a dog, adam is an animal.
+  ⊢ adam is an animal  [by recorded source #1/0: animal(every dog).] -> TRUE
+    ▣ adam is a dog  [given] -> TRUE
+
+~/nibli> ?? dog($x).
+[Find] _ev0 = sk_7 [generated-witness], $x = adam [knowledge-base]

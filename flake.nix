@@ -80,7 +80,7 @@
       # The folders that hold the fonts vidni draws with, each pinned by
       # SHA-256 in crates/vidni-core/src/fonts.toml. vidni looks for them in
       # $VIDNI_FONTS and nowhere else (P3-VIDNI-06).
-      fontDirs = "${pkgs.ibm-plex}/share/fonts:${spaceGrotesk}/share/fonts";
+      fontDirs = "${pkgs.ibm-plex}/share/fonts:${spaceGrotesk}/share/fonts:${pkgs.dejavu_fonts}/share/fonts";
 
       rustTools = [
         pkgs.rustc
@@ -92,6 +92,8 @@
         pkgs.fontconfig
         # unshare, for --offline, and taskset, for `vidni repro`.
         pkgs.util-linux
+        # A code scene with `rev` reads its file with git.
+        pkgs.gitMinimal
       ];
 
       # Piper 1.8 draws its sampling noise inside the voice's ONNX graph, from
@@ -166,7 +168,11 @@
         nativeBuildInputs = [ pkgs.pkg-config ];
         buildInputs = soundLibs;
         # The parity harness's frame tests and the build's tests drive ffmpeg.
-        nativeCheckInputs = [ pkgs.ffmpeg-headless ];
+        # A code scene's test reads a file at a commit with git.
+        nativeCheckInputs = [
+          pkgs.ffmpeg-headless
+          pkgs.gitMinimal
+        ];
         VIDNI_FONTS = fontDirs;
         # The licences and the third-party notices go wherever vidni goes
         # (P8-VIDNI-04).
@@ -193,6 +199,7 @@
                   ++ [
                     pkgs.util-linux
                     pkgs.xdg-utils
+                    pkgs.gitMinimal
                   ]
                 )
               } \

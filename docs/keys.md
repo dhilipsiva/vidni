@@ -147,22 +147,28 @@ What the lines show, by ID.
 
 | Key | Value | Required | Meaning |
 |---|---|---|---|
-| `kind` | `"web"` or `"page"` or `"card"` or `"image"` | yes | `web`: a page captured at a fixed viewport and framed by the virtual camera. `page`: an HTML file rendered at each cut's own size, for cards and overlays. `card`: a card drawn from one of the theme's templates. `image`: a picture in the project folder, PNG or SVG, framed by the virtual camera. |
+| `kind` | `"web"` or `"page"` or `"card"` or `"image"` or `"terminal"` or `"code"` | yes | `web`: a page captured at a fixed viewport and framed by the virtual camera. `page`: an HTML file rendered at each cut's own size, for cards and overlays. `card`: a card drawn from one of the theme's templates. `image`: a picture in the project folder, PNG or SVG, framed by the virtual camera. `terminal`: a transcript of commands and what they printed, drawn as a terminal. `code`: an excerpt of a source file, drawn with its syntax in colour. |
 | `by` | string |  | card: whose words a `quote` card's are. |
 | `cameras` | table of [Camera](#camera), by name |  | web: named framings. `viewport` and `highlights` are always defined. |
 | `color_scheme` | `"light"` or `"dark"` |  | web: the colour scheme the page is asked for. |
+| `columns` | whole number |  | terminal, code: how many characters wide the text is; a longer line goes on in the next row. Default: 80 for a terminal, and the longest line's length for code, between 40 and 100. |
 | `default_camera` | string |  | web: the camera of a line that names none. Default `viewport`. |
 | `items` | array of string |  | card: the points of a `bullets` card. |
+| `language` | string |  | code: the language its syntax is coloured as. Default: by the file's name. |
+| `lines` | array of whole number |  | terminal, code: the first and last line of the file to show, counted from 1. Default: all of it. |
+| `prompt` | string |  | terminal: what a command's line starts with. Default `$ `. |
 | `quote` | string |  | card: the words of a `quote` card. |
-| `scale` | whole number |  | web: device pixels per CSS pixel. Default 1. |
+| `repo` | string |  | code: the git repository `rev` is in, from the project folder. Default: the project folder's own. |
+| `rev` | string |  | code: the git revision the file is read at, as a commit's hash. Without it the file is read as it is in the project folder. |
+| `scale` | whole number |  | web: device pixels per CSS pixel. Default 1. image, terminal, code: how many times its own size the picture is drawn. |
 | `setup` | array of [Action](#action) |  | web: actions run once, after the page loads. |
 | `size` | [PageSize](#pagesize) |  | page: the rendered size for each orientation. Default: the cut's size. |
 | `subtitle` | string |  | card: a second, smaller line (`title`, `section`, `end`). |
 | `targets` | table of [Target](#target), by name |  | web: named parts of the page, for highlights, cameras, actions and expectations. |
 | `template` | `"title"` or `"section"` or `"bullets"` or `"quote"` or `"end"` |  | card: the template it is drawn from. |
-| `title` | string |  | card: its title (`title`, `section`, `bullets`, `end`). |
+| `title` | string |  | card: its title (`title`, `section`, `bullets`, `end`). terminal, code: the words in the window's bar; default: the file's name. |
 | `transparent` | boolean |  | page: rendered on a transparent background, as an overlay. |
-| `url` | string |  | web: the page's address. page: a file in the project folder; `{aspect}` becomes `16x9` or `9x16`. image: the picture's file. |
+| `url` | string |  | web: the page's address. page: a file in the project folder; `{aspect}` becomes `16x9` or `9x16`. image: the picture's file. terminal: the transcript's file. code: the source file, in the project folder, or in `repo` at `rev`. |
 | `vertical_follows_highlights` | number |  | web: in vertical cuts, a line whose highlights are at most this many CSS pixels wide is framed on its highlights. |
 | `viewport` | array of whole number |  | web: the viewport in CSS pixels. Default `[1280, 720]`. |
 
@@ -282,6 +288,7 @@ A named part of a web page: the visible elements that match.
 | `exclude` | string or [TextRule](#textrule) |  | Drop the elements whose text matches. |
 | `grow` | [Grow](#grow) |  | Grow each match to its largest enclosing block that still ends with the same text. |
 | `line` | whole number |  | One line of the element's text, counted from 0. |
+| `lines` | array of whole number |  | On a terminal or code scene: the first and last line of the file that the target is, counted from 1. |
 | `merge` | boolean |  | Draw one box around all the matches. |
 | `pick` | `"all"` or `"first"` or `"last"` |  | Which matches to keep. Default `all`. |
 | `rect` | array of number |  | On an image scene: a part of the picture, as `[x, y, width, height]` in its own pixels (an SVG's, in its own units). |

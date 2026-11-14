@@ -5,6 +5,7 @@
 pub mod card;
 pub mod cut;
 pub mod image;
+pub mod panel;
 pub mod pillow;
 pub mod text;
 

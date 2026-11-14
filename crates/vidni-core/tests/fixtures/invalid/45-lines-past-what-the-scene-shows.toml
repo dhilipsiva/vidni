@@ -1,0 +1,26 @@
+# expect: 22:8: lines 4 to 9 aren't all among the lines the scene shows
+schema = 1
+
+[meta]
+title = "Pictures"
+default_scene = "diagram"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "A picture."
+
+
+[scenes.diagram]
+kind = "terminal"
+url = "diagram.svg"
+lines = [2, 5]
+
+[scenes.diagram.targets]
+late = { lines = [4, 9] }
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

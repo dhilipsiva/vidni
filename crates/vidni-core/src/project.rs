@@ -366,6 +366,11 @@ impl Project {
 }
 
 impl Scene {
+    /// Whether the scene is text that vidni draws: a terminal or code.
+    pub fn is_text(&self) -> bool {
+        matches!(self.kind, SceneKind::Terminal | SceneKind::Code)
+    }
+
     /// Whether the scene's address is on the web, rather than a file in
     /// the project folder.
     pub fn on_the_web(&self) -> bool {
@@ -376,7 +381,9 @@ impl Scene {
     /// without its query and fragment, and with `{aspect}` as written.
     /// None for an address on the web.
     pub fn file(&self) -> Option<&str> {
-        match self.on_the_web() || self.kind == SceneKind::Card {
+        // A file read at a revision is the repository's, not the folder's.
+        let elsewhere = self.kind == SceneKind::Code && self.rev.is_some();
+        match self.on_the_web() || self.kind == SceneKind::Card || elsewhere {
             true => None,
             false => self.url.split(['?', '#']).next(),
         }
@@ -405,16 +412,21 @@ pub struct Scene {
     /// camera. `page`: an HTML file rendered at each cut's own size, for
     /// cards and overlays. `card`: a card drawn from one of the theme's
     /// templates. `image`: a picture in the project folder, PNG or SVG,
-    /// framed by the virtual camera.
+    /// framed by the virtual camera. `terminal`: a transcript of commands
+    /// and what they printed, drawn as a terminal. `code`: an excerpt of
+    /// a source file, drawn with its syntax in colour.
     pub kind: SceneKind,
     /// web: the page's address. page: a file in the project folder;
     /// `{aspect}` becomes `16x9` or `9x16`. image: the picture's file.
+    /// terminal: the transcript's file. code: the source file, in the
+    /// project folder, or in `repo` at `rev`.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub url: String,
     /// card: the template it is drawn from.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub template: Option<Template>,
-    /// card: its title (`title`, `section`, `bullets`, `end`).
+    /// card: its title (`title`, `section`, `bullets`, `end`). terminal,
+    /// code: the words in the window's bar; default: the file's name.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     /// card: a second, smaller line (`title`, `section`, `end`).
@@ -432,9 +444,34 @@ pub struct Scene {
     /// web: the viewport in CSS pixels. Default `[1280, 720]`.
     #[serde(default)]
     pub viewport: Option<[u32; 2]>,
-    /// web: device pixels per CSS pixel. Default 1.
+    /// web: device pixels per CSS pixel. Default 1. image, terminal,
+    /// code: how many times its own size the picture is drawn.
     #[serde(default)]
     pub scale: Option<u32>,
+    /// terminal: what a command's line starts with. Default `$ `.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prompt: Option<String>,
+    /// code: the git revision the file is read at, as a commit's hash.
+    /// Without it the file is read as it is in the project folder.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rev: Option<String>,
+    /// code: the git repository `rev` is in, from the project folder.
+    /// Default: the project folder's own.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repo: Option<String>,
+    /// code: the language its syntax is coloured as. Default: by the
+    /// file's name.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub language: Option<String>,
+    /// terminal, code: the first and last line of the file to show,
+    /// counted from 1. Default: all of it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lines: Option<[u32; 2]>,
+    /// terminal, code: how many characters wide the text is; a longer
+    /// line goes on in the next row. Default: 80 for a terminal, and the
+    /// longest line's length for code, between 40 and 100.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub columns: Option<u32>,
     /// web: the colour scheme the page is asked for.
     #[serde(default)]
     pub color_scheme: Option<ColorScheme>,
@@ -471,6 +508,8 @@ pub enum SceneKind {
     Page,
     Card,
     Image,
+    Terminal,
+    Code,
 }
 
 /// The templates a card scene is drawn from.
@@ -546,6 +585,10 @@ pub struct Target {
     /// height]` in its own pixels (an SVG's, in its own units).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rect: Option<[f64; 4]>,
+    /// On a terminal or code scene: the first and last line of the file
+    /// that the target is, counted from 1.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lines: Option<[u32; 2]>,
 }
 
 /// Which of a target's matches to keep.

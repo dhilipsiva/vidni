@@ -186,6 +186,13 @@ pub fn line_keys(project: &Project) -> BTreeMap<String, String> {
             keys.insert(line.id.clone(), hash(&json!({ "image": web_spec(scene) })));
             continue;
         }
+        // Text that vidni draws is a capture for each set of highlights:
+        // the text itself, with those lines marked.
+        if scene.is_text() {
+            let key = hash(&json!({ "text": web_spec(scene), "highlight": line.highlight }));
+            keys.insert(line.id.clone(), key);
+            continue;
+        }
         if scene.kind != SceneKind::Web {
             continue;
         }

@@ -1,0 +1,23 @@
+# expect: 19:10: prompt is for terminal scenes, and "diagram" is a code scene
+schema = 1
+
+[meta]
+title = "Pictures"
+default_scene = "diagram"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "A picture."
+
+
+[scenes.diagram]
+kind = "code"
+url = "diagram.svg"
+prompt = "> "
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

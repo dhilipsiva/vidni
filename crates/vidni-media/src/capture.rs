@@ -287,7 +287,8 @@ pub fn capture_with(
             continue;
         }
         // A picture is read, not browsed: one capture for all its lines.
-        if scene.kind == SceneKind::Image {
+        // Text is drawn, not browsed: one for each set of lines marked.
+        if scene.kind == SceneKind::Image || scene.is_text() {
             let mut done: Vec<&str> = Vec::new();
             for line in project
                 .lines
@@ -300,7 +301,11 @@ pub fn capture_with(
                 if done.contains(&capture.key.as_str()) {
                     continue;
                 }
-                picture(dir, scene, &capture.key).map_err(|e| format!("scene {id}: {e}"))?;
+                let taking = match scene.is_text() {
+                    true => text(dir, scene, &line.highlight, &capture.key),
+                    false => picture(dir, scene, &capture.key),
+                };
+                taking.map_err(|e| format!("scene {id}: {e}"))?;
                 done.push(&capture.key);
                 taken.push((*capture).clone());
             }
@@ -432,6 +437,23 @@ fn picture(dir: &Path, scene: &Scene, key: &str) -> Result<(), String> {
         keys::files_json(&files).as_bytes(),
     )?;
     write(&keys::path(dir, key), &png)
+}
+
+/// Takes a terminal or code scene's capture: the window of text as a
+/// PNG, with `highlight`'s lines marked; the boxes of its targets as its
+/// frames; and the record of the file it was read from.
+fn text(dir: &Path, scene: &Scene, highlight: &[String], key: &str) -> Result<(), String> {
+    let still = crate::textscene::still(dir, scene, highlight)?;
+    let json = serde_json::to_string_pretty(&still.frames).map_err(|e| e.to_string())?;
+    write(&frames_path(dir, key), (json + "\n").as_bytes())?;
+    write(
+        &keys::files_path(dir, key),
+        keys::files_json(&still.files).as_bytes(),
+    )?;
+    // The picture goes in last: it is what marks the capture taken.
+    let aside = keys::path(dir, key).with_extension("png.part");
+    still.image.save_png(&aside)?;
+    fs::rename(&aside, keys::path(dir, key)).map_err(|e| format!("{}: {e}", aside.display()))
 }
 
 fn write(path: &Path, bytes: &[u8]) -> Result<(), String> {

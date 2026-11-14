@@ -15,6 +15,7 @@ pub mod preview;
 pub mod qa;
 pub mod review;
 pub mod sheet;
+pub mod textscene;
 pub mod tts;
 pub mod voice;
 

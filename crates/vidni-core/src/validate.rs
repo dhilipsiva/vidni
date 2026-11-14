@@ -581,6 +581,27 @@ impl Rules {
                     );
                 }
             }
+            SceneKind::Terminal | SceneKind::Code => {
+                if !line.actions.is_empty() {
+                    self.add(
+                        at("do"),
+                        format!("do needs a web scene, and {id:?} is text that vidni draws"),
+                    );
+                }
+                for (j, target) in line.highlight.iter().enumerate() {
+                    if !scene.targets.contains_key(target) {
+                        self.unknown_target(path!["lines", i, "highlight", j], target, id, scene);
+                    }
+                }
+                for (key, camera) in [
+                    ("camera", &line.camera),
+                    ("camera_vertical", &line.camera_vertical),
+                ] {
+                    if let Some(camera) = camera {
+                        self.camera_ref(at(key), camera, id, scene);
+                    }
+                }
+            }
             SceneKind::Web => {
                 for (j, action) in line.actions.iter().enumerate() {
                     self.action(path!["lines", i, "do", j], action, id, scene);
@@ -694,6 +715,29 @@ impl Rules {
             ("quote", s.quote.is_some()),
             ("by", s.by.is_some()),
         ];
+        // A window of text has a title too.
+        let card_only: Vec<(&str, bool)> = card_only
+            .into_iter()
+            .filter(|(key, _)| !(s.is_text() && *key == "title"))
+            .collect();
+        let text_only = [
+            ("prompt", s.prompt.is_some()),
+            ("repo", s.repo.is_some()),
+            ("rev", s.rev.is_some()),
+            ("language", s.language.is_some()),
+            ("lines", s.lines.is_some()),
+            ("columns", s.columns.is_some()),
+        ];
+        if !s.is_text() {
+            for (key, set) in text_only {
+                if set {
+                    self.add(
+                        at(key),
+                        format!("{key} is for terminal and code scenes, and {id:?} isn't one"),
+                    );
+                }
+            }
+        }
         if s.kind != SceneKind::Card {
             for (key, set) in card_only {
                 if set {
@@ -798,6 +842,127 @@ impl Rules {
             }
             SceneKind::Card => self.card(id, s, &web_only, &page_only),
             SceneKind::Image => self.image(id, s, dir, &page_only),
+            SceneKind::Terminal | SceneKind::Code => self.text(id, s, dir, &page_only),
+        }
+    }
+
+    /// A terminal or code scene: a text file, with lines of it named as
+    /// its parts.
+    fn text(&mut self, id: &str, s: &Scene, dir: Option<&Path>, page_only: &[(&str, bool)]) {
+        let at = |key: &str| path!["scenes", id, key];
+        let code = s.kind == SceneKind::Code;
+        let kind = if code { "code" } else { "terminal" };
+        let not_for_text = [
+            ("viewport", s.viewport.is_some()),
+            ("color_scheme", s.color_scheme.is_some()),
+            ("setup", !s.setup.is_empty()),
+            (
+                "vertical_follows_highlights",
+                s.vertical_follows_highlights.is_some(),
+            ),
+        ];
+        for (key, set) in not_for_text.iter().chain(page_only) {
+            if *set {
+                self.add(at(key), format!("{key} isn't for {kind} scenes"));
+            }
+        }
+        let for_one = [
+            ("prompt", s.prompt.is_some(), false),
+            ("repo", s.repo.is_some(), true),
+            ("rev", s.rev.is_some(), true),
+            ("language", s.language.is_some(), true),
+        ];
+        for (key, set, for_code) in for_one {
+            if set && for_code != code {
+                let other = if for_code { "code" } else { "terminal" };
+                self.add(
+                    at(key),
+                    format!("{key} is for {other} scenes, and {id:?} is a {kind} scene"),
+                );
+            }
+        }
+        if s.prompt.as_deref() == Some("") {
+            self.add(at("prompt"), "prompt is empty");
+        }
+        let file = s.url.split(['?', '#']).next().unwrap_or_default();
+        if s.on_the_web() || file != s.url {
+            self.add(
+                at("url"),
+                format!("a {kind} scene shows a file, not an address"),
+            );
+        } else if s.rev.is_none() {
+            self.project_file(at("url"), &s.url, dir);
+        } else if Path::new(&s.url).is_absolute() || s.url.split('/').any(|part| part == "..") {
+            self.add(
+                at("url"),
+                "with rev, url is the file's path inside the repository",
+            );
+        }
+        // A branch or a tag can move; a commit's hash can't.
+        if let Some(rev) = &s.rev
+            && !((7..=40).contains(&rev.len()) && rev.chars().all(|c| c.is_ascii_hexdigit()))
+        {
+            self.add(
+                at("rev"),
+                "rev is a commit's hash, 7 to 40 hexadecimal digits: a branch or a tag can move",
+            );
+        }
+        if s.repo.is_some() && s.rev.is_none() {
+            self.add(
+                at("repo"),
+                "repo goes with rev: the revision to read the file at",
+            );
+        }
+        if s.scale == Some(0) {
+            self.add(at("scale"), "scale must be 1 or more");
+        }
+        let range = |lines: [u32; 2]| lines[0] >= 1 && lines[1] >= lines[0];
+        if s.lines.is_some_and(|lines| !range(lines)) {
+            self.add(
+                at("lines"),
+                "lines = [first, last], counted from 1, with last not before first",
+            );
+        }
+        if s.columns
+            .is_some_and(|columns| !(20..=200).contains(&columns))
+        {
+            self.add(at("columns"), "columns is between 20 and 200");
+        }
+        for (tid, t) in &s.targets {
+            let here = path!["scenes", id, "targets", tid.as_str()];
+            if !valid_id(tid) {
+                self.add(here.clone(), id_rule("target", tid));
+            }
+            let only_lines = Target {
+                lines: t.lines,
+                ..Target::default()
+            };
+            let inside = |lines: [u32; 2]| {
+                s.lines
+                    .is_none_or(|shown| lines[0] >= shown[0] && lines[1] <= shown[1])
+            };
+            match t.lines {
+                Some(lines) if *t == only_lines && range(lines) && inside(lines) => {}
+                Some(lines) if *t == only_lines && range(lines) => self.add(
+                    here,
+                    format!(
+                        "lines {} to {} aren't all among the lines the scene shows",
+                        lines[0], lines[1]
+                    ),
+                ),
+                _ => self.add(
+                    here,
+                    format!(
+                        "a part of a {kind} scene is lines = [first, last], counted from 1 in its file"
+                    ),
+                ),
+            }
+        }
+        for (cid, c) in &s.cameras {
+            self.camera(id, s, cid, c);
+        }
+        if let Some(camera) = &s.default_camera {
+            self.camera_ref(at("default_camera"), camera, id, s);
         }
     }
 
@@ -1176,6 +1341,12 @@ impl Rules {
             self.add(
                 with("rect"),
                 "rect names a part of an image scene's picture",
+            );
+        }
+        if t.lines.is_some() {
+            self.add(
+                with("lines"),
+                "lines names a part of a terminal or code scene's text",
             );
         }
         match (&t.css, t.any.is_empty()) {

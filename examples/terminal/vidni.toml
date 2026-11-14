@@ -1,0 +1,99 @@
+#:schema ../../docs/vidni.schema.json
+# A terminal scene: a transcript of a session, drawn as a terminal's
+# window, with the lines a narrated line is about marked. Nothing here
+# is run, and nothing needs a browser or the network.
+
+schema = 1
+
+[meta]
+title = "A session in a terminal"
+subtitle = "an example"
+language = "en"
+default_scene = "session"
+
+[voice]
+draft = "piper:en_US-joe-medium"
+respell = [{ text = "vidni", say = "vid nee" }, { text = "nibli", say = "nee blee" }]
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[[cuts]]
+id = "vertical"
+aspect = "9:16"
+
+[sections.main]
+label = "a session"
+
+[[lines]]
+id = "open-1"
+section = "main"
+show = "A scene can be a session in a terminal."
+scene = "open"
+
+[[lines]]
+id = "session-1"
+section = "main"
+show = "This is a session in nibli's prompt, read from a text file."
+
+[[lines]]
+id = "session-2"
+section = "main"
+show = "Three statements go in."
+highlight = ["statements"]
+camera = "statements"
+
+[[lines]]
+id = "session-3"
+section = "main"
+show = "Then a question: is Adam an animal?"
+highlight = ["question"]
+camera = "answer"
+
+[[lines]]
+id = "session-4"
+section = "main"
+show = "The session's answer is TRUE, and it prints why."
+highlight = ["why"]
+camera = "answer"
+
+[[lines]]
+id = "end-1"
+section = "main"
+show = "The same window is drawn on every run."
+scene = "end"
+
+[scenes.open]
+kind = "card"
+template = "title"
+title = "A session in a terminal"
+subtitle = "a terminal scene"
+
+[scenes.session]
+kind = "terminal"
+# What was typed and what was printed, as text. A line that starts with
+# the prompt is a command.
+url = "session.txt"
+title = "nibli"
+# Drawn at twice its size, so that it stays sharp when the camera moves in.
+scale = 2
+prompt = "~/nibli> "
+columns = 84
+
+# A part of the session is some of its file's lines, counted from 1.
+[scenes.session.targets]
+statements = { lines = [1, 12] }
+question = { lines = [14, 14] }
+why = { lines = [15, 18] }
+answer = { lines = [14, 18] }
+
+[scenes.session.cameras]
+statements = { union = ["statements"] }
+answer = { union = ["answer"] }
+
+[scenes.end]
+kind = "card"
+template = "end"
+title = "That is all"
+subtitle = "examples/terminal"
