@@ -203,13 +203,203 @@
         '';
         meta.mainProgram = "vidni";
       };
+
+      # --- The portable bundle (P8-VIDNI-03) ---------------------------------
+      # For a Linux without Nix: a small archive with vidni, and a large one
+      # with the tools, which `vidni setup` downloads by its SHA-256 and
+      # unpacks into the user's cache. Both carry store paths as they are in
+      # this store; `vidni setup` moves the tools' to where it unpacks them.
+
+      # The tools the bundle's vidni drives: the flake's own pins, in their
+      # smaller builds. Piper is built without what trains voices and speaks
+      # Japanese, and ffmpeg without what plays and what reads the network.
+      bundlePiper =
+        (pkgs.piper-tts.override {
+          withAlignment = false;
+          withHTTP = false;
+          withJapanese = false;
+          withTrain = false;
+        }).overridePythonAttrs
+          (old: {
+            patches = (old.patches or [ ]) ++ [ ./nix/piper-seed.patch ];
+            pythonImportsCheck = [ "piper" ];
+            doCheck = false;
+          });
+      # whisper.cpp looks for the code that does its sums in the folder it
+      # was built to find it in, and then beside its own program. Moved,
+      # the first is nowhere, so the bundle's whisper has it beside it.
+      bundleWhisper =
+        pkgs.runCommand "whisper-cli-with-its-backends"
+          {
+            closure = pkgs.closureInfo { rootPaths = [ pkgs.whisper-cpp ]; };
+          }
+          ''
+            mkdir -p $out/bin
+            cp ${pkgs.whisper-cpp}/bin/whisper-cli $out/bin/
+            backends=$(grep -- '-llama-cpp-' $closure/store-paths)
+            ln -s $backends/bin/libggml-*.so $out/bin/
+          '';
+      bundleTools = [
+        pkgs.ffmpeg-headless
+        pkgs.chromium
+        bundlePiper
+        bundleWhisper
+        pkgs.curl
+        pkgs.util-linux
+      ];
+
+      # What the bundle's vidni is started with once the tools are set up.
+      # `vidni setup` rewrites the store paths in it, as in every text file
+      # of the tools.
+      bundleEnv = pkgs.writeText "vidni-tools-env.sh" ''
+        # Written by vidni's build; read by the bundle's `vidni`.
+        PATH="${pkgs.lib.makeBinPath bundleTools}:$PATH"
+        FONTCONFIG_FILE="${fontsConf}"
+        VIDNI_FONTS="${fontDirs}"
+        # The tools' curl checks a server against these, unless you name others.
+        : "''${SSL_CERT_FILE:=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt}"
+        export PATH FONTCONFIG_FILE VIDNI_FONTS SSL_CERT_FILE
+      '';
+
+      # The tools and everything they load, as one archive of store paths
+      # under `store/` (the names only: a link's target stays as it is).
+      # Sorted, with one time and one owner, read through hard links and
+      # packed on one thread, so that it is the same bytes whenever it is
+      # built.
+      bundleToolsArchive =
+        pkgs.runCommand "vidni-tools-x86_64-linux"
+          {
+            nativeBuildInputs = [ pkgs.zstd ];
+            closure = pkgs.closureInfo { rootPaths = bundleTools ++ [ bundleEnv ]; };
+          }
+          ''
+            mkdir -p $out
+            sed 's,^/nix/store/,,' $closure/store-paths | LC_ALL=C sort > paths
+            tar --create --directory /nix/store --files-from paths \
+              --sort=name --mtime=@1 --owner=0 --group=0 --numeric-owner \
+              --hard-dereference --mode=u+w --transform 'flags=r;s,^,store/,' \
+              | zstd -15 -T1 > $out/vidni-tools-x86_64-linux.tar.zst
+          '';
+
+      # vidni itself, with what it loads, the curl it downloads with, the
+      # patchelf that `vidni setup` moves the tools with, and the two
+      # licences and the notices. Each program is started by a script that
+      # hands it to the bundle's own loader, so it runs on any Linux.
+      bundle =
+        pkgs.runCommand "vidni-${vidni.version}-x86_64-linux"
+          {
+            closure = pkgs.closureInfo {
+              rootPaths = [
+                vidni
+                pkgs.curl
+                pkgs.patchelf
+                pkgs.cacert
+              ];
+            };
+            name_ = "vidni-${vidni.version}-x86_64-linux";
+            url = "https://github.com/dhilipsiva/vidni/releases/download/v${vidni.version}";
+          }
+          ''
+            root=$name_
+            mkdir -p $root/bin $root/store $root/share/vidni $root/share/doc/vidni
+            for path in $(cat $closure/store-paths); do
+              cp -a $path $root/store/
+            done
+            chmod -R u+w $root/store
+            # The desktop app isn't in the bundle: it opens its window with
+            # the system's own graphics libraries, which a bundle can't carry.
+            rm -f $root/store/$(basename ${vidni})/bin/vidni-app
+
+            # The tools this bundle pins, by their SHA-256: `vidni setup`
+            # unpacks them into a folder named by its first 16 digits.
+            tools=${bundleToolsArchive}/vidni-tools-x86_64-linux.tar.zst
+            sha=$(sha256sum $tools | cut -d' ' -f1)
+            id=$(echo $sha | cut -c1-16)
+
+            # Every folder of the bundle that holds a library, for the loader.
+            libs=$(cd $root && find store -name '*.so*' -printf '%h\n' | LC_ALL=C sort -u \
+              | sed 's,^,$here/,' | paste -sd:)
+            loader=store/$(basename ${pkgs.glibc})/lib/ld-linux-x86-64.so.2
+            starts() {
+              cat > $root/bin/$1 <<EOF
+            #!/bin/sh
+            # $1, from vidni's portable bundle: started by the bundle's own
+            # loader, with the bundle's own libraries, wherever the bundle is.
+            self=\$0
+            while [ -L "\$self" ]; do
+              link=\$(readlink "\$self")
+              case \$link in /*) self=\$link ;; *) self=\$(dirname "\$self")/\$link ;; esac
+            done
+            here=\$(CDPATH= cd -- "\$(dirname -- "\$self")/.." && pwd)
+            $2
+            exec "\$here/$loader" --library-path "$libs" "\$here/$3" "\$@"
+            EOF
+              sed -i 's/^            //' $root/bin/$1
+              chmod +x $root/bin/$1
+            }
+            starts curl ': "''${SSL_CERT_FILE:=$here/store/'$(basename ${pkgs.cacert})'/etc/ssl/certs/ca-bundle.crt}"; export SSL_CERT_FILE' \
+              store/$(basename ${pkgs.curl.bin})/bin/curl
+            starts patchelf : store/$(basename ${pkgs.patchelf})/bin/patchelf
+            starts vidni 'VIDNI_BUNDLE=$here; VIDNI_EXE=$here/bin/vidni; PATH=$here/bin:$PATH
+            export VIDNI_BUNDLE VIDNI_EXE PATH
+            # Sound devices, as the bundle'"'"'s own ALSA library lists them.
+            : "''${ALSA_CONFIG_PATH:=$here/store/'$(basename ${pkgs.alsa-lib})'/share/alsa/alsa.conf}"
+            export ALSA_CONFIG_PATH
+            # The tools this vidni pins, once `vidni setup` has fetched them.
+            tools=''${XDG_CACHE_HOME:-$HOME/.cache}/vidni/tools/'$id'/env.sh
+            if [ -r "$tools" ]; then . "$tools"; fi' \
+              store/$(basename ${vidni})/bin/vidni
+
+            install -m644 -t $root/share/doc/vidni \
+              ${./LICENSE-MIT} ${./LICENSE-APACHE} ${./THIRD-PARTY-NOTICES.md}
+            for file in $root/share/doc/vidni/*; do
+              mv $file $root/share/doc/vidni/$(basename $file | cut -d- -f2-)
+            done
+            install -m644 ${./packaging/README.txt} $root/README.txt
+            # An example to draft: the one-minute video about vidni.
+            mkdir -p $root/share/vidni/examples/hello
+            install -m644 -t $root/share/vidni/examples/hello \
+              ${./examples/hello/README.md} ${./examples/hello/flow.svg} \
+              ${./examples/hello/vidni.toml} ${./examples/hello/voice.lock}
+            for file in $root/share/vidni/examples/hello/*; do
+              mv $file $root/share/vidni/examples/hello/$(basename $file | cut -d- -f2-)
+            done
+
+            # What `vidni setup` fetches: the tools, by their SHA-256.
+            cat > $root/share/vidni/setup.json <<EOF
+            {
+              "tools": {
+                "file": "vidni-tools-x86_64-linux.tar.zst",
+                "url": "$url/vidni-tools-x86_64-linux.tar.zst",
+                "sha256": "$sha",
+                "bytes": $(stat -c %s $tools),
+                "store": "/nix/store",
+                "env": "store/$(basename ${bundleEnv})"
+              },
+              "voice": "piper:en_US-joe-medium",
+              "listening_model": {
+                "file": "ggml-base.en.bin",
+                "url": "${whisperModel.url}",
+                "sha256": "${whisperModel.outputHash}"
+              }
+            }
+            EOF
+            sed -i 's/^            //' $root/share/vidni/setup.json
+
+            mkdir -p $out
+            tar --create --sort=name --mtime=@1 --owner=0 --group=0 --numeric-owner \
+              --hard-dereference $root \
+              | gzip -9n > $out/$name_.tar.gz
+            ln -s $tools $out/
+          '';
     in
     {
       # `nix run github:dhilipsiva/vidni -- draft my-video` is the command
       # line, and `nix run github:dhilipsiva/vidni#app` the desktop app.
       packages.${system} = {
         default = vidniWithTools;
-        inherit vidni;
+        inherit vidni bundle;
+        bundle-tools = bundleToolsArchive;
       };
       apps.${system} = {
         default = {

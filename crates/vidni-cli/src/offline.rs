@@ -95,7 +95,7 @@ pub fn mark() -> (&'static str, &'static str) {
 /// `--offline`. This process is replaced, so that signals and the exit
 /// code are the command's own; it returns only when that can't be done.
 pub fn again() -> ExitCode {
-    let why = match (wrapper(), std::env::current_exe()) {
+    let why = match (wrapper(), crate::own_exe()) {
         (Err(e), _) => e,
         (_, Err(e)) => format!("vidni's own file: {e}"),
         (Ok(wrapper), Ok(exe)) => {

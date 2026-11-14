@@ -13,10 +13,11 @@ You draft with a synthetic voice, then finish with your own recorded voice.
 
 vidni has one Rust core and two front ends: the `vidni` command line and a native desktop app built with egui. Every step works without an LLM.
 
-**To try it:** [docs/quickstart.md](docs/quickstart.md) goes from a clone to a draft video on Linux.
+**To try it:** [docs/install.md](docs/install.md) installs vidni on Linux, with Nix or without, and [docs/quickstart.md](docs/quickstart.md) goes from there to a draft video.
 
 | Doc | What it is |
 |---|---|
+| [install.md](docs/install.md) | Installing vidni on Linux: `nix run`, or the portable bundle and `vidni setup` |
 | [quickstart.md](docs/quickstart.md) | From a clone to your first draft, and the steps from there to a finished video |
 | [spec.md](docs/spec.md) | How a project file works, with every command |
 | [keys.md](docs/keys.md) | Every key of `vidni.toml`, generated from the schema |

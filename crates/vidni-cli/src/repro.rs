@@ -525,7 +525,7 @@ fn run(
     }
     interrupted("nothing was built")?;
     let recipe = Recipe {
-        exe: std::env::current_exe().map_err(|e| cant(format!("vidni's own file: {e}")))?,
+        exe: crate::own_exe().map_err(|e| cant(format!("vidni's own file: {e}")))?,
         command: if draft { "draft" } else { "final" },
         file: name,
         cuts: cuts.iter().map(|c| c.id.clone()).collect(),

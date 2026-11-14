@@ -176,6 +176,21 @@ vidni runs these as separate programs. None of them is part of the `vidni` binar
 
 Chromium is under a BSD-style licence and includes many other projects; its own list is at `chrome://credits` in the browser.""")
 
+    parts.append(f"""## The portable bundle
+
+The portable bundle for Linux ([docs/install.md](docs/install.md)) is two archives, and both pass programs on:
+
+- **`vidni-<version>-x86_64-linux.tar.gz`** holds vidni, and what starts it on a Linux with no Nix: the GNU C Library and GCC's runtime libraries, ALSA's library, curl with the libraries it loads (OpenSSL and MIT Kerberos among them) and Mozilla's list of certificate authorities, patchelf, Bash and GNU coreutils, and the libraries those load in turn.
+- **`vidni-tools-x86_64-linux.tar.zst`**, which `vidni setup` fetches, holds the programs of the table above in the builds the bundle uses (ffmpeg without what plays and what reads the network, Piper without what trains voices), the fonts, and everything those programs load: some 400 packages, from the C library to Python.
+
+Every package in either archive is in it exactly as Nix built it from nixpkgs at revision `{nixpkgs}`, by vidni's `flake.nix`. Their folders keep the names Nix gave them, `<hash>-<name>-<version>`, so each can be traced:
+
+- **What is in an archive:** its packages are the folders under `store/`. `tar tf vidni-tools-x86_64-linux.tar.zst | cut -d/ -f2 | sort -u` lists the tools' archive's, and `tar tzf vidni-<version>-x86_64-linux.tar.gz | grep /store/ | cut -d/ -f3 | sort -u` the other's.
+- **A package's licence** is in its recipe in nixpkgs, under `meta.license`: <https://search.nixos.org/packages> finds the recipe by name.
+- **A package's source:** `nix derivation show /nix/store/<its folder>` names the source its build fetched, pinned by hash, and its patches; `nix build --inputs-from . nixpkgs#<name>.src` fetches it. The recipes are at <https://github.com/NixOS/nixpkgs/tree/{nixpkgs}>.
+
+Many of these packages are under the GPL or the LGPL (the C library, GCC's runtime, Bash, coreutils, patchelf, ffmpeg, x264, Piper and eSpeak NG among them). **Whoever gives either archive to someone else must offer that person the source of each of them,** as the section above says. The lines above are how the source is found; a release of vidni that carries the archives names the vidni commit and the nixpkgs revision they were built from, which fixes every source.""")
+
     parts.append("""## Fonts
 
 vidni draws text in these fonts, and their outlines end up in your video's frames. All are under the SIL Open Font License 1.1 (<https://openfontlicense.org>), which allows that, for any purpose, and asks that the font files themselves are passed on only with their licence and under their own names.

@@ -31,6 +31,21 @@ ffmpeg, x264, Piper, eSpeak NG are under the GNU General Public License. The ffm
 
 Chromium is under a BSD-style licence and includes many other projects; its own list is at `chrome://credits` in the browser.
 
+## The portable bundle
+
+The portable bundle for Linux ([docs/install.md](docs/install.md)) is two archives, and both pass programs on:
+
+- **`vidni-<version>-x86_64-linux.tar.gz`** holds vidni, and what starts it on a Linux with no Nix: the GNU C Library and GCC's runtime libraries, ALSA's library, curl with the libraries it loads (OpenSSL and MIT Kerberos among them) and Mozilla's list of certificate authorities, patchelf, Bash and GNU coreutils, and the libraries those load in turn.
+- **`vidni-tools-x86_64-linux.tar.zst`**, which `vidni setup` fetches, holds the programs of the table above in the builds the bundle uses (ffmpeg without what plays and what reads the network, Piper without what trains voices), the fonts, and everything those programs load: some 400 packages, from the C library to Python.
+
+Every package in either archive is in it exactly as Nix built it from nixpkgs at revision `27eb89b729375903ba8e21c79a19e408e432531e`, by vidni's `flake.nix`. Their folders keep the names Nix gave them, `<hash>-<name>-<version>`, so each can be traced:
+
+- **What is in an archive:** its packages are the folders under `store/`. `tar tf vidni-tools-x86_64-linux.tar.zst | cut -d/ -f2 | sort -u` lists the tools' archive's, and `tar tzf vidni-<version>-x86_64-linux.tar.gz | grep /store/ | cut -d/ -f3 | sort -u` the other's.
+- **A package's licence** is in its recipe in nixpkgs, under `meta.license`: <https://search.nixos.org/packages> finds the recipe by name.
+- **A package's source:** `nix derivation show /nix/store/<its folder>` names the source its build fetched, pinned by hash, and its patches; `nix build --inputs-from . nixpkgs#<name>.src` fetches it. The recipes are at <https://github.com/NixOS/nixpkgs/tree/27eb89b729375903ba8e21c79a19e408e432531e>.
+
+Many of these packages are under the GPL or the LGPL (the C library, GCC's runtime, Bash, coreutils, patchelf, ffmpeg, x264, Piper and eSpeak NG among them). **Whoever gives either archive to someone else must offer that person the source of each of them,** as the section above says. The lines above are how the source is found; a release of vidni that carries the archives names the vidni commit and the nixpkgs revision they were built from, which fixes every source.
+
 ## Fonts
 
 vidni draws text in these fonts, and their outlines end up in your video's frames. All are under the SIL Open Font License 1.1 (<https://openfontlicense.org>), which allows that, for any purpose, and asks that the font files themselves are passed on only with their licence and under their own names.
@@ -60,7 +75,7 @@ A draft voice is a model trained on recordings of a person, and its licence is i
 
 ## Rust crates
 
-The `vidni` binaries are built from these 319 crates, each under the licence its authors chose (22 licence expressions in all). Each crate's own licence files are in its source, at the address given.
+The `vidni` binaries are built from these 324 crates, each under the licence its authors chose (22 licence expressions in all). Each crate's own licence files are in its source, at the address given.
 
 | Crate | Version | Licence | Source |
 |---|---|---|---|
@@ -161,6 +176,7 @@ The `vidni` binaries are built from these 319 crates, each under the licence its
 | fax | 0.2.7 | MIT | https://github.com/pdf-rs/fax |
 | fdeflate | 0.3.7 | MIT OR Apache-2.0 | https://github.com/image-rs/fdeflate |
 | fearless_simd | 0.4.1 | Apache-2.0 OR MIT | https://github.com/linebender/fearless_simd |
+| filetime | 0.2.29 | MIT/Apache-2.0 | https://github.com/alexcrichton/filetime |
 | fixedbitset | 0.5.9 | MIT OR Apache-2.0 | https://github.com/petgraph/fixedbitset |
 | flate2 | 1.1.11 | MIT OR Apache-2.0 | https://github.com/rust-lang/flate2-rs |
 | float-cmp | 0.9.0 | MIT | https://github.com/mikedilger/float-cmp |
@@ -268,6 +284,7 @@ The `vidni` binaries are built from these 319 crates, each under the licence its
 | rustc-hash | 2.1.3 | Apache-2.0 OR MIT | https://github.com/rust-lang/rustc-hash |
 | rustix | 0.38.44 | Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT | https://github.com/bytecodealliance/rustix |
 | rustix | 1.1.6 | Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT | https://github.com/bytecodealliance/rustix |
+| ruzstd | 0.8.3 | MIT | https://github.com/KillingSpark/zstd-rs |
 | schemars | 1.2.3 | MIT | https://github.com/GREsau/schemars |
 | schemars_derive | 1.2.3 | MIT | https://github.com/GREsau/schemars |
 | scoped-tls | 1.0.1 | MIT/Apache-2.0 | https://github.com/alexcrichton/scoped-tls |
@@ -303,6 +320,7 @@ The `vidni` binaries are built from these 319 crates, each under the licence its
 | syn | 2.0.119 | MIT OR Apache-2.0 | https://github.com/dtolnay/syn |
 | syn | 3.0.10 | MIT OR Apache-2.0 | https://github.com/dtolnay/syn |
 | sys-locale | 0.3.2 | MIT OR Apache-2.0 | https://github.com/1Password/sys-locale |
+| tar | 0.4.46 | MIT OR Apache-2.0 | https://github.com/composefs/tar-rs |
 | tempfile | 3.27.0 | MIT OR Apache-2.0 | https://github.com/Stebalien/tempfile |
 | thiserror | 1.0.69 | MIT OR Apache-2.0 | https://github.com/dtolnay/thiserror |
 | thiserror | 2.0.21 | MIT OR Apache-2.0 | https://github.com/dtolnay/thiserror |
@@ -322,6 +340,7 @@ The `vidni` binaries are built from these 319 crates, each under the licence its
 | tracing-core | 0.1.36 | MIT | https://github.com/tokio-rs/tracing |
 | tree_magic_mini | 3.2.2 | MIT | https://github.com/mbrubeck/tree_magic/ |
 | ttf-parser | 0.25.1 | MIT OR Apache-2.0 | https://github.com/harfbuzz/ttf-parser |
+| twox-hash | 2.1.5 | MIT | https://github.com/shepmaster/twox-hash |
 | type-map | 0.5.1 | MIT/Apache-2.0 | https://github.com/kardeiz/type-map |
 | typenum | 1.20.1 | MIT OR Apache-2.0 | https://github.com/paholg/typenum |
 | unicode-bidi | 0.3.18 | MIT OR Apache-2.0 | https://github.com/servo/unicode-bidi |
@@ -361,6 +380,7 @@ The `vidni` binaries are built from these 319 crates, each under the licence its
 | x11-dl | 2.21.0 | MIT | https://github.com/AltF02/x11-rs.git |
 | x11rb | 0.13.2 | MIT OR Apache-2.0 | https://github.com/psychon/x11rb |
 | x11rb-protocol | 0.13.2 | MIT OR Apache-2.0 | https://github.com/psychon/x11rb |
+| xattr | 1.7.0 | MIT OR Apache-2.0 | https://github.com/Stebalien/xattr |
 | xcursor | 0.3.11 | MIT | https://github.com/esposm03/xcursor-rs |
 | xkbcommon-dl | 0.4.2 | MIT | https://github.com/rust-windowing/xkbcommon-dl |
 | xkeysym | 0.2.1 | MIT OR Apache-2.0 OR Zlib | https://github.com/notgull/xkeysym |

@@ -40,6 +40,7 @@ mod offline;
 mod published;
 mod record;
 mod repro;
+mod setup;
 mod takes;
 
 #[derive(Parser)]
@@ -196,6 +197,19 @@ enum Command {
         /// and read off the squares its buttons and labels hide.
         #[arg(long, value_name = "DIR")]
         grid: Option<PathBuf>,
+    },
+    /// For the portable bundle: fetch the tools vidni drives, the draft
+    /// voice and the listening model, each checked by its SHA-256, into
+    /// your cache. It needs no root.
+    Setup {
+        /// A folder that holds the tools' archive already, where there is
+        /// no network to fetch it over.
+        #[arg(long, value_name = "DIR", conflicts_with = "mirror")]
+        from: Option<PathBuf>,
+        /// Fetch the tools' archive from this address in the place of
+        /// vidni's release: the folder of a mirror that holds it.
+        #[arg(long, value_name = "URL")]
+        mirror: Option<String>,
     },
     /// List the draft voices vidni can fetch, with each one's licence; or fetch one.
     Voices {
@@ -509,6 +523,7 @@ fn dispatch(command: Command) -> ExitCode {
         Command::Capture { path } => build::capture(&path),
         Command::Platforms { grid: None } => platforms(),
         Command::Platforms { grid: Some(dir) } => grid(&dir),
+        Command::Setup { from, mirror } => setup::setup(from.as_deref(), mirror.as_deref()),
         Command::Voices { action: None } => voices(),
         Command::Voices {
             action: Some(VoicesAction::Fetch { id }),
@@ -718,6 +733,17 @@ fn link_takes(lines: &[vidni_core::takes::LineTake], dir: &Path) -> ExitCode {
 }
 
 /// A valid project, with its file and folder.
+/// The file that starts vidni again: the bundle's own starter where
+/// vidni runs from its portable bundle, which hands the program to the
+/// bundle's loader; the program itself otherwise.
+pub(crate) fn own_exe() -> std::io::Result<PathBuf> {
+    let set = |name: &str| std::env::var_os(name).filter(|v| !v.is_empty());
+    match (set("VIDNI_BUNDLE"), set("VIDNI_EXE")) {
+        (Some(_), Some(starter)) => Ok(PathBuf::from(starter)),
+        _ => std::env::current_exe(),
+    }
+}
+
 struct Loaded {
     file: PathBuf,
     dir: PathBuf,

@@ -62,6 +62,16 @@ test-app:
     VIDNI_BIN="$PWD/target/debug/vidni" cargo test -p vidni-app --test interchange -- --ignored
     VIDNI_VOICES="${VIDNI_VOICES:-$VIDNI_PINNED_VOICES}" cargo test -p vidni-app --test export -- --ignored
 
+# Build the portable bundle for a Linux with no Nix (P8-VIDNI-03): vidni's own archive and
+# the tools' archive, which `vidni setup` fetches. Prints the folder that holds the two.
+bundle:
+    nix build .#bundle --no-link --print-out-paths
+
+# Follow the bundle's README in a clean container with no Nix, as a user who isn't root, and
+# hold what it drafts to what the flake's own tools draft. Needs docker and the network.
+test-bundle image="debian:stable-slim":
+    packaging/test.sh {{image}}
+
 # Build the flake's checks (the workspace build and its tests).
 check:
     nix flake check

@@ -23,6 +23,11 @@ workspace = true
 clap = { version = "4.6.7", features = ["derive"] }
 crossterm = "0.29.0"
 ctrlc = { version = "3.5.2", features = ["termination"] }
+ruzstd = "0.8.2"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+sha2 = "0.11.1"
+tar = "0.4.44"
 tempfile = "3.27.0"
 vidni-core = { path = "../vidni-core" }
 vidni-media = { path = "../vidni-media" }
