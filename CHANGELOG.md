@@ -4,7 +4,7 @@ What changed in each release of vidni, for the people who use it. The format is 
 
 ## [Unreleased]
 
-## [0.1.0] - not yet released
+## [0.1.0] - 2026-11-14
 
 The first release.
 
