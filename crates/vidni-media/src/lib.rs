@@ -14,6 +14,7 @@ pub mod qa;
 pub mod review;
 pub mod sheet;
 pub mod tts;
+pub mod voice;
 
 use std::process::{Command, Output};
 

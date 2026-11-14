@@ -11,7 +11,7 @@ vidni final examples/nibli-syllogism --cut long --cut vertical    # the two full
 
 The two full cuts are ratified and approved:
 - `ratified.lock` freezes what they show and say.
-- `release.json` records their releases, each with the hashes of its build. The newest are `long-r3` and `vertical-r2`.
+- `release.json` records their releases, each with the hashes of its build. The newest are `long-r4` and `vertical-r3`: the same pictures as the releases before them, with the narration through vidni's voice chain ([The narration's sound](../../docs/spec.md#the-narrations-sound)). Their pauses hold vidni's stand-in noise, because the takes came with no recording of the room; `vidni record --test` keeps one for the next build.
 - `vidni repro` built both cuts again, on other cores and at other paths, and every hash agreed (docs/determinism.md).
 
 The long cut is delivered as YouTube takes it ([The final build](../../docs/spec.md#the-final-build-vidni-final)):

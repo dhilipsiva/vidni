@@ -130,6 +130,7 @@ fn loudnorm_reaches_its_target_and_qa_passes_a_good_cut() {
         duration: 2.0,
         loudness: -16.0,
         tolerance: 1.5,
+        true_peak: -1.0,
         captions: Some((srt.clone(), 2)),
         chapters: Vec::new(),
     };
@@ -232,6 +233,7 @@ fn chapters_are_written_into_the_file_and_checked_against_its_length() {
         duration: 31.0,
         loudness: -16.0,
         tolerance: 1.5,
+        true_peak: -1.0,
         captions: None,
         chapters: chapters.clone(),
     };
@@ -274,4 +276,62 @@ fn a_frame_of_the_wrong_size_is_refused() {
             .unwrap_err()
             .contains("a frame of 12 bytes")
     );
+}
+
+#[test]
+fn qa_names_digital_silence_and_a_peak_that_is_too_high() {
+    let dir = tempfile::tempdir().unwrap();
+    // Two seconds: a tone driven into clipping, with a quarter of a second of
+    // digital silence cut into its middle.
+    let audio = dir.path().join("gap.wav");
+    let made = Command::new("ffmpeg")
+        .args(["-nostdin", "-loglevel", "error", "-y", "-f", "lavfi", "-i"])
+        .arg("sine=frequency=440:duration=2:sample_rate=48000")
+        .args([
+            "-af",
+            "volume=20,volume=enable='between(t,1,1.25)':volume=0",
+            "-ac",
+            "2",
+        ])
+        .arg(&audio)
+        .status()
+        .unwrap();
+    assert!(made.success());
+    let out = dir.path().join("gap.mp4");
+    encode(&audio, &out);
+    let sound = qa::measure(&out).unwrap();
+    assert_eq!(sound.silences.len(), 1, "{sound:?}");
+    let (at, lasts) = sound.silences[0];
+    assert!(
+        (at - 1.0).abs() < 0.03 && (lasts - 0.25).abs() < 0.03,
+        "{sound:?}"
+    );
+    assert!(sound.true_peak.unwrap() > -1.0, "{sound:?}");
+    let expect = qa::Expect {
+        width: W,
+        height: H,
+        fps: 30,
+        duration: 2.0,
+        loudness: sound.loudness.unwrap(),
+        tolerance: 1.0,
+        true_peak: -1.0,
+        captions: None,
+        chapters: Vec::new(),
+    };
+    let problems = qa::check(&out, &expect).unwrap().problems;
+    assert_eq!(problems.len(), 2, "{problems:#?}");
+    assert!(problems[0].starts_with("its true peak is ") && problems[0].ends_with("above -1 dBTP"));
+    assert!(
+        problems[1]
+            .starts_with("it has a stretch of digital silence longer than 50 ms; the first is 0.2"),
+        "{problems:#?}"
+    );
+    // The tone alone, normalized, has neither.
+    let normalized = dir.path().join("norm.wav");
+    loudnorm(&tone(dir.path()), &normalized, Target::default()).unwrap();
+    let good = dir.path().join("good.mp4");
+    encode(&normalized, &good);
+    let sound = qa::measure(&good).unwrap();
+    assert_eq!(sound.silences, []);
+    assert!(sound.true_peak.unwrap() <= -1.0, "{sound:?}");
 }

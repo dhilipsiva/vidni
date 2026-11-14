@@ -233,6 +233,35 @@ impl Default for Target {
     }
 }
 
+/// Writes `src` as a 48 kHz stereo WAV: the narration as it is encoded.
+/// Its level was set when it was made ([`crate::voice::narrate`]).
+pub fn stereo(src: &Path, dst: &Path) -> Result<(), String> {
+    run(Command::new("ffmpeg")
+        .args([
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-cpuflags",
+            "0",
+            "-i",
+        ])
+        .arg(src)
+        .args([
+            "-af",
+            // Each channel is the narration at its own level. Left to
+            // itself, ffmpeg turns one channel into two 3 dB quieter.
+            "aresample=48000,pan=stereo|c0=c0|c1=c0",
+            "-fflags",
+            "+bitexact",
+            "-flags:a",
+            "+bitexact",
+        ])
+        .arg(dst))
+    .map(|_| ())
+}
+
 /// Normalizes `src` to `target` in two passes, as the reference does (one
 /// pass undershoots on speech with pauses), into a 48 kHz stereo WAV.
 pub fn loudnorm(src: &Path, dst: &Path, target: Target) -> Result<(), String> {

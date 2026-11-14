@@ -18,6 +18,8 @@ pub struct Expect {
     /// The loudness target, in LUFS, and how far off it may be, in LU.
     pub loudness: f64,
     pub tolerance: f64,
+    /// The highest true peak, in dBTP.
+    pub true_peak: f64,
     /// The caption file, and the number of cues the timeline has.
     pub captions: Option<(PathBuf, usize)>,
     /// The cut's chapters; none when it has no list.
@@ -101,7 +103,8 @@ pub fn check(mp4: &Path, expect: &Expect) -> Result<Report, String> {
             expect.duration
         ));
     }
-    let lufs = loudness(mp4)?;
+    let sound = measure(mp4)?;
+    let lufs = sound.loudness;
     match lufs {
         Some(l) if (l - expect.loudness).abs() <= expect.tolerance => {}
         Some(l) => problems.push(format!(
@@ -109,6 +112,24 @@ pub fn check(mp4: &Path, expect: &Expect) -> Result<Report, String> {
             expect.tolerance, expect.loudness
         )),
         None => problems.push("its loudness couldn't be measured".to_string()),
+    }
+    match sound.true_peak {
+        Some(peak) if peak <= expect.true_peak => {}
+        Some(peak) => problems.push(format!(
+            "its true peak is {peak} dBTP, above {} dBTP",
+            expect.true_peak
+        )),
+        None => problems.push("its true peak couldn't be measured".to_string()),
+    }
+    if let Some((at, lasts)) = sound.silences.first() {
+        problems.push(format!(
+            "it has {} of digital silence longer than {} ms; the first is {lasts:.2} s long, at {at:.2} s",
+            match sound.silences.len() {
+                1 => "a stretch".to_string(),
+                n => format!("{n} stretches"),
+            },
+            (SILENCE * 1000.0) as u32
+        ));
     }
     if let Some((srt, cues)) = &expect.captions {
         let text = fs::read_to_string(srt).map_err(|e| format!("{}: {e}", srt.display()))?;
@@ -171,8 +192,11 @@ pub fn check(mp4: &Path, expect: &Expect) -> Result<Report, String> {
         }
     }
     let summary = format!(
-        "{video_line}; {audio_line}; {duration:.2} s; {}",
-        lufs.map_or("loudness unknown".to_string(), |l| format!("{l} LUFS"))
+        "{video_line}; {audio_line}; {duration:.2} s; {}; {}",
+        lufs.map_or("loudness unknown".to_string(), |l| format!("{l} LUFS")),
+        sound
+            .true_peak
+            .map_or("peak unknown".to_string(), |p| format!("{p} dBTP"))
     );
     Ok(Report { summary, problems })
 }
@@ -214,18 +238,65 @@ fn captions(srt: &str, duration: f64) -> Vec<String> {
     problems
 }
 
-/// The integrated loudness of a file's audio, in LUFS (EBU R 128).
-pub fn loudness(path: &Path) -> Result<Option<f64>, String> {
+/// The longest stretch of digital silence a cut may have, in seconds:
+/// longer, and a listener hears the sound drop out between lines.
+pub const SILENCE: f64 = 0.05;
+
+/// What a file's audio measures.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Sound {
+    /// Integrated loudness, in LUFS (EBU R 128).
+    pub loudness: Option<f64>,
+    /// The highest true peak of any channel, in dBTP.
+    pub true_peak: Option<f64>,
+    /// Each stretch of digital silence longer than [`SILENCE`]: its start
+    /// and its length, in seconds.
+    pub silences: Vec<(f64, f64)>,
+}
+
+/// Measures a file's audio in one pass: its loudness, its true peak, and
+/// its stretches of digital silence, which is every sample under one
+/// step of 16 bits.
+pub fn measure(path: &Path) -> Result<Sound, String> {
+    let filters = format!("silencedetect=noise=0.00002:d={SILENCE},ebur128=peak=true");
     let out = Command::new("ffmpeg")
         .args(["-nostdin", "-hide_banner", "-nostats", "-i"])
         .arg(path)
-        .args(["-map", "0:a", "-af", "ebur128", "-f", "null", "-"])
+        .args(["-map", "0:a", "-af", &filters, "-f", "null", "-"])
         .output()
         .map_err(|e| format!("ffmpeg: {e}"))?;
     let log = String::from_utf8_lossy(&out.stderr);
-    Ok(log
+    let after = |line: &str, key: &str| -> Option<f64> {
+        let rest = &line[line.find(key)? + key.len()..];
+        rest.split_whitespace().next()?.parse().ok()
+    };
+    let loudness = log
         .lines()
         .filter_map(|l| l.trim().strip_prefix("I:"))
         .filter_map(|rest| rest.split_whitespace().next()?.parse().ok())
-        .next_back())
+        .next_back();
+    let true_peak = log
+        .lines()
+        .filter_map(|l| l.trim().strip_prefix("Peak:"))
+        .filter_map(|rest| rest.split_whitespace().next()?.parse().ok())
+        .next_back();
+    // A stretch that runs to the end of the file is reported when it ends, too.
+    let silences = log
+        .lines()
+        .filter(|l| l.contains("silence_end:"))
+        .filter_map(|l| {
+            let (end, lasts) = (after(l, "silence_end:")?, after(l, "silence_duration:")?);
+            Some((end - lasts, lasts))
+        })
+        .collect();
+    Ok(Sound {
+        loudness,
+        true_peak,
+        silences,
+    })
+}
+
+/// The integrated loudness of a file's audio, in LUFS (EBU R 128).
+pub fn loudness(path: &Path) -> Result<Option<f64>, String> {
+    measure(path).map(|sound| sound.loudness)
 }

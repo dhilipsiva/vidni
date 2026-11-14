@@ -701,6 +701,31 @@ Then it builds the cut into `build/final/` and runs QA on each file. A build tha
 
 **QA checks the captions against each file:** the caption file has as many cues as the timeline, each cue starts after the one before it ends, and none ends after the picture does.
 
+### The narration's sound
+
+Every build, draft or final, puts the lines' clips through the same chain. It is fixed: there is nothing to set.
+
+| Step | What it does |
+|---|---|
+| High-pass | Takes out what is below 80 Hz: rumble under the voice |
+| De-click | Draws over a sample or two that stand far out of their neighbourhood, such as a mouth click |
+| De-ess | Turns the band around 6.5 kHz down while it is loud, where an "s" hisses |
+| Level | One gain brings the whole narration to −16 LUFS |
+| Compress | Brings syllables more than 4 dB above that loudness nearer it (2.5 to 1), then sets the gain again |
+| Limit | Holds the few peaks still above −2.5 dBFS under it |
+| Room tone | Fills every pause with the room |
+
+- **The first three are done to each clip,** the next three to the narration as a whole. So a line sounds the same in every cut that uses it, and no line is made louder than its neighbours.
+- **The pauses hold the room, not digital silence.** A final build fills them with `takes/_room/tone.wav`, which `vidni record --test` keeps, given the gain the takes were given. Without one, and in a draft, they hold a faint noise at −70 dBFS made from a fixed seed. Between lines recorded in a room, digital silence is heard as the sound dropping out.
+- **The same clips give the same narration,** to the byte, on any machine: the chain is arithmetic done in one order, and its measure of loudness is vidni's own, as ITU-R BS.1770 defines it.
+
+**QA checks the sound of each file:** its loudness is within 1 LU of −16 LUFS, its true peak is at or below −1 dBTP, and it has no stretch of digital silence longer than 50 ms.
+
+```text
+long.mp4: its loudness is -17.2 LUFS, more than 1 LU from -16 LUFS
+long.mp4: it has 2 stretches of digital silence longer than 50 ms; the first is 0.25 s long, at 12.40 s
+```
+
 ### Chapters
 
 A cut for a platform that shows chapters gets a chapter list from its sections. Only YouTube does (`vidni platforms`), so by default only a 16:9 cut has one.
@@ -740,7 +765,7 @@ Every build writes a record beside its files, `build/draft/<cut>.build.json` or 
 | `sources.look` | The gaps, the look, the title and subtitle, and the cut's own settings; what its platforms' apps cover, when they cover something; and its sections' chapter titles, when a platform of its shows chapters |
 | `tools` | vidni's and ffmpeg's versions, each font file, and the encoder's settings |
 | `inputs` | All of the above and the cut's timeline, as one hash |
-| `t1` | The timeline, the captions, the chapter list when there is one, and the narration before and after loudness normalization |
+| `t1` | The timeline, the captions, the chapter list when there is one, and the narration, as it is made (`pcm`) and as 48 kHz stereo for the encoder (`pcm_normalized`) |
 | `outputs.<file>` | For each encoded file: its frames before encoding (T1), its packets and its bytes (T2), and what QA measured |
 
 Two builds with the same `inputs` must have the same `t1` and `outputs`: that is what [`vidni repro`](#checking-that-a-build-repeats-vidni-repro) checks. The tiers are described in [`determinism.md`](determinism.md).

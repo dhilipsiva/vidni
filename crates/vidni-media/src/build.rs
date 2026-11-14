@@ -21,7 +21,7 @@ use crate::compose::card::Card;
 use crate::compose::cut::{Composer, FPS, LANDSCAPE, Layout, Look, PORTRAIT, Picture, Shot, Type};
 use crate::compose::text::Fonts;
 use crate::encode::{self, Encoder, Settings, Target};
-use crate::{compose, narration, qa, review, run};
+use crate::{compose, qa, review, run, voice};
 use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -38,7 +38,13 @@ use vidni_core::voices::{self, Pack};
 use vidni_core::{VERSION, fonts};
 
 /// How far a cut's loudness may be from its target, in LU.
-const LOUDNESS_TOLERANCE: f64 = 1.5;
+const LOUDNESS_TOLERANCE: f64 = 1.0;
+
+/// The highest true peak a cut may have, in dBTP.
+const TRUE_PEAK: f64 = -1.0;
+
+/// The room tone the mic check keeps, in the project folder.
+const ROOM: &str = "takes/_room/tone.wav";
 
 /// Counts the changes to what the compositor draws. A change makes every
 /// earlier build's record out of date.
@@ -134,6 +140,7 @@ impl Setup {
             fonts,
             engine: json!({
                 "compositor": COMPOSITOR,
+                "voice": voice::VERSION,
                 "theme": self.theme,
                 "fps": settings.fps,
                 "crf": settings.crf,
@@ -235,6 +242,9 @@ pub struct Plan<'p> {
     look: Look,
     /// The cut's chapters; none when it has no list.
     chapters: Vec<Chapter>,
+    /// The room the takes were recorded in, to fill the pauses with; none
+    /// for a draft, or when the mic check kept no room at the takes' rate.
+    room: Option<Vec<i16>>,
     tools: Tools,
     pub sources: Sources,
     /// Everything the build depends on, as one hash.
@@ -405,7 +415,18 @@ pub fn plan<'p>(
         (Captions::Burned, _) | (Captions::Both, Voice::Draft) => vec![(name(""), true)],
         (Captions::Both, Voice::Takes) => vec![(name(""), false), (name(".captioned"), true)],
     };
-    let sources = release::sources(project, dir, cut, &clips).map_err(Stop::Failed)?;
+    // The pauses of a cut in the creator's voice hold the creator's room,
+    // which is then one of the cut's sounds.
+    let room_file = dir.join(ROOM);
+    let room = match voice {
+        Voice::Takes => crate::voice::room(&room_file, timeline.rate),
+        Voice::Draft => None,
+    };
+    let mut sounds = clips.clone();
+    if room.is_some() {
+        sounds.push(("_room".to_string(), room_file));
+    }
+    let sources = release::sources(project, dir, cut, &sounds).map_err(Stop::Failed)?;
     let tools = setup.tools().map_err(Stop::Failed)?;
     let inputs = release::inputs(
         voice,
@@ -426,6 +447,7 @@ pub fn plan<'p>(
         faces: setup.faces.clone(),
         look: Look::of(&setup.theme),
         chapters,
+        room,
         tools,
         sources,
         inputs,
@@ -624,8 +646,14 @@ pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<
     progress(Step::Stage("narration"));
     let narration_path = at(&narration);
     let normalized = at(&normalized);
-    narration::assemble(&plan.timeline, &plan.clips(), &narration_path)?;
-    encode::loudnorm(&narration_path, &normalized, Target::default())?;
+    voice::narrate(
+        &plan.timeline,
+        &plan.clips(),
+        plan.room.as_deref(),
+        Target::default().integrated,
+        &narration_path,
+    )?;
+    encode::stereo(&narration_path, &normalized)?;
     t1.pcm = release::file_hash(&narration_path)?;
     t1.pcm_normalized = release::file_hash(&normalized)?;
 
@@ -671,6 +699,7 @@ pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<
                 duration: plan.timeline.total,
                 loudness: Target::default().integrated,
                 tolerance: LOUDNESS_TOLERANCE,
+                true_peak: TRUE_PEAK,
                 captions: Some((srt_path.clone(), cues)),
                 chapters: plan.chapters.clone(),
             },

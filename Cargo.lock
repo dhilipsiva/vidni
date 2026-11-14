@@ -2115,6 +2115,7 @@ dependencies = [
  "cosmic-text",
  "harfrust 0.5.2",
  "hound",
+ "libm",
  "png",
  "resvg",
  "serde",
