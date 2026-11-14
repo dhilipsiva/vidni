@@ -159,7 +159,8 @@
 
       vidni = pkgs.rustPlatform.buildRustPackage {
         pname = "vidni";
-        version = "0.1.0";
+        # vidni's one version: the workspace's, in Cargo.toml.
+        version = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).workspace.package.version;
         src = self;
         cargoLock.lockFile = ./Cargo.lock;
         nativeBuildInputs = [ pkgs.pkg-config ];
@@ -297,7 +298,13 @@
               ];
             };
             name_ = "vidni-${vidni.version}-x86_64-linux";
+            # What the archives were built from: this commit of vidni, when
+            # the tree is as committed, and the pinned nixpkgs.
+            commit = self.rev or "a tree with changes that aren't committed";
+            nixpkgs_ = nixpkgs.rev;
+            toolsClosure = pkgs.closureInfo { rootPaths = bundleTools ++ [ bundleEnv ]; };
             url = "https://github.com/dhilipsiva/vidni/releases/download/v${vidni.version}";
+            version_ = vidni.version;
           }
           ''
             root=$name_
@@ -391,6 +398,26 @@
               --hard-dereference $root \
               | gzip -9n > $out/$name_.tar.gz
             ln -s $tools $out/
+
+            # What a release says of its archives' sources (the notices,
+            # "The portable bundle").
+            {
+              echo "vidni $version_, the portable bundle for Linux (x86_64)"
+              echo
+              echo "Built by Nix from:"
+              echo "  vidni    https://github.com/dhilipsiva/vidni  commit $commit"
+              echo "  nixpkgs  https://github.com/NixOS/nixpkgs     commit $nixpkgs_"
+              echo
+              echo "Every package below is in the archives as Nix built it from those two."
+              echo "THIRD-PARTY-NOTICES.md, in the bundle's share/doc/vidni, says how each"
+              echo "one's licence and source are found."
+              echo
+              echo "$name_.tar.gz holds:"
+              sed 's,^/nix/store/[a-z0-9]*-,  ,' $closure/store-paths | LC_ALL=C sort
+              echo
+              echo "vidni-tools-x86_64-linux.tar.zst holds:"
+              sed 's,^/nix/store/[a-z0-9]*-,  ,' $toolsClosure/store-paths | LC_ALL=C sort
+            } > $out/SOURCES.txt
           '';
     in
     {

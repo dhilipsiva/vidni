@@ -1,0 +1,48 @@
+name: release
+
+# Builds a release's files from a tag, attests where they were built, and
+# leaves them as a draft release for the maintainer to publish
+# (DECISIONS.md, R4 and R5; docs/releasing.md).
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: build, attest and draft the release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - name: the tag is the version
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)
+          test "v$version" = "$GITHUB_REF_NAME"
+      - name: just release
+        run: nix develop .#ci --command just release
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: release/${{ github.ref_name }}/SHA256SUMS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vidni-${{ github.ref_name }}
+          path: release/${{ github.ref_name }}/
+          compression-level: 0
+      - name: draft the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          # The version's own section of the changelog is the release's text.
+          awk -v v="$version" '
+            /^## \[/ { on = index($0, "## [" v "]") == 1; next }
+            on' CHANGELOG.md > notes.md
+          gh release create "$GITHUB_REF_NAME" --draft --title "vidni $version" \
+            --notes-file notes.md release/"$GITHUB_REF_NAME"/*

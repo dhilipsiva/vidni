@@ -67,6 +67,12 @@ test-app:
 bundle:
     nix build .#bundle --no-link --print-out-paths
 
+# Build what a release is made of into release/v<version>/: the two archives, SOURCES.txt
+# and SHA256SUMS (P8-VIDNI-05). `just release --rebuild` builds each archive a second time
+# and fails if it differs from the first. docs/releasing.md has the whole procedure.
+release *args:
+    packaging/release.sh {{args}}
+
 # Follow the bundle's README in a clean container with no Nix, as a user who isn't root, and
 # hold what it drafts to what the flake's own tools draft. Needs docker and the network.
 test-bundle image="debian:stable-slim":
