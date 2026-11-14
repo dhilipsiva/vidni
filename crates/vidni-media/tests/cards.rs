@@ -177,3 +177,42 @@ fn a_theme_changes_a_cards_look_and_not_where_things_sit() {
     };
     assert_eq!(inked(&a, look_a.frame), inked(&b, look_b.frame));
 }
+
+#[test]
+fn a_card_clear_of_the_apps_keeps_its_ink_in_the_free_part_above_the_captions() {
+    use vidni_core::platforms::Insets;
+    use vidni_media::compose::cut::Layout;
+    // What Shorts and Reels cover together.
+    let covered = Insets {
+        top: 288,
+        bottom: 672,
+        left: 65,
+        right: 193,
+    };
+    let layout = Layout::clear_of(covered).unwrap();
+    for theme in themes() {
+        let files = Faces::pinned(&theme, &fonts::dirs()).unwrap();
+        let mut fonts = Fonts::new();
+        let faces = Type {
+            caption: fonts.load(&files.caption).unwrap(),
+            mono: fonts.load(&files.mono).unwrap(),
+            display: fonts.load(&files.display).unwrap(),
+        };
+        let look = Look::of(&theme);
+        for (name, card) in cards() {
+            let drawn = card::render(&card, &layout, &mut fonts, &faces, &look);
+            assert_eq!((drawn.width, drawn.height), (1080, 1920));
+            let [left, top, right, bottom] = drawn.ink(&look.frame).unwrap();
+            // The caption band is the lowest 190 pixels of the free part.
+            assert!(
+                left >= 65 && top >= 288 && right <= 887 && bottom <= 1248 - 190,
+                "{} {name}: its ink is at {left}, {top} to {right}, {bottom}",
+                theme.name
+            );
+            // The card that no app covers reaches further out.
+            let full = card::render(&card, &PORTRAIT, &mut fonts, &faces, &look);
+            let [_, _, wide, _] = full.ink(&look.frame).unwrap();
+            assert!(wide > right, "{} {name}", theme.name);
+        }
+    }
+}

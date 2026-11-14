@@ -126,8 +126,57 @@ impl Image {
         &self.data[at..at + self.channels]
     }
 
+    /// The box around the image's ink, as its corners (left, top, right,
+    /// bottom; the last two just past the ink): every pixel that isn't
+    /// `background`, and that isn't fully transparent. `None` when there
+    /// is no ink.
+    pub fn ink(&self, background: &[u8]) -> Option<[i32; 4]> {
+        let mut found: Option<[i32; 4]> = None;
+        for y in 0..self.height {
+            let row = self.row(y);
+            let inked = |x: usize| {
+                let pixel = &row[x * self.channels..(x + 1) * self.channels];
+                pixel[..3] != background[..3] && pixel.get(3) != Some(&0)
+            };
+            let width = self.width as usize;
+            let Some(first) = (0..width).find(|x| inked(*x)) else {
+                continue;
+            };
+            let last = (0..width).rev().find(|x| inked(*x)).unwrap_or(first);
+            let (first, last, y) = (first as i32, last as i32 + 1, y as i32);
+            found = Some(match found {
+                None => [first, y, last, y + 1],
+                Some([x0, y0, x1, _]) => [x0.min(first), y0, x1.max(last), y + 1],
+            });
+        }
+        found
+    }
+
     pub(crate) fn row(&self, y: u32) -> &[u8] {
         let len = self.width as usize * self.channels;
         &self.data[y as usize * len..(y as usize + 1) * len]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ink_is_what_differs_from_the_background_and_shows() {
+        let grey = [9u8, 9, 9];
+        let mut img = Image::new(8, 6, &[9, 9, 9, 255]);
+        assert_eq!(img.ink(&grey), None);
+        let mut set = |x: usize, y: usize, pixel: [u8; 4]| {
+            let at = (y * 8 + x) * 4;
+            img.data[at..at + 4].copy_from_slice(&pixel);
+        };
+        set(2, 1, [200, 0, 0, 255]);
+        set(5, 4, [0, 0, 200, 128]);
+        // A pixel of another colour that is fully transparent doesn't show.
+        set(7, 5, [0, 200, 0, 0]);
+        assert_eq!(img.ink(&grey), Some([2, 1, 6, 5]));
+        // Without alpha, every pixel of another colour is ink.
+        assert_eq!(img.to_rgb().ink(&grey), Some([2, 1, 8, 6]));
     }
 }

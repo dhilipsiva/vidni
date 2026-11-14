@@ -825,4 +825,10 @@ impl Cut {
             .clone()
             .unwrap_or_else(|| crate::platforms::defaults(self.aspect))
     }
+
+    /// The edges of the frame that the cut's platforms cover, when they
+    /// cover any (`platforms.toml`, each profile's safe zone).
+    pub fn covered(&self) -> Option<crate::platforms::Insets> {
+        crate::platforms::insets(&self.platforms(), self.size())
+    }
 }

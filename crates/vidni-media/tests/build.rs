@@ -84,6 +84,14 @@ fn setup() -> Setup {
     .unwrap()
 }
 
+/// The stages of a build of the long cut.
+const LONG_STAGES: [&str; 4] = [
+    "timeline and captions",
+    "narration",
+    "long.mp4",
+    "review frames",
+];
+
 fn project(dir: &Path, text: &str) -> Project {
     vidni_core::validate::check(text, Some(dir)).unwrap_or_else(|p| panic!("{p:?}"))
 }
@@ -224,7 +232,14 @@ fn a_final_build_records_what_it_made_and_repeats() {
         }
     };
     let record = build::final_build(&p, dir, &lock, long, &setup(), &mut watch).unwrap();
-    assert_eq!(stages, ["timeline and captions", "narration", "long.mp4"]);
+    assert_eq!(stages, LONG_STAGES);
+    // A frame to look at for its one section, for the platform it is made for.
+    let review = dir.join("build/final/review/long/youtube");
+    let frames: Vec<String> = fs::read_dir(&review)
+        .unwrap()
+        .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+        .collect();
+    assert_eq!(frames, ["00-main.png"]);
 
     // One picture, with its captions burned in, measured by QA.
     assert_eq!(record.outputs.keys().collect::<Vec<_>>(), ["long.mp4"]);
@@ -286,7 +301,7 @@ fn a_final_build_records_what_it_made_and_repeats() {
         }
     };
     let again = build::final_build(&p, dir, &lock, long, &afresh, &mut watch).unwrap();
-    assert_eq!(stages, ["timeline and captions", "narration", "long.mp4"]);
+    assert_eq!(stages, LONG_STAGES);
     assert_eq!(again, record);
     assert_eq!(record.differences(&again), Vec::<String>::new());
 }
@@ -309,7 +324,12 @@ fn a_build_is_kept_until_an_input_or_a_file_it_made_changes() {
         let record = build::final_build(p, dir, &lock, cut(p, "short"), setup, &mut watch).unwrap();
         (record, steps)
     };
-    let stages = ["timeline and captions", "narration", "short.mp4"];
+    let stages = [
+        "timeline and captions",
+        "narration",
+        "short.mp4",
+        "review frames",
+    ];
     let (first, steps) = build(&p, &setup());
     assert_eq!(steps, stages);
     let made = dir.join("build/final/short.mp4");

@@ -495,6 +495,60 @@ fn offline_a_page_on_the_web_isnt_captured() {
 }
 
 /// Runs vidni in the folder `dir` and expects it to succeed; its stdout.
+/// A PNG's size and its pixels as rgb24, read by ffmpeg.
+fn image_of(png: &Path) -> ((u32, u32), Vec<u8>) {
+    let probe = Command::new("ffprobe")
+        .args(["-v", "error", "-show_entries", "stream=width,height"])
+        .args(["-of", "csv=p=0"])
+        .arg(png)
+        .output()
+        .unwrap();
+    let size: Vec<u32> = String::from_utf8_lossy(&probe.stdout)
+        .trim()
+        .split(',')
+        .map(|n| n.parse().unwrap())
+        .collect();
+    let raw = Command::new("ffmpeg")
+        .args(["-v", "error", "-i"])
+        .arg(png)
+        .args(["-f", "rawvideo", "-pix_fmt", "rgb24", "-"])
+        .output()
+        .unwrap();
+    assert!(raw.status.success(), "{}", png.display());
+    ((size[0], size[1]), raw.stdout)
+}
+
+#[test]
+#[ignore = "needs ffmpeg; run `just test-build`"]
+fn the_grid_is_a_picture_and_a_clip_to_measure_an_app_with() {
+    let work = tempfile::tempdir().unwrap();
+    let said = ok_in(work.path(), &["platforms", "--grid", "grid"]);
+    assert!(
+        said.starts_with("grid/grid-1080x1920.png: 1080x1920"),
+        "{said}"
+    );
+    let picture = image_of(&work.path().join("grid/grid-1080x1920.png"));
+    assert_eq!(picture.0, (1080, 1920));
+    let probe = Command::new("ffprobe")
+        .args(["-v", "error", "-show_entries"])
+        .args(["stream=codec_name,width,height,nb_frames", "-of", "csv=p=0"])
+        .arg(work.path().join("grid/grid-1080x1920.mp4"))
+        .output()
+        .unwrap();
+    let streams = String::from_utf8_lossy(&probe.stdout);
+    let streams: Vec<&str> = streams.lines().collect();
+    // 15 s at 30 fps, and a sound track for apps that want one.
+    assert_eq!(streams[0], "h264,1080,1920,450", "{streams:?}");
+    assert!(streams[1].starts_with("aac,"), "{streams:?}");
+    // Nothing but the two files is left.
+    let mut left: Vec<String> = fs::read_dir(work.path().join("grid"))
+        .unwrap()
+        .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+        .collect();
+    left.sort();
+    assert_eq!(left, ["grid-1080x1920.mp4", "grid-1080x1920.png"]);
+}
+
 fn ok_in(dir: &Path, args: &[&str]) -> String {
     let out = Command::new(env!("CARGO_BIN_EXE_vidni"))
         .args(args)
@@ -534,6 +588,36 @@ fn a_new_project_drafts_as_it_is() {
             "{file}"
         );
     }
+    // P6-VIDNI-02: each cut has a review frame for its one section, for
+    // each platform it is made for, and nothing it draws is under an app.
+    assert!(!drafted.contains("warning"), "{drafted}");
+    let review = work.path().join("demo/build/draft/review");
+    for frame in [
+        "long/youtube/00-intro.png",
+        "vertical/youtube-shorts/00-intro.png",
+        "vertical/instagram-reels/00-intro.png",
+        "vertical/whatsapp-status/00-intro.png",
+    ] {
+        assert!(review.join(frame).is_file(), "{frame}");
+    }
+    // Shorts' app covers the frame's edges and WhatsApp's none, so the
+    // two frames differ, and only at the edges.
+    let png = |frame: &str| image_of(&review.join(frame));
+    let (shorts, plain) = (
+        png("vertical/youtube-shorts/00-intro.png"),
+        png("vertical/whatsapp-status/00-intro.png"),
+    );
+    assert_eq!(shorts.0, (1080, 1920));
+    let pixel = |image: &((u32, u32), Vec<u8>), x: usize, y: usize| {
+        let at = (y * 1080 + x) * 3;
+        image.1[at..at + 3].to_vec()
+    };
+    assert_ne!(pixel(&shorts, 540, 100), pixel(&plain, 540, 100));
+    assert_ne!(pixel(&shorts, 540, 1600), pixel(&plain, 540, 1600));
+    for (x, y) in [(100, 300), (540, 700), (880, 1240)] {
+        assert_eq!(pixel(&shorts, x, y), pixel(&plain, x, y), "({x}, {y})");
+    }
+
     // Its sheet now has the draft voice's pace for each line.
     let sheet = ok_in(work.path(), &["plan", "demo"]);
     assert!(

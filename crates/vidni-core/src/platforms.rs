@@ -120,6 +120,59 @@ pub fn defaults(aspect: Aspect) -> Vec<String> {
         .collect()
 }
 
+/// The edges of a frame that apps cover, in pixels.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Insets {
+    pub top: u32,
+    pub bottom: u32,
+    pub left: u32,
+    pub right: u32,
+}
+
+impl Insets {
+    /// `zone` on a frame of `width` by `height` pixels. A pixel that an
+    /// app covers in part is covered.
+    pub fn of(zone: &SafeZone, [width, height]: [u32; 2]) -> Self {
+        // A share that is a whole number of pixels stays that number,
+        // whatever its last binary digit.
+        let px = |share: f64, size: u32| (share * f64::from(size) - 1e-6).ceil().max(0.0) as u32;
+        Self {
+            top: px(zone.top, height),
+            bottom: px(zone.bottom, height),
+            left: px(zone.left, width),
+            right: px(zone.right, width),
+        }
+    }
+
+    /// The edges that either covers.
+    pub fn with(self, other: Self) -> Self {
+        Self {
+            top: self.top.max(other.top),
+            bottom: self.bottom.max(other.bottom),
+            left: self.left.max(other.left),
+            right: self.right.max(other.right),
+        }
+    }
+
+    /// Whether no edge is covered.
+    pub fn is_none(&self) -> bool {
+        (self.top, self.bottom, self.left, self.right) == (0, 0, 0, 0)
+    }
+}
+
+/// What the apps of `platforms` cover together on a frame of `size`: the
+/// widest of their safe zones at each edge. `None` when they cover nothing,
+/// or none of them is a profile.
+pub fn insets(platforms: &[String], size: [u32; 2]) -> Option<Insets> {
+    let profiles = all();
+    platforms
+        .iter()
+        .filter_map(|id| profiles.iter().find(|p| &p.id == id))
+        .map(|p| Insets::of(&p.safe_zone, size))
+        .reduce(Insets::with)
+        .filter(|covered| !covered.is_none())
+}
+
 /// `seconds` as `h:mm:ss` or `m:ss`.
 pub fn clock(seconds: u32) -> String {
     let (h, m, s) = (seconds / 3600, seconds / 60 % 60, seconds % 60);
@@ -186,6 +239,34 @@ mod tests {
             defaults(Aspect::Portrait),
             ["youtube-shorts", "instagram-reels", "whatsapp-status"]
         );
+    }
+
+    #[test]
+    fn the_default_vertical_apps_cover_the_widest_zone_at_each_edge() {
+        let ids = |ids: &[&str]| ids.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        // Shorts: 288 px top, 672 bottom, 48 left, 192 right. Reels: 14 %, 35 %, 6 %, 6 %.
+        assert_eq!(
+            insets(&defaults(Aspect::Portrait), [1080, 1920]),
+            Some(Insets {
+                top: 288,
+                bottom: 672,
+                left: 65,
+                right: 193
+            })
+        );
+        assert_eq!(
+            insets(&ids(&["instagram-reels"]), [1080, 1920]),
+            Some(Insets {
+                top: 269,
+                bottom: 672,
+                left: 65,
+                right: 65
+            })
+        );
+        // No platform, or one that covers nothing, leaves the frame free.
+        assert_eq!(insets(&[], [1080, 1920]), None);
+        assert_eq!(insets(&ids(&["youtube"]), [1920, 1080]), None);
+        assert_eq!(insets(&ids(&["whatsapp-status"]), [1080, 1920]), None);
     }
 
     #[test]

@@ -141,7 +141,7 @@ label = ""
 id = "short-hook"
 section = "intro"
 show = "Can a program show its reasoning? Here's a proof you can check, in under a minute."
-scene = "intro"
+scene = "hook"
 only = ["short"]
 
 [[lines]]
@@ -552,7 +552,7 @@ scene = "end"
 id = "short-end"
 section = "end"
 show = "That was the short version. The five-minute walkthrough goes through every step."
-scene = "end"
+scene = "more"
 only = ["short"]
 
 # The live playground, captured at 1280×720 CSS pixels and 3× density.
@@ -651,6 +651,20 @@ url = "cards/card.html?v=intro&r={aspect}"
 [scenes.end]
 kind = "page"
 url = "cards/card.html?v=end&r={aspect}"
+
+# The short's own cards, drawn from the theme's templates: they are laid
+# out clear of what the apps cover, which a page can't know.
+[scenes.hook]
+kind = "card"
+template = "title"
+title = "A proof you can check"
+subtitle = "the nibli syllogism, in under a minute"
+
+[scenes.more]
+kind = "card"
+template = "end"
+title = "Run the proof yourself"
+subtitle = "dhilipsiva.dev/nibli-playground"
 
 [scenes.verdicts]
 kind = "page"

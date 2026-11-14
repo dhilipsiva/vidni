@@ -21,6 +21,7 @@ The final cuts need the creator's takes and the captures the cuts froze, and bot
 A third cut, `short`, is a 54-second 9:16 video for YouTube Shorts, Instagram Reels and WhatsApp Status ([Several cuts](../../docs/spec.md#several-cuts)).
 - **It lists 12 lines.** Ten are lines the full cuts say too: the syllogism, and the start and end of the backward search.
 - **Two are its own:** `short-hook` opens it and `short-end` closes it. Both set `only = ["short"]`, so the full cuts leave them out and stay ratified.
+- **It is laid out clear of the apps.** Shorts and Reels cover the top, the bottom and the right of a video with their own buttons and labels, so the short keeps its title, its view and its captions inside the part they leave free ([What the apps cover](../../docs/spec.md#what-the-apps-cover)). Its two own lines are on cards drawn from the theme's templates, `hook` and `more`, which are laid out there too. `build/draft/review/short/` has a frame of each section for each app, with what the app covers shaded.
 - **It is a draft.** Its two own lines have no take yet, so `vidni draft --cut short` builds it in the draft voice and `vidni final` refuses it. `vidni plan --cut short` prints what is left to record.
 
 The reference pipeline in [`../../reference/`](../../reference/) made the first version of this video, from `reference/segments.json`. Its cuts are in `reference/out/`, and `just parity product` checks vidni's final build against them.

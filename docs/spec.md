@@ -388,7 +388,7 @@ title = "The LLM drafts, the engine decides"
 subtitle = "a five-minute tour"
 ```
 
-Long text wraps, and the whole card sits in the middle of the frame. A line on a card scene takes no `do`, `highlight` or `camera`. A card's words are part of what its cut shows, so changing them after the cut is ratified makes it `changed`.
+Long text wraps, and the whole card sits in the middle of the frame, or of the part of it that the cut's apps leave free ([What the apps cover](#what-the-apps-cover)). A line on a card scene takes no `do`, `highlight` or `camera`. A card's words are part of what its cut shows, so changing them after the cut is ratified makes it `changed`.
 
 ### Images
 
@@ -543,6 +543,35 @@ A line sits at its place in the script whichever cuts use it, so a short's lines
 - **Takes are shared.** A line has one take, and every cut that uses the line plays it.
 - **Each cut is ratified, built and approved by itself.** Adding a short, or a line that is only for it, leaves the other cuts ratified.
 
+### What the apps cover
+
+A phone app draws its own things over a video: buttons down the right, the account and the description along the bottom, tabs across the top. Each platform profile says how much of the frame its app covers at each edge, as its safe zone (`vidni platforms`). A cut is laid out clear of what all its platforms cover together: the most that any of them covers at each edge.
+
+With the default platforms of a 9:16 cut, that is 288 px at the top, 672 at the bottom, 65 at the left and 193 at the right. It leaves 822 by 960 px of the 1080 by 1920 frame free.
+
+**A 9:16 cut whose platforms cover something** keeps everything inside the free part:
+- **The title band,** 176 px high, is under the top edge the apps cover: the kicker, and the section's label in up to two lines.
+- **The caption band,** 190 px high, is above the bottom edge they cover. A cue of more lines than it holds grows upwards, over the view.
+- **The view** is between the two bands, as wide as the free part. A camera frames its targets in it, as in any cut.
+- **A card** drawn from a template is laid out in the free part, above the caption band, with smaller type.
+- **The rest of the frame** is the theme's frame colour.
+
+**A 9:16 cut whose platforms cover nothing,** or with `platforms = []`, keeps the full-height layout: a 330 px title band, the view, and the captions below.
+
+**A page scene** is your own layout, and vidni can't move what it draws. Keep what such a page draws inside the free part, on a plain background; or use a card template.
+
+**QA checks it.** Each line's card, section label, overlay and captions must sit inside the free part. Ink is every pixel that differs from the card's own background, or from the frame colour for the other three. A line that draws ink under an app is a QA problem, named by its line, the thing and the edge:
+
+```text
+line short-hook: its card reaches 288 px into the top edge that the cut's platforms cover
+```
+
+A draft prints it as a warning, and a final build that has one isn't delivered.
+
+**Review frames show it.** Every build writes one frame for each section, halfway through its middle line, as `build/draft/review/<cut>/<platform>/<nn>-<section>.png` (or `build/final/…`). Each platform has its own set, with what its app covers shaded red and the pixels named. A cut made for no platform has one set, in `review/<cut>/`.
+
+**Measuring an app.** `vidni platforms --grid DIR` writes `grid-1080x1920.png` and a 15-second clip of it, `grid-1080x1920.mp4`. The picture is in squares of 120 px, each with the place of its top left corner written in it. Upload the clip privately, take a screenshot while it plays, and the squares the app's buttons and labels hide say what it covers.
+
 ## `[music]`
 
 | Key | Type | Default | Meaning |
@@ -640,7 +669,7 @@ Everything in `build/` can be made again, except the captures of a ratified cut.
 2. It takes the captures the cuts need (`vidni capture` does this step alone).
 3. It builds each cut into `build/draft/`.
 
-A draft is one picture for each cut, `build/draft/<cut>.mp4`, with its captions drawn in unless the cut's `captions` is `file`. What QA finds in a draft is printed as a warning.
+A draft is one picture for each cut, `build/draft/<cut>.mp4`, with its captions drawn in unless the cut's `captions` is `file`. What QA finds in a draft is printed as a warning. Beside the picture are the cut's review frames, in `build/draft/review/<cut>/` ([What the apps cover](#what-the-apps-cover)).
 
 **What a draft keeps.** Each step keeps what it made, and makes it again only when what it was made from changes. So a second draft with nothing changed speaks, captures and renders nothing: on the nibli example, two cuts of five minutes each, it takes under a second.
 

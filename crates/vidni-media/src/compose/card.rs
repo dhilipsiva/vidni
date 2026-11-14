@@ -59,6 +59,28 @@ pub fn render(card: &Card, layout: &Layout, fonts: &mut Fonts, faces: &Type, loo
     // The margin at each side, and how much smaller type is on a 9:16 card.
     let (margin, k) = if portrait { (90.0, 0.8) } else { (160.0, 1.0) };
     let width = w - 2.0 * margin;
+    // Where the card is laid out: the left edge of its text, the text's
+    // width, the middle across, and the top and the height of the space
+    // its blocks sit in the middle of.
+    let (margin, k, width, across, above, space) = match layout.safe() {
+        None => (margin, k, width, w / 2.0, 0.0, h),
+        // Clear of the apps: inside the part of the frame they leave free,
+        // with type as much smaller as that part is narrower.
+        Some(free) => {
+            let [left, top, right, bottom] = free.map(|v| v as f32);
+            // A 9:16 card leaves the caption band to the captions.
+            let bottom = bottom - layout.caption_band() as f32;
+            let inside = right - left - 80.0;
+            (
+                left + 40.0,
+                k * (inside / width).min(1.0),
+                inside,
+                (left + right) / 2.0,
+                top,
+                bottom - top,
+            )
+        }
+    };
     let mut img = Image::new(layout.size.0, layout.size.1, &look.frame);
     let block =
         |fonts: &mut Fonts, text: &str, font, size: f32, ink, above: f32, width: f32| Block {
@@ -194,7 +216,7 @@ pub fn render(card: &Card, layout: &Layout, fonts: &mut Fonts, faces: &Type, loo
     };
     // The blocks sit in the middle of the card, as one.
     let total: f32 = blocks.iter().map(Block::height).sum();
-    let top = ((h - total) / 2.0).round();
+    let top = above + ((space - total) / 2.0).round();
     let accent = |img: &mut Image, (x0, y0, x1, y1): (f32, f32, f32, f32)| {
         pillow::rectangle(
             img,
@@ -205,7 +227,7 @@ pub fn render(card: &Card, layout: &Layout, fonts: &mut Fonts, faces: &Type, loo
     match card.template {
         // A short rule above the title; in the middle on a closing card.
         Template::Title => accent(&mut img, (margin, top, margin + 96.0, top + 7.0)),
-        Template::End => accent(&mut img, (w / 2.0 - 48.0, top, w / 2.0 + 48.0, top + 7.0)),
+        Template::End => accent(&mut img, (across - 48.0, top, across + 48.0, top + 7.0)),
         // A rule down the side of the quotation.
         Template::Quote => accent(&mut img, (margin, top, margin + 9.0, top + total)),
         Template::Section | Template::Bullets => {}
@@ -235,7 +257,7 @@ pub fn render(card: &Card, layout: &Layout, fonts: &mut Fonts, faces: &Type, loo
             };
             let mid = y + block.leading / 2.0;
             match centred {
-                true => fonts.draw(&mut img, (w / 2.0, mid), line, pen, "mm"),
+                true => fonts.draw(&mut img, (across, mid), line, pen, "mm"),
                 false => fonts.draw(&mut img, (x, mid), line, pen, "lm"),
             }
             y += block.leading;

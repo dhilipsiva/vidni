@@ -26,7 +26,7 @@ fn validate_accepts_the_nibli_example() {
     );
     assert_eq!(
         String::from_utf8_lossy(&out.stdout),
-        "examples/nibli-syllogism/vidni.toml: ok: 59 lines in 10 sections, 5 scenes, 3 cuts\n"
+        "examples/nibli-syllogism/vidni.toml: ok: 59 lines in 10 sections, 7 scenes, 3 cuts\n"
     );
 }
 

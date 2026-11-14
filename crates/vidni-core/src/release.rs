@@ -295,7 +295,7 @@ fn hash(value: &Value) -> String {
 /// the cut's own settings. The voice's settings aren't here: what they
 /// change is the audio, which is hashed as it is.
 pub fn look(project: &Project, cut: &Cut) -> Value {
-    json!({
+    let mut look = json!({
         "timing": project.timing,
         "style": project.style,
         "music": project.music,
@@ -312,7 +312,14 @@ pub fn look(project: &Project, cut: &Cut) -> Value {
             "platforms": cut.platforms(),
             "size": cut.size(),
         },
-    })
+    });
+    // The edges the cut's apps cover move what it draws, and they are
+    // vidni's data, not the project's. A cut whose apps cover nothing has
+    // the look it had before vidni knew of them.
+    if let Some(covered) = cut.covered() {
+        look["cut"]["covered"] = json!(covered);
+    }
+    look
 }
 
 /// The sources of `cut`, with `clips` as its lines' audio: each line's ID
@@ -560,6 +567,25 @@ mod tests {
         assert_eq!(date(20_771), "2026-11-14");
         assert_eq!(date(47_540), "2100-02-28");
         assert_eq!(date(47_541), "2100-03-01");
+    }
+
+    #[test]
+    fn what_the_apps_cover_is_in_a_cuts_look_only_when_they_cover_something() {
+        let project: Project = toml::from_str(crate::TEMPLATE).unwrap();
+        let of = |id: &str| {
+            let cut = project.cuts.iter().find(|c| c.id == id).unwrap();
+            look(&project, cut)["cut"].clone()
+        };
+        // YouTube covers nothing of a 16:9 cut: its look has no such key.
+        assert!(of("long").get("covered").is_none());
+        assert_eq!(
+            of("vertical")["covered"],
+            json!({"top": 288, "bottom": 672, "left": 65, "right": 193})
+        );
+        // Nor has a 9:16 cut made for no platform.
+        let mut bare = project.clone();
+        bare.cuts[1].platforms = Some(Vec::new());
+        assert!(look(&bare, &bare.cuts[1])["cut"].get("covered").is_none());
     }
 
     fn record(cut: &str, mp4: &str) -> Record {

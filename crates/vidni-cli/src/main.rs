@@ -159,7 +159,13 @@ enum Command {
         path: PathBuf,
     },
     /// List the platform profiles, with the date each was checked and its sources.
-    Platforms,
+    Platforms {
+        /// Instead, write a test picture and a 15-second clip of it into
+        /// DIR, to measure what an app covers: upload the clip privately,
+        /// and read off the squares its buttons and labels hide.
+        #[arg(long, value_name = "DIR")]
+        grid: Option<PathBuf>,
+    },
     /// List the draft voices vidni can fetch, with each one's licence; or fetch one.
     Voices {
         #[command(subcommand)]
@@ -344,7 +350,8 @@ fn main() -> ExitCode {
         } => unratify(&path, &cuts, refresh),
         Command::Hear { path, lines, draft } => hear(&path, &lines, draft),
         Command::Capture { path } => build::capture(&path),
-        Command::Platforms => platforms(),
+        Command::Platforms { grid: None } => platforms(),
+        Command::Platforms { grid: Some(dir) } => grid(&dir),
         Command::Voices { action: None } => voices(),
         Command::Voices {
             action: Some(VoicesAction::Fetch { id }),
@@ -709,6 +716,32 @@ fn platforms() -> ExitCode {
         "Platforms change their limits without notice; confirm one in the app before relying on it."
     );
     ExitCode::SUCCESS
+}
+
+/// Writes the 9:16 test picture and its clip into `dir`.
+fn grid(dir: &Path) -> ExitCode {
+    use vidni_core::theme::Theme;
+    use vidni_media::build::Faces;
+    let made = Faces::pinned(&Theme::default_theme(), &vidni_core::fonts::dirs())
+        .and_then(|faces| vidni_media::review::grid_clip((1080, 1920), 15, &faces.mono, dir));
+    match made {
+        Ok([png, mp4]) => {
+            say!(
+                "{}: 1080x1920, in squares of 120 px, each with the place of its top left corner",
+                png.display()
+            );
+            say!("{}: 15 s of it, encoded as a cut is", mp4.display());
+            say!(
+                "Upload the clip privately, take a screenshot of it playing, and read off \
+                 the squares the app's buttons and labels hide."
+            );
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("vidni: {e}");
+            ExitCode::FAILURE
+        }
+    }
 }
 
 fn validate(path: &Path) -> ExitCode {

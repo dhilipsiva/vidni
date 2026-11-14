@@ -21,7 +21,7 @@ use crate::compose::card::Card;
 use crate::compose::cut::{Composer, FPS, LANDSCAPE, Layout, Look, PORTRAIT, Picture, Shot, Type};
 use crate::compose::text::Fonts;
 use crate::encode::{self, Encoder, Settings, Target};
-use crate::{compose, narration, qa, run};
+use crate::{compose, narration, qa, review, run};
 use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -339,10 +339,17 @@ pub fn plan<'p>(
     pack: Option<&Pack>,
     setup: &Setup,
 ) -> Result<Plan<'p>, Stop> {
-    let layout = match (cut.aspect, cut.size()) {
-        (Aspect::Landscape, [1920, 1080]) => LANDSCAPE,
-        (Aspect::Portrait, [1080, 1920]) => PORTRAIT,
-        (_, [w, h]) => {
+    // A cut is laid out clear of what its platforms' apps cover.
+    let covered = cut.covered();
+    let layout = match (cut.aspect, cut.size(), covered) {
+        (Aspect::Landscape, [1920, 1080], covered) => Layout {
+            covered,
+            ..LANDSCAPE
+        },
+        (Aspect::Portrait, [1080, 1920], None) => PORTRAIT,
+        (Aspect::Portrait, [1080, 1920], Some(covered)) => Layout::clear_of(covered)
+            .map_err(|why| Stop::refused(format!("cut {}: {why}", cut.id)))?,
+        (_, [w, h], _) => {
             return Err(Stop::refused(format!(
                 "cut {} is {w}x{h}; vidni draws 16:9 at 1920x1080 and 9:16 at 1080x1920 for now",
                 cut.id
@@ -451,6 +458,22 @@ impl Plan<'_> {
             true => composer,
             false => composer.without_captions(),
         })
+    }
+
+    /// What the cut draws where one of its platforms' apps would cover it,
+    /// each as a problem that names its line.
+    fn covered(&self, composer: &mut Composer) -> Result<Vec<String>, String> {
+        let ids = self.cut.line_ids(self.project);
+        let spills = composer.spills()?;
+        Ok(spills
+            .iter()
+            .map(|s| {
+                format!(
+                    "line {}: its {} reaches {} px into the {} edge that the cut's platforms cover",
+                    ids[s.line], s.what, s.by, s.edge
+                )
+            })
+            .collect())
     }
 
     /// The caption files' names: `<cut>.<language>.srt` and `.vtt`.
@@ -612,6 +635,9 @@ pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<
                 chapters: None,
             },
         )?;
+        // What the picture draws where an app would cover it fails QA too.
+        let mut problems = report.problems;
+        problems.extend(plan.covered(&mut composer)?);
         outputs.insert(
             name.clone(),
             Output {
@@ -621,10 +647,20 @@ pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<
                 packets: sha256_hex(&crate::framemd5(&mp4)?),
                 mp4: release::file_hash(&mp4)?,
                 qa: report.summary,
-                problems: report.problems,
+                problems,
             },
         );
     }
+    // Frames to look at, from the picture with captions when there is one.
+    progress(Step::Stage("review frames"));
+    let captioned = plan.pictures.iter().any(|(_, captions)| *captions);
+    review::write(
+        &mut plan.composer(captioned)?,
+        &plan.timeline,
+        plan.cut,
+        &plan.faces.mono,
+        &review::folder(&folder, cut),
+    )?;
     let record = Record {
         cut: cut.clone(),
         voice: plan.voice,
