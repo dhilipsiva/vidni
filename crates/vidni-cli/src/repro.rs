@@ -7,6 +7,7 @@
 
 use crate::build::{cant, chosen, setup, stopped};
 use crate::{Loaded, load, offline};
+use std::collections::BTreeSet;
 use std::ffi::OsString;
 use std::fs::{self, File};
 use std::os::unix::process::CommandExt;
@@ -180,8 +181,10 @@ fn list(cpus: &[usize]) -> String {
 
 /// The files a build of `cuts` reads, as paths inside the project folder:
 /// the project's file and locks, the files its scenes name, each line's
-/// clip in `takes`, and the cuts' captures with their frames. Nothing else
-/// of the folder is copied, so nothing else can matter to a build.
+/// clip in `takes`, and the cuts' captures with their frames. A capture of
+/// one of the project's own pages is checked against the files it was made
+/// from, so they go along, with the record of them. Nothing else of the
+/// folder is copied, so nothing else can matter to a build.
 fn inputs(
     project: &Project,
     dir: &Path,
@@ -202,6 +205,12 @@ fn inputs(
         files.push(capture::path(dir, &capture.key));
         if matches!(capture.source, capture::Source::Line(_)) {
             files.push(capture::frames_path(dir, &capture.key));
+        }
+        if let Some(made_from) = capture::files(dir, &capture.key) {
+            files.push(capture::files_path(dir, &capture.key));
+            // One that wasn't there when the capture was taken still isn't.
+            let there = made_from.iter().filter(|(_, sha)| sha.is_some());
+            files.extend(there.map(|(name, _)| dir.join(name)));
         }
     }
     files.sort();
@@ -380,17 +389,17 @@ fn run(
 
     // What the builds need is checked here, where it can be said plainly:
     // first what the creator can fix, then the tools.
-    let untaken = capture::plan(project, dir, &cuts);
-    if let Some(first) = untaken.first() {
+    let mut seen = BTreeSet::new();
+    let captures: Vec<capture::Capture> = cuts
+        .iter()
+        .flat_map(|cut| capture::for_cut(project, cut))
+        .filter(|c| seen.insert(c.key.clone()))
+        .collect();
+    let unready = capture::refusals(dir, &captures);
+    if !unready.is_empty() {
         return Err(stopped(Stop::Refused(vec![format!(
-            "{} of the captures {} taken yet (the first: {}); repro builds from the captures it finds, so `vidni draft` comes first",
-            untaken.len(),
-            if untaken.len() == 1 {
-                "isn't"
-            } else {
-                "aren't"
-            },
-            first.what
+            "{}; repro builds from the captures it finds, so `vidni draft` comes first",
+            unready.join("; ")
         )])));
     }
     let mut takes = Vec::new();
@@ -409,7 +418,7 @@ fn run(
             takes.extend(clips.into_iter().map(|(_, clip)| clip));
         }
     }
-    setup()?;
+    setup(false)?;
     let mut environment: Vec<(String, OsString)> = vec![
         ("PATH".into(), std::env::var_os("PATH").unwrap_or_default()),
         ("TZ".into(), "UTC".into()),
@@ -694,6 +703,7 @@ url = "cards/card-{aspect}.html?v=1"
             "voice.lock",
             "cards/card-16x9.html",
             "cards/card-9x16.html",
+            "cards/card.css",
             "cards/unused.css",
             "notes.md",
             "takes/main-1/raw/0123-1.wav",
@@ -720,6 +730,8 @@ url = "cards/card-{aspect}.html?v=1"
         let mut wanted = vec![
             "cards/card-16x9.html".to_string(),
             "cards/card-9x16.html".to_string(),
+            // What a card loaded when it was captured goes along with it.
+            "cards/card.css".to_string(),
             "vidni.toml".to_string(),
             "voice.lock".to_string(),
         ];
@@ -730,6 +742,25 @@ url = "cards/card-{aspect}.html?v=1"
             if matches!(c.source, capture::Source::Line(_)) {
                 fs::write(capture::frames_path(dir, &c.key), br#"{"targets":{}}"#).unwrap();
                 wanted.push(format!("build/captures/{}.json", c.key));
+            }
+            // A card's render comes with the record of its files: the
+            // card's own, and a stylesheet that goes along with it.
+            if let Some(file) = &c.file {
+                let made_from = [
+                    (file.clone(), capture::file_sha256(dir, file)),
+                    (
+                        "cards/card.css".into(),
+                        capture::file_sha256(dir, "cards/card.css"),
+                    ),
+                    ("cards/gone.png".into(), None),
+                ]
+                .into();
+                fs::write(
+                    capture::files_path(dir, &c.key),
+                    capture::files_json(&made_from),
+                )
+                .unwrap();
+                wanted.push(format!("build/captures/{}.files.json", c.key));
             }
         }
         wanted.extend(takes.iter().map(|t| release::relative(dir, t)));
@@ -752,7 +783,8 @@ url = "cards/card-{aspect}.html?v=1"
         }
         copied.sort();
         assert_eq!(copied, wanted);
-        // The short cut alone needs one take and its own card.
+        // The short cut alone needs one take and its own card, with the
+        // record of the card's files and the stylesheet it names.
         let short = inputs(
             &project,
             dir,
@@ -760,7 +792,7 @@ url = "cards/card-{aspect}.html?v=1"
             &cuts[1..],
             &takes[1..],
         );
-        assert_eq!(short.len(), 6, "{short:?}");
+        assert_eq!(short.len(), 8, "{short:?}");
     }
 
     #[test]

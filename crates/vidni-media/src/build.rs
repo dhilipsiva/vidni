@@ -22,7 +22,7 @@ use crate::compose::text::Fonts;
 use crate::encode::{self, Encoder, Settings, Target};
 use crate::{compose, narration, qa, run};
 use serde_json::json;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -93,6 +93,8 @@ pub struct Setup {
     pub faces: Faces,
     /// ffmpeg's version, as it prints it.
     pub ffmpeg: String,
+    /// Build even when an earlier build of the same inputs is still whole.
+    pub again: bool,
 }
 
 impl Setup {
@@ -101,6 +103,7 @@ impl Setup {
         Ok(Self {
             faces: Faces::pinned(&fonts::dirs())?,
             ffmpeg: ffmpeg_version()?,
+            again: false,
         })
     }
 
@@ -109,6 +112,7 @@ impl Setup {
         Ok(Self {
             faces,
             ffmpeg: ffmpeg_version()?,
+            again: false,
         })
     }
 
@@ -178,6 +182,8 @@ pub enum Step<'a> {
     Stage(&'a str),
     /// A picture's frames: so many of so many are encoded.
     Frames { file: &'a str, done: u64, of: u64 },
+    /// Nothing is built: an earlier build of the same inputs is still whole.
+    Kept,
 }
 
 /// The camera a web line is framed by in a cut (docs/spec.md, Cameras).
@@ -346,23 +352,12 @@ pub fn plan<'p>(
             return Err(Stop::Failed("a draft needs its voice's pack".into()));
         }
     };
-    let captures = capture::for_cut(project, cut);
-    let untaken: Vec<&capture::Capture> = captures
-        .iter()
-        .filter(|c| !capture::taken(dir, c))
-        .collect();
-    if let Some(first) = untaken.first() {
+    let unready = capture::refusals(dir, &capture::for_cut(project, cut));
+    if !unready.is_empty() {
         return Err(Stop::refused(format!(
-            "cut {}: {} of its {} captures {} taken yet (the first: {}); `vidni draft` takes them",
+            "cut {}: {}; `vidni draft` takes them",
             cut.id,
-            untaken.len(),
-            captures.len(),
-            if untaken.len() == 1 {
-                "isn't"
-            } else {
-                "aren't"
-            },
-            first.what
+            unready.join("; ")
         )));
     }
     let lines = cut.lines_in(project);
@@ -458,6 +453,17 @@ impl Plan<'_> {
         [format!("{stem}.srt"), format!("{stem}.vtt")]
     }
 
+    /// The names of the timeline's file, and of the narration's as it is
+    /// assembled and as it is normalized.
+    fn working_files(&self) -> [String; 3] {
+        let cut = &self.cut.id;
+        [
+            format!("{cut}.timeline.json"),
+            format!("{cut}.narration.wav"),
+            format!("{cut}.narration-norm.wav"),
+        ]
+    }
+
     /// The files a final build delivers: its pictures and its captions.
     fn deliverables(&self) -> Vec<String> {
         let pictures = self.pictures.iter().map(|(name, _)| name.clone());
@@ -468,6 +474,58 @@ impl Plan<'_> {
 fn write(path: &Path, bytes: &[u8]) -> Result<String, String> {
     fs::write(path, bytes).map_err(|e| format!("{}: {e}", path.display()))?;
     Ok(sha256_hex(bytes))
+}
+
+/// The record of an earlier build of exactly what `plan` describes, when
+/// every file that build made is still as it made it. Then a build would
+/// make the same files again, so there is nothing to build (TODO.md,
+/// P2-VIDNI-09).
+pub fn kept(plan: &Plan, dir: &Path) -> Option<Record> {
+    let record = Record::read(dir, plan.voice, &plan.cut.id).ok()??;
+    // The pictures are a part of the inputs; this is to be sure of it.
+    let pictures: BTreeSet<&String> = plan.pictures.iter().map(|(name, _)| name).collect();
+    if record.inputs != plan.inputs || !record.outputs.keys().eq(pictures) {
+        return None;
+    }
+    let [timeline, narration, normalized] = plan.working_files();
+    let [srt, vtt] = plan.caption_files();
+    let t1 = &record.t1;
+    let mut files = vec![
+        (timeline, &t1.timeline),
+        (srt, &t1.srt),
+        (vtt, &t1.vtt),
+        (narration, &t1.pcm),
+        (normalized, &t1.pcm_normalized),
+    ];
+    files.extend(
+        record
+            .outputs
+            .iter()
+            .map(|(name, o)| (name.clone(), &o.mp4)),
+    );
+    let folder = dir.join(plan.voice.dir());
+    let whole = files
+        .iter()
+        .all(|(name, sha)| release::file_hash(&folder.join(name)).ok().as_ref() == Some(*sha));
+    whole.then_some(record)
+}
+
+/// Builds what `plan` describes, unless an earlier build of the same
+/// inputs is still whole and `again` doesn't ask for another.
+fn make(
+    plan: &Plan,
+    dir: &Path,
+    again: bool,
+    progress: &mut dyn FnMut(Step),
+) -> Result<Record, String> {
+    if !again && let Some(record) = kept(plan, dir) {
+        // The resolved project is the whole project's, and may have
+        // changed where this cut hasn't.
+        ratify::write_resolved(plan.project, dir)?;
+        progress(Step::Kept);
+        return Ok(record);
+    }
+    build(plan, dir, progress)
 }
 
 /// Builds what `plan` describes into its folder (`build/draft` or
@@ -489,12 +547,10 @@ pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<
     // it is the whole project's, so no cut's record holds its hash.
     ratify::write_resolved(plan.project, dir)?;
     let [srt, vtt] = plan.caption_files();
+    let [timeline, narration, normalized] = plan.working_files();
     let srt_path = at(&srt);
     let mut t1 = T1 {
-        timeline: write(
-            &at(&format!("{cut}.timeline.json")),
-            plan.timeline_json.as_bytes(),
-        )?,
+        timeline: write(&at(&timeline), plan.timeline_json.as_bytes())?,
         srt: write(&srt_path, timeline::srt(&plan.timeline).as_bytes())?,
         vtt: write(&at(&vtt), timeline::vtt(&plan.timeline).as_bytes())?,
         pcm: String::new(),
@@ -502,8 +558,8 @@ pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<
     };
 
     progress(Step::Stage("narration"));
-    let narration_path = at(&format!("{cut}.narration.wav"));
-    let normalized = at(&format!("{cut}.narration-norm.wav"));
+    let narration_path = at(&narration);
+    let normalized = at(&normalized);
     narration::assemble(&plan.timeline, &plan.clips(), &narration_path)?;
     encode::loudnorm(&narration_path, &normalized, Target::default())?;
     t1.pcm = release::file_hash(&narration_path)?;
@@ -577,7 +633,9 @@ pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<
 }
 
 /// Drafts `cut`: builds it in the draft voice, into `build/draft/`. Its
-/// lines must be spoken and its captures taken already.
+/// lines must be spoken and its captures taken already. A draft of the
+/// same inputs that is still whole is kept, unless `setup` says to build
+/// again.
 pub fn draft(
     project: &Project,
     dir: &Path,
@@ -587,12 +645,14 @@ pub fn draft(
     progress: &mut dyn FnMut(Step),
 ) -> Result<Record, Stop> {
     let plan = plan(project, dir, cut, Voice::Draft, Some(pack), setup)?;
-    build(&plan, dir, progress).map_err(Stop::Failed)
+    make(&plan, dir, setup.again, progress).map_err(Stop::Failed)
 }
 
 /// The final build of `cut`, from the creator's takes, into `build/final/`
 /// and, when QA passes, `out/`. It is refused unless the cut is ratified
-/// and unchanged and every line has a current take.
+/// and unchanged and every line has a current take. A final build of the
+/// same inputs that is still whole is kept, unless `setup` says to build
+/// again; it is delivered all the same.
 pub fn final_build(
     project: &Project,
     dir: &Path,
@@ -606,7 +666,7 @@ pub fn final_build(
         return Err(Stop::Refused(refusals));
     }
     let plan = plan(project, dir, cut, Voice::Takes, None, setup)?;
-    let record = build(&plan, dir, progress).map_err(Stop::Failed)?;
+    let record = make(&plan, dir, setup.again, progress).map_err(Stop::Failed)?;
     let problems = record.problems();
     if !problems.is_empty() {
         let mut refusals = vec![format!(
@@ -621,12 +681,17 @@ pub fn final_build(
     Ok(record)
 }
 
-/// Copies a final build's pictures and captions to `out/`.
+/// Copies a final build's pictures and captions to `out/`. A file that
+/// is there already, byte for byte, is left as it is.
 fn deliver(plan: &Plan, dir: &Path) -> Result<(), String> {
     let (from, to) = (dir.join(Voice::Takes.dir()), dir.join(release::OUT));
     fs::create_dir_all(&to).map_err(|e| format!("{}: {e}", to.display()))?;
     let delivered = plan.deliverables();
     for name in &delivered {
+        let built = release::file_hash(&from.join(name))?;
+        if release::file_hash(&to.join(name)).ok().as_ref() == Some(&built) {
+            continue;
+        }
         fs::copy(from.join(name), to.join(name))
             .map_err(|e| format!("{}: {e}", to.join(name).display()))?;
     }

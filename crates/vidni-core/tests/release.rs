@@ -100,6 +100,16 @@ fn drafted() -> tempfile::TempDir {
             )
             .unwrap();
         }
+        // The card is the project's own page: its render comes with the
+        // record of the files it was made from.
+        if let Some(file) = &c.file {
+            let made_from = [(file.clone(), capture::file_sha256(dir.path(), file))].into();
+            fs::write(
+                capture::files_path(dir.path(), &c.key),
+                capture::files_json(&made_from),
+            )
+            .unwrap();
+        }
     }
     dir
 }

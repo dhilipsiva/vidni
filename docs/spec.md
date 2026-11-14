@@ -343,20 +343,23 @@ A change that arrives late, with nothing moving meanwhile, can't be seen coming:
 
 ## Capturing: `vidni capture`
 
-`vidni capture` takes the captures the cuts need that `build/captures/` doesn't hold yet.
+`vidni capture` takes the captures the cuts need that `build/captures/` doesn't hold yet, or holds [out of date](#when-a-capture-is-out-of-date).
 - **Each web scene** is loaded in a fresh Chromium, and its `setup` run. Then its lines run in script order. For each line:
   1. Its actions run, and the focus is taken off whatever has it.
   2. Its expectations are waited for, up to 30 seconds each, and read.
   3. When a still is needed, the line's highlights are drawn, the page settles, and the still is taken.
 - **Beside each still**, `<key>.json` holds its frames, in CSS pixels: the boxes of every target of the scene, as far as they show; each highlight's boxes; the viewport and scale; and the browser that took it. Cameras aren't in it. A cut frames each camera from its targets' boxes when it is built, so a camera can be changed or added without capturing again.
 - **Each page scene** is rendered at each size a cut needs, in its own Chromium, with a transparent background when it says so.
+- **Beside each capture of a page in the project folder**, `<key>.files.json` records the project's files that the page had loaded by then, each with its SHA-256: the page itself, and its stylesheets, scripts, pictures and whatever else it asked for. A file it asked for that wasn't there is recorded as missing.
 - **A scene's stills are kept only when it passes.** They wait aside until the scene's last line is done. The readings go to `build/onscreen.json`. No still of the scene is kept, and the problem is reported with its scene and line, when:
   - an expectation doesn't hold;
   - a script on the page throws an error;
   - the page opens a dialog, which is dismissed;
   - the page's renderer crashes;
-  - a page that is a file of the project's asks the network for a part that doesn't load. Such a page should come out whole every time. A page on the web may lose a load, as pages do, unless the capture runs with [`--offline`](#without-the-network---offline).
-- **A frozen still is never taken again.** When a ratified cut froze a still's picture and only its frames are missing, `vidni capture` and `vidni draft` refuse, and say to restore the frames or to unratify the cut with `--refresh`.
+  - a page that is a file of the project's asks the network for a part that doesn't load. Such a page should come out whole every time. A page on the web may lose a load, as pages do, unless the capture runs with [`--offline`](#without-the-network---offline);
+  - a page that is a file of the project's loads a file from outside the project folder. Nothing could tell when that file changes, and a copy of the project wouldn't have it;
+  - a file the page loaded changes while the page is being captured.
+- **A frozen still is never taken again for want of its frames.** When a ratified cut froze a still's picture and only its frames are missing, `vidni capture` and `vidni draft` refuse, and say to restore the frames or to unratify the cut with `--refresh`. A frozen still of a page in the project folder is taken again once it is out of date: the files that changed are yours, to change back.
 - **Interrupting** a capture (Ctrl-C) closes Chromium, removes its temporary profile and keeps no still of the unfinished scene.
 
 A web scene with a `scale` above 1 is loaded twice, and the second load is the one captured. Chromium's first load at an emulated scale came out in one of two renderings, launch by launch (DECISIONS.md, T6). The first load is inert: none of the page's scripts run, and the cookies it sets are cleared, so the second load is still a first visit. The server does see two requests.
@@ -416,7 +419,7 @@ Ratifying a cut freezes what it shows and says. `vidni ratify [--cut ID]` record
 A cut's status is never stored; `vidni status` works it out from those hashes each time:
 - **draft:** not ratified.
 - **ratified:** every hash still holds.
-- **changed:** something the cut froze has changed since: a line, a scene, its line list or order, or a capture file on disk. The status names what changed.
+- **changed:** something the cut froze has changed since: a line, a scene, its line list or order, a capture file on disk, or a file in the project folder that one of its captures was made from. The status names what changed.
 
 Gaps (`[timing]`), caption style, platforms and the theme aren't part of a cut's content; only the release hashes them. So changing them leaves a cut ratified, and editing a line regresses exactly the cuts that use it.
 
@@ -430,7 +433,15 @@ Gaps (`[timing]`), caption style, platforms and the theme aren't part of a cut's
   Lines that show the same page with the same highlights share one capture.
 - **A page scene's render** is keyed by the scene, the size it is rendered at, and the cut's aspect, which `{aspect}` in its address becomes.
 
-A draft takes only the captures no file holds yet, so a redraft with no scene changes takes none. `vidni unratify` keeps a cut's captures. `--refresh` deletes the ones no other ratified cut uses, so that they are taken afresh.
+A draft takes only the captures that the folder doesn't hold, or holds out of date, so a redraft with nothing changed takes none. `vidni unratify` keeps a cut's captures. `--refresh` deletes the ones no other ratified cut uses, so that they are taken afresh.
+
+### When a capture is out of date
+
+A key covers what `vidni.toml` says about a scene. It can't cover what the page holds.
+- **A page in the project folder:** its capture is out of date once a file in its record (`<key>.files.json`) isn't what it was: the file changed, or it is gone, or it is there now and wasn't. The next `vidni draft` or `vidni capture` takes that capture again and says which files changed. A capture with no record counts as not taken.
+- **A page on the web:** nothing can tell whether it has changed without loading it. Its capture is kept until `vidni unratify --refresh` deletes it, or you do.
+
+A ratified cut with a capture that is out of date is `changed`, and names the file. It can't have a final build until it is drafted and ratified again. With the file put back as it was, the cut is the ratified one again: at once when no draft took the capture again meanwhile, and otherwise after the next draft, since one machine with one Chromium gives the same capture.
 
 ## From draft to release
 
@@ -457,7 +468,8 @@ out/            the final cuts, as delivered            out of git
 build/          what vidni makes                        out of git
   resolved.json   the project with every default filled in
   voice/          the draft voice's clips
-  captures/       stills and page renders, with each still's frames
+  captures/       stills and page renders, with each still's frames and each
+                  project page's record of the files it loaded
   draft/          each cut's draft
   final/          each cut's final build, before it is delivered
 ```
@@ -473,13 +485,23 @@ Everything in `build/` can be made again, except the captures of a ratified cut.
 
 A draft is one picture for each cut, `build/draft/<cut>.mp4`, with its captions drawn in unless the cut's `captions` is `file`. What QA finds in a draft is printed as a warning.
 
+**What a draft keeps.** Each step keeps what it made, and makes it again only when what it was made from changes. So a second draft with nothing changed speaks, captures and renders nothing: on the nibli example, two cuts of five minutes each, it takes under a second.
+
+| What | Kept as | Made again when |
+|---|---|---|
+| A line's draft clip | `build/voice/<line-id>/<key>-<seed>.wav` | What the draft voice is given changes: the line's `say` or `show`, `voice.respell`, the voice pack or `voice.length_scale`; or its seed in `voice.lock` does |
+| A capture | `build/captures/<key>.png` | Its key changes: the scene, the actions and expectations before it, or its highlights. Or it is [out of date](#when-a-capture-is-out-of-date) |
+| A cut's build | `build/draft/` or `build/final/`, with its record | Its `inputs` change, or a file the build made isn't as the build made it ([the record](#what-a-build-is-made-from-cutbuildjson)) |
+
+`vidni draft --again` and `vidni final --again` render each cut all the same.
+
 ### The final build: `vidni final`
 
 `vidni final` builds each cut from your takes. It refuses a cut, before rendering anything, unless:
 - the cut is ratified, and nothing it froze has changed since;
 - every line of the cut has a current take.
 
-Then it builds the cut into `build/final/` and runs QA on each file. A cut that fails QA stays there, with its problems listed, and is not delivered: what `out/` held of it before stays as it was. A cut that passes is copied to `out/`:
+Then it builds the cut into `build/final/` and runs QA on each file. A build that is there already and is still the cut's is kept, with what QA found in it ([what a draft keeps](#drafting-vidni-draft)). A cut that fails QA stays there, with its problems listed, and is not delivered: what `out/` held of it before stays as it was. A cut that passes is copied to `out/`:
 
 | File | What it is |
 |---|---|
@@ -503,6 +525,8 @@ Every build writes a record beside its files, `build/draft/<cut>.build.json` or 
 | `outputs.<file>` | For each encoded file: its frames before encoding (T1), its packets and its bytes (T2), and what QA measured |
 
 Two builds with the same `inputs` must have the same `t1` and `outputs`: that is what [`vidni repro`](#checking-that-a-build-repeats-vidni-repro) checks. The tiers are described in [`determinism.md`](determinism.md).
+
+That is also why a build can be kept. `vidni draft` and `vidni final` work out a cut's `inputs` first. When the record on disk has the same `inputs`, and each file it names still has the SHA-256 it records, a build would only make the same files again, so nothing is rendered. `--again` renders anyway.
 
 What isn't in a cut's record:
 - **The resolved project,** `build/resolved.json`. It is T1 as well, but it is the whole project's, so an edit to another cut would change it. `vidni repro` compares it once, for the project.

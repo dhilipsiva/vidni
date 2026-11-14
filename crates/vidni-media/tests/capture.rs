@@ -631,3 +631,206 @@ fn a_page_loaded_twice_is_still_a_first_visit_and_a_busy_network_settles() {
     let taken = take(dir.path(), &project, 20).unwrap();
     assert_eq!(taken.len(), 2, "{taken:?}");
 }
+
+/// A page in a folder of the project's, with a stylesheet that imports
+/// another, a picture, a picture that isn't there, and a script that
+/// loads one more picture when a button is clicked; and a card that
+/// shares the stylesheets.
+const SITE: &str = r##"schema = 1
+
+[meta]
+title = "Files"
+default_scene = "site"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "A page with its parts."
+
+[[lines]]
+id = "main-2"
+section = "main"
+show = "A click loads one more."
+do = [{ click = "more" }]
+
+[[lines]]
+id = "main-3"
+section = "main"
+show = "A card."
+scene = "card"
+
+[scenes.site]
+kind = "web"
+url = "site/index.html?x=1#top"
+viewport = [320, 180]
+
+[scenes.site.targets]
+more = { css = "button" }
+
+[scenes.card]
+kind = "page"
+url = "site/card.html"
+size = { landscape = [320, 180], portrait = [180, 320] }
+"##;
+
+/// The files of [`SITE`], by name.
+const SITE_FILES: [(&str, &str); 7] = [
+    (
+        "site/index.html",
+        r#"<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="css/style.css">
+</head><body>
+<h1>Files</h1>
+<img src="img/dot.svg" width="20" height="20" alt="">
+<img src="img/gone.png" width="20" height="20" alt="">
+<button onclick="more()">More</button>
+<script src="app.js"></script>
+</body></html>
+"#,
+    ),
+    (
+        "site/css/style.css",
+        "@import url(\"more.css\");\nbody { margin: 8px; font: 16px sans-serif; }\n",
+    ),
+    ("site/css/more.css", "h1 { color: #1d3557; }\n"),
+    (
+        "site/img/dot.svg",
+        r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#e63946"/></svg>"##,
+    ),
+    (
+        "site/img/late.svg",
+        r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="#2a9d8f"/></svg>"##,
+    ),
+    (
+        "site/app.js",
+        "function more() {\n  const img = new Image(20, 20);\n  img.src = \"img/late.svg\";\n  document.body.append(img);\n}\n",
+    ),
+    (
+        "site/card.html",
+        "<!doctype html><link rel=\"stylesheet\" href=\"css/style.css\"><h1>Card</h1>\n",
+    ),
+];
+
+#[test]
+#[ignore = "needs Chromium: just test-capture"]
+fn a_capture_of_a_project_page_records_the_files_it_was_made_from() {
+    let dir = tempfile::tempdir().unwrap();
+    let dir = dir.path();
+    for (name, text) in SITE_FILES {
+        fs::create_dir_all(dir.join(name).parent().unwrap()).unwrap();
+        fs::write(dir.join(name), text).unwrap();
+    }
+    let project = vidni_core::validate::check(SITE, Some(dir)).unwrap();
+    let cuts: Vec<_> = project.cuts.iter().collect();
+    let planned = || -> Vec<String> {
+        capture::plan(&project, dir, &cuts)
+            .into_iter()
+            .map(|c| c.what)
+            .collect()
+    };
+    let all = [
+        "line main-1",
+        "line main-2",
+        "page card at 320x180 for 16x9",
+    ];
+    assert_eq!(planned(), all);
+    let taken = take(dir, &project, 30).unwrap();
+    assert_eq!(taken.len(), 3);
+    assert_eq!(planned(), Vec::<String>::new());
+
+    // Each capture's record: the project's files its page had asked for
+    // by then, with what they held; none for one that wasn't there.
+    let captures = capture::for_cut(&project, cuts[0]);
+    let record = |what: &str| -> Vec<(String, bool)> {
+        let c = captures.iter().find(|c| c.what == what).unwrap();
+        let files = capture::files(dir, &c.key).unwrap();
+        for (name, sha) in &files {
+            assert_eq!(*sha, capture::file_sha256(dir, name), "{name}");
+        }
+        files
+            .into_iter()
+            .map(|(name, sha)| (name, sha.is_some()))
+            .collect()
+    };
+    let named = |names: &[(&str, bool)]| -> Vec<(String, bool)> {
+        names
+            .iter()
+            .map(|(n, there)| (n.to_string(), *there))
+            .collect()
+    };
+    let page = [
+        ("site/app.js", true),
+        ("site/css/more.css", true),
+        ("site/css/style.css", true),
+        ("site/img/dot.svg", true),
+        ("site/img/gone.png", false),
+        ("site/index.html", true),
+    ];
+    assert_eq!(record("line main-1"), named(&page));
+    // The second line's click loaded one more picture.
+    let mut clicked = page.to_vec();
+    clicked.insert(5, ("site/img/late.svg", true));
+    assert_eq!(record("line main-2"), named(&clicked));
+    assert_eq!(
+        record("page card at 320x180 for 16x9"),
+        named(&[
+            ("site/card.html", true),
+            ("site/css/more.css", true),
+            ("site/css/style.css", true),
+        ])
+    );
+
+    // The imported stylesheet changes: every capture that loaded it is out
+    // of date, and taken again it shows the change.
+    let before = picture(&taken, "main-1");
+    fs::write(dir.join("site/css/more.css"), "h1 { color: #e63946; }\n").unwrap();
+    assert_eq!(planned(), all);
+    let retaken = take(dir, &project, 30).unwrap();
+    assert_eq!(retaken.len(), 3);
+    assert_ne!(picture(&retaken, "main-1").data, before.data);
+    assert_eq!(planned(), Vec::<String>::new());
+    // What only the page loads leaves the card's render as it is; so does
+    // a file that turns up where the page had found none.
+    fs::write(dir.join("site/app.js"), "function more() {}\n").unwrap();
+    assert_eq!(planned(), &all[..2]);
+    fs::write(dir.join("site/app.js"), SITE_FILES[5].1).unwrap();
+    fs::write(dir.join("site/img/gone.png"), b"not a picture").unwrap();
+    assert_eq!(planned(), &all[..2]);
+    // A picture loaded only after the click is the second line's alone.
+    fs::remove_file(dir.join("site/img/gone.png")).unwrap();
+    fs::write(dir.join("site/img/late.svg"), SITE_FILES[3].1).unwrap();
+    assert_eq!(planned(), &all[1..2]);
+}
+
+#[test]
+#[ignore = "needs Chromium: just test-capture"]
+fn a_project_page_that_loads_a_file_from_outside_the_project_is_refused() {
+    let dir = tempfile::tempdir().unwrap();
+    let dir = dir.path();
+    // The stylesheet is beside the project folder, not in it.
+    let project_dir = dir.join("project");
+    fs::write(dir.join("shared.css"), "h1 { color: #1d3557; }\n").unwrap();
+    for (name, text) in SITE_FILES {
+        fs::create_dir_all(project_dir.join(name).parent().unwrap()).unwrap();
+        let text = text.replace("href=\"css/style.css\"", "href=\"../../shared.css\"");
+        fs::write(project_dir.join(name), text).unwrap();
+    }
+    let project = vidni_core::validate::check(SITE, Some(&project_dir)).unwrap();
+    let error = take(&project_dir, &project, 30).unwrap_err();
+    let shared = fs::canonicalize(dir.join("shared.css")).unwrap();
+    assert_eq!(
+        error,
+        format!(
+            "scene site, at setup: the page loaded a file from outside the project folder (the first: {})",
+            shared.display()
+        )
+    );
+    assert_eq!(left_behind(&project_dir), 0);
+}

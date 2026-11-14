@@ -43,7 +43,7 @@ cd examples/nibli-syllogism && find takes build/captures -type f -print0 | sort 
 
 ## Captures
 
-`vidni capture examples/nibli-syllogism` takes what the two cuts show into `build/captures/` (out of git): 46 stills of the live playground, one for each state a line shows, each with the boxes it is framed by, and the 8 renders of the cards and overlays. `vidni draft` does the same on its way.
+`vidni capture examples/nibli-syllogism` takes what the two cuts show into `build/captures/` (out of git): 46 stills of the live playground, one for each state a line shows, each with the boxes it is framed by, and the 8 renders of the cards and overlays, each with a record of the file it was made from (`cards/card.html`). `vidni draft` does the same on its way.
 
 The captures there now were taken on 2026-11-14, with the fonts vidni's flake pins, and both cuts froze them when they were ratified. So they are kept with the takes, and listed in `assets.lock`. Captured with the maintainer's own fonts instead, they match the reference's captures (`just parity stills`), and five captures in a row are pixel-identical (`just capture-repeat`).
 

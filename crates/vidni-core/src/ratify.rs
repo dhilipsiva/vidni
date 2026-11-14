@@ -6,7 +6,8 @@
 //! and the SHA-256 of each capture file. A cut's status is never stored: it
 //! is worked out from those hashes each time. A cut is `draft` until
 //! ratified, `ratified` while every hash still holds, and `changed` once one
-//! doesn't.
+//! doesn't, or once a file of the project's that one of its captures was
+//! made from has changed.
 //!
 //! Gaps, caption style, platforms and the theme aren't part of a cut's
 //! content; only the release hashes them. Changing them leaves a cut ratified.
@@ -77,10 +78,13 @@ pub fn resolved(project: &Project) -> Value {
     v
 }
 
-/// Writes `build/resolved.json`.
+/// Writes `build/resolved.json`, unless it holds the same already.
 pub fn write_resolved(project: &Project, project_dir: &Path) -> Result<PathBuf, String> {
     let path = project_dir.join(RESOLVED);
     let text = serde_json::to_string_pretty(&resolved(project)).expect("JSON serializes") + "\n";
+    if fs::read_to_string(&path).is_ok_and(|held| held == text) {
+        return Ok(path);
+    }
     fs::create_dir_all(path.parent().expect("a parent folder"))
         .and_then(|_| fs::write(&path, text))
         .map_err(|e| format!("{}: {e}", path.display()))?;
@@ -255,6 +259,37 @@ pub fn status_of(project: &Project, project_dir: &Path, lock: &Lock, cut: &Cut) 
             }
         }
     }
+    // A capture of one of the project's own pages shows its files as they
+    // were. Once one of them changes, the cut no longer shows the project.
+    let (mut unrecorded, mut stale) = (0, BTreeMap::new());
+    let mut hashes = capture::Hashes::default();
+    for c in now.captures.iter().filter(|c| !c.on_the_web()) {
+        if capture::path(project_dir, &c.key).is_file()
+            && capture::files(project_dir, &c.key).is_none()
+        {
+            unrecorded += 1;
+        }
+        for file in capture::changed_in(project_dir, c, &mut hashes) {
+            *stale.entry(file).or_insert(0) += 1;
+        }
+    }
+    if unrecorded > 0 {
+        reasons.push(format!(
+            "{unrecorded} of its captures {} no record of the files {} made from; draft it again",
+            if unrecorded == 1 { "has" } else { "have" },
+            if unrecorded == 1 {
+                "it was"
+            } else {
+                "they were"
+            },
+        ));
+    }
+    for (file, captures) in stale {
+        reasons.push(format!(
+            "{file} has changed since {captures} of its captures {} taken",
+            if captures == 1 { "was" } else { "were" },
+        ));
+    }
     if reasons.is_empty() {
         Status::Ratified
     } else {
@@ -285,11 +320,16 @@ fn differences(
 /// missing or unreadable. Taking one again would put another picture in
 /// the place of a frozen one, which a page that has changed since can't
 /// give back. Each is a refusal that says what to do instead.
+///
+/// A still of one of the project's own pages that is out of date is taken
+/// again all the same: its files are what changed, and they are the
+/// creator's to change back.
 pub fn frozen(project_dir: &Path, lock: &Lock, plan: &[Capture]) -> Vec<String> {
     let mut refusals = Vec::new();
     for c in plan
         .iter()
         .filter(|c| matches!(c.source, capture::Source::Line(_)))
+        .filter(|c| !capture::measured(&capture::frames_path(project_dir, &c.key)))
     {
         let Some(picture) = file_hash(&capture::path(project_dir, &c.key)) else {
             continue;
@@ -341,18 +381,12 @@ pub fn ratify(
     let mut done = Vec::new();
     for cut in cuts {
         let content = content(project, cut);
-        let missing: Vec<&Capture> = content
-            .captures
-            .iter()
-            .filter(|c| !capture::taken(project_dir, c))
-            .collect();
-        if !missing.is_empty() {
+        let unready = capture::refusals(project_dir, &content.captures);
+        if !unready.is_empty() {
             return Err(format!(
-                "{}: {} of {} captures aren't taken yet (the first: {}); draft the cut first",
+                "{}: {}; draft the cut first",
                 cut.id,
-                missing.len(),
-                content.captures.len(),
-                missing[0].what
+                unready.join("; ")
             ));
         }
         let hashes = |path: fn(&Path, &str) -> PathBuf, web_only: bool| {
@@ -411,10 +445,14 @@ pub fn unratify(
         let path = capture::path(project_dir, &c.key);
         if !kept.contains(&c.key) && path.is_file() {
             fs::remove_file(&path).map_err(|e| format!("{}: {e}", path.display()))?;
-            // A still's frames go with it.
-            let frames = capture::frames_path(project_dir, &c.key);
-            if frames.is_file() {
-                fs::remove_file(&frames).map_err(|e| format!("{}: {e}", frames.display()))?;
+            // A still's frames go with it, and the record of its files.
+            for beside in [
+                capture::frames_path(project_dir, &c.key),
+                capture::files_path(project_dir, &c.key),
+            ] {
+                if beside.is_file() {
+                    fs::remove_file(&beside).map_err(|e| format!("{}: {e}", beside.display()))?;
+                }
             }
             deleted.push(path);
         }

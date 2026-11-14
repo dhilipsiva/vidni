@@ -119,6 +119,16 @@ fn drafted(text: &str) -> (tempfile::TempDir, Project) {
                 fs::write(capture::frames_path(dir.path(), &c.key), json).unwrap();
             }
         }
+        // The card is the project's own page: its render comes with the
+        // record of the files it was made from.
+        if let Some(file) = &c.file {
+            let made_from = [(file.clone(), capture::file_sha256(dir.path(), file))].into();
+            fs::write(
+                capture::files_path(dir.path(), &c.key),
+                capture::files_json(&made_from),
+            )
+            .unwrap();
+        }
     }
     (dir, p)
 }
@@ -261,9 +271,109 @@ fn a_final_build_records_what_it_made_and_repeats() {
     );
 
     // Built again, every hash is the same: T1 and T2 repeat on one host.
-    let again = build::final_build(&p, dir, &lock, long, &setup(), &mut quiet()).unwrap();
+    let afresh = Setup {
+        again: true,
+        ..setup()
+    };
+    let mut stages = Vec::new();
+    let mut watch = |step: Step| {
+        if let Step::Stage(stage) = step {
+            stages.push(stage.to_string());
+        }
+    };
+    let again = build::final_build(&p, dir, &lock, long, &afresh, &mut watch).unwrap();
+    assert_eq!(stages, ["timeline and captions", "narration", "long.mp4"]);
     assert_eq!(again, record);
     assert_eq!(record.differences(&again), Vec::<String>::new());
+}
+
+#[test]
+fn a_build_is_kept_until_an_input_or_a_file_it_made_changes() {
+    let (dir, p) = drafted(PROJECT);
+    let dir = dir.path();
+    record_takes(dir, &p, None);
+    let lock = ratified(dir, &p);
+    // A final build of the short cut, and what it did: the stages it went
+    // through, or `kept` when it rendered nothing.
+    let build = |p: &Project, setup: &Setup| -> (Record, Vec<String>) {
+        let mut steps = Vec::new();
+        let mut watch = |step: Step| match step {
+            Step::Stage(stage) => steps.push(stage.to_string()),
+            Step::Kept => steps.push("kept".to_string()),
+            Step::Frames { .. } => {}
+        };
+        let record = build::final_build(p, dir, &lock, cut(p, "short"), setup, &mut watch).unwrap();
+        (record, steps)
+    };
+    let stages = ["timeline and captions", "narration", "short.mp4"];
+    let (first, steps) = build(&p, &setup());
+    assert_eq!(steps, stages);
+    let made = dir.join("build/final/short.mp4");
+    let delivered = dir.join("out/short.mp4");
+    let written = |path: &Path| fs::metadata(path).unwrap().modified().unwrap();
+    let times = (written(&made), written(&delivered));
+
+    // Nothing has changed: the build is kept, and no file is written again.
+    let (kept, steps) = build(&p, &setup());
+    assert_eq!(steps, ["kept"]);
+    assert_eq!(kept, first);
+    assert_eq!((written(&made), written(&delivered)), times);
+    // A delivered file that is gone is delivered again, from the build kept.
+    fs::remove_file(&delivered).unwrap();
+    assert_eq!(build(&p, &setup()).1, ["kept"]);
+    assert_eq!(
+        release::file_hash(&delivered).unwrap(),
+        first.outputs["short.mp4"].mp4
+    );
+
+    // A file of the build's that isn't what the build made: built again,
+    // into the same files.
+    fs::write(&made, b"cut short").unwrap();
+    let (again, steps) = build(&p, &setup());
+    assert_eq!(steps, stages);
+    assert_eq!(again, first);
+    assert_eq!(
+        release::file_hash(&made).unwrap(),
+        first.outputs["short.mp4"].mp4
+    );
+    for name in ["short.narration.wav", "short.en.srt"] {
+        fs::remove_file(dir.join("build/final").join(name)).unwrap();
+    }
+    assert_eq!(build(&p, &setup()).1, stages);
+    assert_eq!(build(&p, &setup()).1, ["kept"]);
+
+    // An input changed: here a gap, which a cut's ratification doesn't cover.
+    let slower = project(dir, &PROJECT.replace("tail = 0.2", "tail = 0.4"));
+    let (longer, steps) = build(&slower, &setup());
+    assert_eq!(steps, stages);
+    assert_ne!(longer.inputs, first.inputs);
+    assert_eq!(build(&slower, &setup()).1, ["kept"]);
+    // Changed back, the build on disk is the other gap's.
+    let (back, steps) = build(&p, &setup());
+    assert_eq!(steps, stages);
+    assert_eq!(back, first);
+
+    // A draft is kept the same way, apart from the final build.
+    let pack = speak(dir, &p);
+    let draft = |setup: &Setup| -> Vec<String> {
+        let mut steps = Vec::new();
+        let mut watch = |step: Step| match step {
+            Step::Stage(stage) => steps.push(stage.to_string()),
+            Step::Kept => steps.push("kept".to_string()),
+            Step::Frames { .. } => {}
+        };
+        build::draft(&p, dir, cut(&p, "short"), &pack, setup, &mut watch).unwrap();
+        steps
+    };
+    assert_eq!(draft(&setup()), stages);
+    assert_eq!(draft(&setup()), ["kept"]);
+    // And either is built all the same when that is asked for.
+    let afresh = Setup {
+        again: true,
+        ..setup()
+    };
+    assert_eq!(draft(&afresh), stages);
+    assert_eq!(build(&p, &setup()).1, ["kept"]);
 }
 
 #[test]
@@ -365,7 +475,7 @@ fn a_build_is_refused_without_its_audio_its_captures_or_a_size_it_can_draw() {
     assert_eq!(
         refused(plan(short, Voice::Takes)),
         [
-            "cut short: 1 of its 1 captures isn't taken yet (the first: page card at 1080x1920 for 9x16); `vidni draft` takes them"
+            "cut short: 1 of 1 captures isn't taken yet (the first: page card at 1080x1920 for 9x16); `vidni draft` takes them"
         ]
     );
     assert!(

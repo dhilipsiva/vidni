@@ -242,10 +242,9 @@ impl Project {
     pub fn scene_files(&self) -> Vec<String> {
         let mut files: Vec<String> = Vec::new();
         for scene in self.scenes.values() {
-            if scene.on_the_web() {
+            let Some(file) = scene.file() else {
                 continue;
-            }
-            let file = scene.url.split(['?', '#']).next().unwrap_or_default();
+            };
             for aspect in ["16x9", "9x16"] {
                 let name = file.replace("{aspect}", aspect);
                 if !files.contains(&name) {
@@ -262,6 +261,16 @@ impl Scene {
     /// the project folder.
     pub fn on_the_web(&self) -> bool {
         self.url.starts_with("http://") || self.url.starts_with("https://")
+    }
+
+    /// The file in the project folder that the scene's address names,
+    /// without its query and fragment, and with `{aspect}` as written.
+    /// None for an address on the web.
+    pub fn file(&self) -> Option<&str> {
+        match self.on_the_web() {
+            true => None,
+            false => self.url.split(['?', '#']).next(),
+        }
     }
 }
 

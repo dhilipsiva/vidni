@@ -197,6 +197,16 @@ fn status_ratify_and_unratify_work_from_the_hashes() {
                 let frames = vidni_core::capture::frames_path(dir.path(), &c.key);
                 fs::write(frames, br#"{"targets":{}}"#).unwrap();
             }
+            // The page is the project's own, so its capture comes with
+            // the record of the files it was made from.
+            let file = c.file.clone().unwrap();
+            let sha = vidni_core::capture::file_sha256(dir.path(), &file);
+            let made_from = [(file, sha)].into();
+            fs::write(
+                vidni_core::capture::files_path(dir.path(), &c.key),
+                vidni_core::capture::files_json(&made_from),
+            )
+            .unwrap();
         }
     }
     let (code, stdout, _) = out(&["ratify", project, "--cut", "long"]);
@@ -466,7 +476,7 @@ fn the_gates_refuse_before_any_tool_is_needed() {
     let (code, _, stderr) = vidni_without_fonts(&["repro", project]);
     assert_eq!(code, Some(1), "{stderr}");
     assert!(
-        stderr.starts_with("vidni: 1 of the captures isn't taken yet (the first: line main-1); "),
+        stderr.starts_with("vidni: 1 of 1 captures isn't taken yet (the first: line main-1); "),
         "{stderr}"
     );
     // A cut that doesn't exist.

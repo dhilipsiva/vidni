@@ -8,12 +8,20 @@
 //! and its highlights. A page scene's render is keyed
 //! by the scene, the size it is rendered at, and the cut's aspect, which
 //! `{aspect}` in its address becomes.
+//!
+//! A key covers what the project file says, not what a page holds. So a
+//! capture of one of the project's own pages comes with a record of the
+//! files the page loaded, each with its SHA-256 (`<key>.files.json`), and
+//! the capture is out of date once one of them has changed (TODO.md,
+//! P2-VIDNI-09). A page on the web has no such record: whether it has
+//! changed can't be told without loading it, so its capture is kept until
+//! it is deleted.
 
 use crate::project::{Aspect, Cut, Project, Scene, SceneKind};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 /// Where captures live, relative to the project folder (out of git).
 pub const DIR: &str = "build/captures";
@@ -25,6 +33,17 @@ pub struct Capture {
     /// What it shows, for people: `line <id>` or `page <scene> at <w>x<h>`.
     pub what: String,
     pub source: Source,
+    /// The file in the project folder that its page is, with `{aspect}`
+    /// filled in. None for a page on the web.
+    pub file: Option<String>,
+}
+
+impl Capture {
+    /// Whether the capture is of a page on the web, which needs the
+    /// network, rather than of a file in the project folder.
+    pub fn on_the_web(&self) -> bool {
+        self.file.is_none()
+    }
 }
 
 /// What a capture is taken of.
@@ -50,6 +69,45 @@ pub fn path(project_dir: &Path, key: &str) -> PathBuf {
 /// of its highlights, which a cut's cameras are framed from.
 pub fn frames_path(project_dir: &Path, key: &str) -> PathBuf {
     project_dir.join(DIR).join(format!("{key}.json"))
+}
+
+/// The file of the record of the project's files that a capture's page
+/// loaded.
+pub fn files_path(project_dir: &Path, key: &str) -> PathBuf {
+    project_dir.join(DIR).join(format!("{key}.files.json"))
+}
+
+/// The project's files that a page loaded while it was captured: each by
+/// its path from the project folder, with its SHA-256 then, or `None` for
+/// a file that the page asked for and that wasn't there.
+pub type Files = BTreeMap<String, Option<String>>;
+
+/// A record of files as its file holds it.
+pub fn files_json(files: &Files) -> String {
+    serde_json::to_string_pretty(files).expect("a map of strings serializes") + "\n"
+}
+
+/// Reads a capture's record of its files. None when it has none, or one
+/// that can't be read, or one that names a file outside the project
+/// folder, which no capture writes.
+pub fn files(project_dir: &Path, key: &str) -> Option<Files> {
+    let text = std::fs::read_to_string(files_path(project_dir, key)).ok()?;
+    let files: Files = serde_json::from_str(&text).ok()?;
+    let inside = |name: &String| {
+        !name.is_empty()
+            && Path::new(name)
+                .components()
+                .all(|part| matches!(part, Component::Normal(_)))
+    };
+    files.keys().all(inside).then_some(files)
+}
+
+/// The SHA-256 of the file `name` in the project folder; none when it
+/// isn't there or can't be read.
+pub fn file_sha256(project_dir: &Path, name: &str) -> Option<String> {
+    std::fs::read(project_dir.join(name))
+        .ok()
+        .map(|bytes| sha256_hex(&bytes))
 }
 
 /// JSON with every object's keys sorted and no spaces, so that equal values
@@ -167,6 +225,7 @@ pub fn page_capture(project: &Project, cut: &Cut, id: &str) -> Option<Capture> {
             size,
             aspect,
         },
+        file: scene.file().map(|file| file.replace("{aspect}", aspect)),
     })
 }
 
@@ -183,10 +242,12 @@ pub fn for_cut(project: &Project, cut: &Cut) -> Vec<Capture> {
     };
     for line in project.lines.iter().filter(|l| ids.contains(&l.id)) {
         if let Some(key) = keys.get(&line.id) {
+            let scene = line.scene_in(project).and_then(|id| project.scenes.get(id));
             add(Capture {
                 key: key.clone(),
                 what: format!("line {}", line.id),
                 source: Source::Line(line.id.clone()),
+                file: scene.and_then(Scene::file).map(str::to_string),
             });
         }
         for id in line
@@ -202,51 +263,159 @@ pub fn for_cut(project: &Project, cut: &Cut) -> Vec<Capture> {
     found
 }
 
-/// Whether `capture` is of a page on the web, which needs the network,
-/// rather than of a file in the project folder.
-pub fn on_the_web(project: &Project, capture: &Capture) -> bool {
-    let scene = match &capture.source {
-        Source::Line(id) => project
-            .lines
-            .iter()
-            .find(|line| &line.id == id)
-            .and_then(|line| line.scene_in(project)),
-        Source::Page { scene, .. } => Some(scene.as_str()),
-    };
-    scene
-        .and_then(|id| project.scenes.get(id))
-        .is_some_and(Scene::on_the_web)
-}
-
-/// Whether the project folder holds `capture`: its picture and, for a web
-/// still, frames that a cut can be framed from. A still without them can't
-/// be used, so it counts as not taken.
+/// Whether the project folder holds `capture`: its picture; for a web
+/// still, frames that a cut can be framed from; and for one of the
+/// project's own pages, the record of its files. A capture without them
+/// can't be used, or can't be told to be out of date, so it counts as not
+/// taken.
 pub fn taken(project_dir: &Path, capture: &Capture) -> bool {
     path(project_dir, &capture.key).is_file()
         && match capture.source {
             Source::Line(_) => measured(&frames_path(project_dir, &capture.key)),
             Source::Page { .. } => true,
         }
+        && (capture.on_the_web() || files(project_dir, &capture.key).is_some())
+}
+
+/// The SHA-256 of files in the project folder as they are now, each read
+/// once, however many captures were made from it.
+#[derive(Debug, Default)]
+pub(crate) struct Hashes(BTreeMap<String, Option<String>>);
+
+impl Hashes {
+    fn of(&mut self, project_dir: &Path, name: &str) -> &Option<String> {
+        self.0
+            .entry(name.to_string())
+            .or_insert_with(|| file_sha256(project_dir, name))
+    }
+}
+
+/// The project's files that `capture` was made from and that aren't now
+/// what they were then: one that has changed, one that is gone, or one
+/// that is there now and wasn't. Empty for a capture with no record of its
+/// files.
+pub fn changed(project_dir: &Path, capture: &Capture) -> Vec<String> {
+    changed_in(project_dir, capture, &mut Hashes::default())
+}
+
+/// [`changed`], with the files' hashes kept in `now` for the next capture.
+pub(crate) fn changed_in(project_dir: &Path, capture: &Capture, now: &mut Hashes) -> Vec<String> {
+    files(project_dir, &capture.key)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|(name, then)| now.of(project_dir, name) != then)
+        .map(|(name, _)| name)
+        .collect()
+}
+
+/// The project's files that have changed under any of `captures`.
+pub fn changed_under(project_dir: &Path, captures: &[Capture]) -> BTreeSet<String> {
+    let mut now = Hashes::default();
+    captures
+        .iter()
+        .flat_map(|c| changed_in(project_dir, c, &mut now))
+        .collect()
+}
+
+/// Why a capture can't be used as it is.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Unready {
+    /// It isn't taken.
+    Untaken,
+    /// It is of files that have changed since: these, by name.
+    Stale(Vec<String>),
+}
+
+/// Why `capture` can't be used as it is; none when it can.
+pub fn unready(project_dir: &Path, capture: &Capture) -> Option<Unready> {
+    unready_in(project_dir, capture, &mut Hashes::default())
+}
+
+fn unready_in(project_dir: &Path, capture: &Capture, now: &mut Hashes) -> Option<Unready> {
+    if !taken(project_dir, capture) {
+        return Some(Unready::Untaken);
+    }
+    match changed_in(project_dir, capture, now) {
+        files if files.is_empty() => None,
+        files => Some(Unready::Stale(files)),
+    }
+}
+
+/// Why `captures` can't all be used as they are, in words for a refusal:
+/// how many aren't taken yet, and which files have changed under how
+/// many. Empty when every one can be used.
+pub fn refusals(project_dir: &Path, captures: &[Capture]) -> Vec<String> {
+    let of = captures.len();
+    let (mut untaken, mut stale) = (Vec::new(), Vec::new());
+    let (mut files, mut now) = (BTreeSet::new(), Hashes::default());
+    for capture in captures {
+        match unready_in(project_dir, capture, &mut now) {
+            None => {}
+            Some(Unready::Untaken) => untaken.push(capture),
+            Some(Unready::Stale(changed)) => {
+                files.extend(changed);
+                stale.push(capture);
+            }
+        }
+    }
+    let mut refusals = Vec::new();
+    if let Some(first) = untaken.first() {
+        refusals.push(format!(
+            "{} of {of} captures {} taken yet (the first: {})",
+            untaken.len(),
+            if untaken.len() == 1 {
+                "isn't"
+            } else {
+                "aren't"
+            },
+            first.what
+        ));
+    }
+    if let Some(first) = stale.first() {
+        refusals.push(format!(
+            "{} of {of} captures {} out of date (the first: {}): {} changed since",
+            stale.len(),
+            if stale.len() == 1 { "is" } else { "are" },
+            first.what,
+            have(&files)
+        ));
+    }
+    refusals
+}
+
+/// `names` as the subject of a sentence, three of them at most by name:
+/// `a.css has`, `a.css and b.css have`, `a.css, b.css, c.js and 2 more have`.
+pub fn have(names: &BTreeSet<String>) -> String {
+    let named: Vec<&str> = names.iter().take(3).map(String::as_str).collect();
+    let listed = match (names.len() - named.len(), named.split_last()) {
+        (0, Some((last, rest))) if !rest.is_empty() => {
+            format!("{} and {last}", rest.join(", "))
+        }
+        (0, _) => named.concat(),
+        (more, _) => format!("{} and {more} more", named.join(", ")),
+    };
+    format!("{listed} {}", if names.len() == 1 { "has" } else { "have" })
 }
 
 /// Whether a still's frames file holds the boxes of its scene's targets,
 /// which cameras are framed from. A file from before vidni measured them,
 /// or one that is cut short, doesn't.
-fn measured(frames: &Path) -> bool {
+pub fn measured(frames: &Path) -> bool {
     std::fs::read_to_string(frames)
         .ok()
         .and_then(|text| serde_json::from_str::<Value>(&text).ok())
         .is_some_and(|frames| frames["targets"].is_object())
 }
 
-/// The captures that `cuts` need and the project folder doesn't hold yet:
-/// what a draft would capture.
+/// The captures that `cuts` need and can't use as the project folder has
+/// them: the ones it doesn't hold, and the ones that are out of date. They
+/// are what a draft would capture.
 pub fn plan(project: &Project, project_dir: &Path, cuts: &[&Cut]) -> Vec<Capture> {
-    let mut seen = BTreeSet::new();
+    let (mut seen, mut now) = (BTreeSet::new(), Hashes::default());
     cuts.iter()
         .flat_map(|cut| for_cut(project, cut))
         .filter(|c| seen.insert(c.key.clone()))
-        .filter(|c| !taken(project_dir, c))
+        .filter(|c| unready_in(project_dir, c, &mut now).is_some())
         .collect()
 }
 
@@ -261,7 +430,21 @@ mod tests {
     }
 
     #[test]
-    fn a_capture_is_on_the_web_when_its_scenes_address_is() {
+    fn changed_files_are_named_three_at_most() {
+        let names = |n: usize| -> BTreeSet<String> {
+            ["a.css", "b.css", "c.js", "d.png", "e.svg"][..n]
+                .iter()
+                .map(|name| name.to_string())
+                .collect()
+        };
+        assert_eq!(have(&names(1)), "a.css has");
+        assert_eq!(have(&names(2)), "a.css and b.css have");
+        assert_eq!(have(&names(3)), "a.css, b.css and c.js have");
+        assert_eq!(have(&names(5)), "a.css, b.css, c.js and 2 more have");
+    }
+
+    #[test]
+    fn a_capture_names_its_pages_file_unless_the_page_is_on_the_web() {
         let text = r#"schema = 1
 
 [meta]
@@ -301,19 +484,25 @@ url = "pages/local.html?tab=2"
 
 [scenes.card]
 kind = "page"
-url = "card.html"
+url = "cards/card-{aspect}.html#top"
 "#;
         let project = crate::validate::check(text, None).unwrap();
-        let web: Vec<(String, bool)> = for_cut(&project, &project.cuts[0])
+        let web: Vec<(String, Option<String>)> = for_cut(&project, &project.cuts[0])
             .into_iter()
-            .map(|c| (c.what.clone(), on_the_web(&project, &c)))
+            .map(|c| {
+                assert_eq!(c.on_the_web(), c.file.is_none());
+                (c.what, c.file)
+            })
             .collect();
         assert_eq!(
             web,
             [
-                ("line main-1".to_string(), true),
-                ("line main-2".to_string(), false),
-                ("page card at 1920x1080 for 16x9".to_string(), false),
+                ("line main-1".to_string(), None),
+                ("line main-2".to_string(), Some("pages/local.html".into())),
+                (
+                    "page card at 1920x1080 for 16x9".to_string(),
+                    Some("cards/card-16x9.html".into())
+                ),
             ]
         );
     }

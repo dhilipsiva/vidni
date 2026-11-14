@@ -47,10 +47,12 @@ pub(crate) fn cant(why: String) -> ExitCode {
     ExitCode::from(2)
 }
 
-/// What a build runs with, or why it can't start.
-pub(crate) fn setup() -> Result<Setup, ExitCode> {
+/// What a build runs with, or why it can't start. With `again`, a cut is
+/// built even when nothing has changed since its last build.
+pub(crate) fn setup(again: bool) -> Result<Setup, ExitCode> {
     build::check_tools()
         .and_then(|()| Setup::find())
+        .map(|setup| Setup { again, ..setup })
         .map_err(cant)
 }
 
@@ -61,6 +63,9 @@ fn progress(cut: &str) -> impl FnMut(Step) + '_ {
         Step::Stage(stage) => {
             tenth = 0;
             eprintln!("{cut}: {stage}");
+        }
+        Step::Kept => {
+            eprintln!("{cut}: nothing has changed since it was built; nothing to render");
         }
         Step::Frames { file, done, of } => {
             let now = done * 10 / of.max(1);
@@ -140,10 +145,7 @@ pub(crate) fn take_captures(loaded: &Loaded, cuts: &[&Cut]) -> Result<(), ExitCo
     }
     // Without the network, a page on the web can only fail slowly; a page
     // in the project folder is captured as ever.
-    let web: Vec<&capture::Capture> = plan
-        .iter()
-        .filter(|c| capture::on_the_web(project, c))
-        .collect();
+    let web: Vec<&capture::Capture> = plan.iter().filter(|c| c.on_the_web()).collect();
     if let (true, Some(first)) = (crate::offline::inside(), web.first()) {
         eprintln!(
             "vidni: offline, and {} of web pages {} taken yet (the first: {})",
@@ -152,6 +154,16 @@ pub(crate) fn take_captures(loaded: &Loaded, cuts: &[&Cut]) -> Result<(), ExitCo
             first.what
         );
         return Err(ExitCode::FAILURE);
+    }
+    // A capture that is there and is taken again is one whose files changed.
+    let changed = capture::changed_under(dir, &plan);
+    if !changed.is_empty() {
+        say!(
+            "{}: {} changed, so what was captured from {} is taken again",
+            file.display(),
+            capture::have(&changed),
+            if changed.len() == 1 { "it" } else { "them" }
+        );
     }
     // With no network, whatever a page asks the network for is a fault.
     let limits = vidni_media::capture::Limits {
@@ -203,14 +215,14 @@ pub fn capture(path: &Path) -> ExitCode {
     }
 }
 
-pub fn draft(path: &Path, cuts: &[String]) -> ExitCode {
+pub fn draft(path: &Path, cuts: &[String], again: bool) -> ExitCode {
     let loaded = match load(path) {
         Ok(loaded) => loaded,
         Err(code) => return code,
     };
     let made = chosen(&loaded.project, cuts).and_then(|cuts| {
         // What can't start is found out before anything is spoken.
-        let setup = setup()?;
+        let setup = setup(again)?;
         let pack = speak_lines(&loaded)?;
         take_captures(&loaded, &cuts)?;
         for cut in cuts {
@@ -237,7 +249,7 @@ fn ratified(dir: &Path) -> Result<ratify::Lock, ExitCode> {
     ratify::read_lock(dir).map_err(cant)
 }
 
-pub fn finish(path: &Path, cuts: &[String]) -> ExitCode {
+pub fn finish(path: &Path, cuts: &[String], again: bool) -> ExitCode {
     let loaded = match load(path) {
         Ok(loaded) => loaded,
         Err(code) => return code,
@@ -254,7 +266,7 @@ pub fn finish(path: &Path, cuts: &[String]) -> ExitCode {
         if !refusals.is_empty() {
             return Err(stopped(Stop::Refused(refusals)));
         }
-        let setup = setup()?;
+        let setup = setup(again)?;
         for cut in cuts {
             let mut progress = progress(&cut.id);
             let record = build::final_build(project, dir, &lock, cut, &setup, &mut progress)
@@ -321,7 +333,7 @@ pub fn approve(path: &Path, cuts: &[String]) -> ExitCode {
         if allowed.is_empty() {
             return refused.map_or(Ok(()), Err);
         }
-        let setup = setup()?;
+        let setup = setup(false)?;
         let day = release::today();
         for cut in allowed {
             match build::approve(project, dir, &lock, cut, &setup, &day) {

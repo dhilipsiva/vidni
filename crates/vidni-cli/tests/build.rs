@@ -6,6 +6,7 @@
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+use std::time::{Duration, Instant};
 use vidni_core::{takes, voices};
 
 /// Three lines on two cards. The long cut has them all, and the short the
@@ -149,11 +150,29 @@ fn a_project_goes_from_draft_to_approved_and_its_builds_repeat() {
     }
     assert!(dir.join("build/draft/long.mp4").is_file());
     assert!(!dir.join("out").exists(), "a draft delivers nothing");
-    // Drafted again, nothing is spoken or captured anew.
-    let again = ok(dir, &["draft", "--cut", "short"]);
+    // Drafted again with nothing changed, nothing is spoken, captured or
+    // rendered, and it takes no time to speak of (P2-VIDNI-09).
+    let long = dir.join("build/draft/long.mp4");
+    let written = fs::metadata(&long).unwrap().modified().unwrap();
+    let started = Instant::now();
+    let (code, again, said) = vidni(dir, &["draft"]);
+    let took = started.elapsed();
+    assert_eq!(code, Some(0), "{again}\n{said}");
+    assert!(took < Duration::from_secs(10), "{took:?}");
     assert!(again.contains("3 from the cache"), "{again}");
     assert!(again.contains("every capture is taken"), "{again}");
+    assert!(again.contains("build/draft/long.mp4: "), "{again}");
+    assert_eq!(
+        said,
+        "long: nothing has changed since it was built; nothing to render\n\
+         short: nothing has changed since it was built; nothing to render\n"
+    );
+    assert_eq!(fs::metadata(&long).unwrap().modified().unwrap(), written);
+    // One cut can be drafted alone, and rendered again when that is asked for.
+    let (_, again, said) = vidni(dir, &["draft", "--cut", "short", "--again"]);
     assert!(!again.contains("long.mp4"), "{again}");
+    assert!(said.contains("short: short.mp4: "), "{said}");
+    assert_eq!(fs::metadata(&long).unwrap().modified().unwrap(), written);
 
     // The final build has its gates: ratified cuts, then takes.
     let unratified = refused(dir, &["final"]);
@@ -262,7 +281,7 @@ fn a_project_goes_from_draft_to_approved_and_its_builds_repeat() {
     fs::write(dir.join("vidni.toml"), PROJECT).unwrap();
 
     // None of it needs the network.
-    let offline = ok(dir, &["final", "--offline", "--cut", "short"]);
+    let offline = ok(dir, &["final", "--offline", "--again", "--cut", "short"]);
     assert!(offline.contains("short: delivered to "), "{offline}");
     let (code, stdout, stderr) = vidni(dir, &["repro", "--offline", "--cut", "short"]);
     assert_eq!(code, Some(0), "{stdout}\n{stderr}");
@@ -300,6 +319,52 @@ fn a_project_goes_from_draft_to_approved_and_its_builds_repeat() {
         "{stderr}"
     );
     assert!(!kept.exists());
+
+    // The card's file is what its renders were made from. Once it changes,
+    // the cuts that show it aren't the ratified ones, and a draft renders
+    // the card again.
+    fs::write(
+        dir.join("card.html"),
+        CARD.replace("\"card \"", "\"Card \""),
+    )
+    .unwrap();
+    let status = ok(dir, &["status"]);
+    assert!(
+        status.starts_with(
+            "long   changed: card.html has changed since 2 of its captures were taken; "
+        ),
+        "{status}"
+    );
+    assert_eq!(
+        refused(dir, &["final", "--cut", "long"]),
+        "vidni: cut long has changed since it was ratified: \
+         card.html has changed since 2 of its captures were taken\n"
+    );
+    let (code, redrafted, said) = vidni(dir, &["draft"]);
+    assert_eq!(code, Some(0), "{redrafted}\n{said}");
+    assert!(
+        redrafted.contains("vidni.toml: 4 captures taken\n"),
+        "{redrafted}"
+    );
+    assert!(
+        said.contains("long: long.mp4: ") && said.contains("short: short.mp4: "),
+        "{said}"
+    );
+    let status = ok(dir, &["status"]);
+    assert!(status.starts_with("long   changed: capture "), "{status}");
+    assert!(status.contains(" changed on disk"), "{status}");
+    // With the file as it was, a draft renders the card as it was: the
+    // cuts are the ratified ones again, and their releases stand.
+    fs::write(dir.join("card.html"), CARD).unwrap();
+    let restored = ok(dir, &["draft"]);
+    assert!(
+        restored.contains("vidni.toml: 4 captures taken\n"),
+        "{restored}"
+    );
+    assert_eq!(
+        ok(dir, &["status"]),
+        "long   ratified; approved as long-r1\nshort  ratified; approved as short-r1\n"
+    );
 
     // New words for a line: the cuts that say it can't be built or
     // approved until they are ratified again, and a take is recorded.
@@ -388,6 +453,31 @@ fn a_new_project_drafts_as_it_is() {
     assert!(
         sheet.contains(" in the draft voice, without the pauses\n"),
         "{sheet}"
+    );
+
+    // P2-VIDNI-09: a second draft with nothing changed renders nothing.
+    let started = Instant::now();
+    let again = ok_in(work.path(), &["draft", "demo"]);
+    assert!(started.elapsed() < Duration::from_secs(10));
+    assert!(again.contains("2 from the cache"), "{again}");
+    assert!(
+        again.contains("demo/vidni.toml: every capture is taken\n"),
+        "{again}"
+    );
+    // Its page is a file of the project's: once that changes, the stills
+    // are taken again, and the cuts that show them rendered.
+    let page = work.path().join("demo/page.html");
+    let text = fs::read_to_string(&page).unwrap();
+    fs::write(&page, text.replace("<h1>Demo</h1>", "<h1>A demo</h1>")).unwrap();
+    let before = fs::read(work.path().join("demo/build/draft/long.mp4")).unwrap();
+    let redrafted = ok_in(work.path(), &["draft", "demo"]);
+    assert!(
+        redrafted.contains("demo/vidni.toml: 2 captures taken\n"),
+        "{redrafted}"
+    );
+    assert_ne!(
+        fs::read(work.path().join("demo/build/draft/long.mp4")).unwrap(),
+        before
     );
 
     // And it needs no network: a second new project, from an outline,

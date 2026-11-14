@@ -88,8 +88,22 @@ fn draft(dir: &Path, p: &Project) -> usize {
         if matches!(c.source, capture::Source::Line(_)) {
             fs::write(capture::frames_path(dir, &c.key), br#"{"targets":{}}"#).unwrap();
         }
+        record(dir, c);
     }
     planned.len()
+}
+
+/// Writes the record that a capture of one of the project's own pages
+/// comes with: the files it was made from, here the page's own file only.
+fn record(dir: &Path, c: &capture::Capture) {
+    if let Some(file) = &c.file {
+        let made_from = [(file.clone(), capture::file_sha256(dir, file))].into();
+        fs::write(
+            capture::files_path(dir, &c.key),
+            capture::files_json(&made_from),
+        )
+        .unwrap();
+    }
 }
 
 /// A drafted project with both cuts ratified.
@@ -455,4 +469,152 @@ fn an_expectation_retakes_the_stills_from_its_line_on() {
     assert_eq!(before["main-1"], after["main-1"], "the line before it");
     assert_ne!(before["main-2"], after["main-2"], "its own line");
     assert_ne!(before["hook-1"], after["hook-1"], "a line after it");
+}
+
+#[test]
+fn a_capture_of_the_projects_own_page_is_out_of_date_once_its_file_changes() {
+    use capture::Unready;
+    let (dir, mut lock) = ratified();
+    let dir = dir.path();
+    let p = project(dir, PROJECT);
+    let cuts: Vec<_> = p.cuts.iter().collect();
+    let card = capture::page_capture(&p, &p.cuts[0], "card").unwrap();
+    assert_eq!(card.file.as_deref(), Some("card.html"));
+    assert_eq!(capture::unready(dir, &card), None);
+
+    // The card's file changes: its render shows the file as it was. The
+    // long cut shows the card, so it is no longer the cut that was
+    // ratified; the short doesn't, and stays.
+    fs::write(dir.join("card.html"), "<!doctype html><p>new").unwrap();
+    assert_eq!(
+        capture::unready(dir, &card),
+        Some(Unready::Stale(vec!["card.html".into()]))
+    );
+    assert_eq!(
+        ratify::status(&p, dir, &lock),
+        [
+            changed(
+                "long",
+                &["card.html has changed since 1 of its captures was taken"]
+            ),
+            ok("short")
+        ]
+    );
+    // A draft would render it again, and until then the cut can't be ratified.
+    let what: Vec<String> = capture::plan(&p, dir, &cuts)
+        .into_iter()
+        .map(|c| c.what)
+        .collect();
+    assert_eq!(what, ["page card at 1920x1080 for 16x9"]);
+    assert_eq!(
+        ratify::ratify(&p, dir, &mut lock.clone(), &["long".into()]).unwrap_err(),
+        "long: 1 of 3 captures is out of date (the first: page card at 1920x1080 for 16x9): \
+         card.html has changed since; draft the cut first"
+    );
+    // With the file as it was, nothing is out of date.
+    fs::write(dir.join("card.html"), "<!doctype html>").unwrap();
+    assert_eq!(ratify::status(&p, dir, &lock), [ok("long"), ok("short")]);
+    assert!(capture::plan(&p, dir, &cuts).is_empty());
+
+    // A file the page asked for and that wasn't there is one it was made
+    // without: once it is there, the render is out of date too.
+    let made_from = |also: &[(&str, Option<String>)]| {
+        let mut files: capture::Files = [(
+            "card.html".to_string(),
+            capture::file_sha256(dir, "card.html"),
+        )]
+        .into();
+        files.extend(
+            also.iter()
+                .map(|(name, sha)| (name.to_string(), sha.clone())),
+        );
+        fs::write(
+            capture::files_path(dir, &card.key),
+            capture::files_json(&files),
+        )
+        .unwrap();
+    };
+    made_from(&[("card.css", None)]);
+    assert_eq!(capture::unready(dir, &card), None);
+    fs::write(dir.join("card.css"), "body {}").unwrap();
+    assert_eq!(
+        capture::unready(dir, &card),
+        Some(Unready::Stale(vec!["card.css".into()]))
+    );
+    // And one that was there and is gone.
+    made_from(&[("card.css", capture::file_sha256(dir, "card.css"))]);
+    assert_eq!(capture::unready(dir, &card), None);
+    fs::remove_file(dir.join("card.css")).unwrap();
+    assert_eq!(
+        capture::refusals(dir, std::slice::from_ref(&card)),
+        [
+            "1 of 1 captures is out of date (the first: page card at 1920x1080 for 16x9): \
+          card.css has changed since"
+        ]
+    );
+
+    // Without its record, a render can't be told to be out of date, so it
+    // counts as not taken.
+    fs::remove_file(capture::files_path(dir, &card.key)).unwrap();
+    assert_eq!(capture::unready(dir, &card), Some(Unready::Untaken));
+    assert_eq!(
+        ratify::status(&p, dir, &lock)[0],
+        changed(
+            "long",
+            &["1 of its captures has no record of the files it was made from; draft it again"]
+        )
+    );
+    // A record that names a file outside the project folder isn't one a
+    // capture wrote, and isn't read.
+    for name in ["../card.html", "/etc/hostname", "a/../../b", ""] {
+        made_from(&[(name, None)]);
+        assert_eq!(capture::files(dir, &card.key), None, "{name:?}");
+        assert_eq!(capture::unready(dir, &card), Some(Unready::Untaken));
+    }
+
+    // A capture that is deleted to be taken afresh takes its record along.
+    made_from(&[]);
+    assert_eq!(capture::unready(dir, &card), None);
+    let deleted = ratify::unratify(&p, dir, &mut lock, &["long".into()], true).unwrap();
+    assert!(
+        deleted.contains(&capture::path(dir, &card.key)),
+        "{deleted:?}"
+    );
+    assert!(!capture::files_path(dir, &card.key).exists());
+}
+
+#[test]
+fn a_frozen_still_of_the_projects_own_page_is_taken_again_once_the_page_changes() {
+    let dir = tempfile::tempdir().unwrap();
+    let dir = dir.path();
+    for file in ["card.html", "site.html"] {
+        fs::write(dir.join(file), "<!doctype html>").unwrap();
+    }
+    // The web scene is a page in the project folder now.
+    let text = PROJECT.replace("https://example.com", "site.html?tab=1#top");
+    let p = project(dir, &text);
+    assert_eq!(draft(dir, &p), 4);
+    let mut lock = Lock::default();
+    ratify::ratify(&p, dir, &mut lock, &[]).unwrap();
+    let cuts: Vec<_> = p.cuts.iter().collect();
+    assert_eq!(ratify::status(&p, dir, &lock), [ok("long"), ok("short")]);
+
+    // The page changes. Its three stills are frozen, and out of date: a
+    // draft may take them again, since what changed is the creator's own
+    // file, to change back.
+    fs::write(dir.join("site.html"), "<!doctype html><h1>new").unwrap();
+    let plan = capture::plan(&p, dir, &cuts);
+    assert_eq!(plan.len(), 3);
+    assert_eq!(ratify::frozen(dir, &lock, &plan), Vec::<String>::new());
+    let reason = "site.html has changed since 2 of its captures were taken";
+    assert_eq!(
+        ratify::status(&p, dir, &lock),
+        [changed("long", &[reason]), changed("short", &[reason])]
+    );
+    // A still whose frames can't be read is left alone all the same.
+    let hook = capture::line_keys(&p)["hook-1"].clone();
+    fs::remove_file(capture::frames_path(dir, &hook)).unwrap();
+    let refusals = ratify::frozen(dir, &lock, &plan);
+    assert_eq!(refusals.len(), 1, "{refusals:?}");
+    assert!(refusals[0].starts_with("the capture of line hook-1 is frozen by cut short"));
 }

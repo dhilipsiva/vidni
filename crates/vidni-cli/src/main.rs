@@ -156,6 +156,10 @@ enum Command {
         /// The cut to draft; repeat for more. Default: every cut.
         #[arg(long = "cut", value_name = "ID")]
         cuts: Vec<String>,
+        /// Render each cut again, even when nothing has changed since its
+        /// last draft.
+        #[arg(long)]
+        again: bool,
         /// Run with no network, to show that the draft needs none.
         #[arg(long)]
         offline: bool,
@@ -170,6 +174,10 @@ enum Command {
         /// The cut to build; repeat for more. Default: every cut.
         #[arg(long = "cut", value_name = "ID")]
         cuts: Vec<String>,
+        /// Render each cut again, even when nothing has changed since its
+        /// last final build.
+        #[arg(long)]
+        again: bool,
         /// Run with no network, to show that the build needs none.
         #[arg(long)]
         offline: bool,
@@ -264,8 +272,12 @@ fn main() -> ExitCode {
         {
             offline::again()
         }
-        Command::Draft { path, cuts, .. } => build::draft(&path, &cuts),
-        Command::Final { path, cuts, .. } => build::finish(&path, &cuts),
+        Command::Draft {
+            path, cuts, again, ..
+        } => build::draft(&path, &cuts, again),
+        Command::Final {
+            path, cuts, again, ..
+        } => build::finish(&path, &cuts, again),
         Command::Approve { path, cuts } => build::approve(&path, &cuts),
         Command::Repro {
             path,

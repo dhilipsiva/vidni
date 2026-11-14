@@ -13,6 +13,11 @@
 //! the boxes of every target of the scene and of the line's highlights,
 //! in CSS pixels. Cameras are framed from them when a cut is built.
 //!
+//! A page that is a file of the project's is captured with a record of the
+//! project's files it loaded, each with its SHA-256 (`<key>.files.json`),
+//! so that the capture is known to be out of date once one of them changes
+//! (TODO.md, P2-VIDNI-09).
+//!
 //! Chromium starts with the switches the reference's Playwright used, plus
 //! `--font-render-hinting=none` and `--force-color-profile=srgb`, and the
 //! page is set up as Playwright sets one up. Three things keep a still
@@ -28,9 +33,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::time::{Duration, Instant};
-use vidni_core::capture::{self as keys, Capture, Source};
+use vidni_core::capture::{self as keys, Capture, Files, Source};
 use vidni_core::onscreen::{self, Reading, Readings};
 use vidni_core::project::{Action, ColorScheme, Project, Scene};
 
@@ -286,7 +291,7 @@ pub fn capture_with(
             .prefix(".scene-")
             .tempdir_in(&folder)
             .map_err(|e| format!("{}: {e}", folder.display()))?;
-        let mut page = Page::web(scene, limits)?;
+        let mut page = Page::web(dir, scene, limits)?;
         let mut written = Vec::new();
         page.run_scene(
             project,
@@ -306,19 +311,17 @@ pub fn capture_with(
                 problems.join("\n  ")
             ));
         }
-        // The frames go in first: a still's PNG is what marks it taken.
+        // The frames and the record of its files go in first: a still's
+        // PNG is what marks it taken.
         for capture in &written {
-            for (name, to) in [
-                (
-                    format!("{}.json", capture.key),
-                    frames_path(dir, &capture.key),
-                ),
-                (
-                    format!("{}.png", capture.key),
-                    keys::path(dir, &capture.key),
-                ),
-            ] {
-                fs::rename(aside.path().join(&name), &to)
+            let mut files = vec![frames_path(dir, &capture.key)];
+            if !capture.on_the_web() {
+                files.push(keys::files_path(dir, &capture.key));
+            }
+            files.push(keys::path(dir, &capture.key));
+            for to in files {
+                let name = to.file_name().ok_or("a capture's file has a name")?;
+                fs::rename(aside.path().join(name), &to)
                     .map_err(|e| format!("{}: {e}", to.display()))?;
             }
         }
@@ -340,8 +343,12 @@ pub fn capture_with(
                 .scenes
                 .get(scene)
                 .ok_or_else(|| format!("no scene {scene}"))?;
-            let png = Page::render(dir, spec, *size, aspect, limits)
+            let (png, files) = Page::render(dir, spec, *size, aspect, limits)
                 .map_err(|e| format!("scene {scene} at {}x{}: {e}", size[0], size[1]))?;
+            write(
+                &keys::files_path(dir, &capture.key),
+                keys::files_json(&files).as_bytes(),
+            )?;
             write(&keys::path(dir, &capture.key), &png)?;
             taken.push(capture.clone());
         }
@@ -359,8 +366,16 @@ fn write(path: &Path, bytes: &[u8]) -> Result<(), String> {
         .map_err(|e| format!("{}: {e}", path.display()))
 }
 
+/// The project folder as Chromium names it: with no symbolic link on the
+/// way to it. The addresses of the project's files start with it.
+fn root(dir: &Path) -> Result<PathBuf, String> {
+    fs::canonicalize(dir).map_err(|e| format!("{}: {e}", dir.display()))
+}
+
 /// A scene's address: an http(s) URL as it is, or a file in the project
-/// folder as a `file://` URL, with its query and fragment kept.
+/// folder as a `file://` URL, with its query and fragment kept. The file
+/// is named as the project names it, under the folder's real path, so
+/// that what the page loads beside it is in the project folder too.
 fn address(dir: &Path, url: &str) -> Result<String, String> {
     if url.starts_with("http://") || url.starts_with("https://") {
         return Ok(url.to_string());
@@ -371,7 +386,8 @@ fn address(dir: &Path, url: &str) -> Result<String, String> {
     let (file, query) = rest
         .split_once('?')
         .map_or((rest, None), |(f, q)| (f, Some(q)));
-    let path = fs::canonicalize(dir.join(file)).map_err(|e| format!("{file}: {e}"))?;
+    let path = root(dir)?.join(file);
+    fs::metadata(&path).map_err(|e| format!("{file}: {e}"))?;
     let mut out = String::from("file://");
     for byte in path.as_os_str().as_encoded_bytes() {
         match byte {
@@ -388,6 +404,98 @@ fn address(dir: &Path, url: &str) -> Result<String, String> {
         }
     }
     Ok(out)
+}
+
+/// The file a `file://` address names, without its query and fragment;
+/// none for any other address.
+fn file_of(url: &str) -> Option<PathBuf> {
+    let path = url.strip_prefix("file://")?;
+    let path = path.split(['?', '#']).next().unwrap_or_default();
+    let mut bytes = Vec::with_capacity(path.len());
+    let mut rest = path.as_bytes();
+    while let Some((&byte, after)) = rest.split_first() {
+        // %41 is the byte 0x41; a % that starts no such pair is itself.
+        let escaped = (byte == b'%')
+            .then(|| after.get(..2))
+            .flatten()
+            .and_then(|hex| std::str::from_utf8(hex).ok())
+            .and_then(|hex| u8::from_str_radix(hex, 16).ok());
+        match escaped {
+            Some(decoded) => {
+                bytes.push(decoded);
+                rest = &after[2..];
+            }
+            None => {
+                bytes.push(byte);
+                rest = after;
+            }
+        }
+    }
+    String::from_utf8(bytes).ok().map(PathBuf::from)
+}
+
+/// The project's files that a page of the project's loads.
+struct Local {
+    /// The project folder ([`root`]).
+    root: PathBuf,
+    /// Each file the page has asked for, with its SHA-256 when it was
+    /// first asked for.
+    files: Files,
+    /// The files the page has asked for that aren't in the project folder.
+    outside: Vec<String>,
+}
+
+impl Local {
+    fn new(dir: &Path) -> Result<Self, String> {
+        Ok(Self {
+            root: root(dir)?,
+            files: Files::new(),
+            outside: Vec::new(),
+        })
+    }
+
+    /// Forgets what a document that is gone asked for.
+    fn clear(&mut self) {
+        self.files.clear();
+        self.outside.clear();
+    }
+
+    /// Notes that the page asked for `url`, when that is a file.
+    fn asked(&mut self, url: &str) {
+        let Some(path) = file_of(url) else {
+            return;
+        };
+        let Ok(inside) = path.strip_prefix(&self.root) else {
+            self.outside.push(path.display().to_string());
+            return;
+        };
+        let parts: Vec<String> = inside
+            .components()
+            .filter_map(|part| match part {
+                Component::Normal(name) => Some(name.to_string_lossy().into_owned()),
+                _ => None,
+            })
+            .collect();
+        let name = parts.join("/");
+        if !self.files.contains_key(&name) {
+            let sha = keys::file_sha256(&self.root, &name);
+            self.files.insert(name, sha);
+        }
+    }
+
+    /// The record of the files the page has loaded. A file that is no
+    /// longer what it was when the page asked for it may not be what the
+    /// page shows, so no record is made of it.
+    fn record(&self) -> Result<Files, String> {
+        for (name, then) in &self.files {
+            if keys::file_sha256(&self.root, name) != *then {
+                return Err(format!(
+                    "{name} changed while the page was being captured; capture it again"
+                ));
+            }
+        }
+        Ok(self.files.clone())
+    }
 }
 
 /// Whether an evaluation failed because the page went to another document.
@@ -414,6 +522,8 @@ struct Page {
     /// the project, whose parts should all be there, and for any page when
     /// there is no network.
     whole: bool,
+    /// The project's files the page loads, when it is one of them.
+    local: Option<Local>,
 }
 
 impl Page {
@@ -460,6 +570,7 @@ impl Page {
             asked: BTreeMap::new(),
             unreached: Vec::new(),
             whole: limits.offline,
+            local: None,
         };
         page.call("Page.enable", json!({}))?;
         page.call("Inspector.enable", json!({}))?;
@@ -509,8 +620,8 @@ impl Page {
         Ok(page)
     }
 
-    /// A page for a web scene.
-    fn web(scene: &Scene, limits: Limits) -> Result<Self, String> {
+    /// A page for a web scene of the project in `dir`.
+    fn web(dir: &Path, scene: &Scene, limits: Limits) -> Result<Self, String> {
         let scheme = match scene.color_scheme {
             Some(ColorScheme::Dark) => "dark",
             Some(ColorScheme::Light) | None => "light",
@@ -523,22 +634,27 @@ impl Page {
         )?;
         // A page on the web may lose a load that doesn't matter to it; a
         // file of the project's should have all its parts.
-        page.whole |= !scene.on_the_web();
+        if !scene.on_the_web() {
+            page.whole = true;
+            page.local = Some(Local::new(dir)?);
+        }
         Ok(page)
     }
 
     /// Renders a page scene at `size` for a cut of `aspect`, which
-    /// `{aspect}` in its address becomes.
+    /// `{aspect}` in its address becomes. Returns the picture, and the
+    /// record of the project's files the page loaded.
     fn render(
         dir: &Path,
         scene: &Scene,
         size: [u32; 2],
         aspect: &str,
         limits: Limits,
-    ) -> Result<Vec<u8>, String> {
+    ) -> Result<(Vec<u8>, Files), String> {
         let mut page = Self::open(size, 1, "light", limits)?;
         // A page scene is a file of the project's.
         page.whole = true;
+        page.local = Some(Local::new(dir)?);
         page.goto(&address(dir, &scene.url.replace("{aspect}", aspect))?)?;
         if scene.transparent == Some(true) {
             page.call(
@@ -549,7 +665,27 @@ impl Page {
         page.eval(BLUR)?;
         let png = page.settle()?;
         page.faults()?;
-        Ok(png)
+        let files = page.record()?;
+        Ok((png, files))
+    }
+
+    /// The record of the project's files the page has loaded; empty for a
+    /// page on the web.
+    fn record(&self) -> Result<Files, String> {
+        self.local.as_ref().map_or(Ok(Files::new()), Local::record)
+    }
+
+    /// Forgets the requests of a document that is gone, before `url` loads.
+    /// The file `url` names is noted now, before Chromium reads it.
+    fn forget_requests(&mut self, url: &str) {
+        self.browser.forget_events();
+        self.loading.clear();
+        self.asked.clear();
+        self.unreached.clear();
+        if let Some(local) = &mut self.local {
+            local.clear();
+            local.asked(url);
+        }
     }
 
     fn call(&mut self, method: &str, params: Value) -> Result<Value, String> {
@@ -605,10 +741,7 @@ impl Page {
     /// the one captured, is a first visit too (DECISIONS.md, T6).
     fn goto(&mut self, url: &str) -> Result<(), String> {
         let shown = |e: String| format!("{url}: {e}");
-        self.browser.forget_events();
-        self.loading.clear();
-        self.asked.clear();
-        self.unreached.clear();
+        self.forget_requests(url);
         self.world = None;
         if self.scale != 1 {
             // The first load runs none of the page's scripts.
@@ -648,10 +781,7 @@ impl Page {
                 "Emulation.setScriptExecutionDisabled",
                 json!({"value": false}),
             )?;
-            self.browser.forget_events();
-            self.loading.clear();
-            self.asked.clear();
-            self.unreached.clear();
+            self.forget_requests(url);
             self.call("Page.reload", json!({}))?;
             self.browser
                 .event(&self.session, "Page.loadEventFired", self.limits.patience)
@@ -741,6 +871,20 @@ impl Page {
             ));
             self.unreached.clear();
         }
+        // What a page of the project's loads from elsewhere on this
+        // machine isn't the project's, and no record could vouch for it.
+        if let Some(local) = &mut self.local
+            && let Some(first) = local.outside.first()
+        {
+            faults.push(format!(
+                "the page loaded {} from outside the project folder (the first: {first})",
+                match local.outside.len() {
+                    1 => "a file".to_string(),
+                    n => format!("{n} files"),
+                }
+            ));
+            local.outside.clear();
+        }
         match faults.is_empty() {
             true => Ok(()),
             false => Err(faults.join("; ")),
@@ -778,6 +922,9 @@ impl Page {
         {
             let id = e["requestId"].as_str().unwrap_or_default().to_string();
             let url = e["request"]["url"].as_str().unwrap_or_default();
+            if let Some(local) = &mut self.local {
+                local.asked(url);
+            }
             self.asked.insert(id.clone(), url.to_string());
             self.loading.insert(id, Instant::now());
             active = true;
@@ -996,6 +1143,12 @@ impl Page {
                     &aside.join(format!("{}.json", capture.key)),
                     (json + "\n").as_bytes(),
                 )?;
+                if !capture.on_the_web() {
+                    write(
+                        &aside.join(format!("{}.files.json", capture.key)),
+                        keys::files_json(&self.record()?).as_bytes(),
+                    )?;
+                }
                 write(&aside.join(format!("{}.png", capture.key)), &png)?;
                 written.push((*capture).clone());
                 Ok(())
@@ -1199,6 +1352,97 @@ nothing = { union = ["gone"] }
             "{file}"
         );
         assert!(address(&odd, "cards/missing.html").is_err());
+    }
+
+    #[test]
+    fn a_file_address_names_its_file() {
+        let named = |url: &str| file_of(url).map(|path| path.display().to_string());
+        assert_eq!(
+            named("file:///a/b%20c/d.html?x=1#top").as_deref(),
+            Some("/a/b c/d.html")
+        );
+        assert_eq!(
+            named("file:///a/100%25/%E2%9C%93.css").as_deref(),
+            Some("/a/100%/✓.css")
+        );
+        // A % that starts no escape is itself.
+        assert_eq!(
+            named("file:///a/50%/b%zz%4").as_deref(),
+            Some("/a/50%/b%zz%4")
+        );
+        for other in ["https://example.com/a.css", "data:text/css,", "about:blank"] {
+            assert_eq!(named(other), None, "{other}");
+        }
+        // What `address` writes is read back as the file it was given.
+        let dir = tempfile::tempdir().unwrap();
+        let odd = dir.path().join("videos #2 %41");
+        fs::create_dir_all(odd.join("cards")).unwrap();
+        fs::write(odd.join("cards/card é.html"), "").unwrap();
+        let url = address(&odd, "cards/card é.html?v=intro#top").unwrap();
+        assert_eq!(
+            file_of(&url),
+            Some(root(&odd).unwrap().join("cards/card é.html"))
+        );
+    }
+
+    #[test]
+    fn a_project_pages_files_are_noted_once_and_must_stay_as_they_were() {
+        let dir = tempfile::tempdir().unwrap();
+        let dir = dir.path();
+        fs::create_dir_all(dir.join("site/css")).unwrap();
+        fs::write(dir.join("site/index.html"), "<!doctype html>").unwrap();
+        fs::write(dir.join("site/css/style.css"), "body {}").unwrap();
+        let mut local = Local::new(dir).unwrap();
+        let url = |name: &str| format!("file://{}/{name}", local_root(dir));
+        fn local_root(dir: &Path) -> String {
+            root(dir).unwrap().display().to_string()
+        }
+        local.asked(&address(dir, "./site/index.html?x=1#top").unwrap());
+        local.asked(&url("site/index.html?x=1"));
+        local.asked(&url("site/css/style.css"));
+        local.asked(&url("site/img/gone.png"));
+        // What isn't a file is the network's business, not the record's.
+        local.asked("https://example.com/x.css");
+        local.asked("data:image/png;base64,AAAA");
+        let sha = |name: &str| keys::file_sha256(dir, name);
+        let noted: Files = [
+            ("site/css/style.css".to_string(), sha("site/css/style.css")),
+            ("site/img/gone.png".to_string(), None),
+            ("site/index.html".to_string(), sha("site/index.html")),
+        ]
+        .into();
+        assert!(noted["site/index.html"].is_some());
+        assert_eq!(local.record().unwrap(), noted);
+        assert_eq!(local.outside, Vec::<String>::new());
+
+        // A file that changes while the page is being captured may not be
+        // what the page shows, so no record is made.
+        fs::write(dir.join("site/css/style.css"), "body { color: red }").unwrap();
+        local.asked(&url("site/css/style.css"));
+        assert_eq!(
+            local.record().unwrap_err(),
+            "site/css/style.css changed while the page was being captured; capture it again"
+        );
+        // So does one that turns up after the page asked for it in vain.
+        fs::write(dir.join("site/css/style.css"), "body {}").unwrap();
+        fs::create_dir_all(dir.join("site/img")).unwrap();
+        fs::write(dir.join("site/img/gone.png"), "png").unwrap();
+        assert!(
+            local
+                .record()
+                .unwrap_err()
+                .starts_with("site/img/gone.png changed")
+        );
+
+        // A file from elsewhere on the machine isn't the project's.
+        let elsewhere = tempfile::tempdir().unwrap();
+        let outside = root(elsewhere.path()).unwrap().join("shared.css");
+        local.asked(&format!("file://{}", outside.display()));
+        assert_eq!(local.outside, [outside.display().to_string()]);
+        // A new document starts with nothing noted.
+        local.clear();
+        assert_eq!(local.record().unwrap(), Files::new());
+        assert!(local.outside.is_empty());
     }
 
     #[test]
