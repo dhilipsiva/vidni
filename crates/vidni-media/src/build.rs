@@ -245,6 +245,8 @@ pub struct Plan<'p> {
     /// The room the takes were recorded in, to fill the pauses with; none
     /// for a draft, or when the mic check kept no room at the takes' rate.
     room: Option<Vec<i16>>,
+    /// The music under the narration, when the project plays a track.
+    music: Option<voice::Bed>,
     tools: Tools,
     pub sources: Sources,
     /// Everything the build depends on, as one hash.
@@ -426,6 +428,31 @@ pub fn plan<'p>(
     if room.is_some() {
         sounds.push(("_room".to_string(), room_file));
     }
+    // The track the project plays is one of the cut's sounds too.
+    let music = match project.music.playing() {
+        None => None,
+        Some(track) => {
+            // YouTube blocks a Short of over a minute that has a Content
+            // ID claim, in every country.
+            if track.content_id
+                && timeline.total > 60.0
+                && cut.platforms().iter().any(|p| p == "youtube-shorts")
+            {
+                return Err(Stop::refused(format!(
+                    "cut {} lasts {:.0} s and track {} is registered with Content ID: YouTube \
+                     blocks a Short of over a minute with a Content ID claim, worldwide",
+                    cut.id, timeline.total, track.id
+                )));
+            }
+            let file = dir.join(&track.file);
+            let samples = crate::voice::track(&file, timeline.rate).map_err(Stop::Failed)?;
+            sounds.push(("_music".to_string(), file));
+            Some(crate::voice::Bed {
+                samples,
+                under: project.music.under(),
+            })
+        }
+    };
     let sources = release::sources(project, dir, cut, &sounds).map_err(Stop::Failed)?;
     let tools = setup.tools().map_err(Stop::Failed)?;
     let inputs = release::inputs(
@@ -448,6 +475,7 @@ pub fn plan<'p>(
         look: Look::of(&setup.theme),
         chapters,
         room,
+        music,
         tools,
         sources,
         inputs,
@@ -650,6 +678,7 @@ pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<
         &plan.timeline,
         &plan.clips(),
         plan.room.as_deref(),
+        plan.music.as_ref(),
         Target::default().integrated,
         &narration_path,
     )?;

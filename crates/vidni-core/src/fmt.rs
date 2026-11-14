@@ -78,7 +78,16 @@ const HEARD_AS: &[&str] = &["heard", "means"];
 const TIMING: &[&str] = &["lead_in", "line_gap", "section_gap", "tail"];
 const LINT: &[&str] = &["banned"];
 const STYLE: &[&str] = &["theme"];
-const MUSIC: &[&str] = &["track"];
+const MUSIC: &[&str] = &["track", "under", "library"];
+const TRACK: &[&str] = &[
+    "id",
+    "file",
+    "sha256",
+    "licence",
+    "attribution",
+    "platforms",
+    "content_id",
+];
 const SECTION: &[&str] = &["label", "chapter"];
 pub(crate) const LINE: &[&str] = &[
     "id",
@@ -155,6 +164,7 @@ fn key_order(path: &[String]) -> Option<&'static [&'static str]> {
         ["lint"] => Some(LINT),
         ["style"] => Some(STYLE),
         ["music"] => Some(MUSIC),
+        ["music", "library", "#"] => Some(TRACK),
         ["sections", _] => Some(SECTION),
         ["lines", "#"] => Some(LINE),
         ["lines", "#", "do", "#"] | ["scenes", _, "setup", "#"] => Some(ACTION),

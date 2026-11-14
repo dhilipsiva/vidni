@@ -1,0 +1,47 @@
+# expect: 39:9: track "calm" isn't licensed for youtube-shorts, which cut "short" is made for
+schema = 1
+
+[meta]
+title = "A broken project"
+default_scene = "page"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "Hello."
+
+[scenes.page]
+kind = "web"
+url = "https://example.com"
+
+[scenes.page.targets]
+title = { css = "h1" }
+
+[scenes.page.cameras]
+heading = { union = ["title"] }
+
+[scenes.card]
+kind = "page"
+url = "cards/card.html"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[[cuts]]
+id = "short"
+aspect = "9:16"
+platforms = ["youtube-shorts"]
+
+[music]
+track = "calm"
+
+[[music.library]]
+id = "calm"
+file = "track.wav"
+sha256 = "6aa25e83beeb8a210b3e17350c170dca866c7f2e8f444b6043bf7e1467b14249"
+licence = "CC-BY-4.0"
+attribution = "Calm, by A. Composer (CC BY 4.0)"
+platforms = ["youtube"]

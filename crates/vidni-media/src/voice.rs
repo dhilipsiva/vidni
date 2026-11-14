@@ -516,14 +516,91 @@ pub fn room(room: &Path, rate: u32) -> Option<Vec<i16>> {
     (tone.len() as f64 >= 0.5 * f64::from(rate) && tone.iter().any(|s| *s != 0)).then_some(tone)
 }
 
+/// Music to play under a narration (TODO.md, P6-VIDNI-06).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Bed {
+    /// The track, as one channel at the narration's rate.
+    pub samples: Vec<i16>,
+    /// How far under the narration it plays, in LU.
+    pub under: f64,
+}
+
+/// How long music takes to come in at the start of a cut and to go out at
+/// its end, in seconds.
+const MUSIC_IN: f64 = 1.0;
+const MUSIC_OUT: f64 = 2.0;
+
+/// The 16-bit WAV at `path` as one channel at `rate`: its channels
+/// averaged, and its samples taken along straight lines between its own
+/// when its rate is another.
+pub fn track(path: &Path, rate: u32) -> Result<Vec<i16>, String> {
+    let shown = |e: &dyn std::fmt::Display| format!("{}: {e}", path.display());
+    let mut reader = hound::WavReader::open(path).map_err(|e| shown(&e))?;
+    let spec = reader.spec();
+    if spec.bits_per_sample != 16
+        || spec.sample_format != hound::SampleFormat::Int
+        || !(1..=2).contains(&spec.channels)
+    {
+        return Err(shown(&"music is a 16-bit WAV with one or two channels"));
+    }
+    let all: Vec<i16> = reader
+        .samples::<i16>()
+        .collect::<Result<_, _>>()
+        .map_err(|e| shown(&e))?;
+    let mono: Vec<f64> = all
+        .chunks(usize::from(spec.channels))
+        .map(|frame| frame.iter().map(|s| f64::from(*s)).sum::<f64>() / frame.len() as f64)
+        .collect();
+    if mono.len() < 2 || spec.sample_rate == 0 {
+        return Err(shown(&"there is no music in it"));
+    }
+    if spec.sample_rate == rate {
+        return Ok(mono.iter().map(|s| s.round() as i16).collect());
+    }
+    let step = f64::from(spec.sample_rate) / f64::from(rate);
+    let len = ((mono.len() - 1) as f64 / step) as usize + 1;
+    Ok((0..len)
+        .map(|i| {
+            let at = i as f64 * step;
+            let (before, part) = (at as usize, at.fract());
+            let after = (before + 1).min(mono.len() - 1);
+            (mono[before] * (1.0 - part) + mono[after] * part).round() as i16
+        })
+        .collect())
+}
+
+/// Plays `bed` under `narration`, which is at `target` LUFS: repeated to
+/// the narration's length, `bed.under` LU quieter than it, coming in over
+/// [`MUSIC_IN`] and going out over [`MUSIC_OUT`].
+fn underlay(narration: &mut [i16], bed: &Bed, rate: u32, target: f64) {
+    if bed.samples.len() < 8 {
+        return;
+    }
+    let music = looped(&bed.samples, narration.len(), rate);
+    let Some(now) = loudness(&music, rate) else {
+        return;
+    };
+    let gain = libm::pow(10.0, (target - bed.under - now) / 20.0);
+    let (fade_in, fade_out) = (MUSIC_IN * f64::from(rate), MUSIC_OUT * f64::from(rate));
+    let len = narration.len();
+    for (i, (s, m)) in narration.iter_mut().zip(&music).enumerate() {
+        let fade = (i as f64 / fade_in)
+            .min((len - i) as f64 / fade_out)
+            .min(1.0);
+        let mixed = f64::from(*s) + f64::from(*m) * gain * fade;
+        *s = mixed.round().clamp(-32768.0, 32767.0) as i16;
+    }
+}
+
 /// Writes the narration of `timeline` to `out`, at `target` LUFS: each
 /// line's clip from `clips`, through the chain, at its start on the
 /// timeline, with the pauses filled by `tone`, or by the stand-in noise
-/// when there is none.
+/// when there is none; and `music` under it all, when there is any.
 pub fn narrate(
     timeline: &Timeline,
     clips: &[&Path],
     tone: Option<&[i16]>,
+    music: Option<&Bed>,
     target: f64,
     out: &Path,
 ) -> Result<(), String> {
@@ -565,6 +642,9 @@ pub fn narrate(
             let noise = floor(2 * rate as usize, rate);
             fill(&mut track, &noise, rate);
         }
+    }
+    if let Some(bed) = music {
+        underlay(&mut track, bed, rate, target);
     }
     let spec = hound::WavSpec {
         channels: 1,
@@ -853,7 +933,7 @@ mod tests {
         };
         let read_back = |tone: Option<&[i16]>| {
             let out = dir.path().join("narration.wav");
-            narrate(&timeline, &[&clip, &clip], tone, -16.0, &out).unwrap();
+            narrate(&timeline, &[&clip, &clip], tone, None, -16.0, &out).unwrap();
             read(&out, Some(RATE)).unwrap().0
         };
         // With no room tone, the stand-in noise fills every pause.
@@ -883,6 +963,84 @@ mod tests {
         // And the narration is at its loudness.
         let lufs = loudness(&track, RATE).unwrap();
         assert!((lufs + 16.0).abs() < 0.5, "{lufs:.2} LUFS");
+    }
+
+    #[test]
+    fn music_plays_under_the_narration_and_fades_at_both_ends() {
+        // Ten seconds with nothing in them, and a three-second track,
+        // which is repeated to fill them.
+        let mut narration = vec![0i16; 10 * RATE as usize];
+        let bed = Bed {
+            samples: [sine(440.0, -10.0), sine(550.0, -10.0), sine(660.0, -10.0)].concat(),
+            under: 20.0,
+        };
+        underlay(&mut narration, &bed, RATE, -16.0);
+        // In the middle it is 20 LU under the narration's -16 LUFS.
+        let middle = loudness(&narration[3 * RATE as usize..7 * RATE as usize], RATE).unwrap();
+        assert!((middle + 36.0).abs() < 0.5, "{middle:.2} LUFS");
+        // It comes in over a second and goes out over two.
+        let peak =
+            |span: std::ops::Range<usize>| narration[span].iter().map(|s| s.abs()).max().unwrap();
+        let full = peak(4 * RATE as usize..5 * RATE as usize);
+        assert_eq!(narration[0], 0);
+        assert!(peak(0..4800) < full / 5, "{} of {full}", peak(0..4800));
+        let end = narration.len();
+        assert!(peak(end - 4800..end) < full / 10);
+        assert!(peak(end - 2 * RATE as usize - 4800..end - 2 * RATE as usize) > full * 9 / 10);
+        // Over a narration, the two are summed.
+        let mut spoken = sine(200.0, -16.0);
+        let alone = spoken.clone();
+        underlay(&mut spoken, &bed, RATE, -16.0);
+        assert_ne!(spoken, alone);
+        // A track with no sound adds none.
+        let mut still = alone.clone();
+        let silent = Bed {
+            samples: vec![0; RATE as usize],
+            under: 20.0,
+        };
+        underlay(&mut still, &silent, RATE, -16.0);
+        assert_eq!(still, alone);
+    }
+
+    #[test]
+    fn a_track_is_read_as_one_channel_at_the_narrations_rate() {
+        let dir = tempfile::tempdir().unwrap();
+        let write = |name: &str, channels: u16, rate: u32, bits: u16, frames: &[[i16; 2]]| {
+            let path = dir.path().join(name);
+            let spec = hound::WavSpec {
+                channels,
+                sample_rate: rate,
+                bits_per_sample: bits,
+                sample_format: hound::SampleFormat::Int,
+            };
+            let mut writer = hound::WavWriter::create(&path, spec).unwrap();
+            for frame in frames {
+                for s in &frame[..usize::from(channels)] {
+                    match bits {
+                        16 => writer.write_sample(*s).unwrap(),
+                        _ => writer.write_sample(i32::from(*s)).unwrap(),
+                    }
+                }
+            }
+            writer.finalize().unwrap();
+            path
+        };
+        // Two channels are averaged.
+        let stereo = write("stereo.wav", 2, 48000, 16, &[[100, 300], [-50, 50], [8, 9]]);
+        assert_eq!(track(&stereo, 48000).unwrap(), [200, 0, 9]);
+        // At half the rate, each sample in between is halfway between two.
+        let slow = write("slow.wav", 1, 24000, 16, &[[0, 0], [100, 0], [300, 0]]);
+        assert_eq!(track(&slow, 48000).unwrap(), [0, 50, 100, 200, 300]);
+        // At twice the rate, every other sample is taken.
+        assert_eq!(track(&slow, 12000).unwrap(), [0, 300]);
+        // Another sample format isn't read.
+        let deep = write("deep.wav", 1, 48000, 24, &[[1, 0], [2, 0]]);
+        let error = track(&deep, 48000).unwrap_err();
+        assert!(
+            error.ends_with("music is a 16-bit WAV with one or two channels"),
+            "{error}"
+        );
+        assert!(track(&dir.path().join("none.wav"), 48000).is_err());
     }
 
     #[test]

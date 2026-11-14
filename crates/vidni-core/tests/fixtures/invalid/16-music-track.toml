@@ -1,4 +1,4 @@
-# expect: 34:9: schema 1 has no music library yet (P6-VIDNI-06), so track must be "none"
+# expect: 34:9: unknown track "song.mp3" (there are none); a track comes from [[music.library]], with its licence
 schema = 1
 
 [meta]

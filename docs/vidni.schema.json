@@ -618,10 +618,25 @@
       "description": "Background music.",
       "type": "object",
       "properties": {
+        "library": {
+          "description": "The tracks the project may use, each with its licence.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Track"
+          }
+        },
         "track": {
-          "description": "`none`. Licensed tracks come with the music library (P6-VIDNI-06).",
+          "description": "`none`, or the ID of a track in `library`.",
           "type": "string",
           "default": "none"
+        },
+        "under": {
+          "description": "How far under the narration the track plays, in LU. Default 20.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
         }
       },
       "additionalProperties": false
@@ -1112,6 +1127,52 @@
         }
       },
       "additionalProperties": false
+    },
+    "Track": {
+      "description": "A piece of music the project may use, with what allows it.",
+      "type": "object",
+      "properties": {
+        "attribution": {
+          "description": "The credit the licence asks for, as it goes into a description.",
+          "type": "string"
+        },
+        "content_id": {
+          "description": "Whether the track is registered with YouTube's Content ID. A Short\nover a minute with a Content ID claim is blocked worldwide.",
+          "type": "boolean"
+        },
+        "file": {
+          "description": "The track's file in the project folder: a 16-bit WAV.",
+          "type": "string"
+        },
+        "id": {
+          "description": "A stable ID, like a line's.",
+          "type": "string"
+        },
+        "licence": {
+          "description": "The licence it is used under, such as `CC-BY-4.0`, or the name of\na paid licence.",
+          "type": "string"
+        },
+        "platforms": {
+          "description": "The platforms the licence covers.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sha256": {
+          "description": "The file's SHA-256, so that the licence is of this very file.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "file",
+        "sha256",
+        "licence",
+        "attribution",
+        "platforms"
+      ]
     },
     "Voice": {
       "description": "The voices that speak the lines.",

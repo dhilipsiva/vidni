@@ -291,12 +291,7 @@ impl Rules {
             self.scene(id, scene, dir);
         }
         self.cuts(p);
-        if p.music.track != "none" {
-            self.add(
-                path!["music", "track"],
-                "schema 1 has no music library yet (P6-VIDNI-06), so track must be \"none\"",
-            );
-        }
+        self.music(p, dir);
         for (i, x) in p.expectations.iter().enumerate() {
             self.expectation(p, i, x);
         }
@@ -916,6 +911,122 @@ impl Rules {
     }
 
     /// A file the project names, relative to its folder, with `{aspect}` filled in.
+    /// The music library's entries each carry what allows the track, the
+    /// track that plays is one of them, and its licence covers every
+    /// platform a cut is made for (TODO.md, P6-VIDNI-06).
+    fn music(&mut self, p: &Project, dir: Option<&Path>) {
+        let music = &p.music;
+        let profiles = crate::platforms::all();
+        for (i, track) in music.library.iter().enumerate() {
+            let at = |key: &str| path!["music", "library", i, key];
+            if !valid_id(&track.id) {
+                self.add(at("id"), id_rule("track", &track.id));
+            } else if music.library[..i].iter().any(|t| t.id == track.id) {
+                self.add(
+                    at("id"),
+                    format!("track {:?} is in the library twice", track.id),
+                );
+            }
+            for (key, value, what) in [
+                ("licence", &track.licence, "the licence it is used under"),
+                (
+                    "attribution",
+                    &track.attribution,
+                    "the credit its licence asks for",
+                ),
+            ] {
+                if value.trim().is_empty() {
+                    self.add(at(key), format!("a track needs {what}"));
+                }
+            }
+            if track.platforms.is_empty() {
+                self.add(
+                    at("platforms"),
+                    "a track needs the platforms its licence covers",
+                );
+            }
+            for (j, id) in track.platforms.iter().enumerate() {
+                if !profiles.iter().any(|profile| &profile.id == id) {
+                    let names = one_of(profiles.iter().map(|profile| profile.id.as_str()));
+                    self.add(
+                        path!["music", "library", i, "platforms", j],
+                        format!("unknown platform {id:?}{names}"),
+                    );
+                }
+            }
+            let hex = track.sha256.len() == 64
+                && track
+                    .sha256
+                    .chars()
+                    .all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c));
+            if !hex {
+                self.add(
+                    at("sha256"),
+                    "a track's sha256 is 64 hex digits, in lowercase",
+                );
+            }
+            // The licence is of one file: the one in the project folder
+            // must be it.
+            let inside = !track.file.is_empty()
+                && Path::new(&track.file)
+                    .components()
+                    .all(|part| matches!(part, std::path::Component::Normal(_)));
+            if !inside {
+                self.add(
+                    at("file"),
+                    "a track's file is a path inside the project folder",
+                );
+            } else if let Some(dir) = dir {
+                match crate::capture::file_sha256(dir, &track.file) {
+                    None => self.add(at("file"), format!("{} isn't there", track.file)),
+                    Some(found) if hex && found != track.sha256 => self.add(
+                        at("sha256"),
+                        format!(
+                            "{} isn't the file this entry is for: its SHA-256 is {found}",
+                            track.file
+                        ),
+                    ),
+                    Some(_) => {}
+                }
+            }
+        }
+        if let Some(under) = music.under
+            && !(6.0..=40.0).contains(&under)
+        {
+            self.add(
+                path!["music", "under"],
+                "music plays from 6 to 40 LU under the narration",
+            );
+        }
+        if music.track == "none" {
+            return;
+        }
+        let Some(track) = music.playing() else {
+            let names = one_of(music.library.iter().map(|t| t.id.as_str()));
+            self.add(
+                path!["music", "track"],
+                format!(
+                    "unknown track {:?}{names}; a track comes from [[music.library]], with its licence",
+                    music.track
+                ),
+            );
+            return;
+        };
+        for cut in &p.cuts {
+            for platform in cut.platforms() {
+                if !track.platforms.contains(&platform) {
+                    self.add(
+                        path!["music", "track"],
+                        format!(
+                            "track {:?} isn't licensed for {platform}, which cut {:?} is made for",
+                            track.id, cut.id
+                        ),
+                    );
+                }
+            }
+        }
+    }
+
     fn project_file(&mut self, at: Vec<Seg>, url: &str, dir: Option<&Path>) {
         let Some(dir) = dir else { return };
         let file = url.split(['?', '#']).next().unwrap_or_default();

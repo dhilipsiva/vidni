@@ -750,16 +750,62 @@ impl JsonSchema for LineSelection {
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
 #[serde(default, deny_unknown_fields)]
 pub struct Music {
-    /// `none`. Licensed tracks come with the music library (P6-VIDNI-06).
+    /// `none`, or the ID of a track in `library`.
     pub track: String,
+    /// How far under the narration the track plays, in LU. Default 20.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub under: Option<f64>,
+    /// The tracks the project may use, each with its licence.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub library: Vec<Track>,
 }
 
 impl Default for Music {
     fn default() -> Self {
         Self {
             track: "none".into(),
+            under: None,
+            library: Vec::new(),
         }
     }
+}
+
+impl Music {
+    /// How far under the narration a track plays when the project doesn't say, in LU.
+    pub const UNDER: f64 = 20.0;
+
+    /// The track the project plays, when it plays one that its library has.
+    pub fn playing(&self) -> Option<&Track> {
+        self.library.iter().find(|t| t.id == self.track)
+    }
+
+    /// How far under the narration the track plays, in LU.
+    pub fn under(&self) -> f64 {
+        self.under.unwrap_or(Self::UNDER)
+    }
+}
+
+/// A piece of music the project may use, with what allows it.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Track {
+    /// A stable ID, like a line's.
+    pub id: String,
+    /// The track's file in the project folder: a 16-bit WAV.
+    pub file: String,
+    /// The file's SHA-256, so that the licence is of this very file.
+    pub sha256: String,
+    /// The licence it is used under, such as `CC-BY-4.0`, or the name of
+    /// a paid licence.
+    pub licence: String,
+    /// The credit the licence asks for, as it goes into a description.
+    pub attribution: String,
+    /// The platforms the licence covers.
+    pub platforms: Vec<String>,
+    /// Whether the track is registered with YouTube's Content ID. A Short
+    /// over a minute with a Content ID claim is blocked worldwide.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub content_id: bool,
 }
 
 /// Text a web scene must show, checked when it is captured.

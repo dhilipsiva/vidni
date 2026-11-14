@@ -607,9 +607,47 @@ A draft prints it as a warning, and a final build that has one isn't delivered.
 
 ## `[music]`
 
+A video has no music unless you say so, and then only a track whose licence you have written down.
+
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `track` | string | `"none"` | Must be `none` in schema 1. Licensed tracks arrive with the music library (P6-VIDNI-06). |
+| `track` | string | `"none"` | `none`, or the ID of a track in the library |
+| `under` | number | `20` | How far under the narration the track plays, in LU, from 6 to 40 |
+| `library` | array of tracks | empty | The tracks the project may use |
+
+Each track of the library, a `[[music.library]]` table:
+
+| Key | Type | Meaning |
+|---|---|---|
+| `id` | string | The track's ID |
+| `file` | string | Its file in the project folder: a 16-bit WAV, with one or two channels |
+| `sha256` | string | The file's SHA-256, so that the licence is of this very file |
+| `licence` | string | The licence it is used under: `CC-BY-4.0`, or the name of a paid licence |
+| `attribution` | string | The credit the licence asks for, as it goes into a description |
+| `platforms` | array of strings | The platforms the licence covers |
+| `content_id` | boolean | Whether the track is registered with YouTube's Content ID. Default `false`. |
+
+```toml
+[music]
+track = "calm"
+
+[[music.library]]
+id = "calm"
+file = "music/calm.wav"
+sha256 = "6aa25e83beeb8a210b3e17350c170dca866c7f2e8f444b6043bf7e1467b14249"
+licence = "CC-BY-4.0"
+attribution = "“Calm” by A. Composer, CC BY 4.0"
+platforms = ["youtube", "youtube-shorts"]
+```
+
+`vidni validate` holds the project to it:
+- **Every key but `content_id` is required,** and none may be empty.
+- **The file must be the one the entry is for:** it is in the project folder, and its SHA-256 is the entry's.
+- **The track that plays must be licensed for every platform a cut is made for.** A cut for a platform the entry doesn't list is an error, named with the cut and the platform.
+
+A build plays the track under the whole narration, repeated when it is shorter, coming in over a second and going out over two. It is brought to `under` LU below the narration's loudness, so it sits at the same level under any voice. The file is one of the build's sounds, so another file under the same name is another build.
+
+**Content ID.** YouTube blocks a Short of over a minute that has a Content ID claim, in every country. So a cut for `youtube-shorts` that lasts over 60 seconds isn't built with a track marked `content_id = true`.
 
 ## `[[expectations]]`
 

@@ -1046,3 +1046,142 @@ fn chapters_that_youtube_would_ignore_fail_qa_and_two_sections_make_no_list() {
     assert!(!dir.join("out/long.chapters.txt").exists());
     assert!(!dir.join("build/final/long.chapters.txt").exists());
 }
+
+/// A track for a project's library: a second of a 330 Hz tone, with its
+/// SHA-256. A draft's clips are at 22.05 kHz, so it is resampled.
+fn music(dir: &Path) -> String {
+    let path = dir.join("calm.wav");
+    let spec = hound::WavSpec {
+        channels: 2,
+        sample_rate: 44100,
+        bits_per_sample: 16,
+        sample_format: hound::SampleFormat::Int,
+    };
+    let mut writer = hound::WavWriter::create(&path, spec).unwrap();
+    for n in 0..44100u32 {
+        let t = f64::from(n) / 44100.0;
+        let s = ((t * 330.0 * std::f64::consts::TAU).sin() * 9000.0) as i16;
+        writer.write_sample(s).unwrap();
+        writer.write_sample(s).unwrap();
+    }
+    writer.finalize().unwrap();
+    capture::file_sha256(dir, "calm.wav").unwrap()
+}
+
+/// `text` with a track playing, licensed for every platform the cuts are for.
+fn with_music(text: &str, sha256: &str, content_id: bool) -> String {
+    format!(
+        "{text}\n[music]\ntrack = \"calm\"\n\n[[music.library]]\nid = \"calm\"\nfile = \"calm.wav\"\n\
+         sha256 = \"{sha256}\"\nlicence = \"CC-BY-4.0\"\nattribution = \"Calm, by A. Composer\"\n\
+         platforms = [\"youtube\", \"youtube-shorts\", \"instagram-reels\", \"whatsapp-status\"]\n\
+         content_id = {content_id}\n"
+    )
+}
+
+#[test]
+fn a_track_from_the_library_plays_under_the_narration_and_is_one_of_its_sounds() {
+    let (dir, plain) = drafted(PROJECT);
+    let dir = dir.path();
+    let sha = music(dir);
+    let p = project(dir, &with_music(PROJECT, &sha, false));
+    let pack = speak(dir, &p);
+    let long = cut(&p, "long");
+    let bare = build::draft(
+        &plain,
+        dir,
+        cut(&plain, "long"),
+        &pack,
+        &setup(),
+        &mut quiet(),
+    )
+    .unwrap();
+    let narration = |dir: &Path| fs::read(dir.join("build/draft/long.narration.wav")).unwrap();
+    let without = narration(dir);
+    let with = build::draft(&p, dir, long, &pack, &setup(), &mut quiet()).unwrap();
+    assert_eq!(with.problems(), Vec::<String>::new());
+    // Another narration, from another set of sounds; the pictures are the same.
+    assert_ne!(narration(dir), without);
+    assert_ne!(with.sources.audio, bare.sources.audio);
+    assert_ne!(with.t1.pcm, bare.t1.pcm);
+    assert_eq!(
+        with.outputs["long.mp4"].frames,
+        bare.outputs["long.mp4"].frames
+    );
+    // The track's bytes are an input: another file under the same name
+    // is another build.
+    let before = with.inputs.clone();
+    fs::write(
+        dir.join("calm.wav"),
+        fs::read(dir.join("tone.wav")).unwrap(),
+    )
+    .unwrap();
+    let other = project(
+        dir,
+        &with_music(
+            PROJECT,
+            &capture::file_sha256(dir, "calm.wav").unwrap(),
+            false,
+        ),
+    );
+    let again = build::draft(
+        &other,
+        dir,
+        cut(&other, "long"),
+        &pack,
+        &setup(),
+        &mut quiet(),
+    )
+    .unwrap();
+    assert_ne!(again.inputs, before);
+}
+
+#[test]
+fn a_short_over_a_minute_with_a_content_id_track_is_refused() {
+    // 26 lines of 2.5 s each, in a 9:16 cut for Shorts: 70 s.
+    let mut text = String::from(
+        "schema = 1\n\n[meta]\ntitle = \"A long short\"\ndefault_scene = \"card\"\n\n\
+         [timing]\nlead_in = 0.1\nline_gap = 0.2\nsection_gap = 0.2\ntail = 0.2\n\n\
+         [[cuts]]\nid = \"short\"\naspect = \"9:16\"\n\n[sections.main]\n\n",
+    );
+    for n in 0..26 {
+        text.push_str(&format!(
+            "[[lines]]\nid = \"main-{n}\"\nsection = \"main\"\nshow = \"Line {n}.\"\n\n"
+        ));
+    }
+    text.push_str("[scenes.card]\nkind = \"page\"\nurl = \"card.html\"\n");
+    let (dir, _) = drafted(&text);
+    let dir = dir.path();
+    let sha = music(dir);
+    let claimed = project(dir, &with_music(&text, &sha, true));
+    let pack = speak(dir, &claimed);
+    let reasons = refused(build::draft(
+        &claimed,
+        dir,
+        cut(&claimed, "short"),
+        &pack,
+        &setup(),
+        &mut quiet(),
+    ));
+    assert_eq!(
+        reasons,
+        [
+            "cut short lasts 70 s and track calm is registered with Content ID: YouTube blocks \
+          a Short of over a minute with a Content ID claim, worldwide"
+        ]
+    );
+    // Nothing was rendered for it.
+    assert!(!dir.join("build/draft/short.mp4").exists());
+    // The same track with no claim on it is planned as any other.
+    let free = project(dir, &with_music(&text, &sha, false));
+    assert!(
+        build::plan(
+            &free,
+            dir,
+            cut(&free, "short"),
+            Voice::Draft,
+            Some(&pack),
+            &setup()
+        )
+        .is_ok()
+    );
+}

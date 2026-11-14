@@ -77,7 +77,9 @@ Background music.
 
 | Key | Value | Required | Meaning |
 |---|---|---|---|
-| `track` | string |  | `none`. Licensed tracks come with the music library (P6-VIDNI-06). |
+| `library` | array of [Track](#track) |  | The tracks the project may use, each with its licence. |
+| `track` | string |  | `none`, or the ID of a track in `library`. |
+| `under` | number |  | How far under the narration the track plays, in LU. Default 20. |
 
 ## `[sections.<id>]`
 
@@ -166,6 +168,20 @@ One text and how it is said.
 |---|---|---|---|
 | `say` | string | yes | How it is said. |
 | `text` | string | yes | The text as written. |
+
+### Track
+
+A piece of music the project may use, with what allows it.
+
+| Key | Value | Required | Meaning |
+|---|---|---|---|
+| `attribution` | string | yes | The credit the licence asks for, as it goes into a description. |
+| `file` | string | yes | The track's file in the project folder: a 16-bit WAV. |
+| `id` | string | yes | A stable ID, like a line's. |
+| `licence` | string | yes | The licence it is used under, such as `CC-BY-4.0`, or the name of a paid licence. |
+| `platforms` | array of string | yes | The platforms the licence covers. |
+| `sha256` | string | yes | The file's SHA-256, so that the licence is of this very file. |
+| `content_id` | boolean |  | Whether the track is registered with YouTube's Content ID. A Short over a minute with a Content ID claim is blocked worldwide. |
 
 ### Action
 
