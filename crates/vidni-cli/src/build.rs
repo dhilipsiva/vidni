@@ -19,7 +19,7 @@ pub(crate) fn chosen<'p>(project: &'p Project, ids: &[String]) -> Result<Vec<&'p
     ids.iter()
         .map(|id| {
             project.cuts.iter().find(|c| &c.id == id).ok_or_else(|| {
-                eprintln!("vidni: there is no cut {id:?}");
+                tell!("vidni: there is no cut {id:?}");
                 ExitCode::FAILURE
             })
         })
@@ -32,10 +32,10 @@ pub(crate) fn stopped(stop: Stop) -> ExitCode {
     match stop {
         Stop::Refused(reasons) => {
             for reason in reasons {
-                eprintln!("vidni: {reason}");
+                tell!("vidni: {reason}");
             }
         }
-        Stop::Failed(e) => eprintln!("vidni: {e}"),
+        Stop::Failed(e) => tell!("vidni: {e}"),
     }
     ExitCode::FAILURE
 }
@@ -43,7 +43,7 @@ pub(crate) fn stopped(stop: Stop) -> ExitCode {
 /// Reports that something a command needs is missing or unreadable, as
 /// exit code 2.
 pub(crate) fn cant(why: String) -> ExitCode {
-    eprintln!("vidni: {why}");
+    tell!("vidni: {why}");
     ExitCode::from(2)
 }
 
@@ -62,16 +62,16 @@ fn progress(cut: &str) -> impl FnMut(Step) + '_ {
     move |step| match step {
         Step::Stage(stage) => {
             tenth = 0;
-            eprintln!("{cut}: {stage}");
+            tell!("{cut}: {stage}");
         }
         Step::Kept => {
-            eprintln!("{cut}: nothing has changed since it was built; nothing to render");
+            tell!("{cut}: nothing has changed since it was built; nothing to render");
         }
         Step::Frames { file, done, of } => {
             let now = done * 10 / of.max(1);
             if now > tenth {
                 tenth = now;
-                eprintln!("{cut}: {file}: {done} of {of} frames");
+                tell!("{cut}: {file}: {done} of {of} frames");
             }
         }
     }
@@ -87,25 +87,25 @@ pub(crate) fn speak_lines(loaded: &Loaded) -> Result<Pack, ExitCode> {
     let pack = match voices::find(id, store.as_deref()) {
         Ok(Some(pack)) => pack,
         Ok(None) => {
-            eprintln!(
+            tell!(
                 "vidni: the draft voice {id} isn't a voice vidni knows, and the voice store has no pack.toml for it"
             );
             return Err(ExitCode::FAILURE);
         }
         Err(e) => {
-            eprintln!("vidni: {e}");
+            tell!("vidni: {e}");
             return Err(ExitCode::from(2));
         }
     };
     let Some(store) = store else {
-        eprintln!("vidni: no voice store; set VIDNI_VOICES or HOME");
+        tell!("vidni: no voice store; set VIDNI_VOICES or HOME");
         return Err(ExitCode::from(2));
     };
     // A voice that isn't fetched, or a Piper that isn't there, is something
     // missing; a take that fails part of the way is a failed build.
     let engine = Piper::new(&pack, &voices::pack_dir(&store, id)).map_err(cant)?;
     let drafted = tts::draft(project, dir, &pack, &engine).map_err(|e| {
-        eprintln!("vidni: {e}");
+        tell!("vidni: {e}");
         ExitCode::FAILURE
     })?;
     let n = |from: From| drafted.iter().filter(|d| d.from == from).count();
@@ -120,7 +120,7 @@ pub(crate) fn speak_lines(loaded: &Loaded) -> Result<Pack, ExitCode> {
         n(From::Cache)
     );
     if !pack.commercial {
-        eprintln!(
+        tell!(
             "{}: warning: the draft voice {id} is licensed {}, which doesn't allow commercial use",
             file.display(),
             pack.licence
@@ -147,7 +147,7 @@ pub(crate) fn take_captures(loaded: &Loaded, cuts: &[&Cut]) -> Result<(), ExitCo
     // in the project folder is captured as ever.
     let web: Vec<&capture::Capture> = plan.iter().filter(|c| c.on_the_web()).collect();
     if let (true, Some(first)) = (crate::offline::inside(), web.first()) {
-        eprintln!(
+        tell!(
             "vidni: offline, and {} of web pages {} taken yet (the first: {})",
             count(web.len(), "capture"),
             if web.len() == 1 { "isn't" } else { "aren't" },
@@ -180,11 +180,11 @@ pub(crate) fn take_captures(loaded: &Loaded, cuts: &[&Cut]) -> Result<(), ExitCo
             Ok(())
         }
         Err(_) if vidni_media::cdp::interrupted() => {
-            eprintln!("vidni: interrupted; no still of an unfinished scene was kept");
+            tell!("vidni: interrupted; no still of an unfinished scene was kept");
             Err(ExitCode::from(130))
         }
         Err(e) => {
-            eprintln!("vidni: {e}");
+            tell!("vidni: {e}");
             Err(ExitCode::FAILURE)
         }
     }
@@ -233,7 +233,7 @@ pub fn draft(path: &Path, cuts: &[String], again: bool) -> ExitCode {
             built(&record, dir);
             // A draft is for watching, so what QA finds is said, not refused.
             for problem in record.problems() {
-                eprintln!("vidni: warning: {problem}");
+                tell!("vidni: warning: {problem}");
             }
         }
         Ok(())
@@ -270,7 +270,7 @@ pub fn finish(path: &Path, cuts: &[String], again: bool) -> ExitCode {
         let mut unexported = 0;
         // Sessions that differ in level are worth a listen; they stop nothing.
         for jump in crate::takes::jumps(project, dir) {
-            eprintln!("vidni: warning: {jump}");
+            tell!("vidni: warning: {jump}");
         }
         for cut in cuts {
             let mut progress = progress(&cut.id);
@@ -280,10 +280,10 @@ pub fn finish(path: &Path, cuts: &[String], again: bool) -> ExitCode {
             // What goes with the cut where it is uploaded, made afresh.
             let exports = build::exports(project, dir, cut, &setup).map_err(stopped)?;
             for warning in &exports.warnings {
-                eprintln!("vidni: warning: {warning}");
+                tell!("vidni: warning: {warning}");
             }
             for refusal in &exports.refused {
-                eprintln!("vidni: {refusal}");
+                tell!("vidni: {refusal}");
             }
             unexported += exports.refused.len();
             say!(
@@ -399,7 +399,7 @@ pub fn approve(path: &Path, cuts: &[String]) -> ExitCode {
 pub fn new(name: &str, from: Option<&Path>) -> ExitCode {
     use vidni_core::starter;
     if !vidni_core::validate::valid_id(name) {
-        eprintln!(
+        tell!(
             "vidni: a project's name is lowercase letters and digits, in words joined by hyphens, such as my-first-video; {name:?} isn't"
         );
         return ExitCode::FAILURE;
@@ -418,7 +418,7 @@ pub fn new(name: &str, from: Option<&Path>) -> ExitCode {
     let files = match made {
         Ok(files) => files,
         Err(e) => {
-            eprintln!("vidni: {e}");
+            tell!("vidni: {e}");
             return ExitCode::FAILURE;
         }
     };

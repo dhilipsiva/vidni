@@ -8,6 +8,10 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+[lib]
+name = "vidni_cli"
+path = "src/lib.rs"
+
 [[bin]]
 name = "vidni"
 path = "src/main.rs"

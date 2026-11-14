@@ -34,10 +34,10 @@ fn locks(dir: &Path) -> Result<(ratify::Lock, Releases), ExitCode> {
 /// The first few of `paths`, each on a line of its own after `what`.
 fn list(what: &str, paths: &[String]) {
     for path in paths.iter().take(10) {
-        eprintln!("vidni: {what}: {path}");
+        tell!("vidni: {what}: {path}");
     }
     if paths.len() > 10 {
-        eprintln!("vidni: and {} more", paths.len() - 10);
+        tell!("vidni: and {} more", paths.len() - 10);
     }
 }
 
@@ -50,7 +50,7 @@ pub fn backup(path: &Path, to: &[PathBuf]) -> ExitCode {
     let places = places(to);
     let distinct: std::collections::BTreeSet<&PathBuf> = places.iter().collect();
     if distinct.len() < 2 {
-        eprintln!(
+        tell!(
             "vidni: a backup goes to two places, one of them off this machine: name both with --to, or in $VIDNI_BACKUP"
         );
         return ExitCode::FAILURE;
@@ -93,7 +93,7 @@ pub fn backup(path: &Path, to: &[PathBuf]) -> ExitCode {
     // On one disk with the project, a backup goes when the disk goes.
     let disk = |path: &Path| std::fs::metadata(path).map(|meta| meta.dev()).ok();
     if places.iter().all(|place| disk(place) == disk(dir)) {
-        eprintln!(
+        tell!(
             "vidni: warning: every place is on the disk the project is on; one of them should be off this machine"
         );
     }
@@ -156,7 +156,7 @@ pub fn verify(path: &Path, to: &[PathBuf]) -> ExitCode {
         for place in places(to) {
             let folder = assets::folder(&place, dir).map_err(cant)?;
             if !folder.is_dir() {
-                eprintln!("vidni: {} holds no backup of this project", place.display());
+                tell!("vidni: {} holds no backup of this project", place.display());
                 faults += 1;
                 continue;
             }
@@ -200,7 +200,7 @@ pub fn restore(path: &Path, from: &[PathBuf]) -> ExitCode {
     let Loaded { dir, project, .. } = &loaded;
     let places = places(from);
     if places.is_empty() {
-        eprintln!("vidni: name the backup to restore from with --from, or in $VIDNI_BACKUP");
+        tell!("vidni: name the backup to restore from with --from, or in $VIDNI_BACKUP");
         return ExitCode::FAILURE;
     }
     let restored = locks(dir).and_then(|(_, releases)| {
@@ -209,7 +209,7 @@ pub fn restore(path: &Path, from: &[PathBuf]) -> ExitCode {
             let folder = assets::folder(place, dir).map_err(cant)?;
             match folder.is_dir() {
                 true => folders.push(folder),
-                false => eprintln!(
+                false => tell!(
                     "vidni: warning: {} holds no backup of this project",
                     place.display()
                 ),

@@ -10,7 +10,7 @@ use vidni_core::release::{self, Voice};
 use vidni_core::timeline::Timeline;
 
 fn failed(why: String) -> ExitCode {
-    eprintln!("vidni: {why}");
+    tell!("vidni: {why}");
     ExitCode::FAILURE
 }
 

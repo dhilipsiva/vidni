@@ -109,6 +109,6 @@ pub fn again() -> ExitCode {
             format!("unshare: {error}")
         }
     };
-    eprintln!("vidni: {why}");
+    tell!("vidni: {why}");
     ExitCode::from(2)
 }

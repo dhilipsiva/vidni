@@ -1199,3 +1199,61 @@ fn picking_an_older_take_changes_only_its_line() {
         "{said}"
     );
 }
+
+#[test]
+fn a_command_run_in_process_says_the_same_and_gives_the_same_code() {
+    // P7: the desktop app runs commands this way, on a thread of its own.
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    use vidni_cli::console::{self, Stream};
+    let heard: Rc<RefCell<Vec<(Stream, String)>>> = Rc::default();
+    let run = |args: &[&str]| {
+        heard.borrow_mut().clear();
+        let sink = heard.clone();
+        let listening = console::listen(move |stream, line| {
+            sink.borrow_mut().push((stream, line.to_string()));
+        });
+        let code = vidni_cli::run(args);
+        drop(listening);
+        (code, heard.borrow().clone())
+    };
+    let example = root().join("examples/hello");
+    let example = example.to_str().unwrap();
+    let (code, said) = run(&["validate", example]);
+    let out = vidni(&["validate", example]);
+    assert_eq!(Some(i32::from(code)), out.status.code());
+    assert_eq!(said.len(), 1);
+    assert_eq!(said[0].0, Stream::Out);
+    assert_eq!(
+        format!("{}\n", said[0].1),
+        String::from_utf8_lossy(&out.stdout)
+    );
+    // A refusal: the same words on stderr, and the same code.
+    let broken = root().join("crates/vidni-core/tests/fixtures/invalid/09-unknown-scene.toml");
+    let broken = broken.to_str().unwrap();
+    let (code, said) = run(&["validate", broken]);
+    let out = vidni(&["validate", broken]);
+    assert_eq!((code, out.status.code()), (1, Some(1)));
+    let lines: Vec<String> = said.iter().map(|(_, line)| format!("{line}\n")).collect();
+    assert!(said.iter().any(|(stream, _)| *stream == Stream::Err));
+    assert_eq!(
+        lines.concat(),
+        format!(
+            "{}{}",
+            String::from_utf8_lossy(&out.stderr),
+            String::from_utf8_lossy(&out.stdout)
+        )
+    );
+    // What isn't a command is said, with the code the shell would get.
+    let (code, said) = run(&["nonsense"]);
+    assert_eq!(code, 2);
+    assert!(said[0].1.contains("unrecognized subcommand"), "{said:?}");
+    // Help is said on stdout, and is no failure.
+    let (code, said) = run(&["platforms", "--help"]);
+    assert_eq!(code, 0);
+    assert!(said.iter().all(|(stream, _)| *stream == Stream::Out));
+    assert!(
+        said[0].1.starts_with("List the platform profiles"),
+        "{said:?}"
+    );
+}

@@ -105,7 +105,7 @@ impl Drop for Running {
 /// Exit code 130 with a word about it, when the repro was asked to stop.
 fn interrupted(what: &str) -> Result<(), ExitCode> {
     if INTERRUPTED.load(Ordering::SeqCst) {
-        eprintln!("vidni: interrupted; {what}");
+        tell!("vidni: interrupted; {what}");
         return Err(ExitCode::from(130));
     }
     Ok(())
@@ -532,14 +532,14 @@ fn run(
         offline: wrapper,
         environment,
     };
-    eprintln!(
+    tell!(
         "repro: building twice{}: on cores {} and on cores {}",
         if offline { ", with no network" } else { "" },
         list(&runs[0].cores),
         list(&runs[1].cores)
     );
     if runs[0].cores == runs[1].cores {
-        eprintln!("repro: this process may use one core only, so both builds share it");
+        tell!("repro: this process may use one core only, so both builds share it");
     }
     let mut children = Vec::new();
     for (run, name) in runs.iter().zip(["a", "b"]) {
@@ -557,7 +557,7 @@ fn run(
         }
     }
     let Some(statuses) = wait(&mut children).map_err(cant)? else {
-        eprintln!("vidni: interrupted; the two builds were stopped");
+        tell!("vidni: interrupted; the two builds were stopped");
         return Err(ExitCode::from(130));
     };
     running.note(|scratch| scratch.groups.clear());
@@ -565,7 +565,7 @@ fn run(
     for (status, run) in statuses.into_iter().zip(&runs) {
         if !status.success() {
             failed = true;
-            eprintln!(
+            tell!(
                 "vidni: the build on cores {} failed ({status}):\n{}",
                 list(&run.cores),
                 tail(&run.log)
@@ -587,7 +587,7 @@ fn run(
         say!("  t1 resolved         {}", short(&a));
     } else {
         equal = false;
-        eprintln!("vidni: the builds differ in: t1 resolved");
+        tell!("vidni: the builds differ in: t1 resolved");
     }
     for cut in &cuts {
         let read = |from: &Path| {
@@ -621,7 +621,7 @@ fn run(
         }
         if !differences.is_empty() {
             equal = false;
-            eprintln!(
+            tell!(
                 "vidni: cut {}: the builds differ in: {}",
                 cut.id,
                 differences.join(", ")
@@ -639,7 +639,7 @@ fn run(
             list(&runs[1].cores)
         );
     } else {
-        eprintln!("vidni: repro: the two builds differ{where_}");
+        tell!("vidni: repro: the two builds differ{where_}");
     }
     Ok(equal)
 }

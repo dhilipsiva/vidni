@@ -802,7 +802,7 @@ pub fn record(
     };
     // What can't be done is said before the terminal is taken.
     let refused = |why: String| {
-        eprintln!("vidni: {why}");
+        tell!("vidni: {why}");
         ExitCode::FAILURE
     };
     if let Some(section) = section.filter(|id| !project.sections.contains_key(*id)) {
@@ -877,8 +877,8 @@ pub fn record(
         clear_candidates(&lines);
     }
     if let Err(e) = ended {
-        eprintln!("vidni: {e}");
-        eprintln!("vidni: every take you kept is saved; `vidni record` goes on from there");
+        tell!("vidni: {e}");
+        tell!("vidni: every take you kept is saved; `vidni record` goes on from there");
         return ExitCode::FAILURE;
     }
     if test {

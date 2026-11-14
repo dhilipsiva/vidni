@@ -33,7 +33,7 @@ pub fn line(path: &Path, id: &str, pick: Option<u32>, trim: Option<&str>) -> Exi
         Err(code) => return code,
     };
     let Some(line) = project.lines.iter().find(|l| l.id == id) else {
-        eprintln!("vidni: there is no line {id:?}");
+        tell!("vidni: there is no line {id:?}");
         return ExitCode::FAILURE;
     };
     let hash = spoken_hash(line, &project.voice);
@@ -46,7 +46,7 @@ pub fn line(path: &Path, id: &str, pick: Option<u32>, trim: Option<&str>) -> Exi
     match done {
         Ok(()) => ExitCode::SUCCESS,
         Err(why) => {
-            eprintln!("vidni: {why}");
+            tell!("vidni: {why}");
             ExitCode::FAILURE
         }
     }
