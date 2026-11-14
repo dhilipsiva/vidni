@@ -399,3 +399,11 @@ Added as the items are built.
 - **The caption toggle switches between a build's two pictures.** A draft is one picture, with its captions in it, so the toggle is greyed there; a final build of a cut with `captions = "both"` has both. Drawing a draft's frames without captions would mean composing them in the app, which is the compositor's work and not the preview's.
 - **Sound is `ffplay`,** started beside the frames, so sound and picture agree to about a tenth of a second. That is enough to hear a line while watching it, and not for judging lip-sync, which a narrated video hasn't.
 - **Left as it is:** opening a picture counts its packets, 75 ms for five minutes, on the window's thread.
+
+### T25. Notes are a Markdown file, and what changed is two comparisons
+- **2026-11-14, P7-VIDNI-04.** A line's review note is kept in `notes.md` in the project folder, under a `##` heading that is the line's ID. The file is plain Markdown so that it reads well where the project is hosted, can be written by hand, and goes into git with the script. It is the second of the two files an assistant may edit.
+  - **Notes aren't in `vidni.toml`.** A note there would be part of the project that a cut is made from, and a note on a line would then need a rule that it changes no cut. In a file of its own it can't.
+  - **A write changes one section.** The heading and its note are replaced where they are; everything else, and anything above the first heading, stays byte for byte. A note's own line that reads as a heading is set in by a space.
+- **What changed is said against the last build and against ratification.** A build writes the project it was made from as `build/resolved.json`; comparing it with the project resolved now names each line that is new, gone or changed, and the keys that changed. Ratification already says what changed in each cut (`vidni status`), so `vidni changes` repeats that under its own heading. Nothing new is stored for either.
+  - **`vidni ratify` writes `build/resolved.json` too,** so right after ratifying, "since the last build" is also "since ratification" for the lines.
+- **Both are commands first** (`vidni notes`, `vidni changes`); the app runs them through its command layer and shows what they say.

@@ -25,6 +25,8 @@ The app keeps the list of projects you opened in `recent`, in its folder of sett
 | Check | `vidni validate <project>` | Checks the project's file, and lists each problem at its line |
 | Draft every cut | `vidni draft <project>` | Speaks the lines in the draft voice, takes the captures, and renders every cut |
 | Draft `<cut>` | `vidni draft <project> --cut <cut>` | Drafts one cut |
+| Save note | `vidni notes <project> --line <line> --set <note>` | Writes what to change about a line into notes.md |
+| What changed | `vidni changes <project>` | Lists the lines that changed since the last build, and the cuts that changed since they were ratified |
 
 - **The projects.** The first screen starts a project, opens one by its folder, and lists the ones opened lately.
 - **A project.** Its title, its folder, and each cut with where it stands, in `vidni status`'s own words.
@@ -45,6 +47,14 @@ An open project has two tabs: **Cuts**, and **Script**, which is its file in an 
 - **A line with tables of its own,** written as `[[lines.do]]` under it, is edited in place by the forms, and added after, moved or removed only in the source view: the forms don't move a line's tables with it.
 
 The forms cover what a script is mostly made of. Everything else in a project file (targets, cameras, cuts, the publishing table) is edited in the source view for now.
+
+## Notes, and what changed
+
+Both are in the **Script** tab.
+
+- **A note on a line.** Pick a line, write what to change about it under **Note**, and press Save note. The line's row then ends in `(note)`. An emptied note, saved, is taken away.
+- **Notes are a file.** They are in `notes.md`, in the project folder, each under a heading that is its line's ID. So they are there the next time the app is started, they go into git with the script, and they can be written by hand or with `vidni notes`; the app shows such a change at once. A note is no part of the video: writing one changes no cut.
+- **What changed** lists, in `vidni changes`'s words, each line that is new, gone or changed since the last build, with the keys that changed, and for each ratified cut what has changed since it was ratified. While it is open it follows the file, so an edit shows in it as it is made.
 
 ## The preview
 

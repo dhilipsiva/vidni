@@ -8,10 +8,12 @@
 pub mod assets;
 pub mod captions;
 pub mod capture;
+pub mod changes;
 pub mod chapters;
 pub mod edit;
 pub mod fmt;
 pub mod fonts;
+pub mod notes;
 pub mod onscreen;
 pub mod platforms;
 pub mod project;

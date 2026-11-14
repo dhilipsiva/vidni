@@ -827,6 +827,43 @@ Gaps (`[timing]`), caption style, platforms and the theme aren't part of a cut's
 
 A draft takes only the captures that the folder doesn't hold, or holds out of date, so a redraft with nothing changed takes none. `vidni unratify` keeps a cut's captures. `--refresh` deletes the ones no other ratified cut uses, so that they are taken afresh.
 
+### What changed: `vidni changes`
+
+`vidni changes` says what is different now, against two things:
+
+```console
+$ vidni changes
+since the last build:
+  line intro-1 changed: show
+  line intro-3 is new
+since each cut was ratified:
+  long: line intro-1 changed; line intro-3 was added; its captures changed
+  vertical: not ratified
+```
+
+- **Since the last build.** A draft, a final build and `vidni ratify` each write `build/resolved.json`, the project they were made from. Against it, each line is named that is new, gone or changed, with the keys that changed; then a changed line order, and changed sections, scenes, cuts and other tables. Before the first build it says that there is none to compare with.
+- **Since each cut was ratified.** What `vidni status` says of the cut.
+
+It exits 0 whether or not anything changed: it reports, and refuses nothing.
+
+### Review notes: `notes.md`
+
+What to change about a line, written while watching a draft, is kept in `notes.md` in the project folder:
+
+```markdown
+# Notes
+
+## intro-2
+
+Slower, and say the name once.
+```
+
+A `##` heading is a line's ID, and what is under it, up to the next heading, is that line's note. Anything above the first heading is yours. Commit the file with the script.
+
+`vidni notes` lists the notes, a line each. `vidni notes --line intro-2 --set "…"` writes one, in the place of the line's old one, and `--set ""` takes it away; the rest of the file stays as it is. A line of a note that starts with `## ` is set in by a space, so that it stays in its note. A note on a line that is no longer in the script is kept, and listed as such.
+
+Notes are no part of the video. No build reads them, and writing one changes no cut's status.
+
 ### When a capture is out of date
 
 A key covers what `vidni.toml` says about a scene. It can't cover what the page holds.

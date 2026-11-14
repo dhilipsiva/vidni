@@ -18,6 +18,14 @@ pub enum Action {
         project: PathBuf,
         cut: Option<String>,
     },
+    /// Write the review note on a line.
+    Note {
+        project: PathBuf,
+        line: String,
+        note: String,
+    },
+    /// Say what has changed since the last build and since ratification.
+    Changes(PathBuf),
 }
 
 /// What the app's help says of a kind of action.
@@ -32,7 +40,7 @@ pub struct Usage {
 }
 
 /// Every kind of action, in the order the help lists them.
-pub const ALL: [Usage; 5] = [
+pub const ALL: [Usage; 7] = [
     Usage {
         name: "New project",
         command: "vidni new <name> --in <folder>",
@@ -58,6 +66,16 @@ pub const ALL: [Usage; 5] = [
         command: "vidni draft <project> --cut <cut>",
         does: "Drafts one cut",
     },
+    Usage {
+        name: "Save note",
+        command: "vidni notes <project> --line <line> --set <note>",
+        does: "Writes what to change about a line into notes.md",
+    },
+    Usage {
+        name: "What changed",
+        command: "vidni changes <project>",
+        does: "Lists the lines that changed since the last build, and the cuts that changed since they were ratified",
+    },
 ];
 
 impl Action {
@@ -75,6 +93,19 @@ impl Action {
                 project,
                 cut: Some(cut),
             } => vec!["draft".into(), path(project), "--cut".into(), cut.clone()],
+            Self::Note {
+                project,
+                line,
+                note,
+            } => vec![
+                "notes".into(),
+                path(project),
+                "--line".into(),
+                line.clone(),
+                "--set".into(),
+                note.clone(),
+            ],
+            Self::Changes(project) => vec!["changes".into(), path(project)],
         }
     }
 
@@ -86,6 +117,8 @@ impl Action {
             Self::Validate(_) => 2,
             Self::Draft { cut: None, .. } => 3,
             Self::Draft { cut: Some(_), .. } => 4,
+            Self::Note { .. } => 5,
+            Self::Changes(_) => 6,
         }]
     }
 }
@@ -129,9 +162,15 @@ mod tests {
                 cut: None,
             },
             Action::Draft {
-                project,
+                project: project.clone(),
                 cut: Some("long".into()),
             },
+            Action::Note {
+                project: project.clone(),
+                line: "intro-1".into(),
+                note: "Say it slower.".into(),
+            },
+            Action::Changes(project),
         ];
         // Each kind of action has its own line in the help, and no line is spare.
         let listed: Vec<Usage> = actions.iter().map(Action::usage).collect();
@@ -146,6 +185,8 @@ mod tests {
                 "vidni validate '/videos/my talk'",
                 "vidni draft '/videos/my talk'",
                 "vidni draft '/videos/my talk' --cut long",
+                "vidni notes '/videos/my talk' --line intro-1 --set 'Say it slower.'",
+                "vidni changes '/videos/my talk'",
             ]
         );
         for (action, typed) in actions.iter().zip(&typed) {

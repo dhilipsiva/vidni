@@ -1257,3 +1257,101 @@ fn a_command_run_in_process_says_the_same_and_gives_the_same_code() {
         "{said:?}"
     );
 }
+
+#[test]
+fn notes_are_kept_by_line_and_changes_name_the_lines() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().to_str().unwrap();
+    assert!(vidni(&["new", "demo", "--in", path]).status.success());
+    let project = dir.path().join("demo");
+    let demo = project.to_str().unwrap();
+    let said = |args: &[&str]| {
+        let out = vidni(args);
+        (
+            out.status.code(),
+            String::from_utf8_lossy(&out.stdout).into_owned(),
+            String::from_utf8_lossy(&out.stderr).into_owned(),
+        )
+    };
+    // No notes yet, and listing them writes no file.
+    assert_eq!(
+        said(&["notes", demo]),
+        (
+            Some(0),
+            "no notes; `vidni notes --line ID --set TEXT` writes one\n".into(),
+            String::new()
+        )
+    );
+    assert!(!project.join("notes.md").exists());
+    // A note on a line; a second on another; the first written again.
+    for (line, note) in [
+        ("intro-2", "Name the tool sooner."),
+        ("intro-1", "Say it slower."),
+        ("intro-2", "Name the tool first.\nThen what it does."),
+    ] {
+        let (code, out, err) = said(&["notes", demo, "--line", line, "--set", note]);
+        assert_eq!((code, err.as_str()), (Some(0), ""), "{out}");
+        assert_eq!(out, format!("{line}: noted in notes.md\n"));
+    }
+    assert_eq!(
+        fs::read_to_string(project.join("notes.md")).unwrap(),
+        "# Notes\n\nWhat to change, line by line. Each heading is a line's ID.\n\n\
+         ## intro-2\n\nName the tool first.\nThen what it does.\n\n\
+         ## intro-1\n\nSay it slower.\n"
+    );
+    // Listed in the file's order, a line each.
+    assert_eq!(
+        said(&["notes", demo]).1,
+        "intro-2: Name the tool first. Then what it does.\nintro-1: Say it slower.\n"
+    );
+    // A note with a line that reads as a heading stays one note.
+    let (code, ..) = said(&[
+        "notes",
+        demo,
+        "--line",
+        "intro-1",
+        "--set",
+        "Say it slower.\n## intro-2",
+    ]);
+    assert_eq!(code, Some(0));
+    assert_eq!(
+        said(&["notes", demo]).1,
+        "intro-2: Name the tool first. Then what it does.\nintro-1: Say it slower.  ## intro-2\n"
+    );
+    let (code, ..) = said(&[
+        "notes",
+        demo,
+        "--line",
+        "intro-1",
+        "--set",
+        "Say it slower.",
+    ]);
+    assert_eq!(code, Some(0));
+    // A line that isn't in the script has no note to write.
+    let (code, _, err) = said(&["notes", demo, "--line", "nope", "--set", "x"]);
+    assert_eq!(code, Some(1));
+    assert_eq!(err, "vidni: there is no line \"nope\"\n");
+    // An empty note takes the line's note away; what was written by hand stays.
+    let by_hand = fs::read_to_string(project.join("notes.md"))
+        .unwrap()
+        .replace("# Notes\n", "# Notes\n\nWatched on the 14th.\n");
+    fs::write(project.join("notes.md"), by_hand).unwrap();
+    let (code, out, _) = said(&["notes", demo, "--line", "intro-2", "--set", ""]);
+    assert_eq!(
+        (code, out.as_str()),
+        (Some(0), "intro-2: its note is taken out of notes.md\n")
+    );
+    let text = fs::read_to_string(project.join("notes.md")).unwrap();
+    assert!(text.contains("Watched on the 14th.\n"), "{text}");
+    assert!(!text.contains("intro-2"), "{text}");
+    assert_eq!(said(&["notes", demo]).1, "intro-1: Say it slower.\n");
+
+    // Before a build, there is nothing to compare with.
+    let (code, out, _) = said(&["changes", demo]);
+    assert_eq!(code, Some(0));
+    assert_eq!(
+        out,
+        "since the last build: there is no build yet to compare with\n\
+         since each cut was ratified:\n  long: not ratified\n  vertical: not ratified\n"
+    );
+}

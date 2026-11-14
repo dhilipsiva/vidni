@@ -255,6 +255,26 @@ enum Command {
         #[arg(long = "cut", value_name = "ID")]
         cuts: Vec<String>,
     },
+    /// List the review notes in notes.md, a line each; or, with --line and
+    /// --set, write the note on a line.
+    Notes {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// The line the note is on.
+        #[arg(long, value_name = "ID", requires = "set")]
+        line: Option<String>,
+        /// The note. An empty one takes the line's note away.
+        #[arg(long, value_name = "TEXT", requires = "line")]
+        set: Option<String>,
+    },
+    /// Say what has changed: each line that is new, gone or changed since
+    /// the last build, and each cut that has changed since it was ratified.
+    Changes {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+    },
     /// Record where a cut was published, in published.json; or, with no
     /// flags, list what is published where.
     Published {
@@ -482,6 +502,8 @@ fn dispatch(command: Command) -> ExitCode {
         } => published::record(&path, &cut, &platform, &url, release.as_deref()),
         Command::Published { path, .. } => published::list(&path),
         Command::Where { line, path } => published::whereabouts(&path, &line),
+        Command::Notes { path, line, set } => notes(&path, line.as_deref().zip(set.as_deref())),
+        Command::Changes { path } => changes(&path),
         Command::Backup { path, to } => backup::backup(&path, &to),
         Command::Verify { path, to } => backup::verify(&path, &to),
         Command::Restore { path, from } => backup::restore(&path, &from),
@@ -703,6 +725,95 @@ fn status(path: &Path) -> ExitCode {
                 "{id:width$}  {state}; approved as {tag}, and changed since in {}",
                 changed.join(", ")
             ),
+        }
+    }
+    ExitCode::SUCCESS
+}
+
+/// Lists the notes, or writes the note `set` names: a line and its note.
+fn notes(path: &Path, set: Option<(&str, &str)>) -> ExitCode {
+    use vidni_core::notes;
+    let Loaded { dir, project, .. } = match load(path) {
+        Ok(loaded) => loaded,
+        Err(code) => return code,
+    };
+    let mut all = match notes::read(&dir) {
+        Ok(all) => all,
+        Err(e) => {
+            tell!("vidni: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    if let Some((line, note)) = set {
+        if !project.lines.iter().any(|l| l.id == line) {
+            tell!("vidni: there is no line {line:?}");
+            return ExitCode::FAILURE;
+        }
+        all.set(line, note);
+        if let Err(e) = notes::write(&dir, &all) {
+            tell!("vidni: {e}");
+            return ExitCode::FAILURE;
+        }
+        match note.trim().is_empty() {
+            true => say!("{line}: its note is taken out of {}", notes::FILE),
+            false => say!("{line}: noted in {}", notes::FILE),
+        }
+        return ExitCode::SUCCESS;
+    }
+    let listed = all.all();
+    for (line, note) in &listed {
+        // A note on a line that is gone is still someone's words.
+        let gone = match project.lines.iter().any(|l| &l.id == line) {
+            true => "",
+            false => " (no such line now)",
+        };
+        say!("{line}{gone}: {}", note.replace('\n', " "));
+    }
+    if listed.is_empty() {
+        say!("no notes; `vidni notes --line ID --set TEXT` writes one");
+    }
+    ExitCode::SUCCESS
+}
+
+/// Says what has changed since the last build, and since each cut was ratified.
+fn changes(path: &Path) -> ExitCode {
+    let Loaded { dir, project, .. } = match load(path) {
+        Ok(loaded) => loaded,
+        Err(code) => return code,
+    };
+    let built = dir.join(ratify::RESOLVED);
+    match fs::read_to_string(&built) {
+        Err(_) => say!("since the last build: there is no build yet to compare with"),
+        Ok(text) => match vidni_core::changes::parse(&text) {
+            Err(e) => {
+                tell!("vidni: {}: {e}", built.display());
+                return ExitCode::from(2);
+            }
+            Ok(before) => {
+                let found = vidni_core::changes::between(&before, &ratify::resolved(&project));
+                match found.is_empty() {
+                    true => say!("since the last build: nothing"),
+                    false => say!("since the last build:"),
+                }
+                for change in found {
+                    say!("  {change}");
+                }
+            }
+        },
+    }
+    let lock = match ratify::read_lock(&dir) {
+        Ok(lock) => lock,
+        Err(e) => {
+            tell!("vidni: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    say!("since each cut was ratified:");
+    for (id, state) in ratify::status(&project, &dir, &lock) {
+        match state {
+            RatifyStatus::Draft => say!("  {id}: not ratified"),
+            RatifyStatus::Ratified => say!("  {id}: nothing"),
+            RatifyStatus::Changed(reasons) => say!("  {id}: {}", reasons.join("; ")),
         }
     }
     ExitCode::SUCCESS

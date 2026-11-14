@@ -8,6 +8,8 @@
 //! edit that would leave the file invalid isn't saved: what is wrong is
 //! shown beside the form, at its line and column, and the file stays.
 
+use crate::actions::Action;
+use crate::jobs;
 use eframe::egui;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -90,6 +92,12 @@ pub struct Editor {
     scene: Option<String>,
     scene_form: Vec<String>,
     source: String,
+    /// The review notes, by line, as `notes.md` has them.
+    pub notes: Vec<(String, String)>,
+    /// The note being written on the open line.
+    note: String,
+    /// What has changed, as `vidni changes` says it, when it is asked for.
+    pub changes: Option<Vec<String>>,
 }
 
 impl Editor {
@@ -113,8 +121,12 @@ impl Editor {
             scene: None,
             scene_form: Vec::new(),
             source: String::new(),
+            notes: Vec::new(),
+            note: String::new(),
+            changes: None,
         };
         editor.read();
+        editor.read_notes();
         editor
     }
 
@@ -209,6 +221,10 @@ impl Editor {
             }
         }
         self.text = text;
+        // What is listed as changed is of the file as it is.
+        if self.changes.is_some() {
+            self.ask_changes();
+        }
         // While the file isn't a valid project, the forms stay as they are.
         if self.project.is_none() {
             return;
@@ -266,6 +282,66 @@ impl Editor {
             self.form = form;
             id.to_string()
         });
+        self.note = self.note_on(id);
+    }
+
+    /// The note on line `id`; empty when it has none.
+    fn note_on(&self, id: &str) -> String {
+        self.notes
+            .iter()
+            .find(|(line, _)| line == id)
+            .map(|(_, note)| note.clone())
+            .unwrap_or_default()
+    }
+
+    /// Takes in `notes.md` as it is on disk. A note that is being written
+    /// here keeps what is typed.
+    fn read_notes(&mut self) {
+        let typed = self
+            .selected
+            .as_deref()
+            .is_some_and(|id| self.note_on(id) != self.note);
+        let notes = vidni_core::notes::read(&self.folder)
+            .map(|notes| notes.all())
+            .unwrap_or_default();
+        if notes == self.notes {
+            return;
+        }
+        self.notes = notes;
+        if let (false, Some(id)) = (typed, self.selected.clone()) {
+            self.note = self.note_on(&id);
+        }
+    }
+
+    /// Writes the note on the open line, as `vidni notes` does.
+    fn save_note(&mut self) -> bool {
+        let Some(line) = self.selected.clone() else {
+            return false;
+        };
+        let action = Action::Note {
+            project: self.folder.clone(),
+            line: line.clone(),
+            note: self.note.clone(),
+        };
+        let (code, said) = jobs::now(&action.args());
+        self.refused = match code {
+            0 => Vec::new(),
+            _ => said.into_iter().map(|(_, line)| line).collect(),
+        };
+        if code == 0 {
+            // What was saved is what the form holds.
+            self.notes = vidni_core::notes::read(&self.folder)
+                .map(|notes| notes.all())
+                .unwrap_or_default();
+            self.note = self.note_on(&line);
+        }
+        code == 0
+    }
+
+    /// Asks what has changed, as `vidni changes` says it.
+    fn ask_changes(&mut self) {
+        let (_, said) = jobs::now(&Action::Changes(self.folder.clone()).args());
+        self.changes = Some(said.into_iter().map(|(_, line)| line).collect());
     }
 
     /// Opens the form of scene `id`.
@@ -449,6 +525,7 @@ impl Editor {
     /// Draws the editor.
     pub fn ui(&mut self, ui: &mut egui::Ui) {
         self.refresh();
+        self.read_notes();
         ui.horizontal(|ui| {
             ui.selectable_value(&mut self.view, View::Forms, "Forms");
             ui.selectable_value(&mut self.view, View::Source, "Source");
@@ -513,6 +590,24 @@ impl Editor {
                 self.edit(|file| file.set_title(title.trim()));
             }
         });
+        // What has changed since the last build and since ratification.
+        let asked = self.changes.is_some();
+        let label = if asked {
+            "Hide what changed"
+        } else {
+            "What changed"
+        };
+        if ui.button(label).clicked() {
+            match asked {
+                true => self.changes = None,
+                false => self.ask_changes(),
+            }
+        }
+        if let Some(changes) = &self.changes {
+            for change in changes {
+                ui.monospace(change);
+            }
+        }
         ui.add_space(8.0);
         ui.heading("Script");
         // The lines by section, each with its ID; one is picked to edit.
@@ -527,7 +622,12 @@ impl Editor {
                 });
             }
             let picked = self.selected.as_deref() == Some(&line.id);
-            let row = format!("[{}]  {}", line.id, line.show);
+            // A line with a note says so in its row.
+            let noted = self.notes.iter().any(|(id, _)| *id == line.id);
+            let row = match noted {
+                true => format!("[{}]  {}  (note)", line.id, line.show),
+                false => format!("[{}]  {}", line.id, line.show),
+            };
             if ui.selectable_label(picked, row).clicked() {
                 self.select(&line.id);
                 self.refused.clear();
@@ -569,6 +669,19 @@ impl Editor {
                 }
                 if ui.button(format!("Remove {id}")).clicked() {
                     self.remove(&id);
+                }
+            });
+            // What to change about the line, kept in notes.md.
+            ui.horizontal(|ui| {
+                let label = ui.label("Note");
+                ui.add(
+                    egui::TextEdit::multiline(&mut self.note)
+                        .desired_width(560.0)
+                        .desired_rows(2),
+                )
+                .labelled_by(label.id);
+                if ui.button("Save note").clicked() {
+                    self.save_note();
                 }
             });
             ui.add_space(4.0);
