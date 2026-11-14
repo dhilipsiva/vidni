@@ -104,8 +104,15 @@ fn hash(value: &Value) -> String {
     sha256_hex(canonical(value).as_bytes())
 }
 
-/// The hashes of everything `cut` shows and says.
+/// The hashes of everything `cut` shows and says, in the language it
+/// speaks: a dubbed cut's words are its translations.
 pub fn content(project: &Project, cut: &Cut) -> Content {
+    let spoken = project.for_cut(cut);
+    let own = spoken.cuts.iter().find(|c| c.id == cut.id).unwrap_or(cut);
+    content_of(&spoken, own)
+}
+
+fn content_of(project: &Project, cut: &Cut) -> Content {
     let r = resolved(project);
     let ids: BTreeSet<String> = cut.line_ids(project).into_iter().collect();
     let (mut lines, mut line_values) = (BTreeMap::new(), Vec::new());

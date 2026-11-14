@@ -1,4 +1,4 @@
-# expect: 6:1: unknown field `titel`, expected one of `title`, `subtitle`, `language`, `strict`, `default_scene`
+# expect: 6:1: unknown field `titel`, expected one of `title`, `subtitle`, `language`, `strict`, `default_scene`, `in`
 schema = 1
 
 [meta]

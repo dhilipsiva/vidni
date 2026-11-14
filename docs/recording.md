@@ -60,6 +60,10 @@ vidni takes --line intro-1 --trim 0.4:2.6     # cut the kept one from 0.4 s to 2
 
 Only that line changes. Use `--trim` when vidni's own trim cut a soft first consonant or left a breath in.
 
+## Another language
+
+A cut that is dubbed in another language ([the spec](spec.md#a-cut-in-another-language)) is recorded the same way, from its own sheet: `vidni plan --cut <id>` prints the lines in that language, and `vidni record --cut <id>` goes through them. Its takes are kept beside the script's own, and neither replaces the other. Record a language in one sitting where you can: a voice sounds different in each language, and the levels should match within it.
+
 ## After the session
 
 ```sh

@@ -172,6 +172,48 @@ pub struct Meta {
     /// The scene a line shows when it names none.
     #[serde(default)]
     pub default_scene: Option<String>,
+    /// The title and subtitle in other languages, by language, for the
+    /// cuts that speak them.
+    #[serde(default, rename = "in", skip_serializing_if = "BTreeMap::is_empty")]
+    pub translations: BTreeMap<String, MetaWords>,
+}
+
+/// A video's title in another language.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct MetaWords {
+    pub title: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subtitle: Option<String>,
+}
+
+/// A line's words in another language.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Words {
+    /// What the captions show, and what is said.
+    pub show: String,
+    /// What is said, when it differs from what is shown.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub say: Option<String>,
+}
+
+/// A section's label in another language.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct SectionWords {
+    pub label: String,
+}
+
+/// The draft voice of another language.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct VoiceIn {
+    /// The synthetic draft voice for this language, as `<engine>:<model>`.
+    pub draft: String,
+    /// Spellings that voice says better.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub respell: Vec<Respelling>,
 }
 
 fn default_language() -> String {
@@ -199,6 +241,17 @@ pub struct Voice {
     /// for the same sound. They make its scores fairer and change nothing
     /// else: no output depends on what the check hears.
     pub heard_as: Vec<HeardAs>,
+    /// The draft voices of other languages, by language, for the cuts
+    /// that speak them.
+    #[serde(rename = "in", skip_serializing_if = "BTreeMap::is_empty")]
+    pub translations: BTreeMap<String, VoiceIn>,
+    /// What a draft's kept seeds are filed under beside the line's ID, in
+    /// `voice.lock`: nothing for the script's own language, `@<language>`
+    /// for another. Set when a project is read in a language; never
+    /// written to a file.
+    #[serde(skip)]
+    #[schemars(skip)]
+    pub lock_suffix: String,
 }
 
 impl Default for Voice {
@@ -210,6 +263,8 @@ impl Default for Voice {
             read_as: Vec::new(),
             respell: Vec::new(),
             heard_as: Vec::new(),
+            translations: BTreeMap::new(),
+            lock_suffix: String::new(),
         }
     }
 }
@@ -296,6 +351,9 @@ pub struct Section {
     /// Empty to stay in the chapter before.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub chapter: Option<String>,
+    /// The label in other languages, by language.
+    #[serde(rename = "in", skip_serializing_if = "BTreeMap::is_empty")]
+    pub translations: BTreeMap<String, SectionWords>,
 }
 
 /// One narrated line.
@@ -342,9 +400,97 @@ pub struct Line {
     /// uses every line leaves out the lines that are only for others.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub only: Vec<String>,
+    /// The line's words in other languages, by language: `in.ta.show`.
+    /// A cut with `language = "ta"` shows and says these.
+    #[serde(default, rename = "in", skip_serializing_if = "BTreeMap::is_empty")]
+    pub translations: BTreeMap<String, Words>,
 }
 
 impl Project {
+    /// The language `cut` speaks: its own, or the script's.
+    pub fn language_of<'a>(&'a self, cut: &'a Cut) -> &'a str {
+        cut.language.as_deref().unwrap_or(&self.meta.language)
+    }
+
+    /// Every language a cut speaks, the script's own first.
+    pub fn languages(&self) -> Vec<String> {
+        let mut found = vec![self.meta.language.clone()];
+        for cut in &self.cuts {
+            let language = self.language_of(cut).to_string();
+            if !found.contains(&language) {
+                found.push(language);
+            }
+        }
+        found
+    }
+
+    /// The project as its cuts in `language` have it: those cuts, their
+    /// lines with that language's words, the labels and the title in it,
+    /// and its draft voice. The script's own language is the project as
+    /// it is, with its own cuts only.
+    ///
+    /// Everything that builds, records or hashes a cut works on this, so
+    /// a language is a project of its own to them.
+    pub fn in_language(&self, language: &str) -> Project {
+        let mut project = self.clone();
+        project.cuts.retain(|cut| self.language_of(cut) == language);
+        if language == self.meta.language {
+            // The script's own cuts know nothing of its translations: a
+            // translation that changes leaves them as they were.
+            for line in &mut project.lines {
+                line.translations.clear();
+            }
+            for section in project.sections.values_mut() {
+                section.translations.clear();
+            }
+            project.meta.translations.clear();
+            project.voice.translations.clear();
+            return project;
+        }
+        let wanted: std::collections::BTreeSet<String> = project
+            .cuts
+            .iter()
+            .flat_map(|cut| cut.line_ids(self))
+            .collect();
+        project.lines.retain(|line| wanted.contains(&line.id));
+        for line in &mut project.lines {
+            if let Some(words) = line.translations.remove(language) {
+                line.show = words.show;
+                line.say = words.say;
+            }
+            line.translations.clear();
+        }
+        for section in project.sections.values_mut() {
+            if let Some(words) = section.translations.remove(language) {
+                section.label = words.label;
+            }
+            section.translations.clear();
+        }
+        if let Some(words) = project.meta.translations.remove(language) {
+            project.meta.title = words.title;
+            project.meta.subtitle = words.subtitle.or(project.meta.subtitle);
+        }
+        project.meta.translations.clear();
+        project.meta.language = language.to_string();
+        // The language's own draft voice; what tunes the script's voice
+        // (how symbols are read, what the listener mishears) isn't its.
+        let voice = project.voice.translations.remove(language);
+        project.voice.draft = voice
+            .as_ref()
+            .map_or_else(|| format!("espeak:{language}"), |v| v.draft.clone());
+        project.voice.respell = voice.map(|v| v.respell).unwrap_or_default();
+        project.voice.read_as.clear();
+        project.voice.heard_as.clear();
+        project.voice.translations.clear();
+        project.voice.lock_suffix = format!("@{language}");
+        project
+    }
+
+    /// The project as `cut` has it: [`Self::in_language`] of the cut's.
+    pub fn for_cut(&self, cut: &Cut) -> Project {
+        self.in_language(self.language_of(cut))
+    }
+
     /// The files in the project folder that the scenes name, each once, in
     /// order: a page scene's file for both orientations, and a web scene's
     /// when its address is a file.
@@ -865,6 +1011,11 @@ pub struct Cut {
     /// takes the place of `timing.tail` in this cut.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end_hold: Option<f64>,
+    /// The language the cut speaks, when it isn't the script's: a dubbed
+    /// cut. Its lines show and say their `in.<language>` words, and its
+    /// narration is the takes of those words.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub language: Option<String>,
 }
 
 /// A cut's aspect ratio.

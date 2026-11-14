@@ -80,7 +80,7 @@ fn progress(cut: &str) -> impl FnMut(Step) + '_ {
 /// Speaks every line in the draft voice, and says what was spoken.
 /// Returns the voice's pack.
 pub(crate) fn speak_lines(loaded: &Loaded) -> Result<Pack, ExitCode> {
-    use vidni_media::tts::{self, From, Piper};
+    use vidni_media::tts::{self, From};
     let Loaded { file, dir, project } = loaded;
     let store = voices::store();
     let id = &project.voice.draft;
@@ -103,8 +103,8 @@ pub(crate) fn speak_lines(loaded: &Loaded) -> Result<Pack, ExitCode> {
     };
     // A voice that isn't fetched, or a Piper that isn't there, is something
     // missing; a take that fails part of the way is a failed build.
-    let engine = Piper::new(&pack, &voices::pack_dir(&store, id)).map_err(cant)?;
-    let drafted = tts::draft(project, dir, &pack, &engine).map_err(|e| {
+    let engine = tts::engine(&pack, &voices::pack_dir(&store, id)).map_err(cant)?;
+    let drafted = tts::draft(project, dir, &pack, engine.as_ref()).map_err(|e| {
         tell!("vidni: {e}");
         ExitCode::FAILURE
     })?;

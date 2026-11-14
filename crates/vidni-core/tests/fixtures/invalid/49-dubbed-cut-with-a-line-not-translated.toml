@@ -1,0 +1,28 @@
+# expect: 28:12: cut tamil speaks ta, and 1 of its lines has no in.ta.show (the first: main-1)
+schema = 1
+
+[meta]
+title = "Pictures"
+default_scene = "diagram"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "A picture."
+
+
+[scenes.diagram]
+kind = "card"
+template = "title"
+title = "A card"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[[cuts]]
+id = "tamil"
+aspect = "16:9"
+language = "ta"

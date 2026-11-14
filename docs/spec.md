@@ -673,6 +673,46 @@ A line sits at its place in the script whichever cuts use it, so a short's lines
 - **Takes are shared.** A line has one take, and every cut that uses the line plays it.
 - **Each cut is ratified, built and approved by itself.** Adding a short, or a line that is only for it, leaves the other cuts ratified.
 
+### A cut in another language
+
+A cut can speak another language than the script: a dubbed cut. It shows the same scenes, says each line's words in that language, and is built from your takes of those words.
+
+```toml
+[[cuts]]
+id = "tamil"
+aspect = "16:9"
+language = "ta"            # a language tag; the script's own is [meta] language
+
+[[lines]]
+id = "intro-1"
+section = "intro"
+show = "Language models predict the next word."
+
+[lines.in.ta]              # the line's words in Tamil
+show = "மொழி மாதிரிகள் அடுத்த சொல்லைக் கணிக்கின்றன."
+say = "…"                  # what is said, when it differs from what is shown
+
+[sections.intro.in.ta]     # a section's label in Tamil; without it, the script's label
+label = "அறிமுகம்"
+
+[meta.in.ta]               # the title, and a subtitle if you like
+title = "…"
+
+[voice.in.ta]              # the draft voice of Tamil; default: espeak:ta
+draft = "espeak:ta"
+```
+
+- **Every line of a dubbed cut needs its words in that language.** `vidni validate` names the first line that has none.
+- **A language is a project of its own to every command.** `vidni draft` speaks each language in its own draft voice and renders each cut in the language it speaks. `vidni plan --cut tamil` is the sheet in Tamil, `vidni record --cut tamil` records it, and `vidni final` and `vidni approve` build and release it from those takes. With no cut named, `vidni record` records the script's own language.
+- **Takes are filed by the words they say,** so a line's Tamil take sits beside its English one in `takes/<line>/`, and neither is ever the other's. `vidni takes --line <id> --language ta` lists the Tamil ones.
+- **Ratification is by language.** A translation that changes regresses the dubbed cut and no other. The script's own words changing regresses the script's cuts, and leaves the dubbed cut as it was: it doesn't say them. So a translation can fall behind its original without vidni knowing; `vidni changes` shows which lines changed.
+- **The draft voice** of a language is `[voice.in.<language>] draft`. Where Piper has no voice for it, `espeak:<voice>` is eSpeak NG, which speaks by rule: `espeak:ta` is its Tamil. It sounds like a machine, and is there to time the cut until the takes are recorded. The seeds of a language's draft takes are in `voice.lock` under `<line>@<language>`.
+- **Captions and labels are set in the script's font,** where vidni pins one for the language: Noto Sans Tamil for `ta` ([Fonts](#fonts)). Latin words inside them (a product's name, a verdict) are drawn in the theme's faces. A caption's length counts letters as a reader does, without the vowel signs written onto them.
+- **What stays in the script's language:** the scenes (a captured page shows what it shows), cards' and overlays' words, the listening check, and `[publish]`. A dubbed cut's upload folder has the script's description; write its own by hand.
+- **In the desktop app,** a dubbed cut is drafted, ratified, built and approved like any other. The Record tab records the script's own language; record another in the terminal.
+
+The nibli example has a Tamil cut, `tamil`.
+
 ### What the apps cover
 
 A phone app draws its own things over a video: buttons down the right, the account and the description along the bottom, tabs across the top. Each platform profile says how much of the frame its app covers at each edge, as its safe zone (`vidni platforms`). A cut is laid out clear of what all its platforms cover together: the most that any of them covers at each edge.

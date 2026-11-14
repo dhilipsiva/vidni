@@ -61,6 +61,7 @@ vidni draws text in these fonts, and their outlines end up in your video's frame
 | IBM Plex Mono Bold | 2.5.0 | OFL-1.1 | Copyright 2017 IBM Corp. All rights reserved. | https://github.com/IBM/plex |
 | DejaVu Sans Mono Book | 2.37 | Bitstream-Vera | Copyright (c) 2003 by Bitstream, Inc. All Rights Reserved. DejaVu changes are in public domain | https://dejavu-fonts.github.io |
 | DejaVu Sans Mono Bold | 2.37 | Bitstream-Vera | Copyright (c) 2003 by Bitstream, Inc. All Rights Reserved. DejaVu changes are in public domain | https://dejavu-fonts.github.io |
+| Noto Sans Tamil Regular | 2.004 | OFL-1.1 | Copyright 2022 The Noto Project Authors (https://github.com/notofonts/tamil) | https://github.com/notofonts/tamil |
 | Space Grotesk Bold | 2.0.0 | OFL-1.1 | Copyright 2020 The Space Grotesk Project Authors (https://github.com/floriankarsten/space-grotesk) | https://github.com/floriankarsten/space-grotesk |
 
 ## Draft voices

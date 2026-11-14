@@ -51,6 +51,20 @@ sha256 = "b15cfba08019d57dddc0e4c61ba21d7907245411ba17525d3d2405c0b858798a"
 licence = "Bitstream-Vera"
 source = "https://dejavu-fonts.github.io"
 
+# Tamil, for a cut that speaks it (TODO.md, P9-VIDNI-03). The file holds
+# every weight; vidni draws its default one. It has no Latin letters: the
+# theme's faces draw those.
+[[font]]
+id = "noto-sans-tamil"
+family = "Noto Sans Tamil"
+style = "Regular"
+version = "2.004"
+file = "NotoSansTamil.ttf"
+size = 224256
+sha256 = "1b29b0df004da1349788834621642324210cd7eec03ab060ce28babdc5f395e7"
+licence = "OFL-1.1"
+source = "https://github.com/notofonts/tamil"
+
 [[font]]
 id = "space-grotesk-bold"
 family = "Space Grotesk"

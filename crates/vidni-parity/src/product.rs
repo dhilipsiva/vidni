@@ -52,6 +52,7 @@ fn compare(
             caption: faces.caption,
             mono: faces.mono,
             display: faces.display,
+            script: None,
         },
         vidni_core::theme::load(example, &project.style.theme)?,
     )?;

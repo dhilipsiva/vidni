@@ -60,6 +60,17 @@ pub fn get(id: &str) -> Option<Font> {
     all().into_iter().find(|f| f.id == id)
 }
 
+/// The pinned font of the script that `language` is written in, when the
+/// default faces haven't its letters. A language written in Latin letters
+/// has none.
+pub fn for_language(language: &str) -> Option<Font> {
+    let script = language.split(['-', '_']).next().unwrap_or(language);
+    match script {
+        "ta" => get("noto-sans-tamil"),
+        _ => None,
+    }
+}
+
 /// The folders fonts are looked for in: each folder `$VIDNI_FONTS` names
 /// (separated by `:`), else `$XDG_DATA_HOME/vidni/fonts`, else
 /// `~/.local/share/vidni/fonts`.

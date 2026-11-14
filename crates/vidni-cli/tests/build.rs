@@ -435,3 +435,136 @@ fn an_approved_release_is_uploaded_once_its_name_is_typed() {
         "{err}"
     );
 }
+
+#[test]
+#[ignore = "needs Piper and its voice, eSpeak NG, Chromium and ffmpeg; run `just test-build`"]
+fn a_cut_dubbed_in_another_language_is_built_from_its_own_takes() {
+    flow::through(binary);
+    let work = tempfile::tempdir().unwrap();
+    let dir = &work.path().join("video");
+    fs::create_dir(dir).unwrap();
+    // The flow's project, with each line in Tamil too, and a cut that
+    // speaks it.
+    let plain = vidni_core::validate::check(PROJECT, None).unwrap();
+    let mut text = PROJECT.to_string();
+    for (n, line) in plain.lines.iter().enumerate() {
+        let show = format!("show = {:?}\n", line.show);
+        assert_eq!(text.matches(&show).count(), 1, "{show}");
+        let tamil = [
+            "முதல் வரி இது.",
+            "இரண்டாம் வரி vidni பற்றியது.",
+            "மூன்றாம் வரி முடிவு.",
+        ][n % 3];
+        text = text.replace(&show, &format!("{show}in.ta.show = \"{tamil}\"\n"));
+    }
+    text.push_str("\n[[cuts]]\nid = \"tamil\"\naspect = \"16:9\"\nlanguage = \"ta\"\n");
+    fs::write(dir.join("vidni.toml"), &text).unwrap();
+    fs::write(dir.join("card.html"), CARD).unwrap();
+
+    // A draft speaks each language in its own draft voice, and renders
+    // each cut in the language it speaks.
+    let drafted = flow::ok(dir, &["draft"]);
+    assert!(
+        drafted.contains("draft voice piper:en_US-joe-medium: 3 lines"),
+        "{drafted}"
+    );
+    assert!(
+        drafted.contains("draft voice espeak:ta: 3 lines"),
+        "{drafted}"
+    );
+    assert!(dir.join("build/draft/tamil.mp4").is_file());
+    let captions = fs::read_to_string(dir.join("build/draft/tamil.en.srt"))
+        .or_else(|_| fs::read_to_string(dir.join("build/draft/tamil.ta.srt")))
+        .unwrap();
+    assert!(captions.contains("முதல் வரி இது."), "{captions}");
+    assert!(!captions.contains(&plain.lines[0].show), "{captions}");
+    let own = fs::read_to_string(dir.join("build/draft/long.en.srt")).unwrap();
+    assert!(
+        own.contains(&plain.lines[0].show) && !own.contains("முதல்"),
+        "{own}"
+    );
+    // Both languages' seeds are in the one lock, each under its own name.
+    let lock = fs::read_to_string(dir.join("voice.lock")).unwrap();
+    assert!(
+        lock.contains("[lines.main-1]") && lock.contains("[lines.\"main-1@ta\"]"),
+        "{lock}"
+    );
+    // Drafted again, nothing is spoken afresh in either language.
+    let again = flow::ok(dir, &["draft"]);
+    assert_eq!(again.matches("0 chosen afresh").count(), 2, "{again}");
+
+    flow::ok(dir, &["ratify"]);
+    // The sheet of the dubbed cut is in its language.
+    let sheet = flow::ok(dir, &["plan", "--cut", "tamil"]);
+    assert!(
+        sheet.contains("[ ] main-1") && sheet.contains("முதல் வரி இது."),
+        "{sheet}"
+    );
+    // With the script's own takes only, the dubbed cut has none.
+    flow::record(dir);
+    flow::ok(dir, &["final", "--cut", "long"]);
+    let (code, _, err) = vidni(dir, &["final", "--cut", "tamil"]);
+    assert_eq!(code, Some(1));
+    // (The takes that are there say other words: the script's own.)
+    assert!(
+        err.contains("cut tamil: 3 of its 3 lines have takes only for other words"),
+        "{err}"
+    );
+    // Its takes are of its own words: the draft clips stand in for them.
+    let project = vidni_core::validate::check(&text, Some(dir)).unwrap();
+    let tamil = project.in_language("ta");
+    let lock = vidni_core::voices::read_lock(dir).unwrap();
+    let pack = vidni_core::voices::find(&tamil.voice.draft, None)
+        .unwrap()
+        .unwrap();
+    for (line, take) in tamil
+        .lines
+        .iter()
+        .zip(vidni_core::takes::status(&tamil, dir))
+    {
+        let clip = vidni_core::voices::drafted(dir, &lock, &pack, &tamil.voice, line).unwrap();
+        fs::copy(clip, take.path).unwrap();
+    }
+    let listed = flow::ok(dir, &["takes", "--line", "main-1", "--language", "ta"]);
+    assert!(listed.starts_with("main-1: முதல் வரி இது."), "{listed}");
+    flow::ok(dir, &["final", "--cut", "tamil"]);
+    flow::ok(dir, &["approve", "--cut", "long", "--cut", "tamil"]);
+    let status = flow::ok(dir, &["status"]);
+    assert!(
+        status.contains("long   ratified; approved as long-r1"),
+        "{status}"
+    );
+    assert!(
+        status.contains("tamil  ratified; approved as tamil-r1"),
+        "{status}"
+    );
+    assert!(dir.join("out/tamil.mp4").is_file());
+
+    // A translation that changes regresses the dubbed cut and no other;
+    // the script's own words changing regresses the others and not it.
+    fs::write(
+        dir.join("vidni.toml"),
+        text.replace("முதல் வரி இது.", "இது முதல் வரி."),
+    )
+    .unwrap();
+    let status = flow::ok(dir, &["status"]);
+    assert!(
+        status.contains("long   ratified; approved as long-r1\n"),
+        "{status}"
+    );
+    assert!(
+        status.contains("tamil  changed: line main-1 changed"),
+        "{status}"
+    );
+    let own_words = text.replace(&plain.lines[0].show, "Other words, said in English.");
+    fs::write(dir.join("vidni.toml"), own_words).unwrap();
+    let status = flow::ok(dir, &["status"]);
+    assert!(
+        status.contains("long   changed: line main-1 changed"),
+        "{status}"
+    );
+    assert!(
+        status.contains("tamil  ratified; approved as tamil-r1\n"),
+        "{status}"
+    );
+}

@@ -456,6 +456,12 @@ pub fn refusals(
     lock: &ratify::Lock,
     cut: &Cut,
 ) -> Vec<String> {
+    // A cut's takes are of its words in the language it speaks.
+    let spoken = project.for_cut(cut);
+    let (project, cut) = (
+        &spoken,
+        spoken.cuts.iter().find(|c| c.id == cut.id).unwrap_or(cut),
+    );
     let mut refusals = Vec::new();
     match ratify::status_of(project, project_dir, lock, cut) {
         Status::Ratified => {}
@@ -517,6 +523,12 @@ pub fn standing(project: &Project, project_dir: &Path, releases: &Releases, cut:
     let Some(release) = releases.latest(&cut.id) else {
         return Standing::Unreleased;
     };
+    // A cut is built from the project in the language it speaks.
+    let spoken = project.for_cut(cut);
+    let (project, cut) = (
+        &spoken,
+        spoken.cuts.iter().find(|c| c.id == cut.id).unwrap_or(cut),
+    );
     let was = &release.build.sources;
     let now = takes_of(project, project_dir, cut)
         .ok()

@@ -67,7 +67,14 @@ pub(crate) const ROOT: &[&str] = &[
     "scenes",
     "expectations",
 ];
-pub(crate) const META: &[&str] = &["title", "subtitle", "language", "strict", "default_scene"];
+pub(crate) const META: &[&str] = &[
+    "title",
+    "subtitle",
+    "language",
+    "strict",
+    "default_scene",
+    "in",
+];
 const VOICE: &[&str] = &[
     "draft",
     "seed",
@@ -91,7 +98,7 @@ const TRACK: &[&str] = &[
     "platforms",
     "content_id",
 ];
-const SECTION: &[&str] = &["label", "chapter"];
+const SECTION: &[&str] = &["label", "chapter", "in"];
 pub(crate) const LINE: &[&str] = &[
     "id",
     "section",
@@ -106,6 +113,7 @@ pub(crate) const LINE: &[&str] = &[
     "camera_vertical",
     "overlay",
     "only",
+    "in",
 ];
 pub(crate) const SCENE: &[&str] = &[
     "kind",
@@ -165,6 +173,7 @@ pub(crate) const CUT: &[&str] = &[
     "platforms",
     "size",
     "end_hold",
+    "language",
 ];
 const PUBLISH: &[&str] = &["description", "tags", "links", "titles", "thumbnails"];
 const LINK: &[&str] = &["label", "url"];

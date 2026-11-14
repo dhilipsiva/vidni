@@ -32,7 +32,7 @@ fn the_example_validates() {
             p.scenes.len(),
             p.cuts.len()
         ),
-        (59, 10, 7, 3)
+        (59, 10, 7, 4)
     );
 }
 

@@ -58,6 +58,9 @@ pub struct Faces {
     pub caption: PathBuf,
     pub mono: PathBuf,
     pub display: PathBuf,
+    /// The font of the cut's script, when the theme's fonts haven't its
+    /// letters: it draws them, and the theme's draw the rest.
+    pub script: Option<PathBuf>,
 }
 
 impl Faces {
@@ -72,6 +75,37 @@ impl Faces {
             caption: find(&theme.fonts.text)?,
             mono: find(&theme.fonts.mono)?,
             display: find(&theme.fonts.display)?,
+            script: None,
+        })
+    }
+
+    /// The same faces for a cut in `language`: with its script's pinned
+    /// font, where vidni pins one for it.
+    pub fn for_language(mut self, language: &str, dirs: &[PathBuf]) -> Result<Self, String> {
+        if let Some(font) = fonts::for_language(language) {
+            self.script = Some(fonts::find(&font, dirs)?);
+        }
+        Ok(self)
+    }
+
+    /// Loads the faces: each of the theme's, behind the script's font
+    /// where there is one.
+    pub fn load(&self, fonts: &mut Fonts) -> Result<Type, String> {
+        let script = match &self.script {
+            Some(file) => Some(fonts.load(file)?),
+            None => None,
+        };
+        let mut face = |file: &Path| -> Result<_, String> {
+            let font = fonts.load(file)?;
+            Ok(match &script {
+                Some(script) => fonts.with_fallback(script, &font),
+                None => font,
+            })
+        };
+        Ok(Type {
+            caption: face(&self.caption)?,
+            mono: face(&self.mono)?,
+            display: face(&self.display)?,
         })
     }
 
@@ -81,11 +115,14 @@ impl Faces {
             caption: file.to_path_buf(),
             mono: file.to_path_buf(),
             display: file.to_path_buf(),
+            script: None,
         }
     }
 
-    fn files(&self) -> [&Path; 3] {
-        [&self.caption, &self.mono, &self.display]
+    fn files(&self) -> Vec<&Path> {
+        let mut files: Vec<&Path> = vec![&self.caption, &self.mono, &self.display];
+        files.extend(self.script.as_deref());
+        files
     }
 }
 
@@ -108,7 +145,8 @@ impl Setup {
     pub fn find(project: &Project, dir: &Path) -> Result<Self, String> {
         let theme = theme::load(dir, &project.style.theme)?;
         Ok(Self {
-            faces: Faces::pinned(&theme, &fonts::dirs())?,
+            faces: Faces::pinned(&theme, &fonts::dirs())?
+                .for_language(&project.meta.language, &fonts::dirs())?,
             ffmpeg: ffmpeg_version()?,
             again: false,
             theme,
@@ -517,11 +555,7 @@ impl Plan<'_> {
     /// left out.
     pub fn composer(&self, captions: bool) -> Result<Composer, String> {
         let mut fonts = Fonts::new();
-        let faces = Type {
-            caption: fonts.load(&self.faces.caption)?,
-            mono: fonts.load(&self.faces.mono)?,
-            display: fonts.load(&self.faces.display)?,
-        };
+        let faces = self.faces.load(&mut fonts)?;
         let subtitle = self.project.meta.subtitle.clone().unwrap_or_default();
         let composer = Composer::new(
             self.layout,
@@ -951,11 +985,7 @@ fn export(plan: &Plan, dir: &Path, record: &Record) -> Result<Exports, String> {
         return Ok(found);
     }
     let mut fonts = Fonts::new();
-    let faces = Type {
-        caption: fonts.load(&plan.faces.caption)?,
-        mono: fonts.load(&plan.faces.mono)?,
-        display: fonts.load(&plan.faces.display)?,
-    };
+    let faces = plan.faces.load(&mut fonts)?;
     // The picture with captions drawn in, and the one without.
     let picture = |captions: bool| {
         let named = plan.pictures.iter().find(|(_, drawn)| *drawn == captions);

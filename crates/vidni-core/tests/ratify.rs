@@ -618,3 +618,78 @@ fn a_frozen_still_of_the_projects_own_page_is_taken_again_once_the_page_changes(
     assert_eq!(refusals.len(), 1, "{refusals:?}");
     assert!(refusals[0].starts_with("the capture of line hook-1 is frozen by cut short"));
 }
+
+#[test]
+fn a_dubbed_cut_is_its_translations_and_the_scripts_own_cuts_know_nothing_of_them() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::write(dir.path().join("card.html"), "x").unwrap();
+    let plain = project(dir.path(), PROJECT);
+    // The same project, with every line in Tamil too, and a cut that speaks it.
+    let mut text = PROJECT.to_string();
+    for (n, line) in plain.lines.iter().enumerate() {
+        let show = format!("show = {:?}\n", line.show);
+        assert_eq!(text.matches(&show).count(), 1, "{show}");
+        text = text.replace(&show, &format!("{show}in.ta.show = \"வரி {n}\"\n"));
+    }
+    text.push_str("\n[[cuts]]\nid = \"tamil\"\naspect = \"16:9\"\nlanguage = \"ta\"\n");
+    let dubbed = project(dir.path(), &text);
+    assert_eq!(dubbed.languages(), ["en", "ta"]);
+    let tamil = dubbed.cuts.iter().find(|c| c.id == "tamil").unwrap();
+
+    // In Tamil the project is that cut, with its lines' Tamil words, a
+    // draft voice of its own, and its own names in the voice lock.
+    let ta = dubbed.for_cut(tamil);
+    assert_eq!(
+        ta.cuts.iter().map(|c| c.id.as_str()).collect::<Vec<_>>(),
+        ["tamil"]
+    );
+    assert_eq!(ta.meta.language, "ta");
+    assert_eq!(ta.lines.len(), plain.lines.len());
+    assert_eq!(ta.lines[0].show, "வரி 0");
+    assert_eq!(ta.lines[0].id, plain.lines[0].id);
+    assert!(ta.lines.iter().all(|line| line.translations.is_empty()));
+    assert_eq!(ta.voice.draft, "espeak:ta");
+    assert_eq!(
+        vidni_core::voices::lock_id(&ta.voice, "main-1"),
+        "main-1@ta"
+    );
+    assert_eq!(
+        vidni_core::voices::lock_id(&dubbed.voice, "main-1"),
+        "main-1"
+    );
+    // A take of a line's Tamil words is another take than of its own.
+    let own = vidni_core::spoken::spoken_hash(&plain.lines[0], &plain.voice);
+    let other = vidni_core::spoken::spoken_hash(&ta.lines[0], &ta.voice);
+    assert_ne!(own, other);
+
+    // The script's own cuts hash as they did before there was a
+    // translation, and a translation that changes moves only the dubbed cut.
+    for cut in &plain.cuts {
+        let with = dubbed.cuts.iter().find(|c| c.id == cut.id).unwrap();
+        assert_eq!(
+            ratify::content(&dubbed, with).content,
+            ratify::content(&plain, cut).content,
+            "{}",
+            cut.id
+        );
+    }
+    let before = ratify::content(&dubbed, tamil).content;
+    let edited = project(dir.path(), &text.replace("வரி 0", "வேறு வரி"));
+    let tamil_now = edited.cuts.iter().find(|c| c.id == "tamil").unwrap();
+    assert_ne!(ratify::content(&edited, tamil_now).content, before);
+    for cut in &plain.cuts {
+        let with = edited.cuts.iter().find(|c| c.id == cut.id).unwrap();
+        assert_eq!(
+            ratify::content(&edited, with).content,
+            ratify::content(&plain, cut).content
+        );
+    }
+    // The other way round: the script's own words change, and the dubbed
+    // cut, which doesn't say them, is as it was.
+    let english = project(
+        dir.path(),
+        &text.replace(&plain.lines[0].show, "Other words, in English."),
+    );
+    let tamil_then = english.cuts.iter().find(|c| c.id == "tamil").unwrap();
+    assert_eq!(ratify::content(&english, tamil_then).content, before);
+}

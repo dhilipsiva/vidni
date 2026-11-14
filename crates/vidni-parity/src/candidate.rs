@@ -61,6 +61,9 @@ pub(crate) fn project(example: &Path) -> Result<Project, String> {
             *scene = serde_json::from_value(page).map_err(|e| e.to_string())?;
         }
     }
+    // The reference spoke one language: the script's own.
+    let own = project.meta.language.clone();
+    let mut project = project.in_language(&own);
     project.cuts.retain(|c| c.lines == LineSelection::All);
     project.lines.retain(|l| l.only.is_empty());
     // The reference cut its captions its own way, and held no last picture.

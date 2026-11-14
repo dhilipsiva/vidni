@@ -17,13 +17,29 @@ pub const SHORTEST: f64 = 0.83;
 /// The least contrast between a caption's ink and what is behind it.
 pub const CONTRAST: f64 = 4.5;
 
+/// How many letters `text` has, as a reader counts them: a mark that is
+/// written onto the letter before it (an accent, or a vowel sign of a
+/// script such as Tamil) isn't a letter of its own, and neither is a
+/// joiner that isn't seen.
+pub fn letters(text: &str) -> usize {
+    let mark = |c: char| {
+        matches!(u32::from(c),
+            0x0300..=0x036F          // combining accents
+            | 0x0900..=0x0903 | 0x093A..=0x094F  // Devanagari signs
+            | 0x0B82 | 0x0BBE..=0x0BCD | 0x0BD7  // Tamil signs
+            | 0x200B..=0x200D        // joiners
+        )
+    };
+    text.chars().filter(|c| !mark(*c)).count()
+}
+
 /// `text` in lines of at most `width` characters, broken at spaces; a
 /// word longer than that has a line to itself.
 pub fn wrapped(text: &str, width: usize) -> Vec<String> {
     let mut lines: Vec<String> = Vec::new();
     for word in text.split_whitespace() {
         match lines.last_mut() {
-            Some(line) if line.chars().count() + 1 + word.chars().count() <= width => {
+            Some(line) if letters(line) + 1 + letters(word) <= width => {
                 line.push(' ');
                 line.push_str(word);
             }
@@ -36,7 +52,7 @@ pub fn wrapped(text: &str, width: usize) -> Vec<String> {
 /// Whether `text` fits a cue: [`LINES`] lines of [`LINE`] characters.
 pub fn fits(text: &str) -> bool {
     let lines = wrapped(text, LINE);
-    lines.len() <= LINES && lines.iter().all(|l| l.chars().count() <= LINE)
+    lines.len() <= LINES && lines.iter().all(|l| letters(l) <= LINE)
 }
 
 /// One cue: when it shows, and its words.
@@ -108,11 +124,7 @@ pub fn problems(cues: &[Shown]) -> Vec<String> {
                 let lines = wrapped(&c.text, LINE);
                 (
                     n,
-                    format!(
-                        "{} characters, in {} lines",
-                        c.text.chars().count(),
-                        lines.len()
-                    ),
+                    format!("{} characters, in {} lines", letters(&c.text), lines.len()),
                 )
             })
             .collect(),
@@ -122,10 +134,10 @@ pub fn problems(cues: &[Shown]) -> Vec<String> {
         numbered()
             // A twentieth is allowed for the times' rounding to milliseconds.
             .filter(|(_, c)| {
-                c.end > c.start && c.text.chars().count() as f64 / (c.end - c.start) > SPEED + 0.05
+                c.end > c.start && letters(&c.text) as f64 / (c.end - c.start) > SPEED + 0.05
             })
             .map(|(n, c)| {
-                let speed = c.text.chars().count() as f64 / (c.end - c.start);
+                let speed = letters(&c.text) as f64 / (c.end - c.start);
                 (n, format!("{speed:.1} characters a second"))
             })
             .collect(),

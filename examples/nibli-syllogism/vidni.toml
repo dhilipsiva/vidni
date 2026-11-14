@@ -10,6 +10,9 @@ subtitle = "nibli · the syllogism walkthrough"
 language = "en"
 default_scene = "playground"
 
+[meta.in.ta]
+title = "nibli: LLM வரைகிறது, இயந்திரம் தீர்மானிக்கிறது"
+
 [voice]
 draft = "piper:en_US-joe-medium"
 length_scale = 1.0
@@ -105,6 +108,13 @@ lines = [
   "short-end",
 ]
 
+# The same video in Tamil: each line's `in.ta` words, in the creator's
+# Tamil takes. Until those are recorded it drafts in eSpeak NG's Tamil.
+[[cuts]]
+id = "tamil"
+aspect = "16:9"
+language = "ta"
+
 [music]
 track = "none"
 
@@ -141,27 +151,51 @@ chapter = "Intro"
 [sections.symbolic]
 label = "symbolic reasoning"
 
+[sections.symbolic.in.ta]
+label = "குறியீட்டுத் தர்க்கம்"
+
 [sections.proving]
 label = "theorem proving"
 
+[sections.proving.in.ta]
+label = "தேற்ற நிரூபணம்"
+
 [sections.neurosymbolic]
 label = "neuro-symbolic architecture"
+
+[sections.neurosymbolic.in.ta]
+label = "நியூரோ-சிம்பாலிக் கட்டமைப்பு"
 
 [sections.nibli]
 label = "nibli"
 chapter = "nibli" # A chapter's title is the label with a capital; the engine's name has none.
 
+[sections.nibli.in.ta]
+label = "nibli"
+
 [sections.syllogism]
 label = "the syllogism"
+
+[sections.syllogism.in.ta]
+label = "syllogism"
 
 [sections.reasoning]
 label = "reasoning backward"
 
+[sections.reasoning.in.ta]
+label = "பின்னோக்கிய தர்க்கம்"
+
 [sections.trace]
 label = "building the proof trace"
 
+[sections.trace.in.ta]
+label = "நிரூபணத் தடம்"
+
 [sections.false]
 label = "a real FALSE"
+
+[sections.false.in.ta]
+label = "உண்மையான FALSE"
 
 [sections.end]
 label = ""
@@ -180,10 +214,16 @@ section = "intro"
 show = "Language models predict the next word. A reasoner derives the next step."
 scene = "intro"
 
+[lines.in.ta]
+show = "மொழி மாதிரிகள் அடுத்த சொல்லைக் கணிக்கின்றன. தர்க்க இயந்திரம் அடுத்த படியை நிறுவுகிறது."
+
 [[lines]]
 id = "intro-2"
 section = "intro"
 show = "In five minutes: what symbolic reasoning is, what a theorem prover does, where an LLM fits around one, and a small proof in nibli, step by step."
+
+[lines.in.ta]
+show = "ஐந்து நிமிடங்களில்: குறியீட்டுத் தர்க்கம் என்றால் என்ன, தேற்ற நிரூபி என்ன செய்கிறது, அதைச் சுற்றி LLM எங்கே பொருந்துகிறது, nibli-இல் ஒரு சிறிய நிரூபணம், படிப்படியாக."
 
 [[lines]]
 id = "symbolic-1"
@@ -193,6 +233,9 @@ do = [{ click = "tab-kr" }]
 highlight = ["kr"]
 camera = "kb"
 
+[lines.in.ta]
+show = "குறியீட்டுத் தர்க்கம் வெளிப்படையான கூற்றுகள் மீதும் வெளிப்படையான விதிகள் மீதும் இயங்குகிறது."
+
 [[lines]]
 id = "symbolic-2"
 section = "symbolic"
@@ -200,11 +243,17 @@ show = "Here are three: every dog is an animal, every animal eats, and Adam is a
 highlight = ["kr-line-1", "kr-line-3", "kr-line-5"]
 camera = "kb"
 
+[lines.in.ta]
+show = "இதோ மூன்று: ஒவ்வொரு நாயும் ஒரு விலங்கு, ஒவ்வொரு விலங்கும் உண்ணும், Adam ஒரு நாய்."
+
 [[lines]]
 id = "symbolic-3"
 section = "symbolic"
 show = "Nothing is learned from examples, and nothing is guessed."
 camera = "kb"
+
+[lines.in.ta]
+show = "எடுத்துக்காட்டுகளிலிருந்து எதுவும் கற்கப்படுவதில்லை, எதுவும் ஊகிக்கப்படுவதில்லை."
 
 [[lines]]
 id = "symbolic-4"
@@ -213,6 +262,9 @@ show = "A conclusion counts only if it follows from these statements by fixed ru
 highlight = ["kr-line-1", "kr-line-3", "kr-line-5"]
 camera = "kb"
 
+[lines.in.ta]
+show = "நிலையான அனுமான விதிகளின்படி இந்தக் கூற்றுகளிலிருந்து பின்தொடர்ந்தால் மட்டுமே ஒரு முடிவு ஏற்கப்படும்."
+
 [[lines]]
 id = "symbolic-5"
 section = "symbolic"
@@ -220,10 +272,16 @@ show = "Run it again tomorrow and you get the same answer, and you can inspect e
 highlight = ["row-eats", "row-animal", "row-given"]
 camera = "right"
 
+[lines.in.ta]
+show = "நாளை மீண்டும் இயக்கினாலும் அதே பதில் கிடைக்கும்; அதை உருவாக்கிய ஒவ்வொரு படியையும் நீங்கள் ஆராயலாம்."
+
 [[lines]]
 id = "proving-1"
 section = "proving"
 show = "A theorem prover automates that."
+
+[lines.in.ta]
+show = "தேற்ற நிரூபி அதைத் தானியக்கமாக்குகிறது."
 
 [[lines]]
 id = "proving-2"
@@ -232,12 +290,18 @@ show = "You give it premises and a claim, and it searches for a proof: a chain o
 highlight = ["kr", "query-select"]
 camera = "left"
 
+[lines.in.ta]
+show = "நீங்கள் அதற்கு முற்கோள்களையும் ஒரு கூற்றையும் கொடுக்கிறீர்கள்; அது ஒரு நிரூபணத்தைத் தேடுகிறது: முற்கோள்களிலிருந்து கூற்று வரை விதிகளைப் பயன்படுத்தும் ஒரு சங்கிலி."
+
 [[lines]]
 id = "proving-3"
 section = "proving"
 show = "If it finds one, the answer is TRUE, and it can show you the chain."
 highlight = ["verdict", "row-eats", "row-animal", "row-given"]
 camera = "right"
+
+[lines.in.ta]
+show = "அது ஒன்றைக் கண்டால், பதில் TRUE; அந்தச் சங்கிலியையும் அது காட்டும்."
 
 [[lines]]
 id = "proving-4"
@@ -246,12 +310,18 @@ show = "That answer is sound with respect to what you encoded."
 highlight = ["tree"]
 camera = "proof"
 
+[lines.in.ta]
+show = "நீங்கள் குறியாக்கியதைப் பொறுத்தவரை அந்தப் பதில் சரியானது."
+
 [[lines]]
 id = "proving-5"
 section = "proving"
 show = "It doesn't make your premises true. It tells you what they commit you to."
 highlight = ["kr-line-1", "kr-line-3", "kr-line-5"]
 camera = "kb"
+
+[lines.in.ta]
+show = "அது உங்கள் முற்கோள்களை உண்மையாக்குவதில்லை. அவை உங்களை எதற்குக் கட்டுப்படுத்துகின்றன என்பதைச் சொல்கிறது."
 
 [[lines]]
 id = "proving-6"
@@ -262,12 +332,19 @@ highlight = ["verdict"]
 camera = "right"
 overlay = "verdicts"
 
+[lines.in.ta]
+show = "nibli நான்கு தீர்ப்புகளில் ஒன்றைத் தருகிறது: TRUE; FALSE, அதாவது நிறுவ முடியாதது; UNKNOWN, காரணத்துடன்; RESOURCE_EXCEEDED, ஆழம், எரிபொருள் அல்லது நினைவக வரம்பு தீரும்போது."
+say = "nibli நான்கு தீர்ப்புகளில் ஒன்றைத் தருகிறது. TRUE. FALSE, அதாவது நிறுவ முடியாதது. UNKNOWN, காரணத்துடன். resource exceeded, ஆழம், எரிபொருள் அல்லது நினைவக வரம்பு தீரும்போது."
+
 [[lines]]
 id = "neurosymbolic-1"
 section = "neurosymbolic"
 show = "A neuro-symbolic system pairs a neural front end with a symbolic core, and lets each do what it's good at."
 do = [{ click = "tab-source" }]
 camera = "kb"
+
+[lines.in.ta]
+show = "நியூரோ-சிம்பாலிக் அமைப்பு ஒரு நரம்பியல் முன்முனையை ஒரு குறியீட்டு மையத்துடன் இணைத்து, ஒவ்வொன்றும் தான் சிறப்பாகச் செய்வதைச் செய்ய விடுகிறது."
 
 [[lines]]
 id = "neurosymbolic-2"
@@ -276,12 +353,18 @@ show = "Language models are good at reading prose."
 highlight = ["source-text"]
 camera = "kb"
 
+[lines.in.ta]
+show = "மொழி மாதிரிகள் உரைநடையைப் படிப்பதில் சிறந்தவை."
+
 [[lines]]
 id = "neurosymbolic-3"
 section = "neurosymbolic"
 show = "So in nibli, an LLM can formalize plain English into nibli KR, the engine's rule language."
 highlight = ["source-text", "formalize"]
 camera = "kb"
+
+[lines.in.ta]
+show = "எனவே nibli-இல், ஒரு LLM எளிய ஆங்கிலத்தை nibli KR ஆக, அதாவது இயந்திரத்தின் விதி மொழியாக, முறைப்படுத்த முடியும்."
 
 [[lines]]
 id = "neurosymbolic-4"
@@ -290,6 +373,9 @@ show = "That draft sits outside the reasoning firewall."
 highlight = ["formalize"]
 camera = "kb"
 overlay = "firewall"
+
+[lines.in.ta]
+show = "அந்த வரைவு தர்க்கத் தீச்சுவருக்கு வெளியே இருக்கிறது."
 
 [[lines]]
 id = "neurosymbolic-5"
@@ -300,6 +386,9 @@ highlight = ["kr", "kb-status"]
 camera = "kb"
 overlay = "firewall"
 
+[lines.in.ta]
+show = "அதன் மீது எதுவும் தர்க்கம் செய்வதற்கு முன், நிர்ணயமான வாயில்கள் அதைச் சரிபார்க்கின்றன."
+
 [[lines]]
 id = "neurosymbolic-6"
 section = "neurosymbolic"
@@ -307,6 +396,9 @@ show = "The grammar. A committed vocabulary, where an unknown word is an error i
 highlight = ["kr"]
 camera = "kb"
 overlay = "firewall"
+
+[lines.in.ta]
+show = "இலக்கணம். உறுதிசெய்யப்பட்ட சொற்களஞ்சியம்; அதில் தெரியாத சொல் ஊகம் அல்ல, பிழை. பொருள் தொகுப்பி. நியம உரைக்குத் திரும்பும் ஒரு சுற்றுப் பயணம்."
 
 [[lines]]
 id = "neurosymbolic-7"
@@ -316,6 +408,9 @@ do = [{ click = "tab-back-translation" }]
 highlight = ["bt-line-0", "bt-line-1", "bt-line-2"]
 camera = "kb"
 
+[lines.in.ta]
+show = "பிறகு ஒருவர் விதிகளையும் அவற்றின் மீள்மொழிபெயர்ப்பையும் மதிப்பாய்வு செய்கிறார்: எந்த மாதிரியும் இல்லாத, நிலையான, இயந்திரத்தனமான வாசிப்பு."
+
 [[lines]]
 id = "neurosymbolic-8"
 section = "neurosymbolic"
@@ -324,10 +419,16 @@ do = [{ click = "tab-source" }]
 highlight = ["formalize"]
 camera = "kb"
 
+[lines.in.ta]
+show = "இந்த எடுத்துக்காட்டு முன்பே குறியாக்கப்பட்டது; எனவே Formalize பொத்தான் அணைக்கப்பட்டுள்ளது, வரைவு செய்வதைத் தவிர்க்கிறோம்."
+
 [[lines]]
 id = "neurosymbolic-9"
 section = "neurosymbolic"
 show = "The LLM drafts. The engine decides."
+
+[lines.in.ta]
+show = "LLM வரைகிறது. இயந்திரம் தீர்மானிக்கிறது."
 
 [[lines]]
 id = "nibli-1"
@@ -335,10 +436,16 @@ section = "nibli"
 show = "nibli is the engine I build in Rust."
 highlight = ["brand"]
 
+[lines.in.ta]
+show = "nibli என்பது நான் Rust-இல் உருவாக்கும் இயந்திரம்."
+
 [[lines]]
 id = "nibli-2"
 section = "nibli"
 show = "It's a theorem prover, and it's open source."
+
+[lines.in.ta]
+show = "அது ஒரு தேற்ற நிரூபி; அது திறந்த மூலம்."
 
 [[lines]]
 id = "nibli-3"
@@ -348,6 +455,9 @@ do = [{ click = "tab-kr" }]
 highlight = ["kr", "tree"]
 camera = "top"
 
+[lines.in.ta]
+show = "அது nibli KR-ஐ முதல்-வரிசைத் தர்க்கமாகத் தொகுத்து, ஒரு உண்மைக் களஞ்சியத்தின் மீது பின்னோக்கிச் சங்கிலியிட்டு, கூற்றுகளுக்குப் பதிலளிக்கிறது."
+
 [[lines]]
 id = "nibli-4"
 section = "nibli"
@@ -355,10 +465,16 @@ show = "The whole pipeline, parser, compiler and reasoner, runs right here in th
 highlight = ["footer"]
 camera = "full"
 
+[lines.in.ta]
+show = "பகுப்பி, தொகுப்பி, தர்க்க இயந்திரம் என்ற முழுக் குழாய்வழியும் இங்கேயே உலாவியில் WebAssembly ஆக இயங்குகிறது; Wasmtime-இன் கீழும், ஒரு native crate ஆகவும் இயங்கும்."
+
 [[lines]]
 id = "nibli-5"
 section = "nibli"
 show = "It never invents a fact, a rule or a proof step."
+
+[lines.in.ta]
+show = "அது ஒருபோதும் ஒரு உண்மையையோ, விதியையோ, நிரூபணப் படியையோ கற்பனை செய்வதில்லை."
 
 [[lines]]
 id = "syllogism-1"
@@ -366,6 +482,9 @@ section = "syllogism"
 show = "Here's the syllogism example: three lines of nibli KR."
 highlight = ["examples", "kr-line-1", "kr-line-3", "kr-line-5"]
 camera_vertical = "kb"
+
+[lines.in.ta]
+show = "இதோ syllogism எடுத்துக்காட்டு: nibli KR-இன் மூன்று வரிகள்."
 
 [[lines]]
 id = "syllogism-2"
@@ -375,12 +494,18 @@ do = [{ click = "tab-back-translation" }]
 highlight = ["bt-line-0"]
 camera = "kb"
 
+[lines.in.ta]
+show = "முதல் வரி: ஒவ்வொரு X-க்கும், X ஒரு நாய் என்றால், X ஒரு விலங்கு."
+
 [[lines]]
 id = "syllogism-3"
 section = "syllogism"
 show = "The second: for every X, if X is an animal, then X eats."
 highlight = ["bt-line-1"]
 camera = "kb"
+
+[lines.in.ta]
+show = "இரண்டாவது: ஒவ்வொரு X-க்கும், X ஒரு விலங்கு என்றால், X உண்ணும்."
 
 [[lines]]
 id = "syllogism-4"
@@ -389,12 +514,18 @@ show = "The third: Adam is a dog."
 highlight = ["bt-line-2"]
 camera = "kb"
 
+[lines.in.ta]
+show = "மூன்றாவது: Adam ஒரு நாய்."
+
 [[lines]]
 id = "syllogism-5"
 section = "syllogism"
 show = "We don't ask a question. We state the claim to check: Adam eats."
 highlight = ["query-select", "query-gloss"]
 camera = "query"
+
+[lines.in.ta]
+show = "நாம் கேள்வி கேட்பதில்லை. சரிபார்க்க வேண்டிய கூற்றைச் சொல்கிறோம்: Adam உண்ணும்."
 
 [[lines]]
 id = "reasoning-1"
@@ -404,12 +535,18 @@ do = [{ click = "tab-kr" }]
 highlight = ["row-eats"]
 camera = "right"
 
+[lines.in.ta]
+show = "இயந்திரம் கூற்றிலிருந்து தொடங்கி பின்னோக்கிச் செல்கிறது."
+
 [[lines]]
 id = "reasoning-2"
 section = "reasoning"
 show = "The goal is: Adam eats. No stored fact says so."
 highlight = ["row-eats"]
 camera = "proof"
+
+[lines.in.ta]
+show = "இலக்கு: Adam உண்ணும். சேமிக்கப்பட்ட எந்த உண்மையும் அப்படிச் சொல்லவில்லை."
 
 [[lines]]
 id = "reasoning-3"
@@ -419,12 +556,18 @@ highlight = ["kr-line-3", "row-eats"]
 camera = "top"
 camera_vertical = "kb"
 
+[lines.in.ta]
+show = "எனவே 'உண்ணும்' என்று முடியும் விதியைத் தேடுகிறது: இரண்டாம் வரி, ஒவ்வொரு விலங்கும் உண்ணும்."
+
 [[lines]]
 id = "reasoning-4"
 section = "reasoning"
 show = "Matching that conclusion to the goal binds X to Adam, and leaves a new goal: Adam is an animal."
 highlight = ["row-animal"]
 camera = "proof"
+
+[lines.in.ta]
+show = "அந்த முடிவை இலக்குடன் பொருத்தும்போது X என்பது Adam ஆகிறது; ஒரு புதிய இலக்கு மிஞ்சுகிறது: Adam ஒரு விலங்கு."
 
 [[lines]]
 id = "reasoning-5"
@@ -434,6 +577,9 @@ highlight = ["kr-line-1", "row-animal"]
 camera = "top"
 camera_vertical = "kb"
 
+[lines.in.ta]
+show = "மீண்டும் சேமிக்கப்பட்ட உண்மை இல்லை; எனவே 'விலங்கு' என்று முடியும் விதியைத் தேடுகிறது: முதல் வரி, ஒவ்வொரு நாயும் ஒரு விலங்கு."
+
 [[lines]]
 id = "reasoning-6"
 section = "reasoning"
@@ -442,6 +588,9 @@ highlight = ["kr-line-5", "row-given"]
 camera = "top"
 camera_vertical = "kb"
 
+[lines.in.ta]
+show = "இப்போது ஒரே இலக்கு மிஞ்சுகிறது: Adam ஒரு நாய். அது சேமிக்கப்பட்டுள்ளது."
+
 [[lines]]
 id = "reasoning-7"
 section = "reasoning"
@@ -449,11 +598,17 @@ show = "The chain closes in two rule steps."
 highlight = ["row-eats", "row-animal", "row-given"]
 camera = "proof"
 
+[lines.in.ta]
+show = "இரண்டு விதிப் படிகளில் சங்கிலி நிறைவடைகிறது."
+
 [[lines]]
 id = "reasoning-8"
 section = "reasoning"
 show = "To find the shortest chain, the engine first runs a cheap search without recording, raising the depth limit one step at a time until the claim resolves."
 camera = "proof"
+
+[lines.in.ta]
+show = "மிகக் குறுகிய சங்கிலியைக் கண்டறிய, இயந்திரம் முதலில் பதிவு செய்யாமல் ஒரு மலிவான தேடலை இயக்குகிறது; கூற்று தீரும் வரை ஆழ வரம்பை ஒவ்வொரு படியாக உயர்த்துகிறது."
 
 [[lines]]
 id = "trace-1"
@@ -462,12 +617,18 @@ show = "Then it runs the search once more at that depth, this time recording eve
 highlight = ["tree"]
 camera = "proof"
 
+[lines.in.ta]
+show = "பிறகு அதே ஆழத்தில் தேடலை மீண்டும் ஒருமுறை இயக்குகிறது; இந்த முறை ஒவ்வொரு படியையும் பதிவு செய்கிறது. அந்தப் பதிவே நிரூபணத் தடம்."
+
 [[lines]]
 id = "trace-2"
 section = "trace"
 show = "The stored fact becomes a leaf, marked given."
 highlight = ["row-given"]
 camera = "proof"
+
+[lines.in.ta]
+show = "சேமிக்கப்பட்ட உண்மை ஒரு இலையாகிறது; given என்று குறிக்கப்படுகிறது."
 
 [[lines]]
 id = "trace-3"
@@ -476,6 +637,9 @@ show = "Each rule step becomes a node that cites the source line it used."
 highlight = ["row-eats", "row-animal"]
 camera = "proof"
 
+[lines.in.ta]
+show = "ஒவ்வொரு விதிப் படியும், தான் பயன்படுத்திய மூல வரியைச் சுட்டும் ஒரு கணுவாகிறது."
+
 [[lines]]
 id = "trace-4"
 section = "trace"
@@ -483,12 +647,20 @@ show = "“Adam eats” cites recorded source #1: every animal eats."
 highlight = ["row-eats"]
 camera = "proof"
 
+[lines.in.ta]
+show = "“Adam உண்ணும்” என்பது பதிவான மூலம் #1-ஐச் சுட்டுகிறது: ஒவ்வொரு விலங்கும் உண்ணும்."
+say = "Adam உண்ணும் என்பது பதிவான மூலம் எண் ஒன்றைச் சுட்டுகிறது: ஒவ்வொரு விலங்கும் உண்ணும்."
+
 [[lines]]
 id = "trace-5"
 section = "trace"
 show = "“Adam is an animal” cites recorded source #0: every dog is an animal."
 highlight = ["row-animal"]
 camera = "proof"
+
+[lines.in.ta]
+show = "“Adam ஒரு விலங்கு” என்பது பதிவான மூலம் #0-ஐச் சுட்டுகிறது: ஒவ்வொரு நாயும் ஒரு விலங்கு."
+say = "Adam ஒரு விலங்கு என்பது பதிவான மூலம் எண் பூஜ்ஜியத்தைச் சுட்டுகிறது: ஒவ்வொரு நாயும் ஒரு விலங்கு."
 
 [[lines]]
 id = "trace-6"
@@ -501,12 +673,18 @@ do = [
 highlight = ["row-detail-given"]
 camera = "proof"
 
+[lines.in.ta]
+show = "பங்கு-நிலை விவரத்தைத் திறந்தால், அந்த வரிகள் எதனால் ஆனவை என்று தெரியும்."
+
 [[lines]]
 id = "trace-7"
 section = "trace"
 show = "The fact is stored as an event with named roles: the dog, Adam, and a breed nobody specified."
 highlight = ["rows-roles"]
 camera = "proof"
+
+[lines.in.ta]
+show = "அந்த உண்மை பெயரிடப்பட்ட பங்குகளுடன் ஒரு நிகழ்வாகச் சேமிக்கப்படுகிறது: நாய், Adam, யாரும் குறிப்பிடாத ஒரு இனம்."
 
 [[lines]]
 id = "trace-8"
@@ -515,6 +693,9 @@ show = "When the same sub-goal comes up again, the trace says “proved above”
 do = [{ scroll_to = "rows-proved", within = "proof-panel", offset = 14 }]
 highlight = ["rows-proved"]
 camera = "proof"
+
+[lines.in.ta]
+show = "அதே துணை இலக்கு மீண்டும் வரும்போது, தடம் “proved above” என்று சொல்லிப் பின்னால் சுட்டுகிறது; இருமுறை நிரூபிப்பதில்லை."
 
 [[lines]]
 id = "trace-9"
@@ -527,12 +708,18 @@ do = [
 highlight = ["why", "row-eats", "row-animal", "row-given"]
 camera = "proof"
 
+[lines.in.ta]
+show = "playground முழுப் பதிவையும் நீங்கள் பார்த்த மூன்று வரிகளாக மடிக்கிறது; எளிய ஆங்கிலத்தில் ஒரு 'ஏன்' விளக்கத்துடன்."
+
 [[lines]]
 id = "false-1"
 section = "false"
 show = "Now the claim that Adam is a bird."
 do = [{ select = "query-select", value = "2" }]
 highlight = ["query-select"]
+
+[lines.in.ta]
+show = "இப்போது, Adam ஒரு பறவை என்ற கூற்று."
 
 [[lines]]
 id = "false-2"
@@ -541,12 +728,18 @@ show = "Nothing in the knowledge base supports it, so the answer is FALSE."
 highlight = ["row-failed", "verdict"]
 camera = "right"
 
+[lines.in.ta]
+show = "அறிவுத் தளத்தில் எதுவும் அதை ஆதரிக்கவில்லை; எனவே பதில் FALSE."
+
 [[lines]]
 id = "false-3"
 section = "false"
 show = "The why line says no example could be found that satisfies the claim."
 highlight = ["why"]
 camera = "proof"
+
+[lines.in.ta]
+show = "கூற்றை நிறைவு செய்யும் எந்த எடுத்துக்காட்டும் கிடைக்கவில்லை என்று 'ஏன்' வரி சொல்கிறது."
 
 [[lines]]
 id = "false-4"
@@ -555,10 +748,16 @@ show = "Here, FALSE means not derivable from what we asserted. It isn't a proof 
 highlight = ["row-failed"]
 camera = "proof"
 
+[lines.in.ta]
+show = "இங்கே FALSE என்றால், நாம் உறுதிப்படுத்தியவற்றிலிருந்து நிறுவ முடியாது என்று பொருள். Adam ஒரு பறவை அல்ல என்பதற்கான நிரூபணம் அல்ல."
+
 [[lines]]
 id = "false-5"
 section = "false"
 show = "nibli won't claim more than its premises support."
+
+[lines.in.ta]
+show = "தன் முற்கோள்கள் ஆதரிப்பதை விட அதிகமாக nibli எதையும் கூறாது."
 
 [[lines]]
 id = "end-1"
@@ -566,17 +765,27 @@ section = "end"
 show = "Try it at dhilipsiva.dev/nibli-playground. The code is on GitHub."
 scene = "end"
 
+[lines.in.ta]
+show = "dhilipsiva.dev/nibli-playground-இல் முயன்று பாருங்கள். நிரல் GitHub-இல் உள்ளது."
+say = "dhilipsiva dot dev slash nibli playground-இல் முயன்று பாருங்கள். நிரல் GitHub-இல் உள்ளது."
+
 [[lines]]
 id = "end-2"
 section = "end"
 show = "It's also the running example in my book, Ultimate Neuro-Symbolic Reasoning for AI Engineers, scheduled for December 2026."
 scene = "end"
 
+[lines.in.ta]
+show = "இது என் புத்தகத்திலும் தொடர் எடுத்துக்காட்டாக வருகிறது: Ultimate Neuro-Symbolic Reasoning for AI Engineers; டிசம்பர் 2026-இல் வெளியாகத் திட்டமிடப்பட்டுள்ளது."
+
 [[lines]]
 id = "end-3"
 section = "end"
 show = "I'm dhilipsiva."
 scene = "end"
+
+[lines.in.ta]
+show = "நான் dhilipsiva."
 
 [[lines]]
 id = "short-end"

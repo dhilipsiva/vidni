@@ -80,7 +80,7 @@
       # The folders that hold the fonts vidni draws with, each pinned by
       # SHA-256 in crates/vidni-core/src/fonts.toml. vidni looks for them in
       # $VIDNI_FONTS and nowhere else (P3-VIDNI-06).
-      fontDirs = "${pkgs.ibm-plex}/share/fonts:${spaceGrotesk}/share/fonts:${pkgs.dejavu_fonts}/share/fonts";
+      fontDirs = "${pkgs.ibm-plex}/share/fonts:${spaceGrotesk}/share/fonts:${pkgs.dejavu_fonts}/share/fonts:${pkgs.noto-fonts}/share/fonts";
 
       rustTools = [
         pkgs.rustc

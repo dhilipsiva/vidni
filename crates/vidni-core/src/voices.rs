@@ -115,6 +115,21 @@ pub fn find(id: &str, store: Option<&Path>) -> Result<Option<Pack>, String> {
     if let Some(pack) = all().into_iter().find(|p| p.id == id) {
         return Ok(Some(pack));
     }
+    // eSpeak NG speaks by rule, with no model to fetch: `espeak:ta` is
+    // its Tamil voice. It is the draft voice of a language Piper has no
+    // voice for.
+    if let Some(voice) = id.strip_prefix("espeak:").filter(|v| !v.is_empty()) {
+        return Ok(Some(Pack {
+            id: id.to_string(),
+            language: voice.to_string(),
+            licence: "none on what it speaks; eSpeak NG itself is GPL-3.0-or-later".into(),
+            commercial: true,
+            notes: "Speech made by rule, with no recordings of anyone behind it.".into(),
+            source: "https://github.com/espeak-ng/espeak-ng".into(),
+            checked: "2026-11-14".into(),
+            files: Vec::new(),
+        }));
+    }
     let Some(store) = store else {
         return Ok(None);
     };
@@ -238,6 +253,17 @@ pub fn clip_path(project_dir: &Path, line_id: &str, key: &str, seed: u32) -> Pat
         .join(format!("{key}-{seed}.wav"))
 }
 
+/// What a line's kept seed is filed under in `voice.lock`: its ID, and
+/// after it the language of a voice that isn't the script's own.
+pub fn lock_id(voice: &crate::project::Voice, line: &str) -> String {
+    format!("{line}{}", voice.lock_suffix)
+}
+
+/// The language a lock's entry is of: what follows the line's ID.
+pub fn lock_language(id: &str) -> &str {
+    id.find('@').map_or("", |at| &id[at..])
+}
+
 /// The clip the last draft kept for `line`'s present wording in `pack`'s
 /// voice, when the cache still holds it. A clip kept for another key was
 /// spoken from an earlier wording, or by another voice.
@@ -250,7 +276,10 @@ pub fn drafted(
 ) -> Option<PathBuf> {
     let given = crate::spoken::synthetic(line, voice);
     let key = clip_key(&given, pack, voice.length_scale);
-    let kept = lock.lines.get(&line.id).filter(|kept| kept.key == key)?;
+    let kept = lock
+        .lines
+        .get(&lock_id(voice, &line.id))
+        .filter(|kept| kept.key == key)?;
     let clip = clip_path(project_dir, &line.id, &key, kept.seed);
     clip.is_file().then_some(clip)
 }

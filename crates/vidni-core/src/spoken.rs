@@ -81,6 +81,7 @@ mod tests {
 
     fn line(show: &str) -> Line {
         Line {
+            translations: Default::default(),
             id: "a-1".into(),
             section: "a".into(),
             show: show.into(),

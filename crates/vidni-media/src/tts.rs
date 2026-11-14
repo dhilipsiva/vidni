@@ -118,6 +118,83 @@ pub struct Drafted {
     pub from: From,
 }
 
+/// eSpeak NG with one of its voices: `$VIDNI_ESPEAK`, or `espeak-ng` on
+/// the path. It speaks by rule, so every take of a line is the same; the
+/// seed is ignored.
+#[derive(Debug, Clone)]
+pub struct Espeak {
+    command: PathBuf,
+    voice: String,
+}
+
+impl Espeak {
+    pub fn new(pack: &Pack) -> Result<Self, String> {
+        let command = std::env::var_os("VIDNI_ESPEAK")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from("espeak-ng"));
+        let (_, voice) = pack.engine_and_model();
+        // A voice it hasn't would be spoken in its default one, silently.
+        let listed = Command::new(&command)
+            .arg(format!("--voices={voice}"))
+            .output()
+            .map_err(|e| {
+                format!(
+                    "{}: {e}; it is eSpeak NG's command, and VIDNI_ESPEAK can name it",
+                    command.display()
+                )
+            })?;
+        let known = String::from_utf8_lossy(&listed.stdout).lines().count() > 1;
+        match known {
+            true => Ok(Self {
+                command,
+                voice: voice.to_string(),
+            }),
+            false => Err(format!(
+                "eSpeak NG has no voice {voice:?}; `espeak-ng --voices` lists them"
+            )),
+        }
+    }
+}
+
+impl Engine for Espeak {
+    fn speak(&self, text: &str, _seed: u32, length_scale: f64, out: &Path) -> Result<(), String> {
+        let shown = |e: &dyn std::fmt::Display| format!("{}: {e}", self.command.display());
+        // Its usual pace is 175 words a minute; a longer scale is slower.
+        let pace = (175.0 / length_scale.max(0.1)).round() as u32;
+        let mut child = Command::new(&self.command)
+            .args(["-v", &self.voice, "-s", &pace.to_string(), "--stdin", "-w"])
+            .arg(out)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| shown(&e))?;
+        child
+            .stdin
+            .take()
+            .ok_or("no stdin")?
+            .write_all(text.as_bytes())
+            .map_err(|e| shown(&e))?;
+        let done = child.wait_with_output().map_err(|e| shown(&e))?;
+        match done.status.success() && out.is_file() {
+            true => Ok(()),
+            false => Err(format!(
+                "{}: {}",
+                self.command.display(),
+                String::from_utf8_lossy(&done.stderr).trim()
+            )),
+        }
+    }
+}
+
+/// The engine that speaks `pack`, whose files are in `pack_dir`.
+pub fn engine(pack: &Pack, pack_dir: &Path) -> Result<Box<dyn Engine>, String> {
+    match pack.engine_and_model().0 {
+        "espeak" => Ok(Box::new(Espeak::new(pack)?)),
+        _ => Ok(Box::new(Piper::new(pack, pack_dir)?)),
+    }
+}
+
 /// Where a draft clip came from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum From {
@@ -136,7 +213,14 @@ pub fn draft(
 ) -> Result<Vec<Drafted>, String> {
     let lock = voices::read_lock(dir)?;
     let length_scale = project.voice.length_scale;
+    // The lock holds every language's seeds: this draft writes its own,
+    // and keeps the others' as they are.
     let mut kept = Lock::default();
+    for (id, other) in &lock.lines {
+        if voices::lock_language(id) != project.voice.lock_suffix {
+            kept.lines.insert(id.clone(), other.clone());
+        }
+    }
     let mut drafted = Vec::new();
     for line in &project.lines {
         let text = spoken::synthetic(line, &project.voice);
@@ -144,7 +228,7 @@ pub fn draft(
         let say = |seed: u32| speak(engine, dir, &line.id, &key, seed, &text, length_scale);
         let locked = lock
             .lines
-            .get(&line.id)
+            .get(&voices::lock_id(&project.voice, &line.id))
             .filter(|k| k.key == key)
             .map(|k| k.seed);
         let (seed, from) = match locked {
@@ -168,7 +252,7 @@ pub fn draft(
             }
         };
         kept.lines.insert(
-            line.id.clone(),
+            voices::lock_id(&project.voice, &line.id),
             Kept {
                 key: key.clone(),
                 seed,

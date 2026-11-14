@@ -14,6 +14,7 @@ What the video is.
 |---|---|---|---|
 | `title` | string | yes | The video's title. |
 | `default_scene` | string |  | The scene a line shows when it names none. |
+| `in` | table of [MetaWords](#metawords), by name |  | The title and subtitle in other languages, by language, for the cuts that speak them. |
 | `language` | string |  | The script's language, as a BCP 47 tag. |
 | `strict` | boolean |  | Whether every factual line must name its source (P2-VIDNI-06). |
 | `subtitle` | string |  | A short line shown with the title, such as a series name. |
@@ -26,6 +27,7 @@ The voices that speak the lines.
 |---|---|---|---|
 | `draft` | string |  | The synthetic draft voice: a voice pack, as `<engine>:<model>`. |
 | `heard_as` | array of [HeardAs](#heardas) |  | Words the listening check hears spelled differently from the script for the same sound. They make its scores fairer and change nothing else: no output depends on what the check hears. |
+| `in` | table of [VoiceIn](#voicein), by name |  | The draft voices of other languages, by language, for the cuts that speak them. |
 | `length_scale` | number |  | The draft voice's pace: above 1 is slower. |
 | `read_as` | array of [Respelling](#respelling) |  | How a reader says symbols that the captions show. The prompter shows these, and takes are scored against them. |
 | `respell` | array of [Respelling](#respelling) |  | Spellings the draft voice says better, applied in order to what it speaks. |
@@ -68,6 +70,7 @@ The videos made from the script.
 | `id` | string | yes | A stable ID, like a line's. |
 | `captions` | `"burned"` or `"file"` or `"both"` |  | `burned`, `file` or `both`. Default: `both` for 16:9, `burned` for 9:16. |
 | `end_hold` | number |  | How long a 16:9 cut holds its last picture after the narration ends, in seconds from 5 to 20, for an end screen to go over. It takes the place of `timing.tail` in this cut. |
+| `language` | string |  | The language the cut speaks, when it isn't the script's: a dubbed cut. Its lines show and say their `in.<language>` words, and its narration is the takes of those words. |
 | `lines` | any or array of string |  | `all`, or the IDs of the lines the cut uses, in script order. |
 | `platforms` | array of string |  | The platform profiles the cut is made for. Default: `youtube` for 16:9; `youtube-shorts`, `instagram-reels` and `whatsapp-status` for 9:16. |
 | `size` | array of whole number |  | The frame size in pixels. Default `[1920, 1080]` or `[1080, 1920]`. |
@@ -119,6 +122,7 @@ The sections, by ID. They come in the order of their first line.
 | Key | Value | Required | Meaning |
 |---|---|---|---|
 | `chapter` | string |  | The section's title in a chapter list, when it isn't the label. Empty to stay in the chapter before. |
+| `in` | table of [SectionWords](#sectionwords), by name |  | The label in other languages, by language. |
 | `label` | string |  | Shown on screen while the section plays, and used for chapters. Empty for none. |
 
 ## `[[lines]]`
@@ -135,6 +139,7 @@ The script: every narrated line, in order.
 | `claim` | boolean |  | Whether the line states a fact. In strict projects, every line that does needs a `source`; set `claim = false` on a line that states none, such as a greeting or a transition. |
 | `do` | array of [Action](#action) |  | Actions on a web scene before the line is captured. |
 | `highlight` | array of string |  | Targets of a web scene to box while the line plays. |
+| `in` | table of [Words](#words), by name |  | The line's words in other languages, by language: `in.ta.show`. A cut with `language = "ta"` shows and says these. |
 | `only` | array of string |  | The cuts the line is only for, such as a short's hook. A cut that uses every line leaves out the lines that are only for others. |
 | `overlay` | string |  | A page scene drawn over the line's picture. |
 | `say` | string |  | What is said, when it differs from what is shown. |
@@ -189,6 +194,15 @@ Text that must be on screen when a scene is captured.
 
 These are written inline, as `{ key = value }`, or as a table of their own.
 
+### MetaWords
+
+A video's title in another language.
+
+| Key | Value | Required | Meaning |
+|---|---|---|---|
+| `title` | string | yes |  |
+| `subtitle` | string |  |  |
+
 ### HeardAs
 
 One word as the listening check hears it, and the script's word for the same sound.
@@ -197,6 +211,15 @@ One word as the listening check hears it, and the script's word for the same sou
 |---|---|---|---|
 | `heard` | string | yes | The word as whisper writes it. Case is ignored. |
 | `means` | string | yes | The script's word for it. |
+
+### VoiceIn
+
+The draft voice of another language.
+
+| Key | Value | Required | Meaning |
+|---|---|---|---|
+| `draft` | string | yes | The synthetic draft voice for this language, as `<engine>:<model>`. |
+| `respell` | array of [Respelling](#respelling) |  | Spellings that voice says better. |
 
 ### Respelling
 
@@ -239,6 +262,14 @@ A thumbnail: the picture of a line, with words over it.
 | `line` | string | yes | The line whose picture it is. |
 | `title` | string |  | The words drawn over the picture. Default: none. |
 
+### SectionWords
+
+A section's label in another language.
+
+| Key | Value | Required | Meaning |
+|---|---|---|---|
+| `label` | string | yes |  |
+
 ### Action
 
 One step on a web page. Exactly one verb is set: `click`, `select`, `expand`, `collapse`, `scroll`, `scroll_to` or `wait`, each naming a target.
@@ -257,6 +288,15 @@ One step on a web page. Exactly one verb is set: `click`, `select`, `expand`, `c
 | `value` | string |  | The option value for `select`. |
 | `wait` | string |  | Wait until the target is visible. |
 | `within` | string |  | For `scroll_to`: the scroll container, a target. |
+
+### Words
+
+A line's words in another language.
+
+| Key | Value | Required | Meaning |
+|---|---|---|---|
+| `show` | string | yes | What the captions show, and what is said. |
+| `say` | string |  | What is said, when it differs from what is shown. |
 
 ### Camera
 

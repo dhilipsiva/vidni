@@ -351,6 +351,13 @@
           "description": "A stable ID, like a line's.",
           "type": "string"
         },
+        "language": {
+          "description": "The language the cut speaks, when it isn't the script's: a dubbed\ncut. Its lines show and say their `in.<language>` words, and its\nnarration is the takes of those words.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "lines": {
           "description": "`all`, or the IDs of the lines the cut uses, in script order.",
           "$ref": "#/$defs/LineSelection",
@@ -549,6 +556,13 @@
           "description": "A stable ID: lowercase letters and digits in words joined by hyphens.",
           "type": "string"
         },
+        "in": {
+          "description": "The line's words in other languages, by language: `in.ta.show`.\nA cut with `language = \"ta\"` shows and says these.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Words"
+          }
+        },
         "only": {
           "description": "The cuts the line is only for, such as a short's hook. A cut that\nuses every line leaves out the lines that are only for others.",
           "type": "array",
@@ -664,6 +678,13 @@
           ],
           "default": null
         },
+        "in": {
+          "description": "The title and subtitle in other languages, by language, for the\ncuts that speak them.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/MetaWords"
+          }
+        },
         "language": {
           "description": "The script's language, as a BCP 47 tag.",
           "type": "string",
@@ -684,6 +705,25 @@
         },
         "title": {
           "description": "The video's title.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "title"
+      ]
+    },
+    "MetaWords": {
+      "description": "A video's title in another language.",
+      "type": "object",
+      "properties": {
+        "subtitle": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "title": {
           "type": "string"
         }
       },
@@ -1107,6 +1147,13 @@
             "null"
           ]
         },
+        "in": {
+          "description": "The label in other languages, by language.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/SectionWords"
+          }
+        },
         "label": {
           "description": "Shown on screen while the section plays, and used for chapters. Empty\nfor none.",
           "type": "string",
@@ -1114,6 +1161,19 @@
         }
       },
       "additionalProperties": false
+    },
+    "SectionWords": {
+      "description": "A section's label in another language.",
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "label"
+      ]
     },
     "Split": {
       "description": "How a line's caption is cut into cues.",
@@ -1492,6 +1552,13 @@
             "$ref": "#/$defs/HeardAs"
           }
         },
+        "in": {
+          "description": "The draft voices of other languages, by language, for the cuts\nthat speak them.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/VoiceIn"
+          }
+        },
         "length_scale": {
           "description": "The draft voice's pace: above 1 is slower.",
           "type": "number",
@@ -1523,6 +1590,48 @@
         }
       },
       "additionalProperties": false
+    },
+    "VoiceIn": {
+      "description": "The draft voice of another language.",
+      "type": "object",
+      "properties": {
+        "draft": {
+          "description": "The synthetic draft voice for this language, as `<engine>:<model>`.",
+          "type": "string"
+        },
+        "respell": {
+          "description": "Spellings that voice says better.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Respelling"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "draft"
+      ]
+    },
+    "Words": {
+      "description": "A line's words in another language.",
+      "type": "object",
+      "properties": {
+        "say": {
+          "description": "What is said, when it differs from what is shown.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "show": {
+          "description": "What the captions show, and what is said.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "show"
+      ]
     }
   }
 }

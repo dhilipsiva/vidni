@@ -1568,6 +1568,45 @@ impl Rules {
                     format!("cut ID {:?} is already used by cut {}", cut.id, first + 1),
                 );
             }
+            // A dubbed cut: its language, and its lines' words in it.
+            if let Some(language) = &cut.language {
+                let tag = language.split('-').all(|part| {
+                    (2..=8).contains(&part.len()) && part.chars().all(|c| c.is_ascii_alphanumeric())
+                });
+                if !tag {
+                    self.add(
+                        at("language"),
+                        format!("{language:?} isn't a language tag, such as \"ta\" or \"pt-BR\""),
+                    );
+                } else if *language == p.meta.language {
+                    self.add(
+                        at("language"),
+                        format!("{language:?} is the script's own language: leave language out"),
+                    );
+                } else {
+                    let untranslated: Vec<&str> = cut
+                        .lines_in(p)
+                        .into_iter()
+                        .filter(|line| {
+                            line.translations
+                                .get(language)
+                                .is_none_or(|words| words.show.trim().is_empty())
+                        })
+                        .map(|line| line.id.as_str())
+                        .collect();
+                    if let Some(first) = untranslated.first() {
+                        self.add(
+                            at("language"),
+                            format!(
+                                "cut {} speaks {language}, and {} of its lines {} no in.{language}.show (the first: {first})",
+                                cut.id,
+                                untranslated.len(),
+                                if untranslated.len() == 1 { "has" } else { "have" }
+                            ),
+                        );
+                    }
+                }
+            }
             if let LineSelection::Ids(ids) = &cut.lines {
                 if ids.is_empty() {
                     self.add(at("lines"), "the cut uses no lines");

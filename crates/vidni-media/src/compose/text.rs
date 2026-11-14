@@ -27,6 +27,9 @@ pub struct Font {
     units_per_em: f32,
     ascender: f32,
     descender: f32,
+    /// The face that draws the letters this one hasn't: a script's font
+    /// has its own letters, and seldom Latin ones.
+    fallback: Option<Arc<Font>>,
 }
 
 /// How text is drawn: a face, a size in pixels and an ink colour.
@@ -54,6 +57,9 @@ struct Face {
 
 /// A shaped glyph, its advance and offsets in 26.6.
 struct Glyph {
+    /// The face it is a glyph of, and that face's weight.
+    face: fontdb::ID,
+    weight: fontdb::Weight,
     id: u16,
     advance: i64,
     x_offset: i64,
@@ -107,11 +113,49 @@ impl Fonts {
             units_per_em,
             ascender,
             descender,
+            fallback: None,
         })
     }
 
-    /// `text` shaped as one run, positioned as Pillow's layout positions it.
+    /// `font`, with the letters it hasn't drawn in `other`. A line is laid
+    /// out by `font`'s own height.
+    pub fn with_fallback(&self, font: &Font, other: &Font) -> Font {
+        Font {
+            fallback: Some(Arc::new(other.clone())),
+            ..font.clone()
+        }
+    }
+
+    /// Whether `font`'s face has a glyph for `c`.
+    fn has(&self, font: &Font, c: char) -> bool {
+        ttf_parser::Face::parse(&self.faces[&font.id].bytes, 0)
+            .is_ok_and(|face| face.glyph_index(c).is_some())
+    }
+
+    /// `text` shaped, positioned as Pillow's layout positions it: as one
+    /// run in `font`, or, where `font` has a fallback, as runs of the
+    /// letters each face has.
     fn shape(&self, font: &Font, size: f32, text: &str) -> Vec<Glyph> {
+        let Some(other) = font.fallback.as_deref() else {
+            return self.shape_run(font, size, text);
+        };
+        // A letter goes to the fallback only when the font hasn't it and
+        // the fallback has; what neither has stays with the font.
+        let mut runs: Vec<(bool, String)> = Vec::new();
+        for c in text.chars() {
+            let fallen = !self.has(font, c) && self.has(other, c);
+            match runs.last_mut() {
+                Some((kind, run)) if *kind == fallen => run.push(c),
+                _ => runs.push((fallen, c.to_string())),
+            }
+        }
+        runs.iter()
+            .flat_map(|(fallen, run)| self.shape_run(if *fallen { other } else { font }, size, run))
+            .collect()
+    }
+
+    /// `text` shaped as one run in one face.
+    fn shape_run(&self, font: &Font, size: f32, text: &str) -> Vec<Glyph> {
         let face = &self.faces[&font.id];
         let Ok(font_ref) = harfrust::FontRef::from_index(&face.bytes, 0) else {
             return Vec::new();
@@ -136,6 +180,8 @@ impl Fonts {
                 let id = info.glyph_id as u16;
                 let base = i64::from(face.advances.get(usize::from(id)).copied().unwrap_or(0));
                 Glyph {
+                    face: font.id,
+                    weight: font.weight,
                     id,
                     advance: scale.advance(base)
                         + scale.value(i64::from(position.x_advance) - base),
@@ -209,11 +255,11 @@ impl Fonts {
             );
             pen26 += glyph.advance;
             let (key, gx, gy) = CacheKey::new(
-                font.id,
+                glyph.face,
                 glyph.id,
                 size,
                 (at.0 as f32, at.1 as f32),
-                font.weight,
+                glyph.weight,
                 CacheKeyFlags::empty(),
             );
             let Some(image) = self.cache.get_image(&mut self.system, key).as_ref() else {

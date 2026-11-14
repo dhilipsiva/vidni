@@ -139,6 +139,10 @@ enum Command {
         /// raw take (or of the one --pick names), as `0.35:2.8`.
         #[arg(long, value_name = "FROM:TO", requires = "line")]
         trim: Option<String>,
+        /// With --line: the takes of the line's words in this language,
+        /// for a cut that is dubbed in it.
+        #[arg(long, value_name = "TAG", requires = "line")]
+        language: Option<String>,
         /// Instead, lay the current takes out in DIR as 000.wav, 001.wav … in
         /// script order, as symbolic links, for tools that read numbered files.
         #[arg(long, value_name = "DIR")]
@@ -570,7 +574,9 @@ fn dispatch_one(command: Command) -> ExitCode {
     }
     match command {
         Command::New { name, from, parent } => build::new(&name, from.as_deref(), &parent),
-        Command::Plan { path, cuts } => build::plan(&path, &cuts),
+        Command::Plan { path, cuts } => {
+            by_language(&path, &cuts, true, |cuts| build::plan(&path, cuts))
+        }
         Command::Record {
             path,
             cuts,
@@ -578,14 +584,16 @@ fn dispatch_one(command: Command) -> ExitCode {
             from,
             only,
             test,
-        } => record::record(
-            &path,
-            &cuts,
-            section.as_deref(),
-            from.as_deref(),
-            &only,
-            test,
-        ),
+        } => by_language(&path, &cuts, false, |cuts| {
+            record::record(
+                &path,
+                cuts,
+                section.as_deref(),
+                from.as_deref(),
+                &only,
+                test,
+            )
+        }),
         Command::Validate { path } => validate(&path),
         Command::Fmt { path, check } => fmt(&path, check),
         Command::Takes {
@@ -594,10 +602,15 @@ fn dispatch_one(command: Command) -> ExitCode {
             line: Some(line),
             pick,
             trim,
+            language,
             ..
         } => {
             let _ = cuts;
-            takes::line(&path, &line, pick, trim.as_deref())
+            // A line's takes in another language are of its words in it.
+            LANGUAGE.with(|slot| *slot.borrow_mut() = language);
+            let code = takes::line(&path, &line, pick, trim.as_deref());
+            LANGUAGE.with(|slot| *slot.borrow_mut() = None);
+            code
         }
         Command::Takes {
             path, cuts, link, ..
@@ -618,7 +631,7 @@ fn dispatch_one(command: Command) -> ExitCode {
         Command::Voices {
             action: Some(VoicesAction::Fetch { id }),
         } => fetch_voice(&id),
-        Command::Speak { path } => build::speak(&path),
+        Command::Speak { path } => by_language(&path, &[], true, |_| build::speak(&path)),
         // With --offline, the command runs again in a namespace with no network.
         Command::Draft { offline: true, .. } | Command::Final { offline: true, .. }
             if !offline::inside() =>
@@ -627,11 +640,13 @@ fn dispatch_one(command: Command) -> ExitCode {
         }
         Command::Draft {
             path, cuts, again, ..
-        } => build::draft(&path, &cuts, again),
+        } => by_language(&path, &cuts, true, |cuts| build::draft(&path, cuts, again)),
         Command::Final {
             path, cuts, again, ..
-        } => build::finish(&path, &cuts, again),
-        Command::Approve { path, cuts } => build::approve(&path, &cuts),
+        } => by_language(&path, &cuts, true, |cuts| build::finish(&path, cuts, again)),
+        Command::Approve { path, cuts } => {
+            by_language(&path, &cuts, true, |cuts| build::approve(&path, cuts))
+        }
         Command::Published {
             path,
             cut: Some(cut),
@@ -676,7 +691,9 @@ fn dispatch_one(command: Command) -> ExitCode {
             draft,
             offline,
             keep,
-        } => repro::repro(&path, &cuts, draft, offline, keep.as_deref()),
+        } => by_language(&path, &cuts, true, |cuts| {
+            repro::repro(&path, cuts, draft, offline, keep.as_deref())
+        }),
         Command::Schema => {
             say!("{}", vidni_core::schema_json().trim_end());
             ExitCode::SUCCESS
@@ -857,9 +874,69 @@ fn load(path: &Path) -> Result<Loaded, ExitCode> {
         .unwrap_or(Path::new("."))
         .to_path_buf();
     match validate::check(&text, Some(&dir)) {
-        Ok(project) => Ok(Loaded { file, dir, project }),
+        // A command that works a language at a time gets the project as
+        // that language's cuts have it.
+        Ok(project) => Ok(Loaded {
+            file,
+            dir,
+            project: match LANGUAGE.with(|language| language.borrow().clone()) {
+                Some(language) => project.in_language(&language),
+                None => project,
+            },
+        }),
         Err(problems) => Err(report(&file, &problems)),
     }
+}
+
+thread_local! {
+    /// The language the command at work speaks, while it works one
+    /// language at a time ([`by_language`]).
+    static LANGUAGE: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Runs `run` once for each language that the cuts asked for speak, with
+/// that language's cuts. Inside, [`load`] gives the project in that
+/// language: its cuts, its lines' words, its draft voice. A project in
+/// one language runs once.
+///
+/// With no cut named, `all` says whether every language is meant, or the
+/// script's own only: a recording session is in one language.
+fn by_language(
+    path: &Path,
+    cuts: &[String],
+    all: bool,
+    run: impl Fn(&[String]) -> ExitCode,
+) -> ExitCode {
+    let loaded = match load(path) {
+        Ok(loaded) => loaded,
+        Err(code) => return code,
+    };
+    let project = &loaded.project;
+    let chosen = match build::chosen(project, cuts) {
+        Ok(chosen) => chosen,
+        Err(code) => return code,
+    };
+    let mut languages = project.languages();
+    if cuts.is_empty() && !all {
+        languages.truncate(1);
+    }
+    for language in languages {
+        let ids: Vec<String> = chosen
+            .iter()
+            .filter(|cut| project.language_of(cut) == language)
+            .map(|cut| cut.id.clone())
+            .collect();
+        if ids.is_empty() {
+            continue;
+        }
+        LANGUAGE.with(|slot| *slot.borrow_mut() = Some(language));
+        let code = run(&ids);
+        LANGUAGE.with(|slot| *slot.borrow_mut() = None);
+        if code != ExitCode::SUCCESS {
+            return code;
+        }
+    }
+    ExitCode::SUCCESS
 }
 
 fn status(path: &Path) -> ExitCode {
