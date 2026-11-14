@@ -1185,3 +1185,155 @@ fn a_short_over_a_minute_with_a_content_id_track_is_refused() {
         .is_ok()
     );
 }
+
+/// The names in a folder, sorted.
+fn names(dir: &Path) -> Vec<String> {
+    let mut names: Vec<String> = fs::read_dir(dir)
+        .map(|entries| {
+            entries
+                .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+                .collect()
+        })
+        .unwrap_or_default();
+    names.sort();
+    names
+}
+
+#[test]
+fn each_platform_gets_a_folder_with_the_video_its_metadata_and_its_images() {
+    // A long cut for YouTube with chapters, and a short for three apps.
+    let publish = "\n[publish]\ndescription = \"What this is about.\"\ntags = [\"one\", \"two words\"]\n\
+                   links = [{ label = \"Home\", url = \"https://example.com\" }]\n\
+                   thumbnails = [{ line = \"s0-1\", title = \"A thumbnail\" }, { line = \"s2-0\" }]\n\n\
+                   [publish.titles]\nyoutube-shorts = \"The short of it\"\n";
+    let text = chaptered(3, 4).replace(
+        "[[cuts]]\nid = \"long\"\naspect = \"16:9\"\n",
+        "[[cuts]]\nid = \"long\"\naspect = \"16:9\"\nend_hold = 6\n\n\
+         [[cuts]]\nid = \"short\"\naspect = \"9:16\"\nlines = [\"s0-0\", \"s0-1\"]\n",
+    ) + publish;
+    let (dir, p) = drafted(&text);
+    let dir = dir.path();
+    record_takes(dir, &p, None);
+    let lock = ratified(dir, &p);
+    let build_and_export = |p: &Project, id: &str| {
+        let record = build::final_build(p, dir, &lock, cut(p, id), &setup(), &mut quiet()).unwrap();
+        (
+            record,
+            build::exports(p, dir, cut(p, id), &setup()).unwrap(),
+        )
+    };
+    let (long, warnings) = build_and_export(&p, "long");
+    assert_eq!(warnings, Vec::<String>::new());
+    // The long cut holds its last picture 6 s, where its tail was 0.2 s.
+    let lasts = long.outputs["long.mp4"].frame_count as f64 / 30.0;
+    assert!((lasts - 37.5).abs() < 1.0, "{lasts} s");
+
+    let youtube = dir.join("out/youtube/long");
+    assert_eq!(
+        names(&youtube),
+        [
+            "long.en.srt",
+            "long.en.vtt",
+            "long.mp4",
+            "metadata.md",
+            "thumbnail-1.png",
+            "thumbnail-2.png"
+        ]
+    );
+    // The video is the clean master, the very file that was delivered.
+    assert_eq!(
+        fs::read(youtube.join("long.mp4")).unwrap(),
+        fs::read(dir.join("out/long.mp4")).unwrap()
+    );
+    assert!(!long.outputs["long.mp4"].captions);
+    let metadata = fs::read_to_string(youtube.join("metadata.md")).unwrap();
+    for part in [
+        "# long on YouTube\n",
+        "## Title\n\nChapters\n",
+        "## Description\n\nWhat this is about.\n\n0:00 First things\n0:10 The middle\n0:21 Last words\n\nHome: https://example.com\n",
+        "## Tags\n\none, two words\n",
+        "choose Test & compare and upload the 2 thumbnails",
+        "Add an end screen over the last 6 seconds",
+    ] {
+        assert!(metadata.contains(part), "{part:?} isn't in:\n{metadata}");
+    }
+    // Thumbnails are 1280 by 720, under 2 MB, and the one with words
+    // differs from the frame alone.
+    let thumbnail = |n: u32| Image::load_png(&youtube.join(format!("thumbnail-{n}.png"))).unwrap();
+    let (first, second) = (thumbnail(1), thumbnail(2));
+    assert_eq!((first.width, first.height), (1280, 720));
+    assert_eq!((second.width, second.height), (1280, 720));
+    assert!(fs::metadata(youtube.join("thumbnail-1.png")).unwrap().len() < 2_000_000);
+    // The cards are one colour, so the second is plain and the first has its words.
+    assert!(second.to_rgb().ink(&[29, 53, 87]).is_none());
+    let words = first.to_rgb().ink(&[29, 53, 87]).unwrap();
+    assert!(
+        words[0] >= 48 && words[3] <= 720 - 48 && words[1] > 360,
+        "{words:?}"
+    );
+
+    // The short: a folder for each of its three apps.
+    let (_, warnings) = build_and_export(&p, "short");
+    assert_eq!(warnings, Vec::<String>::new());
+    assert_eq!(
+        names(&dir.join("out/youtube-shorts/short")),
+        ["metadata.md", "short.mp4"]
+    );
+    assert_eq!(
+        names(&dir.join("out/whatsapp-status/short")),
+        ["metadata.md", "short.mp4"]
+    );
+    let reels = dir.join("out/instagram-reels/short");
+    assert_eq!(names(&reels), ["cover.png", "metadata.md", "short.mp4"]);
+    let shorts = fs::read_to_string(dir.join("out/youtube-shorts/short/metadata.md")).unwrap();
+    assert!(shorts.contains("## Title\n\nThe short of it\n"), "{shorts}");
+    assert!(
+        shorts.contains("set this Short's related video to the `long` cut"),
+        "{shorts}"
+    );
+    // The cover's words are inside the 3:4 middle of the frame.
+    let cover = Image::load_png(&reels.join("cover.png")).unwrap().to_rgb();
+    assert_eq!((cover.width, cover.height), (1080, 1920));
+    let background = cover.pixel(0, 0).to_vec();
+    let ink = cover.ink(&background).unwrap();
+    assert!(ink[1] >= 240 && ink[3] <= 1680, "{ink:?}");
+
+    // Other words, and one app fewer: the folders are made again, the
+    // dropped app's goes, and nothing is rendered.
+    let built = fs::metadata(dir.join("build/final/short.mp4"))
+        .unwrap()
+        .modified()
+        .unwrap();
+    let edited = text
+        .replace("What this is about.", "What this is really about.")
+        .replace(
+            "lines = [\"s0-0\", \"s0-1\"]\n",
+            "lines = [\"s0-0\", \"s0-1\"]\nplatforms = [\"youtube-shorts\", \"instagram-reels\"]\n",
+        );
+    let p = project(dir, &edited);
+    build::exports(&p, dir, cut(&p, "long"), &setup()).unwrap();
+    let metadata = fs::read_to_string(youtube.join("metadata.md")).unwrap();
+    assert!(
+        metadata.contains("What this is really about."),
+        "{metadata}"
+    );
+    // The short's platforms are part of its look, so it is built again
+    // before it is exported; the long cut's files were not touched.
+    let before = fs::metadata(dir.join("build/final/long.mp4"))
+        .unwrap()
+        .modified()
+        .unwrap();
+    let lock = ratified(dir, &p);
+    build::final_build(&p, dir, &lock, cut(&p, "short"), &setup(), &mut quiet()).unwrap();
+    build::exports(&p, dir, cut(&p, "short"), &setup()).unwrap();
+    assert!(!dir.join("out/whatsapp-status").exists());
+    assert_eq!(names(&dir.join("out/instagram-reels/short")).len(), 3);
+    assert_eq!(
+        fs::metadata(dir.join("build/final/long.mp4"))
+            .unwrap()
+            .modified()
+            .unwrap(),
+        before
+    );
+    let _ = built;
+}

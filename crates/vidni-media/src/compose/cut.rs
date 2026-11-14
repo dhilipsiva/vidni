@@ -692,7 +692,7 @@ pub enum FrameKey {
 }
 
 /// Greedy word wrap at `width` pixels, as the reference wraps.
-pub(super) fn wrap(
+pub(crate) fn wrap(
     fonts: &mut Fonts,
     font: &Font,
     size: f32,

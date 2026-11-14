@@ -325,6 +325,9 @@ pub fn look(project: &Project, cut: &Cut) -> Value {
     if let Some(covered) = cut.covered() {
         look["cut"]["covered"] = json!(covered);
     }
+    if let Some(hold) = cut.end_hold {
+        look["cut"]["end_hold"] = json!(hold);
+    }
     // A cut for a platform that shows chapters is named by its sections'
     // chapter titles too; another cut's look doesn't know of them.
     if crate::chapters::wanted(cut) {

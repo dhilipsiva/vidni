@@ -400,7 +400,11 @@ pub fn plan<'p>(
         })
         .collect::<Result<Vec<Clip>, String>>()
         .map_err(Stop::Failed)?;
-    let timeline = timeline::build_for(project, &lines, &infos, voice).map_err(Stop::Failed)?;
+    let mut timeline = timeline::build_for(project, &lines, &infos, voice).map_err(Stop::Failed)?;
+    // A cut that holds its last picture for an end screen ends later.
+    if let Some(hold) = cut.end_hold {
+        timeline.hold(hold);
+    }
     let timeline_json = serde_json::to_string_pretty(&timeline)
         .map(|json| json + "\n")
         .map_err(|e| Stop::Failed(e.to_string()))?;
@@ -819,6 +823,158 @@ pub fn final_build(
     }
     deliver(&plan, dir).map_err(Stop::Failed)?;
     Ok(record)
+}
+
+/// Writes what goes with `cut` where it is uploaded: for each platform it
+/// is made for, the folder `out/<platform>/<cut>/` with the video, its
+/// captions where the platform takes them, its images and `metadata.md`
+/// (TODO.md, P6-VIDNI-04). The cut's final build must be delivered. The
+/// folders are made afresh from it and from `[publish]`, and nothing is
+/// rendered again but the images. Returns what an upload would be
+/// refused or cut short for, as warnings.
+pub fn exports(
+    project: &Project,
+    dir: &Path,
+    cut: &Cut,
+    setup: &Setup,
+) -> Result<Vec<String>, Stop> {
+    let plan = plan(project, dir, cut, Voice::Takes, None, setup)?;
+    let record = Record::read(dir, Voice::Takes, &cut.id)
+        .map_err(Stop::Failed)?
+        .ok_or_else(|| Stop::refused(format!("cut {} has no final build to export", cut.id)))?;
+    export(&plan, dir, &record).map_err(Stop::Failed)
+}
+
+fn export(plan: &Plan, dir: &Path, record: &Record) -> Result<Vec<String>, String> {
+    use vidni_core::platforms::{self, CaptionStyle};
+    use vidni_core::publish::{self, Upload};
+    let out = dir.join(release::OUT);
+    let (cut, project) = (plan.cut, plan.project);
+    fn made(path: &Path) -> impl Fn(std::io::Error) -> String + '_ {
+        move |e| format!("{}: {e}", path.display())
+    }
+    let profiles = platforms::all();
+    let wanted = cut.platforms();
+    // A folder from when the cut was for another platform is no longer its.
+    for profile in profiles.iter().filter(|p| !wanted.contains(&p.id)) {
+        let stale = out.join(&profile.id).join(&cut.id);
+        if stale.is_dir() {
+            fs::remove_dir_all(&stale).map_err(made(&stale))?;
+            // Its platform's folder goes with it, once that is empty.
+            let _ = fs::remove_dir(out.join(&profile.id));
+        }
+    }
+    if wanted.is_empty() {
+        return Ok(Vec::new());
+    }
+    let mut fonts = Fonts::new();
+    let faces = Type {
+        caption: fonts.load(&plan.faces.caption)?,
+        mono: fonts.load(&plan.faces.mono)?,
+        display: fonts.load(&plan.faces.display)?,
+    };
+    // The picture with captions drawn in, and the one without.
+    let picture = |captions: bool| {
+        let named = plan.pictures.iter().find(|(_, drawn)| *drawn == captions);
+        named
+            .or(plan.pictures.first())
+            .map(|(name, _)| name.clone())
+    };
+    let ids = cut.line_ids(project);
+    let mut warnings = Vec::new();
+    for profile in profiles.iter().filter(|p| wanted.contains(&p.id)) {
+        let folder = out.join(&profile.id).join(&cut.id);
+        if folder.is_dir() {
+            fs::remove_dir_all(&folder).map_err(made(&folder))?;
+        }
+        fs::create_dir_all(&folder).map_err(made(&folder))?;
+        // The video: the clean master where the platform takes a caption
+        // file, and the picture with its captions in where it doesn't.
+        let takes_file = profile.captions == CaptionStyle::File;
+        let video = picture(!takes_file).ok_or("a cut has a picture")?;
+        let mut copied = vec![video.clone()];
+        let captions: Vec<String> = match takes_file {
+            true => plan.caption_files().to_vec(),
+            false => Vec::new(),
+        };
+        copied.extend(captions.iter().cloned());
+        for name in &copied {
+            let (from, to) = (out.join(name), folder.join(name));
+            // The same file under a second name, where the disk allows it.
+            if fs::hard_link(&from, &to).is_err() {
+                fs::copy(&from, &to).map_err(made(&to))?;
+            }
+        }
+        let mut images = Vec::new();
+        if profile.id == "youtube" && cut.aspect == Aspect::Landscape {
+            // Each thumbnail the project asks for that is of a line of
+            // this cut; or the cut's first line, under the title.
+            let mut wanted: Vec<(usize, Option<String>)> = project
+                .publish
+                .thumbnails
+                .iter()
+                .filter_map(|t| Some((ids.iter().position(|id| *id == t.line)?, t.title.clone())))
+                .collect();
+            if wanted.is_empty() {
+                let title = publish::title(project, &profile.id).to_string();
+                wanted.push((0, Some(title)));
+            }
+            let mut composer = plan.composer(false)?;
+            for (n, (line, title)) in wanted.iter().enumerate() {
+                let entry = &plan.timeline.sentences[*line];
+                let frame = (((entry.start + entry.end) / 2.0) * FPS) as u64;
+                let picture = crate::export::thumbnail(
+                    &composer.frame(frame.min(composer.frames().saturating_sub(1)))?,
+                    title.as_deref(),
+                    &mut fonts,
+                    &faces,
+                    &plan.look,
+                );
+                let name = format!("thumbnail-{}.png", n + 1);
+                picture.save_png(&folder.join(&name))?;
+                let bytes = fs::metadata(folder.join(&name)).map_or(0, |m| m.len());
+                if bytes > crate::export::THUMBNAIL_BYTES {
+                    warnings.push(format!(
+                        "{}/{}/{name} is {:.1} MB, and YouTube takes 2 MB from a phone",
+                        profile.id,
+                        cut.id,
+                        bytes as f64 / 1e6
+                    ));
+                }
+                images.push(name);
+            }
+        }
+        if profile.id == "instagram-reels" {
+            let cover = crate::export::cover(
+                publish::title(project, &profile.id),
+                project.meta.subtitle.as_deref().unwrap_or_default(),
+                &mut fonts,
+                &faces,
+                &plan.look,
+            );
+            cover.save_png(&folder.join("cover.png"))?;
+            images.push("cover.png".to_string());
+        }
+        let upload = Upload {
+            project,
+            cut,
+            platform: profile,
+            chapters: &plan.chapters,
+            synthetic: record.voice == Voice::Draft,
+            video: &video,
+            captions: &captions,
+            images: &images,
+        };
+        let metadata = folder.join("metadata.md");
+        fs::write(&metadata, upload.metadata()).map_err(made(&metadata))?;
+        warnings.extend(
+            upload
+                .problems(plan.timeline.total)
+                .into_iter()
+                .map(|problem| format!("cut {}: {problem}", cut.id)),
+        );
+    }
+    Ok(warnings)
 }
 
 /// Copies a final build's pictures and captions to `out/`. A file that

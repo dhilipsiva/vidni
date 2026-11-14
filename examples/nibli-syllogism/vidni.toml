@@ -108,6 +108,31 @@ lines = [
 [music]
 track = "none"
 
+# What goes with each cut where it is uploaded. None of it is in a picture,
+# so changing it renders nothing again: `vidni final` writes it afresh into
+# each platform's folder under out/.
+[publish]
+description = """
+A five-minute walkthrough of the Syllogism example in the nibli playground: \
+what symbolic reasoning is, what a theorem prover does, where an LLM fits around one, \
+and how nibli proves that Adam eats, step by step."""
+tags = [
+  "nibli",
+  "theorem proving",
+  "symbolic reasoning",
+  "neuro-symbolic AI",
+  "Rust",
+  "WebAssembly",
+]
+links = [
+  { label = "Try it", url = "https://dhilipsiva.dev/nibli-playground" },
+  { label = "The code", url = "https://github.com/dhilipsiva/nibli" },
+]
+thumbnails = [
+  { line = "trace-9", title = "A proof you can read" },
+  { line = "false-2", title = "FALSE, and why" },
+]
+
 # The first and the last section show no label; each still names a chapter.
 [sections.intro]
 label = ""

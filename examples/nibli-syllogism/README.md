@@ -22,6 +22,7 @@ The long cut is delivered as YouTube takes it ([The final build](../../docs/spec
 | `long.en.srt`, `long.en.vtt` | Its captions, to upload with it |
 | `long.captioned.mp4` | The same picture with the captions drawn in, as the reference's cut had them |
 | `long.chapters.txt` | Its ten chapters, to paste into the description. The same chapters are in both pictures. |
+| `youtube/long/` | The upload for YouTube: the master, its captions, two thumbnails, and `metadata.md` with the title, the description, the tags and the steps ([`[publish]`](../../docs/spec.md#publish)) |
 
 The final cuts need the creator's takes and the captures the cuts froze, and both are kept out of git. Without them, `vidni status` reports the cuts as changed and `vidni final` refuses them. `vidni draft` still works: it captures the playground as it is now, and builds the cuts in the draft voice.
 

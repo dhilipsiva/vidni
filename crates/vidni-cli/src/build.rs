@@ -276,12 +276,25 @@ pub fn finish(path: &Path, cuts: &[String], again: bool) -> ExitCode {
             let record = build::final_build(project, dir, &lock, cut, &setup, &mut progress)
                 .map_err(stopped)?;
             built(&record, dir);
+            // What goes with the cut where it is uploaded, made afresh.
+            for warning in build::exports(project, dir, cut, &setup).map_err(stopped)? {
+                eprintln!("vidni: warning: {warning}");
+            }
             say!(
                 "{}: delivered to {}; `vidni approve --cut {}` releases it",
                 cut.id,
                 dir.join(release::OUT).display(),
                 cut.id
             );
+            for platform in cut.platforms() {
+                say!(
+                    "  {}: the upload for {platform}, with its metadata.md",
+                    dir.join(release::OUT)
+                        .join(&platform)
+                        .join(&cut.id)
+                        .display()
+                );
+            }
         }
         Ok(())
     });

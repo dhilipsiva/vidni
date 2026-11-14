@@ -14,6 +14,7 @@ pub mod fonts;
 pub mod onscreen;
 pub mod platforms;
 pub mod project;
+pub mod publish;
 pub mod ratify;
 pub mod release;
 pub mod spoken;

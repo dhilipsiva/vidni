@@ -41,6 +41,16 @@ pub struct Timeline {
     pub sentences: Vec<Entry>,
 }
 
+impl Timeline {
+    /// Makes the timeline end `seconds` after its last line does: the last
+    /// picture is held that long, in the place of the tail.
+    pub fn hold(&mut self, seconds: f64) {
+        if let Some(last) = self.sentences.last() {
+            self.total = round(last.end + seconds, 3);
+        }
+    }
+}
+
 /// One line on the timeline.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Entry {

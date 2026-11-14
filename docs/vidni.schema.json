@@ -44,6 +44,10 @@
         "track": "none"
       }
     },
+    "publish": {
+      "description": "What goes with the video where it is uploaded: its description,\ntags, links, titles and thumbnails.",
+      "$ref": "#/$defs/Publish"
+    },
     "scenes": {
       "description": "What the lines show, by ID.",
       "type": "object",
@@ -312,6 +316,14 @@
           ],
           "default": null
         },
+        "end_hold": {
+          "description": "How long a 16:9 cut holds its last picture after the narration\nends, in seconds from 5 to 20, for an end screen to go over. It\ntakes the place of `timing.tail` in this cut.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
         "id": {
           "description": "A stable ID, like a line's.",
           "type": "string"
@@ -559,6 +571,25 @@
         }
       ]
     },
+    "Link": {
+      "description": "A link under a description.",
+      "type": "object",
+      "properties": {
+        "label": {
+          "description": "What the link is, such as `The code`.",
+          "type": "string"
+        },
+        "url": {
+          "description": "Where it goes: an `http` or `https` address.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "url"
+      ]
+    },
     "Lint": {
       "description": "Wording checks.",
       "type": "object",
@@ -680,6 +711,45 @@
         "first",
         "last"
       ]
+    },
+    "Publish": {
+      "description": "What goes with the video where it is uploaded (TODO.md, P6-VIDNI-04).\nNone of it is in a picture, so changing it renders nothing again.",
+      "type": "object",
+      "properties": {
+        "description": {
+          "description": "The description: what the video is about, in your own words.\nChapters, links and credits are added after it.",
+          "type": "string"
+        },
+        "links": {
+          "description": "Links to list under the description.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Link"
+          }
+        },
+        "tags": {
+          "description": "Tags, most telling first.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "thumbnails": {
+          "description": "Up to three thumbnails for a 16:9 cut, each a frame of a line.\nWith none, there is one: the cut's first line, with the title.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Thumbnail"
+          }
+        },
+        "titles": {
+          "description": "The title on a platform, by profile ID, where it isn't `meta.title`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
     },
     "Respelling": {
       "description": "One text and how it is said.",
@@ -1096,6 +1166,27 @@
         }
       },
       "additionalProperties": false
+    },
+    "Thumbnail": {
+      "description": "A thumbnail: the picture of a line, with words over it.",
+      "type": "object",
+      "properties": {
+        "line": {
+          "description": "The line whose picture it is.",
+          "type": "string"
+        },
+        "title": {
+          "description": "The words drawn over the picture. Default: none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "line"
+      ]
     },
     "Timing": {
       "description": "The pauses around the lines, in seconds.",

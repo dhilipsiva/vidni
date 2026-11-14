@@ -6,7 +6,7 @@
 //! Each problem is reported at its line and column.
 
 use crate::project::{
-    Action, Camera, Expectation, LineSelection, Project, SCHEMA, Scene, SceneKind, Target,
+    Action, Aspect, Camera, Expectation, LineSelection, Project, SCHEMA, Scene, SceneKind, Target,
     TextMatch,
 };
 use regex::Regex;
@@ -292,6 +292,7 @@ impl Rules {
         }
         self.cuts(p);
         self.music(p, dir);
+        self.publish(p);
         for (i, x) in p.expectations.iter().enumerate() {
             self.expectation(p, i, x);
         }
@@ -911,6 +912,107 @@ impl Rules {
     }
 
     /// A file the project names, relative to its folder, with `{aspect}` filled in.
+    /// What goes with the video where it is uploaded fits where it goes
+    /// (TODO.md, P6-VIDNI-04).
+    fn publish(&mut self, p: &Project) {
+        use crate::publish::{TAGS, THUMBNAILS, TITLE, tags_length, title};
+        let publish = &p.publish;
+        let profiles = crate::platforms::all();
+        for (platform, own) in &publish.titles {
+            let at = path!["publish", "titles", platform.as_str()];
+            if !profiles.iter().any(|profile| &profile.id == platform) {
+                let names = one_of(profiles.iter().map(|profile| profile.id.as_str()));
+                self.add(at, format!("unknown platform {platform:?}{names}"));
+            } else if own.trim().is_empty() {
+                self.add(at, "a title can't be empty");
+            }
+        }
+        // YouTube takes a title of 100 characters, on a video and on a Short.
+        let mut seen: Vec<String> = Vec::new();
+        for platform in p.cuts.iter().flat_map(|cut| cut.platforms()) {
+            if !platform.starts_with("youtube") || seen.contains(&platform) {
+                continue;
+            }
+            let length = title(p, &platform).chars().count();
+            if length > TITLE {
+                let at = match publish.titles.contains_key(&platform) {
+                    true => path!["publish", "titles", platform.as_str()],
+                    false => path!["meta", "title"],
+                };
+                self.add(
+                    at,
+                    format!("the title is {length} characters, and {platform} takes {TITLE}; [publish.titles] can give it a shorter one"),
+                );
+            }
+            seen.push(platform);
+        }
+        for (i, tag) in publish.tags.iter().enumerate() {
+            let at = path!["publish", "tags", i];
+            if tag.trim().is_empty() || tag.contains(',') {
+                self.add(at, "a tag is a word or a few, with no comma");
+            } else if publish.tags[..i].contains(tag) {
+                self.add(at, format!("tag {tag:?} is listed twice"));
+            }
+        }
+        let length = tags_length(&publish.tags);
+        if length > TAGS {
+            self.add(
+                path!["publish", "tags"],
+                format!("the tags take {length} characters, and YouTube takes {TAGS}"),
+            );
+        }
+        for (i, link) in publish.links.iter().enumerate() {
+            if link.label.trim().is_empty() {
+                self.add(
+                    path!["publish", "links", i, "label"],
+                    "a link needs a label",
+                );
+            }
+            if !(link.url.starts_with("https://") || link.url.starts_with("http://")) {
+                self.add(
+                    path!["publish", "links", i, "url"],
+                    "a link's url is an http or https address",
+                );
+            }
+        }
+        if publish.thumbnails.len() > THUMBNAILS {
+            self.add(
+                path!["publish", "thumbnails", THUMBNAILS],
+                format!("YouTube compares {THUMBNAILS} thumbnails at most"),
+            );
+        }
+        // A thumbnail is of a line that a 16:9 cut shows.
+        let wide: Vec<String> = p
+            .cuts
+            .iter()
+            .filter(|cut| cut.aspect == Aspect::Landscape)
+            .flat_map(|cut| cut.line_ids(p))
+            .collect();
+        for (i, thumbnail) in publish.thumbnails.iter().enumerate() {
+            let at = path!["publish", "thumbnails", i, "line"];
+            if !p.lines.iter().any(|line| line.id == thumbnail.line) {
+                self.add(at, format!("unknown line {:?}", thumbnail.line));
+            } else if !wide.contains(&thumbnail.line) {
+                self.add(
+                    at,
+                    format!("line {:?} is in no 16:9 cut, so there is no picture of it to make a thumbnail of", thumbnail.line),
+                );
+            }
+        }
+        for (c, cut) in p.cuts.iter().enumerate() {
+            let Some(hold) = cut.end_hold else { continue };
+            let at = path!["cuts", c, "end_hold"];
+            if cut.aspect != Aspect::Landscape {
+                self.add(at, "end_hold is for a 16:9 cut: an end screen goes on a YouTube video, not on a Short");
+            } else if !(5.0..=20.0).contains(&hold) {
+                self.add(
+                    at,
+                    "an end screen covers the last 5 to 20 seconds of a video",
+                );
+            }
+        }
+    }
+
     /// The music library's entries each carry what allows the track, the
     /// track that plays is one of them, and its licence covers every
     /// platform a cut is made for (TODO.md, P6-VIDNI-06).

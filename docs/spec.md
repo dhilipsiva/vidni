@@ -550,6 +550,7 @@ Highlight boxes are drawn with an ember outline, in every theme: they are part o
 | `captions` | `"burned"`, `"file"` or `"both"` | `both` for 16:9, `burned` for 9:16 | `burned` draws captions into the picture. `file` keeps the picture clean and writes SRT and VTT files. `both` makes a clean master with caption files, plus a burned-in variant (DECISIONS.md, D7). |
 | `platforms` | array of strings | the profiles on by default for the cut's aspect: `["youtube"]` for 16:9; `["youtube-shorts", "instagram-reels", "whatsapp-status"]` for 9:16 | The platform profiles the cut is made for: `youtube`, `youtube-shorts`, `instagram-reels`, `tiktok`, `whatsapp-status`, `linkedin` or `x`. `vidni platforms` lists each profile's limits, with the date they were checked and their sources. |
 | `size` | `[width, height]` | `[1920, 1080]` or `[1080, 1920]` | The frame size: even numbers in exactly the cut's aspect. For now, vidni draws only the two default sizes, and a build refuses another. |
+| `end_hold` | number | none | 16:9 cuts: how long the cut holds its last picture after the narration ends, in seconds from 5 to 20, in the place of `timing.tail`. YouTube puts an end screen over the last 5 to 20 seconds of a video of 25 seconds or more. |
 
 ### Several cuts
 
@@ -648,6 +649,47 @@ platforms = ["youtube", "youtube-shorts"]
 A build plays the track under the whole narration, repeated when it is shorter, coming in over a second and going out over two. It is brought to `under` LU below the narration's loudness, so it sits at the same level under any voice. The file is one of the build's sounds, so another file under the same name is another build.
 
 **Content ID.** YouTube blocks a Short of over a minute that has a Content ID claim, in every country. So a cut for `youtube-shorts` that lasts over 60 seconds isn't built with a track marked `content_id = true`.
+
+## `[publish]`
+
+What goes with a cut where it is uploaded. None of it is in a picture, so changing it renders nothing again, and leaves every cut ratified and approved.
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `description` | string | empty | What the video is about, in your own words. vidni adds the chapters, the links, the credit for the music and its notes after it. |
+| `tags` | array of strings | empty | Tags, most telling first. YouTube takes 500 characters of them; a reel's caption gets the first five as hashtags. |
+| `links` | array of `{ label, url }` | empty | Links listed under the description |
+| `titles` | table of strings, by platform | `meta.title` | The title on a platform, where it isn't the project's. YouTube takes 100 characters. |
+| `thumbnails` | array of `{ line, title }` | one: the cut's first line, under the title | Up to three thumbnails for a 16:9 cut. Each is the picture of `line`, without captions, with `title` over it when it has one. |
+
+```toml
+[publish]
+description = "A one-minute video about vidni, made by vidni from one text file."
+tags = ["vidni", "tutorial videos", "open source"]
+links = [{ label = "vidni", url = "https://github.com/dhilipsiva/vidni" }]
+thumbnails = [{ line = "how-4", title = "A video from a text file" }]
+
+[publish.titles]
+youtube-shorts = "vidni in a minute"
+```
+
+### What `vidni final` writes for each platform
+
+After a cut is delivered, `vidni final` writes a folder for each platform the cut is made for, `out/<platform>/<cut>/`, with everything that one upload needs:
+
+| File | What it is |
+|---|---|
+| The video | The clean master where the platform takes a caption file; the picture with its captions drawn in where it doesn't. It is the delivered file under a second name, not a copy, where the disk allows. |
+| The caption files | Where the platform takes them |
+| `metadata.md` | The title, the description as it is pasted, the tags, the files, and the steps of the upload |
+| `thumbnail-1.png` … | YouTube: 1280 by 720, up to three, to compare against each other |
+| `cover.png` | Instagram Reels: a 1080 by 1920 title card, with its words inside the 3:4 middle that the profile grid shows |
+
+- **The folders are made afresh on every `vidni final`,** from the delivered build and from `[publish]`. With nothing to render, that takes under a second, so a description is changed by editing it and running `vidni final` again.
+- **`metadata.md` says what each app asks for:** the caption file and the end screen on YouTube, the related video of a Short (the project's 16:9 cut for YouTube), the cover of a reel.
+- **A folder for a platform the cut is no longer made for is removed.** A cut with `platforms = []` has none.
+- **What an upload would be refused for is a warning:** a description over YouTube's 5,000 characters or Instagram's 2,200, a thumbnail over 2 MB, an end screen on a video under 25 seconds.
+- **A synthetic voice is said.** Should a final cut ever hold one, its description says so, and the steps name Meta's Add AI label, which Meta asks for on a reel narrated with a realistic synthetic voice. Today a final cut is always in your own voice.
 
 ## `[[expectations]]`
 

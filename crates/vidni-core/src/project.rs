@@ -48,9 +48,65 @@ pub struct Project {
     /// Background music.
     #[serde(default)]
     pub music: Music,
+    /// What goes with the video where it is uploaded: its description,
+    /// tags, links, titles and thumbnails.
+    #[serde(default, skip_serializing_if = "Publish::is_empty")]
+    pub publish: Publish,
     /// Text that must be on screen when a scene is captured.
     #[serde(default)]
     pub expectations: Vec<Expectation>,
+}
+
+/// What goes with the video where it is uploaded (TODO.md, P6-VIDNI-04).
+/// None of it is in a picture, so changing it renders nothing again.
+#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize, JsonSchema)]
+#[serde(default, deny_unknown_fields)]
+pub struct Publish {
+    /// The description: what the video is about, in your own words.
+    /// Chapters, links and credits are added after it.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub description: String,
+    /// Tags, most telling first.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
+    /// Links to list under the description.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub links: Vec<Link>,
+    /// The title on a platform, by profile ID, where it isn't `meta.title`.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub titles: BTreeMap<String, String>,
+    /// Up to three thumbnails for a 16:9 cut, each a frame of a line.
+    /// With none, there is one: the cut's first line, with the title.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub thumbnails: Vec<Thumbnail>,
+}
+
+impl Publish {
+    /// Whether the project says nothing of it.
+    pub fn is_empty(&self) -> bool {
+        self == &Self::default()
+    }
+}
+
+/// A link under a description.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Link {
+    /// What the link is, such as `The code`.
+    pub label: String,
+    /// Where it goes: an `http` or `https` address.
+    pub url: String,
+}
+
+/// A thumbnail: the picture of a line, with words over it.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Thumbnail {
+    /// The line whose picture it is.
+    pub line: String,
+    /// The words drawn over the picture. Default: none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
 }
 
 /// What the video is.
@@ -670,6 +726,11 @@ pub struct Cut {
     /// The frame size in pixels. Default `[1920, 1080]` or `[1080, 1920]`.
     #[serde(default)]
     pub size: Option<[u32; 2]>,
+    /// How long a 16:9 cut holds its last picture after the narration
+    /// ends, in seconds from 5 to 20, for an end screen to go over. It
+    /// takes the place of `timing.tail` in this cut.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub end_hold: Option<f64>,
 }
 
 /// A cut's aspect ratio.

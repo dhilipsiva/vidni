@@ -16,14 +16,24 @@ draft = "piper:en_US-joe-medium"
 respell = [{ text = "vidni", say = "vid nee" }]
 
 # A long cut for YouTube: a clean master, a captioned variant and chapters.
+# It holds its last card for six seconds, for an end screen to go over.
 [[cuts]]
 id = "long"
 aspect = "16:9"
+end_hold = 6
 
 # A vertical cut for Shorts, Reels and WhatsApp Status, laid out clear of their apps.
 [[cuts]]
 id = "vertical"
 aspect = "9:16"
+
+# What goes with each cut where it is uploaded: `vidni final` writes it
+# into out/<platform>/<cut>/metadata.md, with the cut's thumbnails.
+[publish]
+description = "A one-minute video about vidni, made by vidni from one text file."
+tags = ["vidni", "tutorial videos", "open source"]
+links = [{ label = "vidni", url = "https://github.com/dhilipsiva/vidni" }]
+thumbnails = [{ line = "how-4", title = "A video from a text file" }]
 
 [sections.welcome]
 label = "hello"

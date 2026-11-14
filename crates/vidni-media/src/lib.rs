@@ -8,6 +8,7 @@ pub mod capture;
 pub mod cdp;
 pub mod compose;
 pub mod encode;
+pub mod export;
 pub mod hear;
 pub mod narration;
 pub mod qa;

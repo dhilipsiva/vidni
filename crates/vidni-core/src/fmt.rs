@@ -59,6 +59,7 @@ pub(crate) const ROOT: &[&str] = &[
     "style",
     "cuts",
     "music",
+    "publish",
     "sections",
     "lines",
     "scenes",
@@ -147,7 +148,18 @@ const ACTION: &[&str] = &[
     "offset",
     "wait",
 ];
-const CUT: &[&str] = &["id", "aspect", "lines", "captions", "platforms", "size"];
+const CUT: &[&str] = &[
+    "id",
+    "aspect",
+    "lines",
+    "captions",
+    "platforms",
+    "size",
+    "end_hold",
+];
+const PUBLISH: &[&str] = &["description", "tags", "links", "titles", "thumbnails"];
+const LINK: &[&str] = &["label", "url"];
+const THUMBNAIL: &[&str] = &["line", "title"];
 const EXPECTATION: &[&str] = &["scene", "at", "target", "text", "texts"];
 
 /// The key order of the table or inline table at `path` ("#" stands for an
@@ -173,6 +185,9 @@ fn key_order(path: &[String]) -> Option<&'static [&'static str]> {
         ["scenes", _, "cameras", _] => Some(CAMERA),
         ["scenes", _, "targets", _, rest @ ..] => target_part(rest),
         ["cuts", "#"] => Some(CUT),
+        ["publish"] => Some(PUBLISH),
+        ["publish", "links", "#"] => Some(LINK),
+        ["publish", "thumbnails", "#"] => Some(THUMBNAIL),
         ["expectations", "#"] => Some(EXPECTATION),
         _ => None,
     }

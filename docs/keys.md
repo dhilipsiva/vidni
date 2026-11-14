@@ -67,6 +67,7 @@ The videos made from the script.
 | `aspect` | `"16:9"` or `"9:16"` | yes | `16:9` or `9:16`. |
 | `id` | string | yes | A stable ID, like a line's. |
 | `captions` | `"burned"` or `"file"` or `"both"` |  | `burned`, `file` or `both`. Default: `both` for 16:9, `burned` for 9:16. |
+| `end_hold` | number |  | How long a 16:9 cut holds its last picture after the narration ends, in seconds from 5 to 20, for an end screen to go over. It takes the place of `timing.tail` in this cut. |
 | `lines` | any or array of string |  | `all`, or the IDs of the lines the cut uses, in script order. |
 | `platforms` | array of string |  | The platform profiles the cut is made for. Default: `youtube` for 16:9; `youtube-shorts`, `instagram-reels` and `whatsapp-status` for 9:16. |
 | `size` | array of whole number |  | The frame size in pixels. Default `[1920, 1080]` or `[1080, 1920]`. |
@@ -80,6 +81,18 @@ Background music.
 | `library` | array of [Track](#track) |  | The tracks the project may use, each with its licence. |
 | `track` | string |  | `none`, or the ID of a track in `library`. |
 | `under` | number |  | How far under the narration the track plays, in LU. Default 20. |
+
+## `[publish]`
+
+What goes with the video where it is uploaded: its description, tags, links, titles and thumbnails.
+
+| Key | Value | Required | Meaning |
+|---|---|---|---|
+| `description` | string |  | The description: what the video is about, in your own words. Chapters, links and credits are added after it. |
+| `links` | array of [Link](#link) |  | Links to list under the description. |
+| `tags` | array of string |  | Tags, most telling first. |
+| `thumbnails` | array of [Thumbnail](#thumbnail) |  | Up to three thumbnails for a 16:9 cut, each a frame of a line. With none, there is one: the cut's first line, with the title. |
+| `titles` | table of string, by name |  | The title on a platform, by profile ID, where it isn't `meta.title`. |
 
 ## `[sections.<id>]`
 
@@ -182,6 +195,24 @@ A piece of music the project may use, with what allows it.
 | `platforms` | array of string | yes | The platforms the licence covers. |
 | `sha256` | string | yes | The file's SHA-256, so that the licence is of this very file. |
 | `content_id` | boolean |  | Whether the track is registered with YouTube's Content ID. A Short over a minute with a Content ID claim is blocked worldwide. |
+
+### Link
+
+A link under a description.
+
+| Key | Value | Required | Meaning |
+|---|---|---|---|
+| `label` | string | yes | What the link is, such as `The code`. |
+| `url` | string | yes | Where it goes: an `http` or `https` address. |
+
+### Thumbnail
+
+A thumbnail: the picture of a line, with words over it.
+
+| Key | Value | Required | Meaning |
+|---|---|---|---|
+| `line` | string | yes | The line whose picture it is. |
+| `title` | string |  | The words drawn over the picture. Default: none. |
 
 ### Action
 

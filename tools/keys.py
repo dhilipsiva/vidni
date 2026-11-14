@@ -25,6 +25,7 @@ TOP = [
     ("style", "[style]"),
     ("cuts", "[[cuts]]"),
     ("music", "[music]"),
+    ("publish", "[publish]"),
     ("sections", "[sections.<id>]"),
     ("lines", "[[lines]]"),
     ("scenes", "[scenes.<id>]"),
