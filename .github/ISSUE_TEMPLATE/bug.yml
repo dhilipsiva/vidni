@@ -1,0 +1,48 @@
+name: Something is wrong
+description: vidni did something other than what its documentation says
+labels: [bug]
+body:
+  - type: textarea
+    id: did
+    attributes:
+      label: What you did
+      description: The command you ran, and the smallest vidni.toml that shows the problem.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened
+      description: What vidni printed, in full, and what it made.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: vidni's version
+      description: What `vidni --version` prints.
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How vidni is installed
+      options:
+        - nix run, or the flake's dev shell
+        - the portable bundle
+        - built another way
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Your system
+      description: The distribution and its version, such as "Fedora 41".

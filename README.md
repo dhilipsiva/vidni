@@ -28,6 +28,8 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 | [app.md](docs/app.md) | The desktop app, as far as it is built |
 | [faq.md](docs/faq.md) | Short answers |
 
+**To help:** [CONTRIBUTING.md](CONTRIBUTING.md) says how to set up and what a change needs, and everyone taking part follows the [code of conduct](CODE_OF_CONDUCT.md). Issues start from a template: something that is wrong, or an idea. [CHANGELOG.md](CHANGELOG.md) lists what each release changed.
+
 **Status:** being built, item by item, from [`TODO.md`](TODO.md). The decisions behind it are in [`DECISIONS.md`](DECISIONS.md). So far:
 
 - `vidni new` starts a project that renders as it is, from an outline when you have one.

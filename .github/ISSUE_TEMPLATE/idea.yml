@@ -1,0 +1,27 @@
+name: An idea
+description: Something vidni could do, or do better
+labels: [idea]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you are trying to make
+      description: The video, or the part of making one, that is hard today. This matters more than the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help
+      description: How you imagine it, in vidni.toml or on the command line, if you have a picture of it.
+  - type: textarea
+    id: now
+    attributes:
+      label: What you do in the meantime
+  - type: checkboxes
+    id: read
+    attributes:
+      label: Before you send it
+      options:
+        - label: It works with no LLM and no network during a build, as everything in vidni does.
+          required: true
