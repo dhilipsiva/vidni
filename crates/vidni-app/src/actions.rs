@@ -26,6 +26,25 @@ pub enum Action {
     },
     /// Say what has changed since the last build and since ratification.
     Changes(PathBuf),
+    /// Freeze every cut, or one.
+    Ratify {
+        project: PathBuf,
+        cut: Option<String>,
+    },
+    /// Unfreeze a cut.
+    Unratify { project: PathBuf, cut: String },
+    /// List what a ratified cut froze, with its hashes.
+    Frozen { project: PathBuf, cut: String },
+    /// Build every cut from the takes, or one.
+    Final {
+        project: PathBuf,
+        cut: Option<String>,
+    },
+    /// Release every cut's final build, or one's.
+    Approve {
+        project: PathBuf,
+        cut: Option<String>,
+    },
 }
 
 /// What the app's help says of a kind of action.
@@ -40,7 +59,7 @@ pub struct Usage {
 }
 
 /// Every kind of action, in the order the help lists them.
-pub const ALL: [Usage; 7] = [
+pub const ALL: [Usage; 15] = [
     Usage {
         name: "New project",
         command: "vidni new <name> --in <folder>",
@@ -76,12 +95,60 @@ pub const ALL: [Usage; 7] = [
         command: "vidni changes <project>",
         does: "Lists the lines that changed since the last build, and the cuts that changed since they were ratified",
     },
+    Usage {
+        name: "Ratify every cut",
+        command: "vidni ratify <project>",
+        does: "Freezes what every cut shows and says, with the hashes of its captures",
+    },
+    Usage {
+        name: "Ratify <cut>",
+        command: "vidni ratify <project> --cut <cut>",
+        does: "Freezes one cut",
+    },
+    Usage {
+        name: "Unratify <cut>",
+        command: "vidni unratify <project> --cut <cut>",
+        does: "Unfreezes one cut, and keeps its captures",
+    },
+    Usage {
+        name: "Frozen <cut>",
+        command: "vidni frozen <project> --cut <cut>",
+        does: "Lists what a ratified cut froze: its lines, scenes and capture files, each with its hash",
+    },
+    Usage {
+        name: "Final build of every cut",
+        command: "vidni final <project>",
+        does: "Builds every ratified cut from your takes into out/, and checks it",
+    },
+    Usage {
+        name: "Final <cut>",
+        command: "vidni final <project> --cut <cut>",
+        does: "Builds one cut from your takes",
+    },
+    Usage {
+        name: "Approve every cut",
+        command: "vidni approve <project>",
+        does: "Records every cut's final build in release.json, as a release with its hashes",
+    },
+    Usage {
+        name: "Approve <cut>",
+        command: "vidni approve <project> --cut <cut>",
+        does: "Releases one cut's final build",
+    },
 ];
 
 impl Action {
     /// The arguments of the command that does it, as they follow `vidni`.
     pub fn args(&self) -> Vec<String> {
         let path = |p: &Path| p.display().to_string();
+        // A command on a project, for every cut or for one.
+        let on = |command: &str, project: &Path, cut: Option<&String>| {
+            let mut args = vec![command.to_string(), path(project)];
+            if let Some(cut) = cut {
+                args.extend(["--cut".to_string(), cut.clone()]);
+            }
+            args
+        };
         match self {
             Self::New { name, parent } => {
                 vec!["new".into(), name.clone(), "--in".into(), path(parent)]
@@ -106,6 +173,11 @@ impl Action {
                 note.clone(),
             ],
             Self::Changes(project) => vec!["changes".into(), path(project)],
+            Self::Ratify { project, cut } => on("ratify", project, cut.as_ref()),
+            Self::Unratify { project, cut } => on("unratify", project, Some(cut)),
+            Self::Frozen { project, cut } => on("frozen", project, Some(cut)),
+            Self::Final { project, cut } => on("final", project, cut.as_ref()),
+            Self::Approve { project, cut } => on("approve", project, cut.as_ref()),
         }
     }
 
@@ -119,6 +191,14 @@ impl Action {
             Self::Draft { cut: Some(_), .. } => 4,
             Self::Note { .. } => 5,
             Self::Changes(_) => 6,
+            Self::Ratify { cut: None, .. } => 7,
+            Self::Ratify { cut: Some(_), .. } => 8,
+            Self::Unratify { .. } => 9,
+            Self::Frozen { .. } => 10,
+            Self::Final { cut: None, .. } => 11,
+            Self::Final { cut: Some(_), .. } => 12,
+            Self::Approve { cut: None, .. } => 13,
+            Self::Approve { cut: Some(_), .. } => 14,
         }]
     }
 }
@@ -170,7 +250,39 @@ mod tests {
                 line: "intro-1".into(),
                 note: "Say it slower.".into(),
             },
-            Action::Changes(project),
+            Action::Changes(project.clone()),
+            Action::Ratify {
+                project: project.clone(),
+                cut: None,
+            },
+            Action::Ratify {
+                project: project.clone(),
+                cut: Some("long".into()),
+            },
+            Action::Unratify {
+                project: project.clone(),
+                cut: "long".into(),
+            },
+            Action::Frozen {
+                project: project.clone(),
+                cut: "long".into(),
+            },
+            Action::Final {
+                project: project.clone(),
+                cut: None,
+            },
+            Action::Final {
+                project: project.clone(),
+                cut: Some("long".into()),
+            },
+            Action::Approve {
+                project: project.clone(),
+                cut: None,
+            },
+            Action::Approve {
+                project,
+                cut: Some("long".into()),
+            },
         ];
         // Each kind of action has its own line in the help, and no line is spare.
         let listed: Vec<Usage> = actions.iter().map(Action::usage).collect();
@@ -187,6 +299,14 @@ mod tests {
                 "vidni draft '/videos/my talk' --cut long",
                 "vidni notes '/videos/my talk' --line intro-1 --set 'Say it slower.'",
                 "vidni changes '/videos/my talk'",
+                "vidni ratify '/videos/my talk'",
+                "vidni ratify '/videos/my talk' --cut long",
+                "vidni unratify '/videos/my talk' --cut long",
+                "vidni frozen '/videos/my talk' --cut long",
+                "vidni final '/videos/my talk'",
+                "vidni final '/videos/my talk' --cut long",
+                "vidni approve '/videos/my talk'",
+                "vidni approve '/videos/my talk' --cut long",
             ]
         );
         for (action, typed) in actions.iter().zip(&typed) {

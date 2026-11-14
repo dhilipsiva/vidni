@@ -255,6 +255,16 @@ enum Command {
         #[arg(long = "cut", value_name = "ID")]
         cuts: Vec<String>,
     },
+    /// List what each ratified cut froze: its content, lines, scenes and
+    /// capture files, each with its hash.
+    Frozen {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// The cut to list; repeat for more. Default: every cut.
+        #[arg(long = "cut", value_name = "ID")]
+        cuts: Vec<String>,
+    },
     /// List the review notes in notes.md, a line each; or, with --line and
     /// --set, write the note on a line.
     Notes {
@@ -504,6 +514,7 @@ fn dispatch(command: Command) -> ExitCode {
         Command::Where { line, path } => published::whereabouts(&path, &line),
         Command::Notes { path, line, set } => notes(&path, line.as_deref().zip(set.as_deref())),
         Command::Changes { path } => changes(&path),
+        Command::Frozen { path, cuts } => frozen(&path, &cuts),
         Command::Backup { path, to } => backup::backup(&path, &to),
         Command::Verify { path, to } => backup::verify(&path, &to),
         Command::Restore { path, from } => backup::restore(&path, &from),
@@ -846,6 +857,62 @@ fn ratify(path: &Path, cuts: &[String]) -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+/// Lists what each ratified cut froze, with its hashes, as `ratified.lock`
+/// holds them.
+fn frozen(path: &Path, cuts: &[String]) -> ExitCode {
+    let Loaded { dir, project, .. } = match load(path) {
+        Ok(loaded) => loaded,
+        Err(code) => return code,
+    };
+    if let Some(unknown) = cuts
+        .iter()
+        .find(|id| !project.cuts.iter().any(|cut| &cut.id == *id))
+    {
+        tell!("vidni: there is no cut {unknown:?}");
+        return ExitCode::FAILURE;
+    }
+    let lock = match ratify::read_lock(&dir) {
+        Ok(lock) => lock,
+        Err(e) => {
+            tell!("vidni: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let asked = |id: &String| cuts.is_empty() || cuts.contains(id);
+    for cut in project.cuts.iter().filter(|cut| asked(&cut.id)) {
+        let Some(locked) = lock.cuts.get(&cut.id) else {
+            say!("{}: not ratified", cut.id);
+            continue;
+        };
+        say!("{}: content {}", cut.id, locked.content);
+        for (what, hashes) in [("line", &locked.lines), ("scene", &locked.scenes)] {
+            for (id, hash) in hashes {
+                say!("  {what} {id}  {hash}");
+            }
+        }
+        // A capture is a file: its place in the project, and the file's hash.
+        let file = |path: PathBuf| {
+            path.strip_prefix(&dir)
+                .unwrap_or(&path)
+                .display()
+                .to_string()
+        };
+        for (key, sha) in &locked.captures {
+            say!(
+                "  capture {}  sha256 {sha}",
+                file(vidni_core::capture::path(&dir, key))
+            );
+        }
+        for (key, sha) in &locked.frames {
+            say!(
+                "  frames {}  sha256 {sha}",
+                file(vidni_core::capture::frames_path(&dir, key))
+            );
+        }
+    }
+    ExitCode::SUCCESS
 }
 
 fn unratify(path: &Path, cuts: &[String], refresh: bool) -> ExitCode {

@@ -813,6 +813,19 @@ A cut's status is never stored; `vidni status` works it out from those hashes ea
 - **ratified:** every hash still holds.
 - **changed:** something the cut froze has changed since: a line, a scene, its line list or order, a capture file on disk, or a file in the project folder that one of its captures was made from. The status names what changed.
 
+`vidni frozen [--cut ID]` lists what each ratified cut froze, as the lock has it: the hash of its content, each line and scene with its hash, and each capture file and frames file with its SHA-256:
+
+```console
+$ vidni frozen --cut long
+long: content 360995cbe0ce…
+  line intro-1  9d2c…
+  scene page  51ab…
+  capture build/captures/7e0f….png  sha256 c41d…
+  frames build/captures/7e0f….json  sha256 08b2…
+```
+
+The hashes are printed whole; they are shortened here.
+
 Gaps (`[timing]`), caption style, platforms and the theme aren't part of a cut's content; only the release hashes them. So changing them leaves a cut ratified, and editing a line regresses exactly the cuts that use it.
 
 **Captures** live in `build/captures/`, out of git, each named by a key:

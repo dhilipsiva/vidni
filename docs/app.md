@@ -27,11 +27,28 @@ The app keeps the list of projects you opened in `recent`, in its folder of sett
 | Draft `<cut>` | `vidni draft <project> --cut <cut>` | Drafts one cut |
 | Save note | `vidni notes <project> --line <line> --set <note>` | Writes what to change about a line into notes.md |
 | What changed | `vidni changes <project>` | Lists the lines that changed since the last build, and the cuts that changed since they were ratified |
+| Ratify every cut | `vidni ratify <project>` | Freezes what every cut shows and says, with the hashes of its captures |
+| Ratify `<cut>` | `vidni ratify <project> --cut <cut>` | Freezes one cut |
+| Unratify `<cut>` | `vidni unratify <project> --cut <cut>` | Unfreezes one cut, and keeps its captures |
+| Frozen `<cut>` | `vidni frozen <project> --cut <cut>` | Lists what a ratified cut froze: its lines, scenes and capture files, each with its hash |
+| Final build of every cut | `vidni final <project>` | Builds every ratified cut from your takes into out/, and checks it |
+| Final `<cut>` | `vidni final <project> --cut <cut>` | Builds one cut from your takes |
+| Approve every cut | `vidni approve <project>` | Records every cut's final build in release.json, as a release with its hashes |
+| Approve `<cut>` | `vidni approve <project> --cut <cut>` | Releases one cut's final build |
 
 - **The projects.** The first screen starts a project, opens one by its folder, and lists the ones opened lately.
 - **A project.** Its title, its folder, and each cut with where it stands, in `vidni status`'s own words.
 - **Jobs.** A command that takes time runs as a job, one at a time. The job's panel shows the command as you would type it, a bar for the frames of a render, and everything the command says. When it ends, the project is read again.
 - **Help.** The table above, drawn from the same list the app builds its commands from, so the two can't differ.
+
+## The gates
+
+The **Cuts** tab has the three gates a cut goes through, for every cut at once and beside each cut: ratify, the final build, and approval.
+
+- **A gate is its command.** A button runs `vidni ratify`, `vidni final` or `vidni approve` as a job, so a gate allows what the command allows and refuses what it refuses, in the same words: a cut that isn't ratified, a line with no take, a cut that changed since it was ratified. The refusal is in the job's log, under the command that was run, and the cut's row says where it stands afterwards.
+- **Frozen `<cut>`** lists what a ratified cut froze, under the table: the hash of its content, each of its lines and scenes with its hash, and each capture file and frames file with its SHA-256. These are the hashes in `ratified.lock`. The list is read again when the lock changes.
+- **Unratify `<cut>`** makes a cut a draft again, and keeps its captures.
+- **Approving is for good.** A release is never rewritten, in the app as on the command line: approving a later build of a cut makes its next release.
 
 ## The script editor
 

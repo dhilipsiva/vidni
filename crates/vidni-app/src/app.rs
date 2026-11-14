@@ -118,6 +118,14 @@ pub struct App {
     pub preview: Preview,
     /// The job that is running, or the last one that ran.
     pub job: Option<Job>,
+    /// Whether what the last job changed has been read.
+    taken_in: bool,
+    /// The cut whose frozen assets are listed, and the list, in `vidni
+    /// frozen`'s words.
+    pub frozen: Option<(String, Vec<String>)>,
+    /// When the lock that list was read from was written; `None` until
+    /// the list is read.
+    frozen_read: Option<Option<std::time::SystemTime>>,
     /// What the forms hold.
     new_name: String,
     new_parent: String,
@@ -140,6 +148,9 @@ impl App {
             tab: Tab::Cuts,
             preview: Preview::default(),
             job: None,
+            taken_in: true,
+            frozen: None,
+            frozen_read: None,
             new_name: String::new(),
             new_parent: home,
             open_folder: String::new(),
@@ -161,6 +172,15 @@ impl App {
         }
         self.editor = Some(Editor::open(folder));
         self.preview = Preview::default();
+        // The same project read again keeps its list open, read afresh.
+        if self
+            .project
+            .as_ref()
+            .is_none_or(|open| open.folder != folder)
+        {
+            self.frozen = None;
+        }
+        self.frozen_read = None;
         self.project = Some(project);
     }
 
@@ -172,15 +192,16 @@ impl App {
     fn start(&mut self, action: &Action, ctx: &egui::Context) {
         let ctx = ctx.clone();
         self.job = Some(Job::start(action.args(), move || ctx.request_repaint()));
+        self.taken_in = false;
     }
 
     /// Takes in what the running job has said, and what it changed once
     /// it has finished.
     pub fn poll(&mut self) {
         let Some(job) = &mut self.job else { return };
-        let was_running = job.running();
         job.poll();
-        if was_running && !job.running() {
+        if !job.running() && !self.taken_in {
+            self.taken_in = true;
             // Whatever the job did, the project is read again. A picture
             // the job built again is another file, which the preview
             // sees for itself and opens where it was.
@@ -332,9 +353,46 @@ impl App {
                 self.start(&action, &ctx);
             }
         });
+        // The gates, for every cut at once. Each is the command, with its
+        // own preconditions: what it refuses, it says in the job's log.
+        ui.horizontal(|ui| {
+            let folder = &project.folder;
+            let gates = [
+                (
+                    "Ratify every cut",
+                    Action::Ratify {
+                        project: folder.clone(),
+                        cut: None,
+                    },
+                ),
+                (
+                    "Final build of every cut",
+                    Action::Final {
+                        project: folder.clone(),
+                        cut: None,
+                    },
+                ),
+                (
+                    "Approve every cut",
+                    Action::Approve {
+                        project: folder.clone(),
+                        cut: None,
+                    },
+                ),
+            ];
+            for (name, action) in gates {
+                let button = egui::Button::new(name);
+                if ui
+                    .add_enabled(!busy && !project.cuts.is_empty(), button)
+                    .clicked()
+                {
+                    self.start(&action, &ctx);
+                }
+            }
+        });
         ui.add_space(8.0);
         egui::Grid::new("cuts")
-            .num_columns(3)
+            .num_columns(8)
             .striped(true)
             .show(ui, |ui| {
                 ui.strong("Cut");
@@ -351,9 +409,83 @@ impl App {
                         };
                         self.start(&action, &ctx);
                     }
+                    let (folder, cut) = (project.folder.clone(), id.clone());
+                    let gates = [
+                        (
+                            format!("Ratify {id}"),
+                            Action::Ratify {
+                                project: folder.clone(),
+                                cut: Some(cut.clone()),
+                            },
+                        ),
+                        (
+                            format!("Unratify {id}"),
+                            Action::Unratify {
+                                project: folder.clone(),
+                                cut: cut.clone(),
+                            },
+                        ),
+                        (
+                            format!("Final {id}"),
+                            Action::Final {
+                                project: folder.clone(),
+                                cut: Some(cut.clone()),
+                            },
+                        ),
+                        (
+                            format!("Approve {id}"),
+                            Action::Approve {
+                                project: folder.clone(),
+                                cut: Some(cut.clone()),
+                            },
+                        ),
+                    ];
+                    for (name, action) in gates {
+                        if ui.add_enabled(!busy, egui::Button::new(name)).clicked() {
+                            self.start(&action, &ctx);
+                        }
+                    }
+                    // What the cut froze, shown under the table while asked for.
+                    let shown = self.frozen.as_ref().is_some_and(|(of, _)| of == id);
+                    let name = match shown {
+                        true => format!("Hide what {id} froze"),
+                        false => format!("Frozen {id}"),
+                    };
+                    if ui.button(name).clicked() {
+                        self.frozen_read = None;
+                        self.frozen = match shown {
+                            true => None,
+                            false => Some((id.clone(), Vec::new())),
+                        };
+                    }
                     ui.end_row();
                 }
             });
+        // Read again whenever the lock has been written since, so that it
+        // is of the lock as it is now: a cut ratified again, here or on
+        // the command line, shows its new hashes.
+        if let Some((cut, lines)) = &mut self.frozen {
+            let written = std::fs::metadata(project.folder.join(vidni_core::ratify::LOCK))
+                .and_then(|file| file.modified())
+                .ok();
+            if !busy && self.frozen_read != Some(written) {
+                self.frozen_read = Some(written);
+                let action = Action::Frozen {
+                    project: project.folder.clone(),
+                    cut: cut.clone(),
+                };
+                *lines = jobs::now(&action.args())
+                    .1
+                    .into_iter()
+                    .map(|(_, line)| line)
+                    .collect();
+            }
+            ui.add_space(8.0);
+            ui.strong(format!("What {cut} froze"));
+            for line in lines.iter() {
+                ui.monospace(line);
+            }
+        }
     }
 
     /// The project's file, in the editor. A cut's standing follows from
