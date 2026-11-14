@@ -70,6 +70,23 @@ assets-check:
 parity stage *args:
     env -u FONTCONFIG_FILE cargo run -q --release -p vidni-parity -- {{stage}} {{args}}
 
+# Every parity stage in turn, the encoder's own check, and the harness's test: about half an
+# hour (P3-VIDNI-07). The encoder is held to T2 and not to the reference's packets, since its
+# flags differ on purpose, so `encode-t2` stands for the encode stage.
+parity-all:
+    for stage in timeline narration cuts stills takes product; do just parity "$stage" || exit 1; done
+    just encode-t2
+    just parity-selftest
+
+# The reference is retired and stays as it is: fail if a file under reference/ differs from
+# the ones listed in golden/reference.sha256 (P3-VIDNI-07). `just reference-frozen update`
+# lists them again, for a change that is meant.
+reference-frozen mode="check":
+    #!/usr/bin/env bash
+    now="$(git ls-files -s reference | sha256sum | cut -d' ' -f1)"
+    if [ "{{mode}}" = update ]; then echo "$now" > golden/reference.sha256; echo "golden/reference.sha256: $now"; exit 0; fi
+    if [ "$now" = "$(cat golden/reference.sha256)" ]; then echo "reference/: unchanged since it was retired"; else echo "reference/ has changed since it was retired; it is read-only (just reference-frozen update, if the change is meant)" >&2; exit 1; fi
+
 # Show that the parity harness passes the reference itself and catches a perturbed output per stage.
 parity-selftest:
     env -u FONTCONFIG_FILE cargo run -q --release -p vidni-parity -- selftest
@@ -124,6 +141,11 @@ test-build:
 # builds the drafts instead of the final cuts, which need the creator's takes.
 repro example="nibli-syllogism" *args:
     cargo run -q --release -p vidni-cli -- repro examples/{{example}} {{args}}
+
+# Write docs/keys.md, the reference of every key in vidni.toml, again from the schema
+# (P8-VIDNI-01). `just keys check` fails when the page is out of date.
+keys mode="write":
+    python3 -I tools/keys.py {{mode}}
 
 # Write THIRD-PARTY-NOTICES.md again from what vidni pins: its crates, fonts, voices, tools and
 # models (P8-VIDNI-04). `just notices check` fails when the file is out of date.

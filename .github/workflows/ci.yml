@@ -41,6 +41,10 @@ jobs:
         env:
           VIDNI_NO_SANDBOX: "1"
         run: nix develop .#ci --command just example hello
+      - name: just reference-frozen
+        run: nix develop .#ci --command just reference-frozen
+      - name: just keys check
+        run: nix develop .#ci --command just keys check
       - name: just notices check
         run: nix develop .#ci --command just notices check
       - name: nix flake check

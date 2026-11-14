@@ -15,6 +15,16 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 
 **To try it:** [docs/quickstart.md](docs/quickstart.md) goes from a clone to a draft video on Linux.
 
+| Doc | What it is |
+|---|---|
+| [quickstart.md](docs/quickstart.md) | From a clone to your first draft, and the steps from there to a finished video |
+| [spec.md](docs/spec.md) | How a project file works, with every command |
+| [keys.md](docs/keys.md) | Every key of `vidni.toml`, generated from the schema |
+| [recording.md](docs/recording.md) | Recording your narration, and keeping takes consistent |
+| [platforms.md](docs/platforms.md) | What each platform takes, and what to check before uploading |
+| [determinism.md](docs/determinism.md) | What repeats, where, and how it was measured |
+| [faq.md](docs/faq.md) | Short answers |
+
 **Status:** being built, item by item, from [`TODO.md`](TODO.md). The decisions behind it are in [`DECISIONS.md`](DECISIONS.md). So far:
 
 - `vidni new` starts a project that renders as it is, from an outline when you have one.

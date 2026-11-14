@@ -1,6 +1,6 @@
 # nibli explainer video: the Syllogism walkthrough
 
-> **vidni's reference pipeline.** This Python and Node pipeline made the first vidni video. It moved here from the maintainer's workspace with its history (P1-VIDNI-03). It stays the reference implementation until the Rust port matches its golden outputs (`just golden`, `just parity`). Run every command below from this folder. The creator's takes live in [`../examples/nibli-syllogism/recordings/`](../examples/nibli-syllogism/), out of git.
+> **vidni's reference pipeline, retired (P3-VIDNI-07, 2026-11-14).** This Python and Node pipeline made the first vidni video. It moved here from the maintainer's workspace with its history (P1-VIDNI-03), and the Rust port now matches its golden outputs at every stage. Nothing in vidni runs it to make a video. It stays here, unchanged, as what `just golden`, `just parity` and `just test-reference` compare vidni with; `just reference-frozen` fails if a file of it changes. Run every command below from this folder. The creator's takes live in [`../examples/nibli-syllogism/takes/`](../examples/nibli-syllogism/), out of git; `vidni takes --cut long --link DIR` lays them out as the numbered files this pipeline reads.
 
 A five-minute narrated video of the live nibli playground. It covers:
 

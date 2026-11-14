@@ -947,3 +947,57 @@ fn a_backup_lists_the_assets_copies_them_twice_and_restores_them() {
         ".: deleted 0 files, 0.0 MB; takes, frozen captures and delivered files are never touched\n"
     );
 }
+
+#[test]
+fn nothing_vidni_ships_runs_python_or_node() {
+    // P3-VIDNI-07: the reference pipeline is retired. The crates that make
+    // a video start no interpreter and no script of the reference's; only
+    // the parity harness, a development tool, still runs the reference.
+    fn sources(dir: &Path, found: &mut Vec<PathBuf>) {
+        for entry in fs::read_dir(dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                sources(&path, found);
+            } else if path.extension().is_some_and(|e| e == "rs") {
+                found.push(path);
+            }
+        }
+    }
+    let crates = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+    let mut files = Vec::new();
+    for shipped in [
+        "vidni-core",
+        "vidni-media",
+        "vidni-record",
+        "vidni-cli",
+        "vidni-app",
+    ] {
+        sources(&crates.join(shipped).join("src"), &mut files);
+    }
+    assert!(files.len() > 30, "{} source files", files.len());
+    let started = [
+        "\"python",
+        "\"node\"",
+        "\"nodejs\"",
+        "\"npm\"",
+        "\"npx\"",
+        ".py\"",
+        ".mjs\"",
+        "build.sh",
+    ];
+    for file in files {
+        let text = fs::read_to_string(&file).unwrap();
+        for (n, line) in text.lines().enumerate() {
+            // A comment may name the reference; code may not start it.
+            let code = line.split("//").next().unwrap_or_default();
+            for word in started {
+                assert!(
+                    !code.contains(word),
+                    "{}:{}: {word} in {line:?}",
+                    file.display(),
+                    n + 1
+                );
+            }
+        }
+    }
+}
