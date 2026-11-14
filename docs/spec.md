@@ -479,7 +479,12 @@ draft = { union = ["draft"] }
 - **An SVG's text** is set in the fonts vidni pins ([Fonts](#fonts)), by the family the SVG names, and in no font of the system's. So the picture is the same on every machine.
 - **The picture is a capture** like any other: one for all the lines that show it, taken by `vidni draft` or `vidni capture` with no browser, frozen when its cut is ratified, and taken again when its file changes ([When a capture is out of date](#when-a-capture-is-out-of-date)).
 
-[`examples/images`](../examples/images) has an SVG diagram and a PNG chart.
+- **A Mermaid diagram** is an image scene too: `url = "flow.mmd"` names a file of Mermaid's text, and vidni has Mermaid's own program, `mmdc`, draw it as a PNG, `scale` times its size.
+  - It is drawn in the browser vidni pins, with the fonts vidni pins, in Mermaid's dark theme; `color_scheme = "light"` asks for the light one.
+  - A target's `rect` is in the diagram's own pixels, before the scale.
+  - `mmdc` is on the path in vidni's flake, and `VIDNI_MERMAID` names another. In a container, `VIDNI_NO_SANDBOX=1` is passed on to its browser.
+
+[`examples/images`](../examples/images) has an SVG diagram and a PNG chart, and [`examples/diagram`](../examples/diagram) a Mermaid one.
 
 ### Terminals
 

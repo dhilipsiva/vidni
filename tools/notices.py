@@ -33,6 +33,7 @@ TOOLS = [
     ("whisper-cpp", "whisper.cpp", "listens to takes for `vidni hear`"),
     ("curl", "curl", "downloads a voice for `vidni voices fetch`"),
     ("git", "git", "reads a code scene's file at a commit"),
+    ("mermaid-cli", "Mermaid CLI", "draws a Mermaid diagram for an image scene"),
 ]
 
 # The listening model, as flake.nix fetches it.

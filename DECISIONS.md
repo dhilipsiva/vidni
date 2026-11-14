@@ -482,3 +482,8 @@ Added as the items are built.
 - **Transparent page scenes stay** as overlays, for a strip nobody's template draws.
 - **The example was ratified, built and approved again** as `long-r6` and `vertical-r5`: an overlay is part of what a cut shows. Its sound is the same; its frames differ where an overlay shows.
 - **The parity harness turns the two overlays back into pages,** since the reference drew them from `cards/card.html`, which stays in the example for that. What it compares is still the reference's own frames.
+
+### T33. A Mermaid diagram is an image scene that Mermaid's program draws
+- **2026-11-14, P5-VIDNI-04.** `url = "x.mmd"` on an image scene has `mmdc` draw the diagram to a PNG, which is then a picture like any other: targets by rectangle, cameras, a capture that is frozen with its cut and taken again when the file changes.
+- **PNG, not SVG.** Mermaid's SVG holds its labels as HTML inside the SVG, which resvg doesn't draw. Its PNG comes from the same Chromium that vidni pins for web scenes, with the same fonts, and two drawings of one diagram are the same bytes.
+- **The pin is nixpkgs' `mermaid-cli`,** in the flake's shells and in what `nix run` starts. It isn't in the portable bundle: it brings Node with it, for a kind of scene few videos have. A bundle user names their own `mmdc` and takes the difference in pins.

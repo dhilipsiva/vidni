@@ -1060,9 +1060,11 @@ impl Rules {
     /// named by their rectangles, and cameras on them.
     fn image(&mut self, id: &str, s: &Scene, dir: Option<&Path>, page_only: &[(&str, bool)]) {
         let at = |key: &str| path!["scenes", id, key];
+        // A Mermaid diagram is drawn dark or light; a picture is as it is.
+        let mermaid = s.url.to_lowercase().ends_with(".mmd");
         let not_for_images = [
             ("viewport", s.viewport.is_some()),
-            ("color_scheme", s.color_scheme.is_some()),
+            ("color_scheme", s.color_scheme.is_some() && !mermaid),
             ("setup", !s.setup.is_empty()),
         ];
         for (key, set) in not_for_images.iter().chain(page_only) {
@@ -1077,8 +1079,14 @@ impl Rules {
                 at("url"),
                 "an image scene shows a file in the project folder",
             );
-        } else if !(lower.ends_with(".png") || lower.ends_with(".svg")) {
-            self.add(at("url"), "an image scene shows a PNG or an SVG file");
+        } else if ![".png", ".svg", ".mmd"]
+            .iter()
+            .any(|end| lower.ends_with(end))
+        {
+            self.add(
+                at("url"),
+                "an image scene shows a PNG, an SVG or a Mermaid (.mmd) file",
+            );
         } else {
             self.project_file(at("url"), &s.url, dir);
         }

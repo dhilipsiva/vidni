@@ -834,3 +834,57 @@ fn a_project_page_that_loads_a_file_from_outside_the_project_is_refused() {
     );
     assert_eq!(left_behind(&project_dir), 0);
 }
+
+#[test]
+#[ignore = "needs mmdc and Chromium, as the dev shell has them: just test-capture"]
+fn a_mermaid_diagram_is_drawn_the_same_each_time_at_its_scale() {
+    use vidni_core::capture as keys;
+    let dir = tempfile::tempdir().unwrap();
+    let text = "schema = 1\n\n[meta]\ntitle = \"A diagram\"\ndefault_scene = \"flow\"\n\n\
+                [[cuts]]\nid = \"long\"\naspect = \"16:9\"\n\n[sections.main]\n\n\
+                [[lines]]\nid = \"main-1\"\nsection = \"main\"\nshow = \"A diagram.\"\n\n\
+                [scenes.flow]\nkind = \"image\"\nurl = \"flow.mmd\"\nscale = 2\n\n\
+                [scenes.flow.targets]\nfirst = { rect = [0, 0, 100, 50] }\n";
+    std::fs::write(dir.path().join("vidni.toml"), text).unwrap();
+    std::fs::write(
+        dir.path().join("flow.mmd"),
+        "flowchart LR\n  a[One] --> b[Two]\n",
+    )
+    .unwrap();
+    let project = vidni_core::validate::check(text, Some(dir.path())).unwrap();
+    let cut = &project.cuts[0];
+    let wanted = keys::for_cut(&project, cut);
+    assert_eq!(wanted.len(), 1);
+    let take = || {
+        let _ = std::fs::remove_dir_all(dir.path().join("build"));
+        vidni_media::capture::capture(&project, dir.path(), &wanted).unwrap();
+        std::fs::read(keys::path(dir.path(), &wanted[0].key)).unwrap()
+    };
+    let (first, second) = (take(), take());
+    assert_eq!(first, second, "two drawings of one diagram differ");
+    // Drawn at twice its size, and measured at its own.
+    let image = Image::load_png(&keys::path(dir.path(), &wanted[0].key)).unwrap();
+    let frames: vidni_media::capture::Frames = serde_json::from_str(
+        &std::fs::read_to_string(keys::frames_path(dir.path(), &wanted[0].key)).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(frames.scale, 2);
+    assert_eq!(
+        (image.width, image.height),
+        (frames.viewport[0] * 2, frames.viewport[1] * 2)
+    );
+    assert_eq!(frames.targets["first"], [[0.0, 0.0, 100.0, 50.0]]);
+    // The diagram changes: the capture is of another file, so it is stale.
+    std::fs::write(
+        dir.path().join("flow.mmd"),
+        "flowchart LR\n  a[One] --> b[Two] --> c[Three]\n",
+    )
+    .unwrap();
+    assert_ne!(take(), first);
+    // A diagram Mermaid can't read is said, and nothing is taken.
+    std::fs::write(dir.path().join("flow.mmd"), "this is no diagram\n").unwrap();
+    let _ = std::fs::remove_dir_all(dir.path().join("build"));
+    let why = vidni_media::capture::capture(&project, dir.path(), &wanted).unwrap_err();
+    assert!(why.contains("flow.mmd: Mermaid couldn't draw it"), "{why}");
+    assert!(!keys::path(dir.path(), &wanted[0].key).exists());
+}

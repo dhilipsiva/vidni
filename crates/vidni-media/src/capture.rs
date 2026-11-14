@@ -414,6 +414,16 @@ fn picture(dir: &Path, scene: &Scene, key: &str) -> Result<(), String> {
         resvg::render(&tree, grown, &mut pixmap.as_mut());
         let png = pixmap.encode_png().map_err(|e| format!("{name}: {e}"))?;
         (png, [w as u32, h as u32], scale)
+    } else if name.to_lowercase().ends_with(".mmd") {
+        let scale = scene.scale.unwrap_or(1).max(1);
+        let png = mermaid(&file, scene, scale).map_err(|e| format!("{name}: {e}"))?;
+        let aside = keys::path(dir, key).with_extension("mmd.png");
+        write(&aside, &png)?;
+        let image = crate::compose::image::Image::load_png(&aside);
+        let _ = fs::remove_file(&aside);
+        let image = image?;
+        // The diagram's own size: what it is drawn at, without the scale.
+        (png, [image.width / scale, image.height / scale], scale)
     } else {
         let image = crate::compose::image::Image::load_png(&file)?;
         (bytes, [image.width, image.height], 1)
@@ -437,6 +447,52 @@ fn picture(dir: &Path, scene: &Scene, key: &str) -> Result<(), String> {
         keys::files_json(&files).as_bytes(),
     )?;
     write(&keys::path(dir, key), &png)
+}
+
+/// Draws the Mermaid diagram in `file` as a PNG, `scale` times its size,
+/// with Mermaid's own program: `mmdc`, or the one `VIDNI_MERMAID` names.
+/// It draws in a browser, so the diagram's text is set in the fonts that
+/// `FONTCONFIG_FILE` names, as a web scene's is.
+fn mermaid(file: &Path, scene: &Scene, scale: u32) -> Result<Vec<u8>, String> {
+    use vidni_core::project::ColorScheme;
+    let command = std::env::var_os("VIDNI_MERMAID")
+        .filter(|v| !v.is_empty())
+        .unwrap_or_else(|| "mmdc".into());
+    let work = tempfile::tempdir().map_err(|e| e.to_string())?;
+    let out = work.path().join("diagram.png");
+    // Dark, on the ground a window of text has; or light, on white.
+    let (theme, ground) = match scene.color_scheme {
+        Some(ColorScheme::Light) => ("default", "#ffffff"),
+        _ => ("dark", "#14161c"),
+    };
+    let mut mmdc = std::process::Command::new(&command);
+    mmdc.arg("--input")
+        .arg(file)
+        .arg("--output")
+        .arg(&out)
+        .args(["--theme", theme, "--backgroundColor", ground])
+        .args(["--scale", &scale.to_string(), "--quiet"]);
+    // Where Chromium can't make its sandbox, it is told to do without.
+    if std::env::var_os("VIDNI_NO_SANDBOX").is_some_and(|v| !v.is_empty()) {
+        let config = work.path().join("puppeteer.json");
+        fs::write(&config, r#"{"args":["--no-sandbox"]}"#).map_err(|e| e.to_string())?;
+        mmdc.arg("--puppeteerConfigFile").arg(&config);
+    }
+    let done = mmdc.output().map_err(|e| {
+        format!(
+            "{}: {e}; it is Mermaid's command-line program, and VIDNI_MERMAID can name it",
+            Path::new(&command).display()
+        )
+    })?;
+    if !done.status.success() || !out.is_file() {
+        let said = String::from_utf8_lossy(&done.stderr);
+        let said = said.lines().filter(|l| !l.trim().is_empty()).take(4);
+        return Err(format!(
+            "Mermaid couldn't draw it: {}",
+            said.collect::<Vec<_>>().join(" ")
+        ));
+    }
+    fs::read(&out).map_err(|e| format!("{}: {e}", out.display()))
 }
 
 /// Takes a terminal or code scene's capture: the window of text as a

@@ -157,6 +157,8 @@
         pkgs.whisper-cpp
         pkgs.espeak-ng
         pkgs.curl
+        # Draws a Mermaid diagram, in the Chromium above.
+        pkgs.mermaid-cli
       ];
 
       vidni = pkgs.rustPlatform.buildRustPackage {
@@ -472,6 +474,7 @@
             pkgs.chromium
             pkgs.whisper-cpp
             piper
+            pkgs.mermaid-cli
           ];
           nativeBuildInputs = [ pkgs.pkg-config ];
           buildInputs = soundLibs;

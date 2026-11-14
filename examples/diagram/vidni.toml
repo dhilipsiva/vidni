@@ -1,0 +1,74 @@
+#:schema ../../docs/vidni.schema.json
+# A Mermaid diagram as a scene: the diagram is text, and vidni has
+# Mermaid's own program draw it, in the pinned browser and fonts.
+
+schema = 1
+
+[meta]
+title = "A diagram from text"
+subtitle = "an example"
+language = "en"
+default_scene = "gates"
+
+[voice]
+draft = "piper:en_US-joe-medium"
+respell = [{ text = "vidni", say = "vid nee" }]
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[[cuts]]
+id = "vertical"
+aspect = "9:16"
+
+[sections.main]
+label = "a diagram"
+
+[[lines]]
+id = "open-1"
+section = "main"
+show = "A scene can be a diagram, written as text."
+scene = "open"
+
+[[lines]]
+id = "gates-1"
+section = "main"
+show = "This one is a Mermaid file: the steps from a draft to a release."
+
+[[lines]]
+id = "gates-2"
+section = "main"
+show = "The camera can move in on a part of it."
+camera = "start"
+
+[[lines]]
+id = "end-1"
+section = "main"
+show = "Change the text, and the picture follows."
+scene = "end"
+
+[scenes.open]
+kind = "card"
+template = "title"
+title = "A diagram from text"
+subtitle = "a Mermaid scene"
+
+[scenes.gates]
+kind = "image"
+# A Mermaid file is drawn by Mermaid's program, at twice its size.
+url = "gates.mmd"
+scale = 2
+
+# A part of the diagram, in the diagram's own pixels.
+[scenes.gates.targets]
+start = { rect = [0, 0, 410, 136] }
+
+[scenes.gates.cameras]
+start = { union = ["start"] }
+
+[scenes.end]
+kind = "card"
+template = "end"
+title = "That is all"
+subtitle = "examples/diagram"

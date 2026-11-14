@@ -21,6 +21,7 @@ vidni runs these as separate programs. None of them is part of the `vidni` binar
 | whisper.cpp | 1.9.5 | MIT | listens to takes for `vidni hear` | https://github.com/ggerganov/whisper.cpp |
 | curl | 8.22.0 | curl | downloads a voice for `vidni voices fetch` | https://curl.se/ |
 | git | 2.56.0 | GPL-2.0-only | reads a code scene's file at a commit | https://git-scm.com/ |
+| Mermaid CLI | 12.0.0 | MIT | draws a Mermaid diagram for an image scene | https://github.com/mermaid-js/mermaid-cli |
 
 ### The GPL programs, and their source
 

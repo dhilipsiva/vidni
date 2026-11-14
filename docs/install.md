@@ -66,6 +66,7 @@ From here on, [the quickstart](quickstart.md#5-make-it-yours) applies as it is.
 
 - **The desktop app.** It opens its window with the system's graphics libraries, which a bundle can't carry for every system. `nix run github:dhilipsiva/vidni#app` has it.
 - **A sure microphone.** `vidni record` in the bundle finds sound devices through the bundle's own ALSA library and its own configuration, without your system's PipeWire or PulseAudio plugins. `ALSA_CONFIG_PATH` names another configuration. `VIDNI_MIC` names a device when the default one isn't found. Recording through the bundle hasn't been tried on real hardware yet.
+- **Mermaid and git.** A Mermaid diagram needs `mmdc`, which the bundle doesn't carry (`VIDNI_MERMAID` names yours), and a code scene at a commit uses the system's git.
 - **Chromium's sandbox, in some places.** In a container, as root, or on a system that forbids unprivileged user namespaces (Ubuntu 24.04 does by default), Chromium can't make its sandbox. Set `VIDNI_NO_SANDBOX=1` for the commands that capture, and capture only pages you trust that way.
 - **`--offline` and `vidni repro`** need unprivileged user namespaces too.
 
