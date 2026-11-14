@@ -468,14 +468,15 @@
         };
         # CI's shell: the Rust toolchain and just, plus a headless ffmpeg for the
         # parity and build tests, Chromium for the capture tests, whisper for
-        # the listening tests and Piper for the build's, without the other
-        # media tools.
+        # the listening tests, Piper for the build's and eSpeak NG for the
+        # dubbed cut's, without the other media tools.
         ci = pkgs.mkShell {
           packages = rustTools ++ [
             pkgs.ffmpeg-headless
             pkgs.chromium
             pkgs.whisper-cpp
             piper
+            pkgs.espeak-ng
             pkgs.mermaid-cli
           ];
           nativeBuildInputs = [ pkgs.pkg-config ];
