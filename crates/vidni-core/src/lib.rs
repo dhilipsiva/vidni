@@ -5,6 +5,7 @@
 //! Everything here is deterministic and does no media I/O. See `TODO.md`,
 //! milestone P2.
 
+pub mod assets;
 pub mod capture;
 pub mod edit;
 pub mod fmt;

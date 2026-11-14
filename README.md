@@ -25,6 +25,7 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 - `vidni draft` renders each cut in the draft voice, to watch before recording. Drafted again with nothing changed, it renders nothing.
 - `vidni ratify` and `vidni status` freeze cuts.
 - `vidni final` builds each ratified cut from your takes, `vidni approve` records it as a release, and `vidni repro` checks that a build repeats.
+- `vidni backup` copies the takes and frozen captures to two places and lists them in `assets.lock`; `vidni verify` checks them, `vidni restore` brings them back, and `vidni gc` deletes what can be made again.
 
 The nibli example goes from draft to approved through these commands ([docs/spec.md](docs/spec.md#from-draft-to-release)). The desktop app isn't built yet.
 

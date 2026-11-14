@@ -20,6 +20,7 @@ macro_rules! say {
     }};
 }
 
+mod backup;
 mod build;
 mod offline;
 mod record;
@@ -215,6 +216,46 @@ enum Command {
         #[arg(long = "cut", value_name = "ID")]
         cuts: Vec<String>,
     },
+    /// Back up the project's assets, its takes and the captures its
+    /// ratified cuts froze, to two places, and list them in assets.lock.
+    Backup {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// A place to back up to: a folder on another disk, or one mounted
+        /// from another machine. Give it twice. Default: $VIDNI_BACKUP.
+        #[arg(long = "to", value_name = "DIR")]
+        to: Vec<PathBuf>,
+    },
+    /// Check the project's assets against assets.lock, and each backup too.
+    Verify {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// A backup to check as well; repeat for more. Default: $VIDNI_BACKUP.
+        #[arg(long = "to", value_name = "DIR")]
+        to: Vec<PathBuf>,
+    },
+    /// Bring back the assets that are missing, from a backup.
+    Restore {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// A backup to restore from; repeat for more. Default: $VIDNI_BACKUP.
+        #[arg(long = "from", value_name = "DIR")]
+        from: Vec<PathBuf>,
+    },
+    /// Delete what can be made again: draft clips, drafts, final builds,
+    /// and captures no cut shows. Takes, frozen captures and delivered
+    /// files are never touched.
+    Gc {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// Say what would be deleted, and delete nothing.
+        #[arg(long)]
+        dry_run: bool,
+    },
     /// Check that a build repeats: build the cuts twice from copies of the
     /// project, in clean environments, at two paths and on two sets of
     /// cores, and compare every hash.
@@ -319,6 +360,10 @@ fn main() -> ExitCode {
             path, cuts, again, ..
         } => build::finish(&path, &cuts, again),
         Command::Approve { path, cuts } => build::approve(&path, &cuts),
+        Command::Backup { path, to } => backup::backup(&path, &to),
+        Command::Verify { path, to } => backup::verify(&path, &to),
+        Command::Restore { path, from } => backup::restore(&path, &from),
+        Command::Gc { path, dry_run } => backup::gc(&path, dry_run),
         Command::Repro {
             path,
             cuts,

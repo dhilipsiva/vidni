@@ -257,3 +257,14 @@ Added as the items are built.
   - **Reviewing a section** is `s`, which plays the section's kept takes one after another, and `--section`, which goes through one section's lines.
   - **The tests run it in a pseudo-terminal** with a made-up input (`VIDNI_RECORD_INPUT`) and ALSA's null output, so they hear nobody and make no sound. The listening check's part is tested with a recording as the input, in `just test-hear`.
   - **Playback** stretches a take to the output's rate by straight lines between samples when the output doesn't offer the take's rate. It is for listening, and no output is made from it.
+
+### T11. What a backup holds, and where it goes
+- **2026-11-14, P4-VIDNI-05.** D4 rules that assets are listed in `assets.lock` and backed up to two places, one of them off the machine. `vidni backup`, `verify`, `restore` and `gc` do that.
+- **A place is a folder.** vidni copies files and checks hashes; it doesn't speak to another machine itself. The place off the machine is a folder mounted from it, or a disk that is carried away. So vidni needs no network tool and no credentials, and the same code is tested on two folders.
+  - It can't tell where a folder really is. It refuses fewer than two places, refuses a place that isn't there (so that an unmounted folder isn't quietly made on this disk), and warns when every place is on the project's disk.
+  - The places come from `--to` or `$VIDNI_BACKUP`, not from `vidni.toml`: they are one machine's paths, and the project file is shared.
+- **The assets are the takes and what ratified cuts froze.** A capture of a cut that isn't ratified can be taken again, so it isn't one. `assets.lock` stays in `sha256sum`'s format, sorted by the bytes of the path, so that the list doesn't depend on a locale.
+- **A backup also archives what each cut's newest release delivered,** under `releases/<tag>/`. A cut's file is promised to repeat on one machine only (T3), so the delivered file itself is kept. It is archived only when `out/` holds the very file the release records.
+- **A backup only gains files,** and a restore only fills in what is missing. A file that is there and differs from the list is left alone: it may be a take recorded since.
+- **`gc` deletes by kind, and the kinds are narrow:** draft clips, drafts, final builds, captures that no cut shows and none froze, and files written aside and never moved in. A capture that an unratified cut shows is kept, though it could be taken again: the page may have changed.
+- **Checked on a copy of the nibli example,** not on the maintainer's own files: backed up to two folders (269 assets and 6 delivered files each), with `gc` deleting 413.5 MB of draft clips, drafts and final builds; then the takes, `build/` and `out/` wiped. `vidni restore` brought back 275 files, and `vidni final` built both cuts again in four minutes, with the frames, packets and file hashes that `release.json` holds for `long-r1` and `vertical-r1`.

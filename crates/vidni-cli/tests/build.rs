@@ -366,6 +366,92 @@ fn a_project_goes_from_draft_to_approved_and_its_builds_repeat() {
         "long   ratified; approved as long-r1\nshort  ratified; approved as short-r1\n"
     );
 
+    // P4-VIDNI-05: the assets are backed up to two places. With what can
+    // be made again deleted, and then the assets wiped too, a restore and
+    // a final build give the very cuts that were approved.
+    ok(dir, &["final"]);
+    let places = tempfile::tempdir().unwrap();
+    let (near, far) = (places.path().join("disk"), places.path().join("elsewhere"));
+    for place in [&near, &far] {
+        fs::create_dir(place).unwrap();
+    }
+    let to = [
+        "--to",
+        near.to_str().unwrap(),
+        "--to",
+        far.to_str().unwrap(),
+    ];
+    let backed = ok(dir, &[&["backup"][..], &to[..]].concat());
+    // Three takes, and the four card renders the cuts froze, each with
+    // the record of its file; and what the two releases delivered.
+    assert!(
+        backed.contains("assets.lock: 11 assets, written afresh\n"),
+        "{backed}"
+    );
+    let name = dir.file_name().unwrap();
+    assert!(
+        backed.contains(&format!(
+            "{}: 11 assets, 11 copied; 7 delivered files, 7 copied\n",
+            far.join(name).display()
+        )),
+        "{backed}"
+    );
+    let verified = ok(dir, &[&["verify"][..], &to[..]].concat());
+    assert!(
+        verified.contains("11 of 11 assets as listed; holds long-r1 and short-r1\n"),
+        "{verified}"
+    );
+    // What can be made again goes, and nothing else.
+    let would = ok(dir, &["gc", "--dry-run"]);
+    assert!(would.contains("would delete 3 draft clips, "), "{would}");
+    assert!(dir.join("build/voice").is_dir());
+    let deleted = ok(dir, &["gc"]);
+    assert!(deleted.contains("deleted 3 draft clips, "), "{deleted}");
+    assert!(deleted.contains(" files of final builds, "), "{deleted}");
+    for gone in ["build/voice", "build/draft", "build/final"] {
+        assert!(!dir.join(gone).exists(), "{gone}");
+    }
+    ok(dir, &["verify"]);
+    assert_eq!(names(&dir.join("out")).len(), 7);
+    // Then the assets themselves, and what was delivered.
+    for wiped in ["takes", "build", "out"] {
+        fs::remove_dir_all(dir.join(wiped)).unwrap();
+    }
+    let (code, _, missing) = vidni(dir, &["verify"]);
+    assert_eq!(code, Some(1), "{missing}");
+    assert!(missing.contains("vidni: missing: "), "{missing}");
+    assert!(
+        refused(dir, &["final", "--cut", "short"]).contains("went missing"),
+        "a cut whose frozen captures are gone can't be built"
+    );
+    // One backup is enough to restore from; the other has lost a take.
+    let lost = far.join(name).join("takes");
+    fs::remove_dir_all(&lost).unwrap();
+    let from = [
+        "--from",
+        far.to_str().unwrap(),
+        "--from",
+        near.to_str().unwrap(),
+    ];
+    let restored = ok(dir, &[&["restore"][..], &from[..]].concat());
+    assert!(
+        restored.contains(": 18 files restored, 0 there already\n"),
+        "{restored}"
+    );
+    ok(dir, &["verify"]);
+    // Built again from what was restored, each cut is the release that
+    // was approved: the same T1 and T2 hashes as release.json holds.
+    let rebuilt = ok(dir, &["final"]);
+    assert!(rebuilt.contains("build/final/long.mp4: "), "{rebuilt}");
+    for cut in ["long", "short"] {
+        let already = ok(dir, &["approve", "--cut", cut]);
+        assert!(
+            already.starts_with(&format!("{cut}: already approved as {cut}-r1, on ")),
+            "{already}"
+        );
+    }
+    assert_eq!(vidni_core::release::read(dir).unwrap(), releases);
+
     // New words for a line: the cuts that say it can't be built or
     // approved until they are ratified again, and a take is recorded.
     let reworded = PROJECT.replace("Then a take is recorded", "Then every take is recorded");

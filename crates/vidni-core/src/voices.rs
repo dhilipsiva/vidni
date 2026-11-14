@@ -227,10 +227,13 @@ pub fn candidate_seeds(voice_seed: u64, line_id: &str, key: &str, n: usize) -> V
         .collect()
 }
 
+/// Where draft clips are cached, relative to the project folder.
+pub const CACHE: &str = "build/voice";
+
 /// Where a line's draft clip is cached: `build/voice/<line-id>/<key>-<seed>.wav`.
 pub fn clip_path(project_dir: &Path, line_id: &str, key: &str, seed: u32) -> PathBuf {
     project_dir
-        .join("build/voice")
+        .join(CACHE)
         .join(line_id)
         .join(format!("{key}-{seed}.wav"))
 }

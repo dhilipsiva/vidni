@@ -730,3 +730,151 @@ fn record_says_what_it_cant_do_before_it_takes_the_terminal() {
     );
     assert!(!dir.join("takes").exists());
 }
+
+#[test]
+fn a_backup_lists_the_assets_copies_them_twice_and_restores_them() {
+    let work = tempfile::tempdir().unwrap();
+    assert_eq!(vidni_in(work.path(), &["new", "demo"]).0, Some(0));
+    let dir = work.path().join("demo");
+    // Takes where `vidni takes` says they go, a raw take, and what vidni
+    // could make again.
+    let (_, takes, _) = vidni_in(&dir, &["takes"]);
+    for line in takes.lines().take(2) {
+        let take = dir.join(line.split_whitespace().nth(2).unwrap());
+        fs::create_dir_all(take.parent().unwrap().join("raw")).unwrap();
+        fs::write(&take, line.as_bytes()).unwrap();
+        fs::write(take.parent().unwrap().join("raw/abcd-1.wav"), b"raw").unwrap();
+    }
+    fs::create_dir_all(dir.join("build/draft")).unwrap();
+    fs::write(dir.join("build/draft/long.mp4"), b"a draft").unwrap();
+
+    // A backup goes to two places, and each must be there already.
+    let (near, far) = (work.path().join("disk"), work.path().join("elsewhere"));
+    let (near, far) = (near.to_str().unwrap(), far.to_str().unwrap());
+    let (code, _, stderr) = vidni_in(&dir, &["backup", "--to", near]);
+    assert_eq!(code, Some(1));
+    assert!(
+        stderr.starts_with("vidni: a backup goes to two places, "),
+        "{stderr}"
+    );
+    let (code, _, stderr) = vidni_in(&dir, &["backup", "--to", near, "--to", near]);
+    assert_eq!(code, Some(1), "{stderr}");
+    fs::create_dir(near).unwrap();
+    let (code, _, stderr) = vidni_in(&dir, &["backup", "--to", near, "--to", far]);
+    assert_eq!(code, Some(2));
+    assert_eq!(
+        stderr,
+        format!("vidni: {far} isn't there: is the disk plugged in, or the folder mounted?\n")
+    );
+    assert!(!dir.join("assets.lock").exists() && !Path::new(far).exists());
+    // Nothing is listed yet, so there is nothing to check against.
+    let (code, _, stderr) = vidni_in(&dir, &["verify"]);
+    assert_eq!(code, Some(2));
+    assert!(
+        stderr.ends_with("assets.lock lists no asset; `vidni backup` writes it\n"),
+        "{stderr}"
+    );
+
+    fs::create_dir(far).unwrap();
+    let (code, stdout, stderr) = vidni_in(&dir, &["backup", "--to", near, "--to", far]);
+    assert_eq!(code, Some(0), "{stderr}");
+    assert_eq!(
+        stdout,
+        format!(
+            "./assets.lock: 4 assets, written afresh\n\
+             {near}/demo: 4 assets, 4 copied; 0 delivered files, 0 copied\n\
+             {far}/demo: 4 assets, 4 copied; 0 delivered files, 0 copied\n"
+        )
+    );
+    // Here both places are on the project's disk, which is said.
+    assert!(
+        stderr.contains("warning: every place is on the disk the project is on"),
+        "{stderr}"
+    );
+    // The list is one sha256sum can check.
+    let lock = fs::read_to_string(dir.join("assets.lock")).unwrap();
+    assert_eq!(lock.lines().count(), 4);
+    assert!(
+        lock.lines().all(|l| l.len() > 66 && &l[64..66] == "  "),
+        "{lock}"
+    );
+    // The places can come from the environment instead.
+    let backup = format!("{near}:{far}");
+    let with_places = |args: &[&str]| {
+        let out = Command::new(env!("CARGO_BIN_EXE_vidni"))
+            .args(args)
+            .current_dir(&dir)
+            .env("VIDNI_BACKUP", &backup)
+            .output()
+            .unwrap();
+        (
+            out.status.code(),
+            String::from_utf8_lossy(&out.stdout).into_owned(),
+            String::from_utf8_lossy(&out.stderr).into_owned(),
+        )
+    };
+    let (code, stdout, _) = with_places(&["verify"]);
+    assert_eq!(code, Some(0));
+    assert_eq!(
+        stdout,
+        format!(
+            ".: 4 of 4 assets as listed\n\
+             {near}/demo: 4 of 4 assets as listed\n\
+             {far}/demo: 4 of 4 assets as listed\n"
+        )
+    );
+
+    // A take is lost, and another is recorded since the backup.
+    let lost = lock.lines().last().unwrap()[66..].to_string();
+    fs::remove_file(dir.join(&lost)).unwrap();
+    fs::write(
+        dir.join("takes/intro-1/raw/abcd-2.wav"),
+        b"a newer raw take",
+    )
+    .unwrap();
+    let (code, stdout, stderr) = with_places(&["verify"]);
+    assert_eq!(code, Some(1));
+    assert_eq!(stderr, format!("vidni: missing: ./{lost}\n"));
+    assert!(
+        stdout.starts_with(".: 3 of 4 assets as listed\n"),
+        "{stdout}"
+    );
+    assert!(
+        stdout.contains(
+            ".: 1 asset isn't listed yet (the first: takes/intro-1/raw/abcd-2.wav); \
+             `vidni backup` lists and copies them\n"
+        ),
+        "{stdout}"
+    );
+    // Restored, it is back; restoring needs to be told from where.
+    let (code, _, stderr) = vidni_in(&dir, &["restore"]);
+    assert_eq!(code, Some(1));
+    assert!(
+        stderr.starts_with("vidni: name the backup to restore from"),
+        "{stderr}"
+    );
+    let (code, stdout, stderr) = vidni_in(&dir, &["restore", "--from", far]);
+    assert_eq!(code, Some(0), "{stderr}");
+    assert_eq!(stdout, ".: 1 file restored, 3 there already\n");
+    assert!(dir.join(&lost).is_file());
+
+    // gc says what it would delete, then deletes it: the draft, and no take.
+    let (code, stdout, _) = vidni_in(&dir, &["gc", "--dry-run"]);
+    assert_eq!(code, Some(0));
+    assert_eq!(
+        stdout,
+        "would delete 1 file of drafts, 0.0 MB (`vidni draft` builds them again)\n\
+         .: would delete 1 file, 0.0 MB; takes, frozen captures and delivered files are never touched\n"
+    );
+    assert!(dir.join("build/draft/long.mp4").is_file());
+    let (code, stdout, _) = vidni_in(&dir, &["gc"]);
+    assert_eq!(code, Some(0));
+    assert!(stdout.starts_with("deleted 1 file of drafts, "), "{stdout}");
+    assert!(!dir.join("build").exists(), "the emptied folders go too");
+    assert_eq!(with_places(&["verify"]).0, Some(0));
+    let (_, stdout, _) = vidni_in(&dir, &["gc"]);
+    assert_eq!(
+        stdout,
+        ".: deleted 0 files, 0.0 MB; takes, frozen captures and delivered files are never touched\n"
+    );
+}

@@ -35,10 +35,11 @@ just assets-check   # or: cd examples/nibli-syllogism && sha256sum -c assets.loc
 
 Without the takes, only the synthetic variant can be rebuilt. `just golden` needs them too, because the creator's voice is one of the golden variants. It lays them out for the reference pipeline with `vidni takes --link`.
 
-After a retake or a new capture, refresh the lock:
+After a retake or a new capture, back them up, which also writes the list afresh:
 
 ```sh
-cd examples/nibli-syllogism && find takes build/captures -type f -print0 | sort -z | xargs -0 sha256sum > assets.lock
+vidni backup examples/nibli-syllogism --to /mnt/other-disk/vidni --to /mnt/nas/vidni
+vidni verify examples/nibli-syllogism   # the same check as assets-check, by vidni
 ```
 
 ## Captures

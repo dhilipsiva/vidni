@@ -506,8 +506,9 @@ vidni.toml      the project                             committed
 voice.lock      the draft voice's kept seeds            committed
 ratified.lock   the ratified cuts                       committed
 release.json    the approved releases                   committed
-takes/          your takes                              out of git, backed up (D4)
-out/            the final cuts, as delivered            out of git
+assets.lock     the takes and frozen captures, by hash  committed
+takes/          your takes                              out of git, backed up
+out/            the final cuts, as delivered            out of git, archived with a backup
 build/          what vidni makes                        out of git
   resolved.json   the project with every default filled in
   voice/          the draft voice's clips
@@ -517,7 +518,7 @@ build/          what vidni makes                        out of git
   final/          each cut's final build, before it is delivered
 ```
 
-Everything in `build/` can be made again, except the captures of a ratified cut. A page on the web may have changed since, so those are frozen: keep them with your takes.
+Everything in `build/` can be made again, except the captures of a ratified cut. A page on the web may have changed since, so those are frozen: they are assets, as your takes are ([Assets and backups](#assets-and-backups)).
 
 ### Drafting: `vidni draft`
 
@@ -617,6 +618,26 @@ Interrupted, it ends both builds and removes its copies. It needs `taskset`, fro
 - Nothing can be connected to. A name can still be looked up where the host's resolver answers through a socket in the file system.
 
 The command checks that it has no route to the network before it does anything else. It needs `unshare`, from util-linux, and a kernel that lets a user make namespaces. It runs on Linux only.
+
+### Assets and backups
+
+The assets are what nothing can make again: every take under `takes/` (kept takes, raw takes and room tone), and every capture file a ratified cut froze. They are large and stay out of git. `assets.lock`, which is committed, lists each with its SHA-256, one to a line as `sha256sum` writes them, so `sha256sum -c assets.lock` checks them too.
+
+| Command | What it does |
+|---|---|
+| `vidni backup --to DIR --to DIR` | Lists the assets in `assets.lock`, and copies them to each place |
+| `vidni verify [--to DIR]…` | Checks the assets in the project folder against `assets.lock`, and each backup named |
+| `vidni restore --from DIR` | Copies back the assets that are missing |
+| `vidni gc [--dry-run]` | Deletes what can be made again |
+
+- **A backup goes to two places,** one of them off the machine: another disk, or a folder mounted from another machine. `vidni backup` refuses fewer, and warns when every place is on the disk the project is on. A place must be there already: a folder that isn't is a disk that isn't plugged in, and vidni doesn't make it. `$VIDNI_BACKUP` names the places, separated by `:`, when no `--to` or `--from` does.
+- **In each place** the backup is a folder named as the project's folder is. It holds the assets at their paths, a copy of `assets.lock`, and under `releases/<tag>/` the files each cut's newest release delivered, when `out/` still holds them. Those are archived because a cut's file isn't promised to come out the same on another machine ([`determinism.md`](determinism.md), T3).
+- **A backup only gains files.** Each copy is checked against its hash before it stands for the file. Nothing in a backup is deleted, so a take that was replaced is still there.
+- **`vidni restore`** copies back each listed file that is missing, from the first place that holds it as listed, and the newest releases' delivered files into `out/`. A file that is there and holds something else is left as it is, and reported: it may be a take recorded since the backup. A project that has lost `assets.lock` takes a backup's.
+- **`vidni verify`** exits with 1 when a listed file is missing or changed, here or in a backup. Assets that aren't listed yet are named, and aren't a fault.
+- **`vidni gc`** deletes the draft voice's clips, the drafts, the final builds in `build/final/`, captures that no cut shows and no ratified cut froze, and files a session left behind. It never touches a take, a frozen capture, a capture a cut shows now, or `out/`.
+
+After the assets are wiped, `vidni restore` and `vidni final` give the cuts that were approved, with the hashes `release.json` holds.
 
 ### Exit codes
 
