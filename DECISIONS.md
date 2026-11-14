@@ -456,3 +456,11 @@ Added as the items are built.
   - the small archive kept the store's hard links, which differ between machines;
   - two runs at once shared a folder; set-user-ID bits would have been unpacked;
   - the test never downloaded the tools (it does now, from a `file://` address that stands in for the release, through `--mirror`), and several of its checks couldn't fail.
+
+### T30. A release is what Nix builds from a tag
+- **2026-11-14, P8-VIDNI-05.** The release's files are the flake's `bundle` output and their checksums. Nothing in them comes from the machine or the moment: the archives are sorted, with one time and one owner, read through hard links, and compressed on one thread; `SOURCES.txt` names the commit, which a clean tree fixes. `just release` refuses a tree with uncommitted changes, since Nix would then build something no commit names.
+- **Reproducible is tested by building twice,** with Nix's own `--rebuild`, which builds a derivation again and fails if the result differs. vidni's Rust build, the tools' archive and the bundle each passed. It is one machine's evidence; a second machine's is wanted before the claim is made without that note.
+- **Signatures are attestations (R5),** made by the release workflow from `SHA256SUMS`, so they exist only for what that workflow built. There is no maintainer's key to keep, lose or rotate.
+- **The workflow drafts; a person publishes (R4).** It runs on a `v<version>` tag, checks that the tag is the version in `Cargo.toml`, and leaves a draft release with the changelog's section as its text.
+- **The first release is 0.1.0, with everything built so far.** The TODO's "v0.1" and "v0.2" were lines of work; neither was released by itself.
+- **What a version promises** is in `docs/releasing.md`: the project file, the commands and the files vidni reads back. The bytes of a video are promised within a version, not across versions, since a version may move a pin.

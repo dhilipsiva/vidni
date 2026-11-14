@@ -18,6 +18,7 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 | Doc | What it is |
 |---|---|
 | [install.md](docs/install.md) | Installing vidni on Linux: `nix run`, or the portable bundle and `vidni setup` |
+| [releasing.md](docs/releasing.md) | Versions, the changelog, and how a release is built and checked |
 | [quickstart.md](docs/quickstart.md) | From a clone to your first draft, and the steps from there to a finished video |
 | [spec.md](docs/spec.md) | How a project file works, with every command |
 | [keys.md](docs/keys.md) | Every key of `vidni.toml`, generated from the schema |
