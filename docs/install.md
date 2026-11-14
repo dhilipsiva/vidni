@@ -1,6 +1,8 @@
-# Installing vidni on Linux
+# Installing vidni
 
-vidni runs on Linux, x86_64. There are two ways to get it, and they give the same vidni with the same tools: a video drafted by one is, byte for byte, the video drafted by the other.
+vidni is made for Linux, x86_64, where there are two ways to get it. For macOS and Windows there are unsigned builds of the command line: see [the end of this page](#macos-and-windows).
+
+On Linux there are two ways to get it, and they give the same vidni with the same tools: a video drafted by one is, byte for byte, the video drafted by the other.
 
 | | With Nix | The portable bundle |
 |---|---|---|
@@ -77,3 +79,24 @@ From here on, [the quickstart](quickstart.md#5-make-it-yours) applies as it is.
 ### Passing the bundle on
 
 The two archives hold programs under the GPL and the LGPL, among other licences. Whoever gives them to someone else takes on those licences' duties, the offer of source above all. [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md#the-portable-bundle) says what is in the archives and where each program's source is; the bundle carries that file and vidni's two licences in `share/doc/vidni/`.
+
+## macOS and Windows
+
+The `platforms` workflow builds vidni's command line for macOS (Apple silicon) and Windows (x86_64) and packs each with its licences, the hello example and two setup scripts. The archives are on each run of that workflow, and on a release when it has them. `README.txt` in the archive has the steps; in short:
+
+1. **Let the system run it.** The builds aren't signed, since signing needs certificates that nobody has paid for.
+   - **macOS** says the program "cannot be opened because the developer cannot be verified". Take the quarantine mark off the folder once: `xattr -dr com.apple.quarantine <the folder>`.
+   - **Windows** shows "Windows protected your PC". Choose **More info**, then **Run anyway**.
+   - Check the archive against the release's `SHA256SUMS` before you do either.
+2. **Install what vidni drives:** ffmpeg (`brew install ffmpeg`, or `choco install ffmpeg`), and Piper with its seed flag (`python -m pip install piper-tts==1.8.0`, then `python setup/seed-piper.py`).
+3. **Fetch the fonts:** `bash setup/fonts.sh` (on Windows, in Git Bash). vidni checks each file against its pinned SHA-256.
+4. **Fetch the draft voice and draft:** `bin/vidni voices fetch piper:en_US-joe-medium`, then `bin/vidni draft examples/hello`.
+
+**What differs from Linux:**
+
+- **The tools are your system's, not vidni's pins.** A video builds the same way twice on your machine. It isn't byte for byte the video Linux builds: another ffmpeg encodes other bytes.
+- **Web and page scenes** need Chromium. On macOS, `VIDNI_CHROMIUM` names its program; this wasn't tried on a runner. On Windows they aren't supported: vidni hands Chromium its pipes in a way only Unix has. Cards, pictures, terminal and code scenes work on both.
+- **`--offline`, `vidni repro` and `vidni setup`** are Linux's.
+- **The desktop app and recording** weren't tried on either system.
+
+**How it was tried:** on GitHub's `macos-latest` and `windows-latest` runners, the workflow builds the command, packs it, unpacks the archive elsewhere, sets up as above, and drafts the hello example from the package: 2,131 frames, 71 seconds, on each.

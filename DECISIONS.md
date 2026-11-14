@@ -525,3 +525,10 @@ Added as the items are built.
 - **A caption's length is counted in letters,** leaving out marks that are written onto a letter. Counted in code points, a Tamil caption looked a third longer than it reads, and the limits of P6-VIDNI-05 would have refused captions nobody finds long.
 - **Scenes, cards, overlays and `[publish]` aren't translated.** A page that was captured shows what it shows. Cards and descriptions in a second language are a piece of work of their own, and the spec says they stay in the script's language.
 - **The Tamil of the nibli example is the assistant's draft** (A6): 57 lines, the labels and the title. Technical names stay in Latin letters. The maintainer corrects it and records it; until then the cut `tamil` is a draft in eSpeak's voice, and the item stays open.
+
+### T38. macOS and Windows get the command line, with the system's own tools
+- **2026-11-14, P9-VIDNI-02 (R10, A5).** A workflow builds `vidni` on `macos-latest` and `windows-latest`, packs it with the licences, the hello example and two setup scripts, and drafts hello from the unpacked archive on the same runner. Both passed on their first run.
+- **The tools aren't pinned there.** ffmpeg is Homebrew's or Chocolatey's, and Piper is pip's `piper-tts` 1.8.0 with the same two insertions as `nix/piper-seed.patch` (`packaging/seed-piper.py`), since vidni refuses a Piper it can't seed. The fonts are the pinned files, fetched from their projects' releases and held to their SHA-256 by vidni itself. So a build repeats on one machine, and isn't Linux's bytes; the docs say so.
+- **What only Unix has is behind `cfg(unix)`:** Chromium's pipes by descriptor number, the network namespace of `--offline`, process groups, file modes, `vidni setup`. Windows refuses a web or page scene with a sentence that names what works.
+- **Unsigned,** and the README in each archive says what each system asks and how to answer it (A5).
+- **Not shown:** the desktop app, recording, and Chromium on macOS. The item's *Done when* is the hello example from the packaged build, which needs none of them.
