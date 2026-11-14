@@ -68,6 +68,8 @@ pub struct Browser {
     commands: Option<std::io::PipeWriter>,
     messages: Receiver<Result<Value, String>>,
     said: Arc<Mutex<VecDeque<String>>>,
+    /// Closes when Chromium's stderr does: everything it said is in `said`.
+    said_all: Receiver<()>,
     next_id: u64,
     events: VecDeque<Value>,
     profile: Option<tempfile::TempDir>,
@@ -126,7 +128,10 @@ impl Browser {
         let said = Arc::new(Mutex::new(VecDeque::new()));
         let stderr = child.stderr.take();
         let lines = Arc::clone(&said);
+        let (heard, said_all) = channel::<()>();
         std::thread::spawn(move || {
+            // Dropped when this thread ends, which closes `said_all`.
+            let _heard = heard;
             let Some(stderr) = stderr else { return };
             for line in BufReader::new(stderr).lines().map_while(Result::ok) {
                 if let Ok(mut said) = lines.lock() {
@@ -164,6 +169,7 @@ impl Browser {
             commands: Some(commands),
             messages,
             said,
+            said_all,
             next_id: 1,
             events: VecDeque::new(),
             profile: Some(profile),
@@ -216,9 +222,14 @@ impl Browser {
         let mut bytes = message.to_string().into_bytes();
         bytes.push(0);
         let pipe = self.commands.as_mut().ok_or("Chromium is closing")?;
-        pipe.write_all(&bytes)
-            .and_then(|_| pipe.flush())
-            .map_err(|e| format!("{method}: Chromium stopped reading: {e}"))?;
+        // A Chromium that has stopped may have said why, as one that closes
+        // its other pipe may.
+        if let Err(e) = pipe.write_all(&bytes).and_then(|_| pipe.flush()) {
+            return Err(format!(
+                "{method}: Chromium stopped reading: {e}{}",
+                self.last_words()
+            ));
+        }
         Ok(id)
     }
 
@@ -233,7 +244,7 @@ impl Browser {
             let left = deadline.saturating_duration_since(Instant::now());
             match self.messages.recv_timeout(left.min(GLANCE)) {
                 Ok(Ok(message)) => break message,
-                Ok(Err(e)) => return Err(format!("{waiting_for}: {e}{}", self.last_said())),
+                Ok(Err(e)) => return Err(format!("{waiting_for}: {e}{}", self.last_words())),
                 Err(RecvTimeoutError::Timeout) if left > GLANCE => continue,
                 Err(RecvTimeoutError::Timeout) => {
                     return Err(format!("{waiting_for}: Chromium didn't answer in time"));
@@ -241,7 +252,7 @@ impl Browser {
                 Err(RecvTimeoutError::Disconnected) => {
                     return Err(format!(
                         "{waiting_for}: Chromium stopped{}",
-                        self.last_said()
+                        self.last_words()
                     ));
                 }
             }
@@ -321,6 +332,14 @@ impl Browser {
     /// Drops every kept event.
     pub fn forget_events(&mut self) {
         self.events.clear();
+    }
+
+    /// What Chromium said last, once its pipe has closed. A Chromium that
+    /// has stopped closes its stderr too, so the lines still on their way
+    /// are waited for, briefly.
+    fn last_words(&self) -> String {
+        let _ = self.said_all.recv_timeout(Duration::from_millis(500));
+        self.last_said()
     }
 
     fn last_said(&self) -> String {

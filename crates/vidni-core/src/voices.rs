@@ -27,7 +27,7 @@ pub const LOCK: &str = "voice.lock";
 /// A pack's own description, in its folder in the store.
 pub const PACK_FILE: &str = "pack.toml";
 
-const LOCK_HEADER: &str = "# Written by `vidni draft`: the seed each line's draft voice take was kept at.\n\
+const LOCK_HEADER: &str = "# Written by `vidni speak` and `vidni draft`: the seed each line's draft take was kept at.\n\
                            # Commit it, so that a redraft gives the same audio. To hear another take of\n\
                            # a line, give it another seed (docs/spec.md, The draft voice).\n";
 
@@ -235,6 +235,23 @@ pub fn clip_path(project_dir: &Path, line_id: &str, key: &str, seed: u32) -> Pat
         .join(format!("{key}-{seed}.wav"))
 }
 
+/// The clip the last draft kept for `line`'s present wording in `pack`'s
+/// voice, when the cache still holds it. A clip kept for another key was
+/// spoken from an earlier wording, or by another voice.
+pub fn drafted(
+    project_dir: &Path,
+    lock: &Lock,
+    pack: &Pack,
+    voice: &crate::project::Voice,
+    line: &crate::project::Line,
+) -> Option<PathBuf> {
+    let given = crate::spoken::synthetic(line, voice);
+    let key = clip_key(&given, pack, voice.length_scale);
+    let kept = lock.lines.get(&line.id).filter(|kept| kept.key == key)?;
+    let clip = clip_path(project_dir, &line.id, &key, kept.seed);
+    clip.is_file().then_some(clip)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -323,7 +340,7 @@ mod tests {
         );
         write_lock(dir.path(), &lock).unwrap();
         let text = fs::read_to_string(dir.path().join(LOCK)).unwrap();
-        assert!(text.starts_with("# Written by `vidni draft`"));
+        assert!(text.starts_with("# Written by `vidni speak` and `vidni draft`"));
         assert_eq!(read_lock(dir.path()).unwrap(), lock);
     }
 }

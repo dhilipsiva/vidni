@@ -1,5 +1,6 @@
 //! vidni's core: the project model, validation, line IDs, hashes and locks,
-//! per-cut state, the timeline and caption cues, lint and platform profiles.
+//! per-cut state, the timeline and caption cues, lint, platform profiles,
+//! the pinned fonts, and the gates and records of builds and releases.
 //!
 //! Everything here is deterministic and does no media I/O. See `TODO.md`,
 //! milestone P2.
@@ -7,10 +8,12 @@
 pub mod capture;
 pub mod edit;
 pub mod fmt;
+pub mod fonts;
 pub mod onscreen;
 pub mod platforms;
 pub mod project;
 pub mod ratify;
+pub mod release;
 pub mod spoken;
 pub mod takes;
 pub mod timeline;

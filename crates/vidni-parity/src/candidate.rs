@@ -142,6 +142,11 @@ fn cuts(example: &Path, reference: &Path, dst: &Path) -> Result<(), String> {
 /// copy of the example, and laid out as the reference names them:
 /// `stills/NNN.png` by line number, each with its frames as
 /// `stills/NNN.json`, and `cards/<scene>-<aspect>.png`.
+///
+/// The reference's frames hold each camera's box. vidni's hold the boxes
+/// of the scene's targets, and a camera is framed from them when a cut is
+/// built. So a still's frames are written here with its cameras framed
+/// that way, which checks the framing as well as the measuring.
 fn stills(example: &Path, dst: &Path) -> Result<(), String> {
     let work = dst.join("project");
     let (project, _) = crate::capture::fresh(example, &work)?;
@@ -160,10 +165,36 @@ fn stills(example: &Path, dst: &Path) -> Result<(), String> {
                 capture::path(&work, key),
                 dst.join(format!("stills/{k:03}.png")),
             )?;
-            copy(
-                vidni_media::capture::frames_path(&work, key),
-                dst.join(format!("stills/{k:03}.json")),
-            )?;
+            let file = vidni_media::capture::frames_path(&work, key);
+            let frames: vidni_media::capture::Frames = fs::read_to_string(&file)
+                .map_err(|e| e.to_string())
+                .and_then(|text| serde_json::from_str(&text).map_err(|e| e.to_string()))
+                .map_err(|e| format!("{}: {e}", file.display()))?;
+            let scene = line
+                .scene_in(&project)
+                .and_then(|id| project.scenes.get(id))
+                .ok_or_else(|| format!("line {} shows no scene", line.id))?;
+            let cameras: serde_json::Map<String, serde_json::Value> = scene
+                .cameras
+                .keys()
+                .map(String::as_str)
+                .chain(["viewport", "highlights"])
+                .map(|name| {
+                    (
+                        name.to_string(),
+                        serde_json::json!(frames.camera(name, scene)),
+                    )
+                })
+                .collect();
+            let framed = serde_json::json!({
+                "viewport": frames.viewport,
+                "scale": frames.scale,
+                "cameras": cameras,
+                "highlights": frames.highlights,
+                "browser": frames.browser,
+            });
+            let json = serde_json::to_string_pretty(&framed).map_err(|e| e.to_string())?;
+            fs::write(dst.join(format!("stills/{k:03}.json")), json).map_err(made)?;
         }
     }
     for cut in &project.cuts {

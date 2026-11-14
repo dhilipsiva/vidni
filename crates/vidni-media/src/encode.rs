@@ -2,7 +2,9 @@
 //!
 //! Every flag that could vary is fixed, so that the same frames and samples
 //! give the same packets on one host (TODO.md, rule 2, tier T2):
-//! - libx264 with a fixed thread count, preset and CRF;
+//! - libx264 with a fixed thread count, preset and CRF, and its lookahead
+//!   run in the encoder's own thread: in a thread of its own, the packets
+//!   depended on how the threads happened to be scheduled (DECISIONS.md, T8);
 //! - `+bitexact` for the container and both codecs, and `-map_metadata -1`,
 //!   so no version string, date or encoder tag enters the file;
 //! - an explicit BT.709 conversion from RGB, with the colour tags to match;
@@ -13,6 +15,13 @@ use crate::run;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
+
+/// libx264's own settings, beyond the preset. `sync-lookahead=0` runs the
+/// lookahead in the encoder's thread. With the threaded lookahead that x264
+/// turns on when it has several threads, 40 encodes of one stretch of a cut
+/// gave 8 different packet streams; without it, 40 gave one, on 1 to 32
+/// cores, and took no longer.
+pub const X264_PARAMS: &str = "sync-lookahead=0";
 
 /// What the encoder makes.
 #[derive(Debug, Clone, PartialEq)]
@@ -75,6 +84,7 @@ impl Settings {
                 "-vf", "scale=out_color_matrix=bt709:out_range=tv:flags=bitexact+accurate_rnd+full_chroma_int,format=yuv420p",
                 "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709", "-color_range", "tv",
                 "-c:v", "libx264", "-preset", self.preset,
+                "-x264-params", X264_PARAMS,
             ]
             .iter()
             .map(|s| s.to_string()),
@@ -230,6 +240,14 @@ pub fn loudnorm(src: &Path, dst: &Path, target: Target) -> Result<(), String> {
             .map(str::to_string)
             .ok_or(format!("loudnorm gave no {k}"))
     };
+    // Silence has no loudness to bring to a target, and ffmpeg refuses the
+    // measurement it gives for it.
+    if field("input_i")?.contains("inf") {
+        return Err(format!(
+            "{}: there is no sound in it to normalize",
+            src.display()
+        ));
+    }
     let filter = format!(
         "{base}:linear=true:measured_I={}:measured_TP={}:measured_LRA={}:measured_thresh={}:offset={},aresample=48000",
         field("input_i")?,

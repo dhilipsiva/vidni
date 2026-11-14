@@ -84,6 +84,10 @@ fn draft(dir: &Path, p: &Project) -> usize {
         let path = capture::path(dir, &c.key);
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(path, c.key.as_bytes()).unwrap();
+        // A web still comes with its frames.
+        if matches!(c.source, capture::Source::Line(_)) {
+            fs::write(capture::frames_path(dir, &c.key), br#"{"targets":{}}"#).unwrap();
+        }
     }
     planned.len()
 }
@@ -277,6 +281,127 @@ fn a_capture_changed_on_disk_regresses_the_cuts_that_froze_it() {
             "short",
             &[&format!("capture {} changed on disk", &hook[..12])]
         )
+    );
+}
+
+#[test]
+fn a_stills_frames_are_frozen_with_it() {
+    let (dir, lock) = ratified();
+    let p = project(dir.path(), PROJECT);
+    let hook = capture::line_keys(&p)["hook-1"].clone();
+    // The boxes a still is framed by are part of what the cut shows.
+    fs::write(
+        capture::frames_path(dir.path(), &hook),
+        b"{\"moved\": true}",
+    )
+    .unwrap();
+    let states = ratify::status(&p, dir.path(), &lock);
+    assert_eq!(states[0], ok("long"));
+    assert_eq!(
+        states[1],
+        changed(
+            "short",
+            &[&format!(
+                "the frames of capture {} changed on disk",
+                &hook[..12]
+            )]
+        )
+    );
+    // A cut with many files gone says how many, not which.
+    let long = &p.cuts[0];
+    let mut big = lock.clone();
+    let frozen = big.cuts.get_mut(&long.id).unwrap();
+    for n in 0..5 {
+        frozen.captures.insert(format!("{n:064}"), "00".into());
+    }
+    let Status::Changed(reasons) = ratify::status_of(&p, dir.path(), &big, long) else {
+        panic!("captures that are gone change the cut");
+    };
+    assert_eq!(reasons, ["5 of its 8 captures went missing"]);
+    // A still without its frames can't be framed, so it is taken again.
+    fs::remove_file(capture::frames_path(dir.path(), &hook)).unwrap();
+    let cuts: Vec<_> = p.cuts.iter().collect();
+    let what: Vec<String> = capture::plan(&p, dir.path(), &cuts)
+        .into_iter()
+        .map(|c| c.what)
+        .collect();
+    assert_eq!(what, ["line hook-1"]);
+}
+
+#[test]
+fn a_frozen_still_isnt_taken_again_for_want_of_its_frames() {
+    let (dir, lock) = ratified();
+    let p = project(dir.path(), PROJECT);
+    let cuts: Vec<_> = p.cuts.iter().collect();
+    let hook = capture::line_keys(&p)["hook-1"].clone();
+    // Its frames are gone, so the still counts as not taken; but the
+    // picture is the one the short cut froze, and a draft must leave it.
+    fs::remove_file(capture::frames_path(dir.path(), &hook)).unwrap();
+    let plan = capture::plan(&p, dir.path(), &cuts);
+    assert_eq!(plan.len(), 1);
+    assert_eq!(
+        ratify::frozen(dir.path(), &lock, &plan),
+        [format!(
+            "the capture of line hook-1 is frozen by cut short, and its frames can't be read; restore build/captures/{hook}.json from a backup, or run `vidni unratify --cut short --refresh` to take it afresh"
+        )]
+    );
+    // Frames from before targets were measured can't be framed from either.
+    fs::write(capture::frames_path(dir.path(), &hook), b"{\"cameras\":{}}").unwrap();
+    assert_eq!(capture::plan(&p, dir.path(), &cuts).len(), 1);
+    // A picture that is no longer the frozen one may be taken again, and
+    // so may one that no ratified cut froze.
+    fs::write(capture::path(dir.path(), &hook), b"another screenshot").unwrap();
+    assert_eq!(
+        ratify::frozen(dir.path(), &lock, &plan),
+        Vec::<String>::new()
+    );
+    assert_eq!(
+        ratify::frozen(dir.path(), &Lock::default(), &plan),
+        Vec::<String>::new()
+    );
+}
+
+#[test]
+fn a_lock_from_before_frames_were_frozen_cant_vouch_for_them() {
+    let (dir, mut lock) = ratified();
+    let p = project(dir.path(), PROJECT);
+    lock.cuts.get_mut("long").unwrap().frames.clear();
+    let states = ratify::status(&p, dir.path(), &lock);
+    assert_eq!(
+        states[0],
+        changed(
+            "long",
+            &["the frames of 2 of its stills were never frozen; ratify it again"]
+        )
+    );
+    assert_eq!(states[1], ok("short"));
+    // A key that isn't a hash, as a lock edited by hand may hold, is named whole.
+    lock.cuts
+        .get_mut("short")
+        .unwrap()
+        .captures
+        .insert("abc".into(), "00".into());
+    let states = ratify::status(&p, dir.path(), &lock);
+    assert_eq!(states[1], changed("short", &["capture abc went missing"]));
+}
+
+#[test]
+fn a_vertical_cut_freezes_the_subtitle_its_title_band_shows() {
+    let (dir, lock) = ratified();
+    let text = PROJECT.replace(
+        "title = \"Ratify\"",
+        "title = \"Ratify\"\nsubtitle = \"a series\"",
+    );
+    // The 16:9 cut draws no subtitle; the 9:16 cut's band does.
+    assert_eq!(
+        states(dir.path(), &text, &lock),
+        [
+            ok("long"),
+            changed(
+                "short",
+                &["its sections, subtitle, size or line order changed"]
+            )
+        ]
     );
 }
 

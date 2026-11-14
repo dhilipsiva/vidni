@@ -1,0 +1,39 @@
+# The fonts vidni draws with (TODO.md, P3-VIDNI-06; DECISIONS.md, D12).
+#
+# Each file is pinned by size and SHA-256, so that a frame's text is the
+# same wherever it is drawn. vidni's flake provides these files, and
+# `VIDNI_FONTS` names the folders that hold them. A file with the right
+# name and other bytes is refused.
+
+[[font]]
+id = "ibm-plex-sans-bold"
+family = "IBM Plex Sans"
+style = "Bold"
+version = "1.1.0"
+file = "IBMPlexSans-Bold.otf"
+size = 140656
+sha256 = "19de5aec74215119b3f8f7d1b1f0e0eba867bee2d2c65c5761b287d67581c316"
+licence = "OFL-1.1"
+source = "https://github.com/IBM/plex"
+
+[[font]]
+id = "ibm-plex-mono-bold"
+family = "IBM Plex Mono"
+style = "Bold"
+version = "2.5.0"
+file = "IBMPlexMono-Bold.otf"
+size = 91776
+sha256 = "27a69e26eb871f52431f45fef5e938acd45e752d9132faaf38aa4a045168b3b6"
+licence = "OFL-1.1"
+source = "https://github.com/IBM/plex"
+
+[[font]]
+id = "space-grotesk-bold"
+family = "Space Grotesk"
+style = "Bold"
+version = "2.0.0"
+file = "SpaceGrotesk-Bold.otf"
+size = 72748
+sha256 = "be8709abe941dcc98f3625663b340ca20dc90cd6806ee76bd68b568097b6368f"
+licence = "OFL-1.1"
+source = "https://github.com/floriankarsten/space-grotesk"

@@ -253,6 +253,23 @@ impl Rules {
         if p.meta.title.trim().is_empty() {
             self.add(path!["meta", "title"], "the title is empty");
         }
+        // The language goes into file names (`long.en.srt`), so it must
+        // be a tag and nothing else: subtags of letters and digits, joined
+        // by hyphens, the first of two to eight letters.
+        let language = &p.meta.language;
+        let mut subtags = language.split('-');
+        let primary = subtags.next().unwrap_or_default();
+        let tag = (2..=8).contains(&primary.len())
+            && primary.chars().all(|c| c.is_ascii_alphabetic())
+            && subtags.all(|s| {
+                (1..=8).contains(&s.len()) && s.chars().all(|c| c.is_ascii_alphanumeric())
+            });
+        if !tag {
+            self.add(
+                path!["meta", "language"],
+                format!("language must be a BCP 47 tag such as en or pt-BR, not {language:?}"),
+            );
+        }
         if let Some(scene) = &p.meta.default_scene
             && !p.scenes.contains_key(scene)
         {

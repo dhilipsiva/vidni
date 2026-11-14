@@ -155,6 +155,8 @@ pub struct Composer {
     label_pieces: Vec<(String, Image, (i32, i32))>,
     total: f64,
     images: Vec<(PathBuf, Image)>,
+    /// Whether captions are drawn into the picture.
+    captions: bool,
 }
 
 impl Composer {
@@ -258,7 +260,15 @@ impl Composer {
             label_pieces,
             total: timeline.total,
             images: Vec::new(),
+            captions: true,
         })
+    }
+
+    /// Leaves the captions out of the picture, for a cut whose captions
+    /// are files only. The framing stays the same.
+    pub fn without_captions(mut self) -> Self {
+        self.captions = false;
+        self
     }
 
     /// The frame's width and height.
@@ -280,6 +290,9 @@ impl Composer {
     }
 
     fn cue_at(&self, t: f64) -> Option<usize> {
+        if !self.captions {
+            return None;
+        }
         let mut best = None;
         for (j, cue) in self.cues.iter().enumerate() {
             if cue.start - 0.12 <= t {
@@ -683,6 +696,22 @@ mod tests {
         assert_eq!((at(0.275), at(0.285)), (None, Some(0)));
         assert_eq!((at(2.895), at(2.905)), (Some(0), None));
         assert_eq!((at(3.875), at(3.885)), (None, Some(1)));
+    }
+
+    #[test]
+    fn a_cut_without_captions_draws_none_and_changes_nothing_else() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut burned = two_cards(dir.path(), (1920, 1080));
+        let mut clean = two_cards(dir.path(), (1920, 1080)).without_captions();
+        assert_eq!(clean.frames(), burned.frames());
+        // Frame 30 is inside the first cue: the caption's box is the only difference.
+        assert_eq!(burned.key(30), FrameKey::Stable(0, Some(0)));
+        assert_eq!(clean.key(30), FrameKey::Stable(0, None));
+        let (with, without) = (burned.frame(30).unwrap(), clean.frame(30).unwrap());
+        assert_ne!(with.data, without.data);
+        assert_eq!(without.data, Image::new(1920, 1080, &RED).data);
+        // Before the cue, the two are the same picture.
+        assert_eq!(burned.frame(0).unwrap().data, clean.frame(0).unwrap().data);
     }
 
     #[test]

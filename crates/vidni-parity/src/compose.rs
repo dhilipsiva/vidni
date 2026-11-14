@@ -11,16 +11,14 @@
 use crate::VARIANTS;
 use crate::candidate::{project, variants};
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 use std::fs;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use vidni_core::project::{Line, Project, Scene};
+use vidni_core::project::Project;
 use vidni_core::timeline;
-use vidni_media::compose::cut::{
-    Composer, FrameKey, LANDSCAPE, Layout, PORTRAIT, Picture, Shot, Type,
-};
+use vidni_media::build::camera_name;
+use vidni_media::compose::cut::{Composer, LANDSCAPE, Layout, PORTRAIT, Picture, Shot, Type};
 use vidni_media::compose::text::Fonts;
 
 /// The reference's three faces (caption, mono, display): the pattern
@@ -108,31 +106,6 @@ pub struct Job {
     pub composer: Composer,
 }
 
-/// The camera a line uses in a cut, by vidni's rules.
-fn camera(line: &Line, scene: &Scene, portrait: bool, rects: &Value) -> String {
-    let landscape = line
-        .camera
-        .clone()
-        .or_else(|| scene.default_camera.clone())
-        .unwrap_or_else(|| "viewport".into());
-    if !portrait {
-        return landscape;
-    }
-    if let Some(vertical) = &line.camera_vertical {
-        return vertical.clone();
-    }
-    if let (Some(limit), Some(width)) = (scene.vertical_follows_highlights, rects["hl"][2].as_f64())
-        && width <= limit
-    {
-        return "highlights".into();
-    }
-    scene
-        .cameras
-        .get(&landscape)
-        .and_then(|c| c.vertical.clone())
-        .unwrap_or(landscape)
-}
-
 fn rect(value: &Value) -> Option<[f64; 4]> {
     let v: Vec<f64> = value.as_array()?.iter().filter_map(Value::as_f64).collect();
     (v.len() == 4).then(|| [v[0], v[1], v[2], v[3]])
@@ -186,7 +159,9 @@ fn shots(
                 None => {
                     let scene_id = line.scene_in(project).ok_or("a line with no scene")?;
                     let scene = project.scenes.get(scene_id).ok_or("an unknown scene")?;
-                    let name = camera(line, scene, portrait, &shot["cameras"]);
+                    // The reference calls the highlights' camera `hl`.
+                    let highlights = shot["cameras"]["hl"][2].as_f64();
+                    let name = camera_name(line, scene, portrait, highlights);
                     let key = match name.as_str() {
                         "highlights" => "hl",
                         other => other,
@@ -253,31 +228,6 @@ pub fn jobs(example: &Path, reference: &Path, faces: &Faces) -> Result<Vec<Job>,
         }
     }
     Ok(jobs)
-}
-
-/// Renders every frame of a cut in order, handing each to `sink`; a frame
-/// equal to the one before (same key) is handed over again without being
-/// redrawn. Returns the SHA-256 of the whole rgb24 stream and the number of
-/// frames drawn.
-pub fn render(
-    composer: &mut Composer,
-    mut sink: impl FnMut(&[u8]) -> Result<(), String>,
-) -> Result<(String, u64), String> {
-    let mut hash = Sha256::new();
-    let mut last: Option<(FrameKey, Vec<u8>)> = None;
-    let mut drawn = 0;
-    for f in 0..composer.frames() {
-        let key = composer.key(f);
-        if last.as_ref().is_none_or(|(k, _)| *k != key) {
-            last = Some((key, composer.frame(f)?.data));
-            drawn += 1;
-        }
-        let bytes = &last.as_ref().expect("a frame").1;
-        hash.update(bytes);
-        sink(bytes)?;
-    }
-    let hex = hash.finalize().iter().map(|b| format!("{b:02x}")).collect();
-    Ok((hex, drawn))
 }
 
 /// The largest difference allowed between a channel value of vidni's

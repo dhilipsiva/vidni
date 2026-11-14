@@ -205,15 +205,11 @@ pub fn clips(
             _ => None,
         };
         let drafted = || {
-            let script = spoken::synthetic(line, &project.voice);
-            let key = voices::clip_key(&script, pack?, project.voice.length_scale);
-            // A clip kept for another key was spoken from an earlier wording.
-            let kept = lock.lines.get(&line.id).filter(|kept| kept.key == key)?;
-            let path = voices::clip_path(dir, &line.id, &key, kept.seed);
-            path.is_file().then_some(Clip {
+            let path = voices::drafted(dir, &lock, pack?, &project.voice, line)?;
+            Some(Clip {
                 kind: Kind::Draft,
                 path,
-                script,
+                script: spoken::synthetic(line, &project.voice),
             })
         };
         (line.id.clone(), take.or_else(drafted))

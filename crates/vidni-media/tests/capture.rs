@@ -225,7 +225,7 @@ text = "arrived"
 fn project(edit: impl Fn(&str) -> String) -> (tempfile::TempDir, Project) {
     let dir = tempfile::tempdir().unwrap();
     let fixtures = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/capture");
-    for name in ["page.html", "page2.html", "overlay.html"] {
+    for name in ["page.html", "page2.html", "overlay.html", "remote.html"] {
         fs::copy(fixtures.join(name), dir.path().join(name)).unwrap();
     }
     let text = edit(PROJECT);
@@ -247,6 +247,7 @@ fn take(dir: &Path, project: &Project, patience: u64) -> Result<Vec<(String, Pat
     let plan = capture::plan(project, dir, &cuts);
     let limits = Limits {
         patience: Duration::from_secs(patience),
+        ..Limits::default()
     };
     let taken = capture_with(project, dir, &plan, limits)?;
     Ok(taken
@@ -290,13 +291,23 @@ fn a_scene_runs_its_actions_and_frames_each_line() {
     let readings = fs::read_to_string(dir.path().join("build/onscreen.json")).unwrap();
     assert!(readings.contains("Cheese PIE"), "{readings}");
 
+    let scene = &project.scenes["page"];
     let a = frames(dir.path(), &project, "a");
     assert_eq!((a.viewport, a.scale), ([640, 360], 2));
     assert_eq!(a.highlights["tab-a"], vec![[10.0, 40.0, 80.0, 30.0]]);
-    assert_eq!(a.cameras["tabs"], Some([10.0, 40.0, 170.0, 30.0]));
-    assert_eq!(a.cameras["all"], Some([0.0, 0.0, 640.0, 360.0]));
-    assert_eq!(a.cameras["viewport"], a.cameras["all"]);
-    assert_eq!(a.cameras["highlights"], Some([10.0, 40.0, 80.0, 30.0]));
+    // Every target of the scene is measured, whether a camera names it
+    // yet or not; one that shows nothing has no boxes.
+    assert_eq!(a.targets.len(), scene.targets.len());
+    assert_eq!(a.targets["tab-a"], vec![[10.0, 40.0, 80.0, 30.0]]);
+    assert_eq!(a.targets["arrived"], Vec::<[f64; 4]>::new());
+    // The cameras are framed from them.
+    assert_eq!(a.camera("tabs", scene), Some([10.0, 40.0, 170.0, 30.0]));
+    assert_eq!(a.camera("all", scene), Some([0.0, 0.0, 640.0, 360.0]));
+    assert_eq!(a.camera("viewport", scene), a.camera("all", scene));
+    assert_eq!(
+        a.camera("highlights", scene),
+        Some([10.0, 40.0, 80.0, 30.0])
+    );
     let still = picture(&taken, "a");
     assert_eq!((still.width, still.height), (1280, 720));
 
@@ -345,7 +356,7 @@ fn a_scene_runs_its_actions_and_frames_each_line() {
     // first was left and then swapped its body; capture followed.
     let j = frames(dir.path(), &project, "j");
     assert_eq!(j.highlights["arrived"], vec![[40.0, 60.0, 200.0, 40.0]]);
-    assert_eq!(j.cameras["tabs"], None);
+    assert_eq!(j.camera("tabs", scene), None);
 
     // The overlay, at each aspect's size, on a transparent background.
     let wide = picture(&taken, "badge-16x9");
@@ -416,6 +427,30 @@ fn a_highlight_that_matches_nothing_names_its_line_and_target() {
         "{error}"
     );
     assert_eq!(left_behind(dir.path()), 0);
+}
+
+#[test]
+#[ignore = "needs Chromium: just test-capture"]
+fn a_project_page_that_loses_a_part_to_the_network_is_refused() {
+    // The overlay's page now asks for a style sheet that nothing serves.
+    let (dir, project) =
+        project(|text| text.replace("overlay.html?r={aspect}", "remote.html?r={aspect}"));
+    let error = take(dir.path(), &project, 30).unwrap_err();
+    // Chromium says why in its own words; port 1 it refuses to try at all.
+    assert!(
+        error.contains(
+            "the page asked the network for a part that didn't load \
+             (the first: http://127.0.0.1:1/none.css (net::ERR_"
+        ),
+        "{error}"
+    );
+    // No render of it is kept, so a later capture can't mistake it for whole.
+    let kept: Vec<_> = capture::for_cut(&project, &project.cuts[0])
+        .into_iter()
+        .filter(|c| matches!(c.source, Source::Page { .. }))
+        .filter(|c| capture::path(dir.path(), &c.key).is_file())
+        .collect();
+    assert_eq!(kept, []);
 }
 
 #[test]

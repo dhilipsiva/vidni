@@ -176,3 +176,48 @@ Added as the items are built.
 - **`voice.heard_as` replaces the table of homophones the reference had built in.** Those were the nibli video's words (`nibley` for `nibli`, `atom` for `adam`), so they now live in that project's file.
   - The key sits in `[voice]`, which no cut's ratified content covers. Whatever later hashes a release must leave it out as well.
 - **The check knows English only:** the model is English, and the score compares the letters a to z. `vidni hear` refuses a script in another language instead of scoring it. P9-VIDNI-03 will need a multilingual model and a score over Unicode letters.
+
+### T8. How a cut is built, released and checked to repeat
+- **2026-11-14, P3-VIDNI-06.** A build names everything it is made from by hash, in two layers.
+  - **Sources** are the cut's own: what it shows and says (the hash that ratifying freezes), each line's clip by its place and its bytes, each capture's files, and the look (the gaps, the title and the cut's settings). None needs a tool to work out, so `vidni status` can tell how a cut stands against its release without rendering anything.
+  - **Inputs** add the tools and the timeline: vidni's and ffmpeg's versions, each font file, the encoder's settings, and the timeline the build starts from. Two builds with the same inputs must give the same T1 and T2 hashes.
+  - **What is left out, on purpose:**
+    - `voice.heard_as` (T7).
+    - The draft voice's settings, in a final build. Its timeline writes what the creator reads, not what the draft voice is given, so a respelling changes no release.
+    - The resolved project. It is the whole project's, so an edit to another cut would change it; `vidni repro` compares it once, for the project.
+
+    Tests hold each of these.
+- **A still's frames hold its targets, and cameras are framed when a cut is built.**
+  - A capture's key leaves the cameras out, so that a camera can change without a new capture (T3). The first wiring read each camera's box from the frames file, as it was measured at capture. So a camera edited afterwards never reached the picture, and ratifying froze the stale framing. The review found it.
+  - Now `<key>.json` holds the boxes of every target of the scene, and a camera is the union of its targets' boxes, worked out at build time as the page runtime worked it out. `just parity stills` still passes 118 of 118, with the cameras framed this way.
+  - Ratifying hashes the frames file with the still, and a still without usable frames counts as not taken. A still whose picture a ratified cut froze is never taken again for want of its frames: a page may not give the same picture twice.
+- **A 9:16 cut freezes the project's subtitle,** because its title band shows it. A 16:9 cut draws none.
+- **Approving writes a record, not a git tag.** A release is the final build's record in `release.json`, under a tag such as `long-r1`.
+  - **Why:** a project folder needn't be a git repository, and tagging and pushing are the creator's to do (TODO.md marks them HIGH).
+  - Releases are only ever added, so `release.json` is each cut's history. It names its layout (`"schema": 1`), since it outlives the vidni that wrote it.
+  - The release's day is read from the clock, the one place vidni reads it. `SOURCE_DATE_EPOCH` isn't used for it: Nix shells set it to 1980.
+- **`vidni repro` found that the encoder didn't repeat.** On the nibli example, two clean builds of the 9:16 cut gave the same frames and different packets, in a stretch of 222 frames after one crossfade.
+  - **The cause** was x264's threaded lookahead, which x264 turns on when it has more than one thread. Encoding 451 frames around that crossfade 40 times gave 8 different packet streams, on the same cores as well as on different ones.
+  - **The fix** is `sync-lookahead=0`, which runs the lookahead in the encoder's own thread. With it, 40 encodes on 1, 2, 3, 4 and 32 cores gave one packet stream, in the same time.
+  - P3-VIDNI-01's check had encoded twice and seen the same packets. Twice wasn't enough.
+  - **Ruled out on the way:** the conversion from RGB to YUV gives the same bytes on 1 to 32 cores for those frames, and `lookahead-threads=1`, `deterministic=1` and `direct=spatial` each left the packets unsteady.
+- **What repro varies, and what it compares.**
+  - The two builds run at once, on two cores and on three others, from copies of the project at paths of different depth. A copy holds only what a build reads: the project file, the locks, the files its scenes name, the current takes and the captures.
+  - Their environment holds only `PATH`, a fixed time zone and locale, `SOURCE_DATE_EPOCH`, a home and a temporary folder of their own, the font folders and, for a draft, the voice store.
+  - They are compared with each other, and with the creator's own build of the same inputs. That build was made in the creator's environment, so a build that depended on the time zone, the locale or the home folder would differ from them.
+  - As a check of the check: with the encoder's thread count made to follow the cores, repro reports the packets and files as different and the frames as equal.
+- **`--offline` runs the command under `unshare --user --map-user --map-group --net`.**
+  - Mapped to root instead, as `unshare -r` maps it, Chromium refuses to start. vidni replaces itself with the command inside the namespace, so signals and the exit code are the command's own.
+  - The command inside checks that it has no route to the network, so that the mark it carries can't be set by hand to skip the namespace. It looks at routes, not at interfaces: where tunnel modules are loaded, every new namespace lists their idle devices.
+  - With no network, anything a page asks the network for fails the capture. A page that is a file of the project's is held to that with a network too, so a still taken while a part was missing is never kept as if it were whole.
+  - Names can still be looked up where the host's resolver answers through a socket in the file system, which a network namespace doesn't cover. Nothing can be connected to.
+- **Fonts are pinned as voices are:** by size and SHA-256 in `fonts.toml`, and looked for only in the folders that `VIDNI_FONTS` names.
+  - The flake's IBM Plex Mono Bold (2.5.0) isn't the file the reference drew with (1.1.0, from the maintainer's system). So vidni's own builds differ from golden wherever mono text is drawn, and so do captures taken with the flake's fonts.
+  - `just parity product` therefore checks the wiring with the reference's fonts. It plans the example's final build as `vidni final` does, from fresh captures and the creator's takes, and compares it with the reference's cuts in the creator's voice.
+- **A draft is one picture for each cut.** The final build makes every picture the cut's `captions` asks for.
+- **An independent review** of the change found no way past a gate, and 21 other things. The ones that changed the design are above: the cameras, what a record leaves out, the subtitle, the frozen stills and the page that loses a part. The rest were fixed where they stood: repro built `vidni.toml` whatever file it was given, copied the whole folder, and could leave its copies behind on an interrupt; a language tag could put a slash into a file name; and an encoder that stopped was reported as a broken pipe.
+- **Limits, for now:**
+  - The compositor draws 1920×1080 and 1080×1920 only, and a build refuses another size.
+  - Loudness is normalized by ffmpeg's loudnorm in two passes, as in the reference, and QA allows 1.5 LU around the target. On a very short cut the result falls short: a cut of 2.9 seconds measured −19.9 LUFS, which QA refuses. P4-VIDNI-03 revisits the voice chain.
+  - A record names vidni by its version. Between versions, a change to what vidni draws must raise the compositor's own count (`COMPOSITOR`), or an earlier build would still pass as current.
+  - When a rebuilt cut fails QA, `out/` keeps the files of the build before it. `vidni approve` refuses the cut until a build of it passes.

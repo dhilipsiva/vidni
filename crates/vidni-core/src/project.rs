@@ -235,6 +235,28 @@ pub struct Line {
     pub overlay: Option<String>,
 }
 
+impl Project {
+    /// The files in the project folder that the scenes name, each once, in
+    /// order: a page scene's file for both orientations, and a web scene's
+    /// when its address is a file.
+    pub fn scene_files(&self) -> Vec<String> {
+        let mut files: Vec<String> = Vec::new();
+        for scene in self.scenes.values() {
+            if scene.url.starts_with("http://") || scene.url.starts_with("https://") {
+                continue;
+            }
+            let file = scene.url.split(['?', '#']).next().unwrap_or_default();
+            for aspect in ["16x9", "9x16"] {
+                let name = file.replace("{aspect}", aspect);
+                if !files.contains(&name) {
+                    files.push(name);
+                }
+            }
+        }
+        files
+    }
+}
+
 impl Line {
     /// The scene the line shows: its own, or the project's default.
     pub fn scene_in<'a>(&'a self, project: &'a Project) -> Option<&'a str> {
@@ -691,6 +713,18 @@ impl Cut {
         match &self.lines {
             LineSelection::All => project.lines.iter().map(|l| l.id.clone()).collect(),
             LineSelection::Ids(ids) => ids.clone(),
+        }
+    }
+
+    /// The cut's lines, in script order.
+    pub fn lines_in<'p>(&self, project: &'p Project) -> Vec<&'p Line> {
+        match &self.lines {
+            LineSelection::All => project.lines.iter().collect(),
+            LineSelection::Ids(ids) => project
+                .lines
+                .iter()
+                .filter(|l| ids.contains(&l.id))
+                .collect(),
         }
     }
 

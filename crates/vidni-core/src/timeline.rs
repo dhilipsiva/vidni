@@ -8,8 +8,9 @@
 //! reference pipeline rounds them, so that the timeline matches its golden
 //! output exactly (TODO.md, P2-VIDNI-04).
 
-use crate::project::{Project, SceneKind};
-use crate::spoken::synthetic;
+use crate::project::{Line, Project, SceneKind};
+use crate::release::Voice;
+use crate::spoken::{spoken, synthetic};
 use serde::{Deserialize, Serialize};
 
 /// The longest caption cue, in characters, before a line is split.
@@ -55,7 +56,8 @@ pub struct Entry {
     pub end: f64,
     pub wav: String,
     pub show: String,
-    /// What the synthetic voice is given.
+    /// What the line's voice is given: the draft voice's text, with its
+    /// respellings, or the words the creator reads.
     pub say: String,
     /// The page scene the line shows full-frame, if any.
     pub card: Option<String>,
@@ -76,14 +78,25 @@ pub fn round(x: f64, places: usize) -> f64 {
     format!("{x:.places$}").parse().unwrap_or(x)
 }
 
-/// Builds the timeline of `project`'s lines from their clips, one per line in script order.
+/// Builds the timeline of `project`'s lines from their clips, one per line
+/// in script order, as the reference writes it: `say` is what the draft
+/// voice is given, whoever speaks.
 pub fn build(project: &Project, clips: &[Clip]) -> Result<Timeline, String> {
-    if clips.len() != project.lines.len() {
-        return Err(format!(
-            "{} clips for {} lines",
-            clips.len(),
-            project.lines.len()
-        ));
+    let lines: Vec<&Line> = project.lines.iter().collect();
+    build_for(project, &lines, clips, Voice::Draft)
+}
+
+/// Builds the timeline of `lines`, the lines of one cut in script order,
+/// from their clips, spoken by `voice`. A line's position, and a section's
+/// start and end, are its place among these lines.
+pub fn build_for(
+    project: &Project,
+    lines: &[&Line],
+    clips: &[Clip],
+    voice: Voice,
+) -> Result<Timeline, String> {
+    if clips.len() != lines.len() {
+        return Err(format!("{} clips for {} lines", clips.len(), lines.len()));
     }
     let rate = clips.first().map_or(0, |c| c.rate);
     if let Some(c) = clips.iter().find(|c| c.rate != rate) {
@@ -96,14 +109,13 @@ pub fn build(project: &Project, clips: &[Clip]) -> Result<Timeline, String> {
     let mut t = timing.lead_in;
     let mut entries: Vec<Entry> = Vec::with_capacity(clips.len());
     let mut index = 0;
-    for (k, (line, clip)) in project.lines.iter().zip(clips).enumerate() {
-        if k > 0 && project.lines[k - 1].section != line.section {
+    for (k, (line, clip)) in lines.iter().zip(clips).enumerate() {
+        if k > 0 && lines[k - 1].section != line.section {
             index = 0;
         }
         let dur = clip.seconds();
         let (start, end) = (t, t + dur);
-        let last_in_section = project
-            .lines
+        let last_in_section = lines
             .get(k + 1)
             .is_none_or(|next| next.section != line.section);
         t = end
@@ -126,15 +138,14 @@ pub fn build(project: &Project, clips: &[Clip]) -> Result<Timeline, String> {
             c0 = c1;
         }
         let card = line
-            .scene
-            .as_ref()
+            .scene_in(project)
             .filter(|id| {
                 project
                     .scenes
                     .get(*id)
                     .is_some_and(|s| s.kind == SceneKind::Page)
             })
-            .cloned();
+            .map(str::to_string);
         entries.push(Entry {
             k,
             segment: line.section.clone(),
@@ -148,7 +159,12 @@ pub fn build(project: &Project, clips: &[Clip]) -> Result<Timeline, String> {
             end: round(end, 3),
             wav: clip.wav.clone(),
             show: line.show.clone(),
-            say: synthetic(line, &project.voice),
+            // A final cut's timeline holds nothing of the draft voice's
+            // settings, so a respelling changes no release.
+            say: match voice {
+                Voice::Draft => synthetic(line, &project.voice),
+                Voice::Takes => spoken(line, &project.voice),
+            },
             card,
             cues,
         });

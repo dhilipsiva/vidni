@@ -1,0 +1,962 @@
+//! Building a cut: from its lines' audio and its captures to its encoded
+//! files, and the record of what they were made from (TODO.md,
+//! P3-VIDNI-06).
+//!
+//! A draft speaks with the draft voice and a final build with the creator's
+//! takes. Otherwise the two are built alike:
+//! 1. the timeline and the captions, from the clips' lengths;
+//! 2. the narration track, and its loudness-normalized copy;
+//! 3. each picture of the cut, composited and encoded;
+//! 4. QA of each encoded file.
+//!
+//! The build's record (`<cut>.build.json`) names every input and output by
+//! hash. The gates are here and in `vidni_core::release`, so the command
+//! line and the app refuse the same things (TODO.md, rule 4): a final build
+//! needs a ratified, unchanged cut and a current take for every line, and
+//! it is delivered to `out/` only when QA passes. Approving a cut needs
+//! that build, still current, and its files as they were delivered.
+
+use crate::capture::Frames;
+use crate::compose::cut::{Composer, FPS, LANDSCAPE, Layout, PORTRAIT, Picture, Shot, Type};
+use crate::compose::text::Fonts;
+use crate::encode::{self, Encoder, Settings, Target};
+use crate::{compose, narration, qa, run};
+use serde_json::json;
+use std::collections::BTreeMap;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use vidni_core::capture::{self, sha256_hex};
+use vidni_core::project::{Aspect, Captions, Cut, Line, Project, Scene};
+use vidni_core::ratify;
+use vidni_core::release::{self, Approval, Output, Record, Sources, T1, Tools, Voice};
+use vidni_core::timeline::{self, Clip, Timeline};
+use vidni_core::voices::{self, Pack};
+use vidni_core::{VERSION, fonts};
+
+/// The fonts of vidni's look, as caption, mono and display. Themes will
+/// name their own (P5-VIDNI-01).
+pub const LOOK: [&str; 3] = [
+    "ibm-plex-sans-bold",
+    "ibm-plex-mono-bold",
+    "space-grotesk-bold",
+];
+
+/// How far a cut's loudness may be from its target, in LU.
+const LOUDNESS_TOLERANCE: f64 = 1.5;
+
+/// Counts the changes to what the compositor draws. A change makes every
+/// earlier build's record out of date.
+const COMPOSITOR: u32 = 1;
+
+/// The font files a cut is drawn with.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Faces {
+    pub caption: PathBuf,
+    pub mono: PathBuf,
+    pub display: PathBuf,
+}
+
+impl Faces {
+    /// The pinned fonts of vidni's look, found in `dirs` and checked by
+    /// their SHA-256.
+    pub fn pinned(dirs: &[PathBuf]) -> Result<Self, String> {
+        let find = |id: &str| {
+            let font = fonts::get(id).ok_or_else(|| format!("no pinned font {id}"))?;
+            fonts::find(&font, dirs)
+        };
+        Ok(Self {
+            caption: find(LOOK[0])?,
+            mono: find(LOOK[1])?,
+            display: find(LOOK[2])?,
+        })
+    }
+
+    /// One file for all three faces.
+    pub fn all(file: &Path) -> Self {
+        Self {
+            caption: file.to_path_buf(),
+            mono: file.to_path_buf(),
+            display: file.to_path_buf(),
+        }
+    }
+
+    fn files(&self) -> [&Path; 3] {
+        [&self.caption, &self.mono, &self.display]
+    }
+}
+
+/// What a build runs with, besides the project: the fonts, and the ffmpeg
+/// on the path.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Setup {
+    pub faces: Faces,
+    /// ffmpeg's version, as it prints it.
+    pub ffmpeg: String,
+}
+
+impl Setup {
+    /// The pinned fonts from the font folders, and the ffmpeg on the path.
+    pub fn find() -> Result<Self, String> {
+        Ok(Self {
+            faces: Faces::pinned(&fonts::dirs())?,
+            ffmpeg: ffmpeg_version()?,
+        })
+    }
+
+    /// `faces`, with the ffmpeg on the path.
+    pub fn with(faces: Faces) -> Result<Self, String> {
+        Ok(Self {
+            faces,
+            ffmpeg: ffmpeg_version()?,
+        })
+    }
+
+    fn tools(&self) -> Result<Tools, String> {
+        let mut fonts = BTreeMap::new();
+        for file in self.faces.files() {
+            let name = file
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            fonts.insert(name, release::file_hash(file)?);
+        }
+        let settings = Settings::new(0, 0);
+        let loudness = Target::default();
+        Ok(Tools {
+            vidni: VERSION.to_string(),
+            ffmpeg: self.ffmpeg.clone(),
+            fonts,
+            engine: json!({
+                "compositor": COMPOSITOR,
+                "fps": settings.fps,
+                "crf": settings.crf,
+                "preset": settings.preset,
+                "threads": settings.threads,
+                "x264": encode::X264_PARAMS,
+                "audio_kbps": settings.audio_kbps,
+                "loudness": [loudness.integrated, loudness.true_peak, loudness.range],
+            }),
+        })
+    }
+}
+
+/// The version of the ffmpeg on the path: `9.0.2` of `ffmpeg version 9.0.2 …`.
+fn ffmpeg_version() -> Result<String, String> {
+    let out = Command::new("ffmpeg")
+        .arg("-version")
+        .output()
+        .map_err(|e| format!("ffmpeg: {e}; vidni encodes with the ffmpeg on the path"))?;
+    String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .next()
+        .and_then(|line| line.strip_prefix("ffmpeg version "))
+        .and_then(|rest| rest.split_whitespace().next())
+        .map(str::to_string)
+        .ok_or_else(|| "ffmpeg -version printed no version".to_string())
+}
+
+/// Why a build, or an approval, didn't happen.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Stop {
+    /// A gate refused it: each reason is the creator's to fix.
+    Refused(Vec<String>),
+    /// Something broke: a tool, or a file.
+    Failed(String),
+}
+
+impl Stop {
+    fn refused(reason: String) -> Self {
+        Stop::Refused(vec![reason])
+    }
+}
+
+/// What a build is doing, for whoever is watching.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Step<'a> {
+    /// A stage begins.
+    Stage(&'a str),
+    /// A picture's frames: so many of so many are encoded.
+    Frames { file: &'a str, done: u64, of: u64 },
+}
+
+/// The camera a web line is framed by in a cut (docs/spec.md, Cameras).
+/// `highlights` is the width of the line's highlight boxes together, when
+/// it has any.
+pub fn camera_name(line: &Line, scene: &Scene, portrait: bool, highlights: Option<f64>) -> String {
+    let landscape = line
+        .camera
+        .clone()
+        .or_else(|| scene.default_camera.clone())
+        .unwrap_or_else(|| "viewport".into());
+    if !portrait {
+        return landscape;
+    }
+    if let Some(vertical) = &line.camera_vertical {
+        return vertical.clone();
+    }
+    if let (Some(limit), Some(width)) = (scene.vertical_follows_highlights, highlights)
+        && width <= limit
+    {
+        return "highlights".into();
+    }
+    scene
+        .cameras
+        .get(&landscape)
+        .and_then(|c| c.vertical.clone())
+        .unwrap_or(landscape)
+}
+
+/// Everything one build of a cut is made from, worked out before anything
+/// is rendered.
+pub struct Plan<'p> {
+    project: &'p Project,
+    cut: &'p Cut,
+    voice: Voice,
+    layout: Layout,
+    /// Each line's clip, in script order.
+    clips: Vec<PathBuf>,
+    timeline: Timeline,
+    /// The timeline as its file holds it.
+    timeline_json: String,
+    shots: Vec<Shot>,
+    /// Each picture to encode: its file name, and whether captions are
+    /// drawn into it.
+    pictures: Vec<(String, bool)>,
+    faces: Faces,
+    tools: Tools,
+    pub sources: Sources,
+    /// Everything the build depends on, as one hash.
+    pub inputs: String,
+}
+
+/// The lines of `cut` that the draft voice has spoken, each with its clip;
+/// or the refusal that names the ones it hasn't.
+fn drafted(
+    project: &Project,
+    dir: &Path,
+    cut: &Cut,
+    pack: &Pack,
+) -> Result<Vec<(String, PathBuf)>, Stop> {
+    let lock = voices::read_lock(dir).map_err(Stop::Failed)?;
+    let lines = cut.lines_in(project);
+    let (mut clips, mut unspoken) = (Vec::new(), Vec::new());
+    for line in &lines {
+        match voices::drafted(dir, &lock, pack, &project.voice, line) {
+            Some(clip) => clips.push((line.id.clone(), clip)),
+            None => unspoken.push(line.id.as_str()),
+        }
+    }
+    match unspoken.first() {
+        None => Ok(clips),
+        Some(first) => Err(Stop::refused(format!(
+            "cut {}: the draft voice hasn't spoken {} of its {} lines as they are now (the first: {first}); `vidni draft` speaks them",
+            cut.id,
+            unspoken.len(),
+            lines.len()
+        ))),
+    }
+}
+
+/// Each line's shot in `cut`, from the project's captures.
+fn shots(project: &Project, dir: &Path, cut: &Cut, lines: &[&Line]) -> Result<Vec<Shot>, String> {
+    let keys = capture::line_keys(project);
+    let portrait = cut.aspect == Aspect::Portrait;
+    let page =
+        |id: &str| capture::page_capture(project, cut, id).map(|c| capture::path(dir, &c.key));
+    lines
+        .iter()
+        .map(|line| {
+            let label = project
+                .sections
+                .get(&line.section)
+                .map(|s| s.label.clone())
+                .unwrap_or_default();
+            let overlay = line.overlay.as_deref().and_then(page);
+            let scene_id = line
+                .scene_in(project)
+                .ok_or_else(|| format!("line {} shows no scene", line.id))?;
+            let picture = match page(scene_id) {
+                Some(card) => Picture::Card(card),
+                None => {
+                    let scene = project
+                        .scenes
+                        .get(scene_id)
+                        .ok_or_else(|| format!("line {} shows an unknown scene", line.id))?;
+                    let key = keys
+                        .get(&line.id)
+                        .ok_or_else(|| format!("line {} has no capture", line.id))?;
+                    let file = capture::frames_path(dir, key);
+                    let frames: Frames = fs::read_to_string(&file)
+                        .map_err(|e| e.to_string())
+                        .and_then(|text| serde_json::from_str(&text).map_err(|e| e.to_string()))
+                        .map_err(|e| format!("{}: {e}", file.display()))?;
+                    // Cameras are framed now, from the boxes the capture
+                    // measured, so a camera edited since frames what it names today.
+                    let highlights = frames.camera("highlights", scene).map(|b| b[2]);
+                    let name = camera_name(line, scene, portrait, highlights);
+                    let viewport = [f64::from(frames.viewport[0]), f64::from(frames.viewport[1])];
+                    let camera = frames.camera(&name, scene).ok_or_else(|| {
+                        format!(
+                            "line {}: nothing that its camera {name} names shows in its capture",
+                            line.id
+                        )
+                    })?;
+                    Picture::Still {
+                        path: capture::path(dir, key),
+                        camera,
+                        viewport,
+                        scale: f64::from(frames.scale),
+                    }
+                }
+            };
+            Ok(Shot {
+                label,
+                picture,
+                overlay,
+            })
+        })
+        .collect()
+}
+
+/// Works out what a build of `cut` with `voice` is made from. `pack` is
+/// the draft voice's pack, which a draft needs to know its clips by.
+pub fn plan<'p>(
+    project: &'p Project,
+    dir: &Path,
+    cut: &'p Cut,
+    voice: Voice,
+    pack: Option<&Pack>,
+    setup: &Setup,
+) -> Result<Plan<'p>, Stop> {
+    let layout = match (cut.aspect, cut.size()) {
+        (Aspect::Landscape, [1920, 1080]) => LANDSCAPE,
+        (Aspect::Portrait, [1080, 1920]) => PORTRAIT,
+        (_, [w, h]) => {
+            return Err(Stop::refused(format!(
+                "cut {} is {w}x{h}; vidni draws 16:9 at 1920x1080 and 9:16 at 1080x1920 for now",
+                cut.id
+            )));
+        }
+    };
+    let clips = match (voice, pack) {
+        (Voice::Takes, _) => release::takes_of(project, dir, cut).map_err(Stop::Refused)?,
+        (Voice::Draft, Some(pack)) => drafted(project, dir, cut, pack)?,
+        (Voice::Draft, None) => {
+            return Err(Stop::Failed("a draft needs its voice's pack".into()));
+        }
+    };
+    let captures = capture::for_cut(project, cut);
+    let untaken: Vec<&capture::Capture> = captures
+        .iter()
+        .filter(|c| !capture::taken(dir, c))
+        .collect();
+    if let Some(first) = untaken.first() {
+        return Err(Stop::refused(format!(
+            "cut {}: {} of its {} captures {} taken yet (the first: {}); `vidni draft` takes them",
+            cut.id,
+            untaken.len(),
+            captures.len(),
+            if untaken.len() == 1 {
+                "isn't"
+            } else {
+                "aren't"
+            },
+            first.what
+        )));
+    }
+    let lines = cut.lines_in(project);
+    let infos = clips
+        .iter()
+        .map(|(_, path)| {
+            let reader =
+                hound::WavReader::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
+            Ok(Clip {
+                wav: release::relative(dir, path),
+                frames: u64::from(reader.duration()),
+                rate: reader.spec().sample_rate,
+            })
+        })
+        .collect::<Result<Vec<Clip>, String>>()
+        .map_err(Stop::Failed)?;
+    let timeline = timeline::build_for(project, &lines, &infos, voice).map_err(Stop::Failed)?;
+    let timeline_json = serde_json::to_string_pretty(&timeline)
+        .map(|json| json + "\n")
+        .map_err(|e| Stop::Failed(e.to_string()))?;
+    let shots = shots(project, dir, cut, &lines).map_err(Stop::Failed)?;
+    // A draft is for watching, so it is one picture, with the captions a
+    // viewer would see. The final build makes every picture the cut asks for.
+    let name = |suffix: &str| format!("{}{suffix}.mp4", cut.id);
+    let pictures = match (cut.captions(), voice) {
+        (Captions::File, _) => vec![(name(""), false)],
+        (Captions::Burned, _) | (Captions::Both, Voice::Draft) => vec![(name(""), true)],
+        (Captions::Both, Voice::Takes) => vec![(name(""), false), (name(".captioned"), true)],
+    };
+    let sources = release::sources(project, dir, cut, &clips).map_err(Stop::Failed)?;
+    let tools = setup.tools().map_err(Stop::Failed)?;
+    let inputs = release::inputs(
+        voice,
+        &sources,
+        &tools,
+        &sha256_hex(timeline_json.as_bytes()),
+    );
+    Ok(Plan {
+        project,
+        cut,
+        voice,
+        layout,
+        clips: clips.into_iter().map(|(_, path)| path).collect(),
+        timeline,
+        timeline_json,
+        shots,
+        pictures,
+        faces: setup.faces.clone(),
+        tools,
+        sources,
+        inputs,
+    })
+}
+
+impl Plan<'_> {
+    /// The cut's timeline.
+    pub fn timeline(&self) -> &Timeline {
+        &self.timeline
+    }
+
+    /// Each line's clip, in script order.
+    pub fn clips(&self) -> Vec<&Path> {
+        self.clips.iter().map(PathBuf::as_path).collect()
+    }
+
+    /// The compositor of the cut's picture, with its captions drawn in or
+    /// left out.
+    pub fn composer(&self, captions: bool) -> Result<Composer, String> {
+        let mut fonts = Fonts::new();
+        let faces = Type {
+            caption: fonts.load(&self.faces.caption)?,
+            mono: fonts.load(&self.faces.mono)?,
+            display: fonts.load(&self.faces.display)?,
+        };
+        let subtitle = self.project.meta.subtitle.clone().unwrap_or_default();
+        let composer = Composer::new(
+            self.layout,
+            &self.timeline,
+            self.shots.clone(),
+            &mut fonts,
+            &faces,
+            &subtitle,
+        )?;
+        Ok(match captions {
+            true => composer,
+            false => composer.without_captions(),
+        })
+    }
+
+    /// The caption files' names: `<cut>.<language>.srt` and `.vtt`.
+    fn caption_files(&self) -> [String; 2] {
+        let stem = format!("{}.{}", self.cut.id, self.project.meta.language);
+        [format!("{stem}.srt"), format!("{stem}.vtt")]
+    }
+
+    /// The files a final build delivers: its pictures and its captions.
+    fn deliverables(&self) -> Vec<String> {
+        let pictures = self.pictures.iter().map(|(name, _)| name.clone());
+        pictures.chain(self.caption_files()).collect()
+    }
+}
+
+fn write(path: &Path, bytes: &[u8]) -> Result<String, String> {
+    fs::write(path, bytes).map_err(|e| format!("{}: {e}", path.display()))?;
+    Ok(sha256_hex(bytes))
+}
+
+/// Builds what `plan` describes into its folder (`build/draft` or
+/// `build/final`), and writes the build's record last, so that an
+/// interrupted build never looks finished.
+pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<Record, String> {
+    let cut = &plan.cut.id;
+    let folder = dir.join(plan.voice.dir());
+    fs::create_dir_all(&folder).map_err(|e| format!("{}: {e}", folder.display()))?;
+    let at = |name: &str| folder.join(name);
+    // A record left from an earlier build would describe files about to change.
+    let record_path = Record::path(dir, plan.voice, cut);
+    if record_path.is_file() {
+        fs::remove_file(&record_path).map_err(|e| format!("{}: {e}", record_path.display()))?;
+    }
+
+    progress(Step::Stage("timeline and captions"));
+    // The resolved project is the file the engine's inputs are read off;
+    // it is the whole project's, so no cut's record holds its hash.
+    ratify::write_resolved(plan.project, dir)?;
+    let [srt, vtt] = plan.caption_files();
+    let srt_path = at(&srt);
+    let mut t1 = T1 {
+        timeline: write(
+            &at(&format!("{cut}.timeline.json")),
+            plan.timeline_json.as_bytes(),
+        )?,
+        srt: write(&srt_path, timeline::srt(&plan.timeline).as_bytes())?,
+        vtt: write(&at(&vtt), timeline::vtt(&plan.timeline).as_bytes())?,
+        pcm: String::new(),
+        pcm_normalized: String::new(),
+    };
+
+    progress(Step::Stage("narration"));
+    let narration_path = at(&format!("{cut}.narration.wav"));
+    let normalized = at(&format!("{cut}.narration-norm.wav"));
+    narration::assemble(&plan.timeline, &plan.clips(), &narration_path)?;
+    encode::loudnorm(&narration_path, &normalized, Target::default())?;
+    t1.pcm = release::file_hash(&narration_path)?;
+    t1.pcm_normalized = release::file_hash(&normalized)?;
+
+    let (width, height) = plan.layout.size;
+    let cues = plan.timeline.sentences.iter().map(|e| e.cues.len()).sum();
+    let mut outputs = BTreeMap::new();
+    for (name, captions) in &plan.pictures {
+        progress(Step::Stage(name));
+        let mut composer = plan.composer(*captions)?;
+        // ffmpeg picks its container by the name's ending.
+        let part = at(&format!("{name}.part.mp4"));
+        let mp4 = at(name);
+        let of = composer.frames();
+        let mut encoder = Encoder::start(&Settings::new(width, height), &normalized, &part)?;
+        let rendered = compose::render(&mut composer, |f, bytes| {
+            encoder.push(bytes)?;
+            progress(Step::Frames {
+                file: name,
+                done: f + 1,
+                of,
+            });
+            Ok(())
+        });
+        // When ffmpeg stops part of the way, what it said is the reason,
+        // not the pipe it left broken.
+        let (frames, frame_count) = match (rendered, encoder.finish()) {
+            (Ok((frames, _)), Ok(count)) => (frames, count),
+            (_, Err(ffmpeg)) => return Err(ffmpeg),
+            (Err(e), Ok(_)) => return Err(e),
+        };
+        fs::rename(&part, &mp4).map_err(|e| format!("{}: {e}", mp4.display()))?;
+        let report = qa::check(
+            &mp4,
+            &qa::Expect {
+                width,
+                height,
+                fps: FPS as u32,
+                duration: plan.timeline.total,
+                loudness: Target::default().integrated,
+                tolerance: LOUDNESS_TOLERANCE,
+                captions: Some((srt_path.clone(), cues)),
+                chapters: None,
+            },
+        )?;
+        outputs.insert(
+            name.clone(),
+            Output {
+                captions: *captions,
+                frames,
+                frame_count,
+                packets: sha256_hex(&crate::framemd5(&mp4)?),
+                mp4: release::file_hash(&mp4)?,
+                qa: report.summary,
+                problems: report.problems,
+            },
+        );
+    }
+    let record = Record {
+        cut: cut.clone(),
+        voice: plan.voice,
+        inputs: plan.inputs.clone(),
+        sources: plan.sources.clone(),
+        t1,
+        outputs,
+        tools: plan.tools.clone(),
+    };
+    record.write(dir)?;
+    Ok(record)
+}
+
+/// Drafts `cut`: builds it in the draft voice, into `build/draft/`. Its
+/// lines must be spoken and its captures taken already.
+pub fn draft(
+    project: &Project,
+    dir: &Path,
+    cut: &Cut,
+    pack: &Pack,
+    setup: &Setup,
+    progress: &mut dyn FnMut(Step),
+) -> Result<Record, Stop> {
+    let plan = plan(project, dir, cut, Voice::Draft, Some(pack), setup)?;
+    build(&plan, dir, progress).map_err(Stop::Failed)
+}
+
+/// The final build of `cut`, from the creator's takes, into `build/final/`
+/// and, when QA passes, `out/`. It is refused unless the cut is ratified
+/// and unchanged and every line has a current take.
+pub fn final_build(
+    project: &Project,
+    dir: &Path,
+    lock: &ratify::Lock,
+    cut: &Cut,
+    setup: &Setup,
+    progress: &mut dyn FnMut(Step),
+) -> Result<Record, Stop> {
+    let refusals = release::refusals(project, dir, lock, cut);
+    if !refusals.is_empty() {
+        return Err(Stop::Refused(refusals));
+    }
+    let plan = plan(project, dir, cut, Voice::Takes, None, setup)?;
+    let record = build(&plan, dir, progress).map_err(Stop::Failed)?;
+    let problems = record.problems();
+    if !problems.is_empty() {
+        let mut refusals = vec![format!(
+            "cut {} failed QA, so it isn't delivered; its files are in {}",
+            cut.id,
+            Voice::Takes.dir()
+        )];
+        refusals.extend(problems);
+        return Err(Stop::Refused(refusals));
+    }
+    deliver(&plan, dir).map_err(Stop::Failed)?;
+    Ok(record)
+}
+
+/// Copies a final build's pictures and captions to `out/`.
+fn deliver(plan: &Plan, dir: &Path) -> Result<(), String> {
+    let (from, to) = (dir.join(Voice::Takes.dir()), dir.join(release::OUT));
+    fs::create_dir_all(&to).map_err(|e| format!("{}: {e}", to.display()))?;
+    let delivered = plan.deliverables();
+    for name in &delivered {
+        fs::copy(from.join(name), to.join(name))
+            .map_err(|e| format!("{}: {e}", to.join(name).display()))?;
+    }
+    // A captioned variant from when the cut asked for one is no longer the cut's.
+    let variant = format!("{}.captioned.mp4", plan.cut.id);
+    let stale = to.join(&variant);
+    if !delivered.contains(&variant) && stale.is_file() {
+        fs::remove_file(&stale).map_err(|e| format!("{}: {e}", stale.display()))?;
+    }
+    Ok(())
+}
+
+/// Approves `cut` on `day`: its final build becomes a release in
+/// `release.json`. It is refused unless a final build would be allowed
+/// now, the build on disk is of the cut as it is now and passed QA, and
+/// the files in `out/` are the ones it delivered.
+pub fn approve(
+    project: &Project,
+    dir: &Path,
+    lock: &ratify::Lock,
+    cut: &Cut,
+    setup: &Setup,
+    day: &str,
+) -> Result<Approval, Stop> {
+    let refusals = release::refusals(project, dir, lock, cut);
+    if !refusals.is_empty() {
+        return Err(Stop::Refused(refusals));
+    }
+    let plan = plan(project, dir, cut, Voice::Takes, None, setup)?;
+    let again = format!("`vidni final --cut {}` builds it", cut.id);
+    let record = Record::read(dir, Voice::Takes, &cut.id)
+        .map_err(Stop::Failed)?
+        .ok_or_else(|| Stop::refused(format!("cut {} has no final build; {again}", cut.id)))?;
+    if record.inputs != plan.inputs {
+        let (was, now) = (&record.sources, &plan.sources);
+        let mut changed: Vec<&str> = [
+            ("what it shows and says", was.content != now.content),
+            ("its takes", was.audio != now.audio),
+            ("its captures", was.captures != now.captures),
+            ("its gaps, look or settings", was.look != now.look),
+            ("vidni, ffmpeg or the fonts", record.tools != plan.tools),
+        ]
+        .into_iter()
+        .filter_map(|(what, differs)| differs.then_some(what))
+        .collect();
+        // The one input left: what a line's words are read as can change
+        // the timeline without changing a take.
+        if changed.is_empty() {
+            changed.push("its timeline");
+        }
+        return Err(Stop::refused(format!(
+            "cut {} has changed since its final build ({}); {again} again",
+            cut.id,
+            changed.join(", ")
+        )));
+    }
+    if !record.problems().is_empty() {
+        return Err(Stop::refused(format!(
+            "cut {}'s final build failed QA; {again} again",
+            cut.id
+        )));
+    }
+    let [srt, vtt] = plan.caption_files();
+    let mut delivered: Vec<(&str, &str)> = vec![(&srt, &record.t1.srt), (&vtt, &record.t1.vtt)];
+    delivered.extend(
+        record
+            .outputs
+            .iter()
+            .map(|(name, o)| (name.as_str(), o.mp4.as_str())),
+    );
+    for (name, sha) in delivered {
+        let file = dir.join(release::OUT).join(name);
+        if release::file_hash(&file).ok().as_deref() != Some(sha) {
+            return Err(Stop::refused(format!(
+                "{} isn't the file cut {}'s final build delivered; {again} again",
+                Path::new(release::OUT).join(name).display(),
+                cut.id
+            )));
+        }
+    }
+    let mut releases = release::read(dir).map_err(Stop::Failed)?;
+    let approval = release::approve(&mut releases, &record, day);
+    if matches!(approval, Approval::Approved(_)) {
+        release::write(dir, &releases).map_err(Stop::Failed)?;
+    }
+    Ok(approval)
+}
+
+/// Runs ffmpeg and ffprobe once, so that a build fails before it starts
+/// when either is missing.
+pub fn check_tools() -> Result<(), String> {
+    for tool in ["ffmpeg", "ffprobe"] {
+        run(Command::new(tool).arg("-version"))
+            .map_err(|e| format!("{e}; vidni builds with the {tool} on the path"))?;
+    }
+    Ok(())
+}
+
+/// A build of the project in `dir`, for people, a line for each file:
+/// where it is, its frames, and what QA measured.
+pub fn summary(record: &Record, dir: &Path) -> Vec<String> {
+    let folder = dir.join(record.voice.dir());
+    record
+        .outputs
+        .iter()
+        .map(|(name, o)| {
+            format!(
+                "{}: {} frames; {}",
+                folder.join(name).display(),
+                o.frame_count,
+                o.qa
+            )
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A web scene with a wide camera whose 9:16 stand-in is a narrow one,
+    /// and four lines framed in the four ways a 9:16 cut chooses between.
+    const PROJECT: &str = r#"schema = 1
+
+[meta]
+title = "Framing"
+default_scene = "page"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[[cuts]]
+id = "short"
+aspect = "9:16"
+
+[sections.main]
+
+[[lines]]
+id = "plain"
+section = "main"
+show = "The scene's default camera."
+
+[[lines]]
+id = "wide"
+section = "main"
+show = "A camera that names its 9:16 stand-in."
+camera = "table"
+
+[[lines]]
+id = "boxed"
+section = "main"
+show = "Highlights narrow enough to follow."
+camera = "table"
+highlight = ["cell"]
+
+[[lines]]
+id = "named"
+section = "main"
+show = "A 9:16 camera of the line's own."
+camera = "table"
+camera_vertical = "column"
+highlight = ["cell"]
+
+[scenes.page]
+kind = "web"
+url = "https://example.com"
+default_camera = "table"
+vertical_follows_highlights = 400
+
+[scenes.page.targets]
+grid = { css = "table" }
+cell = { css = "td" }
+side = { css = "aside" }
+
+[scenes.page.cameras]
+table = { union = ["grid"], vertical = "column" }
+column = { union = ["side"] }
+"#;
+
+    fn project() -> Project {
+        vidni_core::validate::check(PROJECT, None).unwrap_or_else(|p| panic!("{p:?}"))
+    }
+
+    #[test]
+    fn a_cut_chooses_each_lines_camera_in_the_specs_order() {
+        let p = project();
+        let scene = &p.scenes["page"];
+        let name = |line: usize, portrait: bool, highlights: Option<f64>| {
+            camera_name(&p.lines[line], scene, portrait, highlights)
+        };
+        // 16:9: the line's camera, or else the scene's default.
+        assert_eq!(name(0, false, None), "table");
+        assert_eq!(name(3, false, Some(300.0)), "table");
+        // 9:16, in order: the line's own vertical camera;
+        assert_eq!(name(3, true, Some(300.0)), "column");
+        // its highlights, when they are narrow enough;
+        assert_eq!(name(2, true, Some(400.0)), "highlights");
+        // else the vertical stand-in of its camera;
+        assert_eq!(name(2, true, Some(401.0)), "column");
+        assert_eq!(name(1, true, None), "column");
+        // else the camera itself, and the whole viewport when nothing names one.
+        let mut bare = scene.clone();
+        bare.cameras.get_mut("table").unwrap().vertical = None;
+        assert_eq!(camera_name(&p.lines[1], &bare, true, None), "table");
+        bare.default_camera = None;
+        assert_eq!(camera_name(&p.lines[0], &bare, true, None), "viewport");
+    }
+
+    /// Writes each web line's capture into `dir`: a still's file, and its
+    /// frames with `targets` as the boxes measured. A line's highlights
+    /// are measured too, as in a real capture.
+    fn capture_lines(dir: &Path, p: &Project, targets: &[(&str, &[[f64; 4]])]) {
+        let keys = capture::line_keys(p);
+        let boxes = |name: &str| -> Vec<[f64; 4]> {
+            targets
+                .iter()
+                .find(|(target, _)| *target == name)
+                .map(|(_, boxes)| boxes.to_vec())
+                .unwrap_or_default()
+        };
+        for line in &p.lines {
+            let key = &keys[&line.id];
+            let still = capture::path(dir, key);
+            fs::create_dir_all(still.parent().unwrap()).unwrap();
+            fs::write(&still, b"a still").unwrap();
+            let frames = Frames {
+                viewport: [1280, 720],
+                scale: 3,
+                targets: targets
+                    .iter()
+                    .map(|(name, boxes)| (name.to_string(), boxes.to_vec()))
+                    .collect(),
+                highlights: line
+                    .highlight
+                    .iter()
+                    .map(|name| (name.clone(), boxes(name)))
+                    .collect(),
+                browser: "a stand-in".into(),
+            };
+            let json = serde_json::to_string(&frames).unwrap();
+            fs::write(capture::frames_path(dir, key), json).unwrap();
+        }
+    }
+
+    /// The camera rectangle of each of a cut's lines.
+    fn framing(p: &Project, dir: &Path, cut: usize) -> Vec<[f64; 4]> {
+        let lines = p.cuts[cut].lines_in(p);
+        shots(p, dir, &p.cuts[cut], &lines)
+            .unwrap()
+            .into_iter()
+            .map(|shot| match shot.picture {
+                Picture::Still {
+                    camera,
+                    viewport,
+                    scale,
+                    ..
+                } => {
+                    assert_eq!((viewport, scale), ([1280.0, 720.0], 3.0));
+                    camera
+                }
+                Picture::Card(card) => panic!("{} is no still", card.display()),
+            })
+            .collect()
+    }
+
+    const TABLE: [f64; 4] = [100.0, 80.0, 900.0, 500.0];
+    const COLUMN: [f64; 4] = [1000.0, 80.0, 240.0, 600.0];
+    const CELL: [f64; 4] = [300.0, 200.0, 180.0, 40.0];
+
+    #[test]
+    fn a_shot_is_framed_by_its_cameras_targets_in_the_capture() {
+        let dir = tempfile::tempdir().unwrap();
+        let dir = dir.path();
+        let p = project();
+        capture_lines(
+            dir,
+            &p,
+            &[("grid", &[TABLE]), ("side", &[COLUMN]), ("cell", &[CELL])],
+        );
+        assert_eq!(framing(&p, dir, 0), [TABLE, TABLE, TABLE, TABLE]);
+        assert_eq!(framing(&p, dir, 1), [COLUMN, COLUMN, CELL, COLUMN]);
+    }
+
+    #[test]
+    fn a_camera_edited_after_the_capture_frames_what_it_names_now() {
+        let dir = tempfile::tempdir().unwrap();
+        let dir = dir.path();
+        let p = project();
+        capture_lines(
+            dir,
+            &p,
+            &[("grid", &[TABLE]), ("side", &[COLUMN]), ("cell", &[CELL])],
+        );
+        // The 9:16 stand-in now frames the cell, and a new camera frames
+        // the table and the column together. Cameras aren't part of a
+        // capture's key, so the stills and their frames are the same files.
+        let text = PROJECT
+            .replace(
+                "column = { union = [\"side\"] }",
+                "column = { union = [\"cell\"] }\nboth = { union = [\"grid\", \"side\"] }",
+            )
+            .replace(
+                "show = \"The scene's default camera.\"",
+                "show = \"The scene's default camera.\"\ncamera = \"both\"",
+            );
+        let edited = vidni_core::validate::check(&text, None).unwrap_or_else(|p| panic!("{p:?}"));
+        assert_eq!(capture::line_keys(&edited), capture::line_keys(&p));
+        let both = [100.0, 80.0, 1140.0, 600.0];
+        assert_eq!(framing(&edited, dir, 0), [both, TABLE, TABLE, TABLE]);
+        assert_eq!(framing(&edited, dir, 1), [both, CELL, CELL, CELL]);
+    }
+
+    #[test]
+    fn a_camera_whose_targets_dont_show_stops_the_build_by_name() {
+        let dir = tempfile::tempdir().unwrap();
+        let dir = dir.path();
+        let p = project();
+        // The column's target matched nothing on the page.
+        capture_lines(
+            dir,
+            &p,
+            &[("grid", &[TABLE]), ("side", &[]), ("cell", &[CELL])],
+        );
+        let lines = p.cuts[1].lines_in(&p);
+        assert_eq!(
+            shots(&p, dir, &p.cuts[1], &lines).unwrap_err(),
+            "line plain: nothing that its camera column names shows in its capture"
+        );
+        // The 16:9 cut doesn't use it.
+        assert_eq!(framing(&p, dir, 0).len(), 4);
+    }
+}

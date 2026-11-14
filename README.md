@@ -17,12 +17,14 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 
 - `vidni validate` checks a project file against [schema 1](docs/spec.md), and `vidni fmt` puts it in the canonical layout.
 - `vidni takes` tracks the recorded takes.
-- `vidni voices` lists the draft voices with their licences, and `vidni draft` speaks every line in the draft voice, seeded so that a redraft repeats it.
+- `vidni voices` lists the draft voices with their licences, and `vidni speak` speaks every line in the draft voice, seeded so that it repeats.
 - `vidni capture` captures web scenes and page scenes through Chromium, as the cuts need them.
 - `vidni hear` listens to each line's audio with whisper and flags a line that doesn't sound like its script. It only advises.
+- `vidni draft` renders each cut in the draft voice, to watch before recording.
 - `vidni ratify` and `vidni status` freeze cuts.
+- `vidni final` builds each ratified cut from your takes, `vidni approve` records it as a release, and `vidni repro` checks that a build repeats.
 
-Nothing renders yet.
+The nibli example goes from draft to approved through these commands ([docs/spec.md](docs/spec.md#from-draft-to-release)). Recording (`vidni record`) and the desktop app aren't built yet.
 
 ## Layout
 

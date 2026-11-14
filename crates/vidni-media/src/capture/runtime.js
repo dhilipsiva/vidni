@@ -2,8 +2,8 @@
 // in vidni's own isolated world, where the page's scripts can't reach it.
 // It puts vidni's style and highlight layer into the document, finds a web
 // scene's targets (docs/spec.md, Targets), draws a line's highlight boxes,
-// frames its cameras, reads texts for expectations, says where an action
-// clicks, and calms animations. Targets arrive as the project serializes
+// measures the targets that cameras are framed from, reads texts for
+// expectations, says where an action clicks, and calms animations. Targets arrive as the project serializes
 // them. The geometry is the reference's (reference/capture.mjs), so stills
 // match.
 window.__vidni = (() => {
@@ -91,9 +91,12 @@ window.__vidni = (() => {
         if (off >= nodes[j][1]) return [nodes[j][0], Math.min(off - nodes[j][1], nodes[j][0].textContent.length)];
       }
     };
+    // An element with no text has no line to box.
+    const from = at(start), to = at(end);
+    if (!from || !to) return null;
     const range = document.createRange();
-    range.setStart(...at(start));
-    range.setEnd(...at(end));
+    range.setStart(...from);
+    range.setEnd(...to);
     const b = range.getBoundingClientRect();
     return [b.x - 6, b.y - 3, b.width + 12, b.height + 6];
   };
@@ -251,16 +254,13 @@ window.__vidni = (() => {
       }
       return out;
     },
-    // Each camera's frame: the union of its targets' boxes, or the viewport;
-    // `highlights` is the union of the boxes just drawn.
-    cameras(cameras, drawn) {
-      const out = {viewport: [0, 0, innerWidth, innerHeight]};
-      for (const [name, camera] of cameras) {
-        if (camera.viewport) { out[name] = [0, 0, innerWidth, innerHeight]; continue; }
-        const rects = camera.union.flatMap(spec => resolve(spec).map(({el, r}) => clip(el, r)).filter(Boolean));
-        out[name] = union(rects);
+    // The boxes of each of `targets` ([name, spec] pairs) as they show now,
+    // by name. Cameras are framed from them when a cut is built.
+    targets(targets) {
+      const out = {};
+      for (const [name, spec] of targets) {
+        out[name] = resolve(spec).map(({el, r}) => clip(el, r)).filter(Boolean);
       }
-      out.highlights = union(Object.values(drawn).flat());
       return out;
     },
     // The texts of a target's matches, in page order.

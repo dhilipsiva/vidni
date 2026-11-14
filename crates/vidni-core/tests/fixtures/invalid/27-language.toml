@@ -1,0 +1,22 @@
+# expect: 6:12: language must be a BCP 47 tag such as en or pt-BR, not "en/US"
+schema = 1
+
+[meta]
+title = "A broken project"
+language = "en/US"
+default_scene = "page"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "Hello."
+
+[scenes.page]
+kind = "web"
+url = "https://example.com"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

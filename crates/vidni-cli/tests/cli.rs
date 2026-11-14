@@ -191,6 +191,10 @@ fn status_ratify_and_unratify_work_from_the_hashes() {
             let path = vidni_core::capture::path(dir.path(), &c.key);
             fs::create_dir_all(path.parent().unwrap()).unwrap();
             fs::write(path, c.key.as_bytes()).unwrap();
+            if matches!(c.source, vidni_core::capture::Source::Line(_)) {
+                let frames = vidni_core::capture::frames_path(dir.path(), &c.key);
+                fs::write(frames, br#"{"targets":{}}"#).unwrap();
+            }
         }
     }
     let (code, stdout, _) = out(&["ratify", project, "--cut", "long"]);
@@ -334,13 +338,14 @@ fn voices_lists_each_pack_with_its_licence() {
 }
 
 #[test]
-fn draft_says_how_to_fetch_a_missing_voice() {
+fn speak_says_how_to_fetch_a_missing_voice() {
     let store = tempfile::tempdir().unwrap();
     let dir = tempfile::tempdir().unwrap();
     let file = project_with_voice(dir.path(), "piper:en_US-joe-medium");
-    let out = vidni_without_voices(&["draft", file.to_str().unwrap()], store.path());
+    let out = vidni_without_voices(&["speak", file.to_str().unwrap()], store.path());
     let stderr = String::from_utf8_lossy(&out.stderr);
-    assert_eq!(out.status.code(), Some(1), "{stderr}");
+    // A voice that isn't fetched is something missing, as a font is.
+    assert_eq!(out.status.code(), Some(2), "{stderr}");
     assert!(
         stderr.contains("run `vidni voices fetch piper:en_US-joe-medium`"),
         "{stderr}"
@@ -422,4 +427,120 @@ fn hear_names_a_line_that_isnt_there() {
         String::from_utf8_lossy(&out.stderr),
         format!("vidni: {}: no line nope\n", file.display())
     );
+}
+
+/// Runs vidni with no fonts to be found, so that anything it does needs none.
+fn vidni_without_fonts(args: &[&str]) -> (Option<i32>, String, String) {
+    let out = Command::new(env!("CARGO_BIN_EXE_vidni"))
+        .args(args)
+        .env("VIDNI_FONTS", "/nonexistent/fonts")
+        .output()
+        .unwrap();
+    (
+        out.status.code(),
+        String::from_utf8_lossy(&out.stdout).into_owned(),
+        String::from_utf8_lossy(&out.stderr).into_owned(),
+    )
+}
+
+#[test]
+fn the_gates_refuse_before_any_tool_is_needed() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = project_with_voice(dir.path(), "piper:en_US-joe-medium");
+    let project = file.to_str().unwrap();
+    let unratified = "vidni: cut long isn't ratified; `vidni ratify --cut long` freezes it\n\
+                      vidni: cut long: 1 of its 1 lines has no take: main-1\n";
+    // A final build and an approval of a cut that was never ratified or recorded.
+    for command in ["final", "approve"] {
+        let (code, stdout, stderr) = vidni_without_fonts(&[command, project]);
+        assert_eq!(
+            (code, stdout.as_str()),
+            (Some(1), ""),
+            "{command}: {stderr}"
+        );
+        assert_eq!(stderr, unratified, "{command}");
+    }
+    // A repro builds from the captures it finds, and there are none yet.
+    let (code, _, stderr) = vidni_without_fonts(&["repro", project]);
+    assert_eq!(code, Some(1), "{stderr}");
+    assert!(
+        stderr.starts_with("vidni: 1 of the captures isn't taken yet (the first: line main-1); "),
+        "{stderr}"
+    );
+    // A cut that doesn't exist.
+    for command in ["draft", "final", "approve", "repro"] {
+        let (code, _, stderr) = vidni_without_fonts(&[command, project, "--cut", "nope"]);
+        assert_eq!(code, Some(1), "{command}");
+        assert_eq!(stderr, "vidni: there is no cut \"nope\"\n", "{command}");
+    }
+    // Nothing was made on the way.
+    let left: Vec<_> = fs::read_dir(dir.path())
+        .unwrap()
+        .map(|e| e.unwrap().file_name())
+        .collect();
+    assert_eq!(left, ["vidni.toml"]);
+}
+
+#[test]
+fn a_build_says_which_font_it_cant_find() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = project_with_voice(dir.path(), "piper:en_US-joe-medium");
+    let (code, stdout, stderr) = vidni_without_fonts(&["draft", file.to_str().unwrap()]);
+    assert_eq!((code, stdout.as_str()), (Some(2), ""), "{stderr}");
+    assert_eq!(
+        stderr,
+        "vidni: the font IBMPlexSans-Bold.otf (IBM Plex Sans Bold 1.1.0) wasn't found: looked in \
+         /nonexistent/fonts; VIDNI_FONTS names the folders that hold vidni's fonts\n"
+    );
+}
+
+#[test]
+fn a_command_marked_offline_must_have_no_network() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = project_with_voice(dir.path(), "piper:en_US-joe-medium");
+    let out = Command::new(env!("CARGO_BIN_EXE_vidni"))
+        .args(["validate", file.to_str().unwrap()])
+        .env("VIDNI_OFFLINE", "1")
+        .output()
+        .unwrap();
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    // Where these tests run with a route to the network, the mark alone is
+    // refused. (A build sandbox has none, and there the mark is true.)
+    let routed = |file: &str, name: fn(&str) -> Option<&str>| {
+        fs::read_to_string(file)
+            .unwrap_or_default()
+            .lines()
+            .filter_map(name)
+            .any(|name| name != "Iface" && name != "lo")
+    };
+    let networked = routed("/proc/self/net/route", |l| l.split_whitespace().next())
+        || routed("/proc/self/net/ipv6_route", |l| {
+            l.split_whitespace().next_back()
+        });
+    if networked {
+        assert_eq!(out.status.code(), Some(2), "{stderr}");
+        assert!(
+            stderr.starts_with(
+                "vidni: VIDNI_OFFLINE is set, but this process has a route to the network (through "
+            ),
+            "{stderr}"
+        );
+    } else {
+        assert!(out.status.success(), "{stderr}");
+    }
+}
+
+#[test]
+fn approve_exits_2_when_the_releases_cant_be_read() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = project_with_voice(dir.path(), "piper:en_US-joe-medium");
+    fs::write(dir.path().join("release.json"), "{\"cuts\": {}}").unwrap();
+    for command in ["approve", "status"] {
+        let (code, _, stderr) = vidni_without_fonts(&[command, file.to_str().unwrap()]);
+        assert_eq!(code, Some(2), "{command}: {stderr}");
+        assert!(
+            stderr.ends_with("release.json: it names no schema\n"),
+            "{command}: {stderr}"
+        );
+    }
 }

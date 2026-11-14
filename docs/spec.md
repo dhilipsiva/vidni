@@ -70,7 +70,7 @@ A line's ID is permanent. Takes, captions and per-cut state are keyed by it (P2-
 |---|---|---|---|
 | `title` | string | required | The video's title. It must not be empty. |
 | `subtitle` | string | none | A short line shown with the title, such as a series name |
-| `language` | string | `"en"` | The script's language, as a BCP 47 tag |
+| `language` | string | `"en"` | The script's language, as a BCP 47 tag of letters, digits and hyphens, such as `en` or `pt-BR`. It becomes part of the caption files' names. |
 | `strict` | boolean | `false` | Whether every line that states a fact must name its `source`. Set `claim = false` on a line that states none. |
 | `default_scene` | string | none | The scene a line shows when it names none |
 
@@ -161,7 +161,7 @@ takes/_room/                        room tone from the mic check
 
 ## The draft voice
 
-`vidni draft` speaks every line in the draft voice, `voice.draft`, so that a cut can be watched before any take is recorded.
+`vidni draft` begins by speaking every line in the draft voice, `voice.draft`, so that a cut can be watched before any take is recorded. `vidni speak` does that step alone.
 
 **Voice packs.** A draft voice is a voice pack: a model's files, pinned by size and SHA-256, plus what its model card says about the licence. `vidni voices` lists the packs vidni ships, each with its licence, whether that allows commercial use, and the model card it was read from. `vidni voices fetch <id>` downloads a pack into the voice store and checks every file. The store is `$VIDNI_VOICES`, else `$XDG_DATA_HOME/vidni/voices`, else `~/.local/share/vidni/voices`, and a pack lives in `<engine>/<model>/` there with a `pack.toml` holding its description. A creator's own voice is a folder of the same shape, with a `pack.toml` they write:
 
@@ -187,7 +187,7 @@ files = [
 
 **The cache.** Clips are cached in `build/voice/<line-id>/<key>-<seed>.wav`, where the key is the first 16 hex digits of a SHA-256 over what the voice is given (the line's `say` or `show`, with `voice.respell` applied), the pack's ID and file hashes, and `voice.length_scale`. A draft speaks only what the cache doesn't hold. Clearing `build/` and drafting again gives the same PCM, from `voice.lock`.
 
-**Licences.** A voice whose licence doesn't allow commercial use may still be drafted with, but its audio can't go into a cut that is used commercially. `vidni validate` and `vidni draft` warn about such a voice, and about one whose licence vidni can't find.
+**Licences.** A voice whose licence doesn't allow commercial use may still be drafted with, but its audio can't go into a cut that is used commercially. `vidni validate`, `vidni speak` and `vidni draft` warn about such a voice, and about one whose licence vidni can't find.
 
 ## The listening check: `vidni hear`
 
@@ -306,13 +306,15 @@ A change that arrives late, with nothing moving meanwhile, can't be seen coming:
   1. Its actions run, and the focus is taken off whatever has it.
   2. Its expectations are waited for, up to 30 seconds each, and read.
   3. When a still is needed, the line's highlights are drawn, the page settles, and the still is taken.
-- **Beside each still**, `<key>.json` holds its frames, in CSS pixels: every camera's box (the scene's own, plus `viewport` and `highlights`), each highlight's boxes, the viewport and scale, and the browser that took it.
+- **Beside each still**, `<key>.json` holds its frames, in CSS pixels: the boxes of every target of the scene, as far as they show; each highlight's boxes; the viewport and scale; and the browser that took it. Cameras aren't in it. A cut frames each camera from its targets' boxes when it is built, so a camera can be changed or added without capturing again.
 - **Each page scene** is rendered at each size a cut needs, in its own Chromium, with a transparent background when it says so.
 - **A scene's stills are kept only when it passes.** They wait aside until the scene's last line is done. The readings go to `build/onscreen.json`. No still of the scene is kept, and the problem is reported with its scene and line, when:
   - an expectation doesn't hold;
   - a script on the page throws an error;
   - the page opens a dialog, which is dismissed;
-  - the page's renderer crashes.
+  - the page's renderer crashes;
+  - a page that is a file of the project's asks the network for a part that doesn't load. Such a page should come out whole every time. A page on the web may lose a load, as pages do, unless the capture runs with [`--offline`](#without-the-network---offline).
+- **A frozen still is never taken again.** When a ratified cut froze a still's picture and only its frames are missing, `vidni capture` and `vidni draft` refuse, and say to restore the frames or to unratify the cut with `--refresh`.
 - **Interrupting** a capture (Ctrl-C) closes Chromium, removes its temporary profile and keeps no still of the unfinished scene.
 
 A web scene with a `scale` above 1 is loaded twice, and the second load is the one captured. Chromium's first load at an emulated scale came out in one of two renderings, launch by launch (DECISIONS.md, T6). The first load is inert: none of the page's scripts run, and the cookies it sets are cleared, so the second load is still a first visit. The server does see two requests.
@@ -338,7 +340,7 @@ Highlight boxes are drawn in the nibli example's look, an ember outline, until t
 | `lines` | `"all"` or array of line IDs | `"all"` | The lines the cut uses, in script order |
 | `captions` | `"burned"`, `"file"` or `"both"` | `both` for 16:9, `burned` for 9:16 | `burned` draws captions into the picture. `file` keeps the picture clean and writes SRT and VTT files. `both` makes a clean master with caption files, plus a burned-in variant (DECISIONS.md, D7). |
 | `platforms` | array of strings | the profiles on by default for the cut's aspect: `["youtube"]` for 16:9; `["youtube-shorts", "instagram-reels", "whatsapp-status"]` for 9:16 | The platform profiles the cut is made for: `youtube`, `youtube-shorts`, `instagram-reels`, `tiktok`, `whatsapp-status`, `linkedin` or `x`. `vidni platforms` lists each profile's limits, with the date they were checked and their sources. |
-| `size` | `[width, height]` | `[1920, 1080]` or `[1080, 1920]` | The frame size: even numbers in exactly the cut's aspect |
+| `size` | `[width, height]` | `[1920, 1080]` or `[1080, 1920]` | The frame size: even numbers in exactly the cut's aspect. For now, vidni draws only the two default sizes, and a build refuses another. |
 
 ## `[music]`
 
@@ -365,9 +367,9 @@ A capture waits at that point, up to 30 seconds, for the target to show the expe
 ## Ratification
 
 Ratifying a cut freezes what it shows and says. `vidni ratify [--cut ID]` records the following in `ratified.lock`, which is committed with the project:
-- **One hash of the cut's content:** its line order, its lines (every key, with the default scene filled in), their sections, the scenes they use, and the keys of its captures. All of it is taken from `build/resolved.json`, the project with every default filled in.
+- **One hash of the cut's content:** its line order, its lines (every key, with the default scene filled in), their sections, the scenes they use, the keys of its captures and, for a 9:16 cut, the subtitle that its title band shows. All of it is taken from `build/resolved.json`, the project with every default filled in.
 - **A hash for each line and each scene,** so that a changed cut can say what changed.
-- **The SHA-256 of each capture file.**
+- **The SHA-256 of each capture file,** and of each still's frames file, which holds the boxes the still is framed by.
 
 A cut's status is never stored; `vidni status` works it out from those hashes each time:
 - **draft:** not ratified.
@@ -387,6 +389,136 @@ Gaps (`[timing]`), caption style, platforms and the theme aren't part of a cut's
 - **A page scene's render** is keyed by the scene, the size it is rendered at, and the cut's aspect, which `{aspect}` in its address becomes.
 
 A draft takes only the captures no file holds yet, so a redraft with no scene changes takes none. `vidni unratify` keeps a cut's captures. `--refresh` deletes the ones no other ratified cut uses, so that they are taken afresh.
+
+## From draft to release
+
+A cut is drafted, ratified, built from your takes, and approved. Each step is a command, and each refuses to go ahead when an earlier one isn't in place.
+
+| Step | Command | What it makes |
+|---|---|---|
+| Draft | `vidni draft` | Each cut in the draft voice, in `build/draft/`, to watch |
+| Ratify | `vidni ratify` | `ratified.lock`: what each cut shows and says, frozen ([Ratification](#ratification)) |
+| Final build | `vidni final` | Each cut from your takes, in `out/` |
+| Approve | `vidni approve` | `release.json`: each final cut, as a release |
+
+Each of these takes `--cut ID`, which can be repeated, and works on every cut without it.
+
+**The project folder** holds four kinds of file:
+
+```text
+vidni.toml      the project                             committed
+voice.lock      the draft voice's kept seeds            committed
+ratified.lock   the ratified cuts                       committed
+release.json    the approved releases                   committed
+takes/          your takes                              out of git, backed up (D4)
+out/            the final cuts, as delivered            out of git
+build/          what vidni makes                        out of git
+  resolved.json   the project with every default filled in
+  voice/          the draft voice's clips
+  captures/       stills and page renders, with each still's frames
+  draft/          each cut's draft
+  final/          each cut's final build, before it is delivered
+```
+
+Everything in `build/` can be made again, except the captures of a ratified cut. A page on the web may have changed since, so those are frozen: keep them with your takes.
+
+### Drafting: `vidni draft`
+
+`vidni draft` makes each cut watchable before anything is recorded. It does three things, and each does only what is missing:
+1. It speaks every line in the draft voice (`vidni speak` does this step alone; see [The draft voice](#the-draft-voice)).
+2. It takes the captures the cuts need (`vidni capture` does this step alone).
+3. It builds each cut into `build/draft/`.
+
+A draft is one picture for each cut, `build/draft/<cut>.mp4`, with its captions drawn in unless the cut's `captions` is `file`. What QA finds in a draft is printed as a warning.
+
+### The final build: `vidni final`
+
+`vidni final` builds each cut from your takes. It refuses a cut, before rendering anything, unless:
+- the cut is ratified, and nothing it froze has changed since;
+- every line of the cut has a current take.
+
+Then it builds the cut into `build/final/` and runs QA on each file. A cut that fails QA stays there, with its problems listed, and is not delivered: what `out/` held of it before stays as it was. A cut that passes is copied to `out/`:
+
+| File | What it is |
+|---|---|
+| `<cut>.mp4` | The cut. Its captions are drawn in when `captions` is `burned`. |
+| `<cut>.captioned.mp4` | The variant with captions drawn in, when `captions` is `both` |
+| `<cut>.<language>.srt`, `.vtt` | The captions as files, to upload |
+
+### What a build is made from: `<cut>.build.json`
+
+Every build writes a record beside its files, `build/draft/<cut>.build.json` or `build/final/<cut>.build.json`. It names what the build was made from and what it made, each by its SHA-256.
+
+| Key | What it holds |
+|---|---|
+| `sources.content` | What the cut shows and says: the hash that ratifying freezes |
+| `sources.audio` | Each line's clip |
+| `sources.captures` | Each capture's picture and frames |
+| `sources.look` | The gaps, the look, the title and subtitle, and the cut's own settings |
+| `tools` | vidni's and ffmpeg's versions, each font file, and the encoder's settings |
+| `inputs` | All of the above and the cut's timeline, as one hash |
+| `t1` | The timeline, the captions, and the narration before and after loudness normalization |
+| `outputs.<file>` | For each encoded file: its frames before encoding (T1), its packets and its bytes (T2), and what QA measured |
+
+Two builds with the same `inputs` must have the same `t1` and `outputs`: that is what [`vidni repro`](#checking-that-a-build-repeats-vidni-repro) checks. The tiers are described in [`determinism.md`](determinism.md).
+
+What isn't in a cut's record:
+- **The resolved project,** `build/resolved.json`. It is T1 as well, but it is the whole project's, so an edit to another cut would change it. `vidni repro` compares it once, for the project.
+- **`voice.heard_as`,** which only the listening check reads.
+- **The draft voice's settings,** in a final build. `voice.respell`, `voice.seed` and the rest change the draft voice's clips, and no take.
+
+### Approving: `vidni approve`
+
+`vidni approve` writes a cut's final build into `release.json` as a release. It refuses unless:
+- a final build would be allowed now (the cut is ratified and unchanged, and every line has a current take);
+- the build in `build/final/` is of the cut as it is now, with the tools and fonts in use now, and passed QA;
+- the files in `out/` are the ones that build delivered.
+
+A release has a tag, the cut's ID and a number, such as `long-r1`; the day it was approved; and the build's record. `release.json` names its own layout as `"schema": 1`. Releases are never changed. Approving a cut again after a change adds the next one, `long-r2`, and approving the same build twice changes nothing. vidni makes no git tag: commit `release.json`, and tag the commit if you want one.
+
+`vidni status` shows each cut's state, and how it stands against its newest release:
+
+```text
+long      ratified; approved as long-r1
+vertical  changed: line intro-2 changed; approved as vertical-r1, and changed since in what it shows and says
+```
+
+### Checking that a build repeats: `vidni repro`
+
+`vidni repro` builds the final cuts twice and compares every hash of the two records. Each build runs:
+- **from its own copy of the project,** at a path of another depth and length. The copy holds what a build reads and nothing else: the project file it was given, the locks, the files its scenes name, each line's current take, and the cuts' captures. Captures are never taken again here: they are frozen inputs.
+- **in a clean environment:** only `PATH`, a fixed time zone (`TZ=UTC`), a fixed locale (`LC_ALL` and `LANG` set to `C.UTF-8`), `SOURCE_DATE_EPOCH`, an empty `HOME` and `TMPDIR` of its own, and the font folders. Nothing else of yours is passed on.
+- **on its own set of cores:** two cores for one build and three others for the other, where there are at least five; one against the rest, where there are fewer.
+
+It prints each hash the builds share, the resolved project's first, and exits 0 when all are equal. When the project folder has a build of the same inputs, made in your own environment, that build must equal them too. A difference is named by its tier and file, such as `t2 long.mp4 packets`, and the exit code is 1.
+
+| Option | What it does |
+|---|---|
+| `--draft` | Builds the drafts instead of the final cuts. Each build speaks its lines again, from `voice.lock`, so the voice store is passed on too. |
+| `--offline` | Runs both builds with no network |
+| `--keep DIR` | Keeps both copies, with their builds and logs, in `DIR`, an empty or new folder outside the project |
+
+Interrupted, it ends both builds and removes its copies. It needs `taskset`, from util-linux, and runs on Linux only.
+
+### Without the network: `--offline`
+
+`vidni draft --offline` and `vidni final --offline` run in a namespace that has no network, so a build that reaches for the network fails instead of passing by luck:
+- Page scenes are files, so they are still captured. One that asks the network for a part fails, and no capture of it is kept.
+- A web scene whose capture isn't taken yet is refused, by name.
+- Nothing can be connected to. A name can still be looked up where the host's resolver answers through a socket in the file system.
+
+The command checks that it has no route to the network before it does anything else. It needs `unshare`, from util-linux, and a kernel that lets a user make namespaces. It runs on Linux only.
+
+### Exit codes
+
+For `draft`, `final`, `approve` and `repro`:
+- 0 when everything asked for was done
+- 1 when a gate refused, a build failed, or two builds differ
+- 2 when the project, a lock or `release.json` can't be read, or something a build needs is missing: a font, ffmpeg, the draft voice's files
+
+### Fonts
+
+vidni draws captions and labels with font files it pins by SHA-256: IBM Plex Sans Bold, IBM Plex Mono Bold and Space Grotesk Bold, until themes name their own (P5-VIDNI-01). It looks for them in the folders that `VIDNI_FONTS` names (separated by `:`), else in `$XDG_DATA_HOME/vidni/fonts`, else in `~/.local/share/vidni/fonts`, and never among the system's fonts. A file with the right name and other bytes is refused. vidni's Nix shell sets `VIDNI_FONTS`.
 
 ## Layout: `vidni fmt`
 
@@ -428,6 +560,7 @@ It checks, in order:
    - Regular expressions compile: a target's as JavaScript, `lint.banned` as Rust's `regex` crate.
    - `scroll`'s `top` and `scroll_to`'s `offset` are finite numbers.
    - Each `voice.heard_as` entry's `heard` is one word, listed once, and its `means` has letters.
+   - `meta.language` is a tag of letters, digits and hyphens.
    - No line shows or says wording that `lint.banned` forbids.
    - In a strict project, every line that states a fact names its `source`.
    - Every file a scene names exists.

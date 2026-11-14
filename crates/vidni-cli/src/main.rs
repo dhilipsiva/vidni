@@ -20,6 +20,10 @@ macro_rules! say {
     }};
 }
 
+mod build;
+mod offline;
+mod repro;
+
 #[derive(Parser)]
 #[command(
     name = "vidni",
@@ -113,13 +117,71 @@ enum Command {
         #[command(subcommand)]
         action: Option<VoicesAction>,
     },
-    /// Draft a project: speak every line in the draft voice. A line's first
-    /// draft keeps one of a few seeded takes and records its seed in
-    /// voice.lock; every later draft repeats that take.
+    /// Speak every line in the draft voice. A line's first take is one of a
+    /// few seeded ones, and its seed is recorded in voice.lock; every later
+    /// run repeats that take.
+    Speak {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+    },
+    /// Draft the cuts, to watch before recording: speak every line in the
+    /// draft voice, take the captures that are missing, and render each cut
+    /// into build/draft.
     Draft {
         /// A project folder, or its vidni.toml.
         #[arg(default_value = ".")]
         path: PathBuf,
+        /// The cut to draft; repeat for more. Default: every cut.
+        #[arg(long = "cut", value_name = "ID")]
+        cuts: Vec<String>,
+        /// Run with no network, to show that the draft needs none.
+        #[arg(long)]
+        offline: bool,
+    },
+    /// Build the final cuts from your takes, into out. A cut is refused
+    /// unless it is ratified and unchanged, each of its lines has a current
+    /// take, and its build passes QA.
+    Final {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// The cut to build; repeat for more. Default: every cut.
+        #[arg(long = "cut", value_name = "ID")]
+        cuts: Vec<String>,
+        /// Run with no network, to show that the build needs none.
+        #[arg(long)]
+        offline: bool,
+    },
+    /// Approve the final cuts: record each one's build in release.json, as
+    /// a release with its tag and hashes.
+    Approve {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// The cut to approve; repeat for more. Default: every cut.
+        #[arg(long = "cut", value_name = "ID")]
+        cuts: Vec<String>,
+    },
+    /// Check that a build repeats: build the cuts twice from copies of the
+    /// project, in clean environments, at two paths and on two sets of
+    /// cores, and compare every hash.
+    Repro {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// The cut to build; repeat for more. Default: every cut.
+        #[arg(long = "cut", value_name = "ID")]
+        cuts: Vec<String>,
+        /// Build the drafts, in the draft voice, instead of the final cuts.
+        #[arg(long)]
+        draft: bool,
+        /// Run both builds with no network.
+        #[arg(long)]
+        offline: bool,
+        /// Keep the two builds in DIR, an empty or new folder, to look at.
+        #[arg(long, value_name = "DIR")]
+        keep: Option<PathBuf>,
     },
     /// Print the JSON Schema of vidni.toml, for editors.
     Schema,
@@ -136,14 +198,25 @@ enum VoicesAction {
 
 fn main() -> ExitCode {
     // On Ctrl-C or a termination signal, a running Chromium is asked to stop,
-    // so that the capture unwinds and leaves nothing behind. With none
-    // running, or on a second signal, vidni exits at once.
+    // so that the capture unwinds and leaves nothing behind, and so are the
+    // two builds of a repro. With neither running, or on a second signal,
+    // vidni exits at once.
     let _ = ctrlc::set_handler(|| {
-        if !vidni_media::cdp::interrupt() {
+        // Both are asked: a capture never runs inside a repro's own process.
+        let (capture, builds) = (vidni_media::cdp::interrupt(), repro::interrupt());
+        if !capture && !builds {
             std::process::exit(130);
         }
     });
-    match Cli::parse().command {
+    let command = Cli::parse().command;
+    // A command that says it runs with no network is held to it.
+    if offline::inside()
+        && let Err(e) = offline::verify()
+    {
+        eprintln!("vidni: {e}");
+        return ExitCode::from(2);
+    }
+    match command {
         Command::Validate { path } => validate(&path),
         Command::Fmt { path, check } => fmt(&path, check),
         Command::Takes { path, link } => takes(&path, link.as_deref()),
@@ -155,13 +228,29 @@ fn main() -> ExitCode {
             refresh,
         } => unratify(&path, &cuts, refresh),
         Command::Hear { path, lines, draft } => hear(&path, &lines, draft),
-        Command::Capture { path } => capture(&path),
+        Command::Capture { path } => build::capture(&path),
         Command::Platforms => platforms(),
         Command::Voices { action: None } => voices(),
         Command::Voices {
             action: Some(VoicesAction::Fetch { id }),
         } => fetch_voice(&id),
-        Command::Draft { path } => draft(&path),
+        Command::Speak { path } => build::speak(&path),
+        // With --offline, the command runs again in a namespace with no network.
+        Command::Draft { offline: true, .. } | Command::Final { offline: true, .. }
+            if !offline::inside() =>
+        {
+            offline::again()
+        }
+        Command::Draft { path, cuts, .. } => build::draft(&path, &cuts),
+        Command::Final { path, cuts, .. } => build::finish(&path, &cuts),
+        Command::Approve { path, cuts } => build::approve(&path, &cuts),
+        Command::Repro {
+            path,
+            cuts,
+            draft,
+            offline,
+            keep,
+        } => repro::repro(&path, &cuts, draft, offline, keep.as_deref()),
         Command::Schema => {
             say!("{}", vidni_core::schema_json().trim_end());
             ExitCode::SUCCESS
@@ -308,6 +397,7 @@ fn link_takes(lines: &[vidni_core::takes::LineTake], dir: &Path) -> ExitCode {
 
 /// A valid project, with its file and folder.
 struct Loaded {
+    file: PathBuf,
     dir: PathBuf,
     project: vidni_core::project::Project,
 }
@@ -320,13 +410,13 @@ fn load(path: &Path) -> Result<Loaded, ExitCode> {
         .unwrap_or(Path::new("."))
         .to_path_buf();
     match validate::check(&text, Some(&dir)) {
-        Ok(project) => Ok(Loaded { dir, project }),
+        Ok(project) => Ok(Loaded { file, dir, project }),
         Err(problems) => Err(report(&file, &problems)),
     }
 }
 
 fn status(path: &Path) -> ExitCode {
-    let Loaded { dir, project } = match load(path) {
+    let Loaded { dir, project, .. } = match load(path) {
         Ok(loaded) => loaded,
         Err(code) => return code,
     };
@@ -337,22 +427,37 @@ fn status(path: &Path) -> ExitCode {
             return ExitCode::from(2);
         }
     };
+    let releases = match vidni_core::release::read(&dir) {
+        Ok(releases) => releases,
+        Err(e) => {
+            eprintln!("vidni: {e}");
+            return ExitCode::from(2);
+        }
+    };
     let states = ratify::status(&project, &dir, &lock);
     let width = states.iter().map(|(id, _)| id.len()).max().unwrap_or(0);
-    for (id, state) in states {
-        match state {
-            RatifyStatus::Draft => say!("{id:width$}  draft"),
-            RatifyStatus::Ratified => say!("{id:width$}  ratified"),
-            RatifyStatus::Changed(reasons) => {
-                say!("{id:width$}  changed: {}", reasons.join("; "))
-            }
+    for ((id, state), cut) in states.into_iter().zip(&project.cuts) {
+        use vidni_core::release::Standing;
+        let state = match state {
+            RatifyStatus::Draft => "draft".to_string(),
+            RatifyStatus::Ratified => "ratified".to_string(),
+            RatifyStatus::Changed(reasons) => format!("changed: {}", reasons.join("; ")),
+        };
+        // And how it stands against its newest release, when it has one.
+        match vidni_core::release::standing(&project, &dir, &releases, cut) {
+            Standing::Unreleased => say!("{id:width$}  {state}"),
+            Standing::Current(tag) => say!("{id:width$}  {state}; approved as {tag}"),
+            Standing::Outdated(tag, changed) => say!(
+                "{id:width$}  {state}; approved as {tag}, and changed since in {}",
+                changed.join(", ")
+            ),
         }
     }
     ExitCode::SUCCESS
 }
 
 fn ratify(path: &Path, cuts: &[String]) -> ExitCode {
-    let Loaded { dir, project } = match load(path) {
+    let Loaded { dir, project, .. } = match load(path) {
         Ok(loaded) => loaded,
         Err(code) => return code,
     };
@@ -381,7 +486,7 @@ fn ratify(path: &Path, cuts: &[String]) -> ExitCode {
 }
 
 fn unratify(path: &Path, cuts: &[String], refresh: bool) -> ExitCode {
-    let Loaded { dir, project } = match load(path) {
+    let Loaded { dir, project, .. } = match load(path) {
         Ok(loaded) => loaded,
         Err(code) => return code,
     };
@@ -557,113 +662,6 @@ fn fetch_voice(id: &str) -> ExitCode {
                 );
             }
             ExitCode::SUCCESS
-        }
-        Err(e) => {
-            eprintln!("vidni: {e}");
-            ExitCode::FAILURE
-        }
-    }
-}
-
-fn draft(path: &Path) -> ExitCode {
-    use vidni_media::tts::{self, From, Piper};
-    let (file, text) = match read(path) {
-        Ok(read) => read,
-        Err(code) => return code,
-    };
-    let dir = file
-        .parent()
-        .filter(|d| !d.as_os_str().is_empty())
-        .unwrap_or(Path::new("."));
-    let project = match validate::check(&text, Some(dir)) {
-        Ok(project) => project,
-        Err(problems) => return report(&file, &problems),
-    };
-    let store = voices::store();
-    let id = &project.voice.draft;
-    let pack = match voices::find(id, store.as_deref()) {
-        Ok(Some(pack)) => pack,
-        Ok(None) => {
-            eprintln!(
-                "vidni: the draft voice {id} isn't a voice vidni knows, and the voice store has no pack.toml for it"
-            );
-            return ExitCode::FAILURE;
-        }
-        Err(e) => {
-            eprintln!("vidni: {e}");
-            return ExitCode::from(2);
-        }
-    };
-    let Some(store) = store else {
-        eprintln!("vidni: no voice store; set VIDNI_VOICES or HOME");
-        return ExitCode::from(2);
-    };
-    let engine = match Piper::new(&pack, &voices::pack_dir(&store, id)) {
-        Ok(engine) => engine,
-        Err(e) => {
-            eprintln!("vidni: {e}");
-            return ExitCode::FAILURE;
-        }
-    };
-    let drafted = match tts::draft(&project, dir, &pack, &engine) {
-        Ok(drafted) => drafted,
-        Err(e) => {
-            eprintln!("vidni: {e}");
-            return ExitCode::FAILURE;
-        }
-    };
-    let n = |from: From| drafted.iter().filter(|d| d.from == from).count();
-    say!(
-        "{}: draft voice {id}: {}; {} chosen afresh from {} takes each, {} spoken from {}, {} from the cache",
-        file.display(),
-        count(drafted.len(), "line"),
-        n(From::Chosen),
-        tts::ATTEMPTS,
-        n(From::Lock),
-        voices::LOCK,
-        n(From::Cache)
-    );
-    if !pack.commercial {
-        eprintln!(
-            "{}: warning: the draft voice {id} is licensed {}, which doesn't allow commercial use",
-            file.display(),
-            pack.licence
-        );
-    }
-    ExitCode::SUCCESS
-}
-
-fn capture(path: &Path) -> ExitCode {
-    let (file, text) = match read(path) {
-        Ok(read) => read,
-        Err(code) => return code,
-    };
-    let dir = file
-        .parent()
-        .filter(|d| !d.as_os_str().is_empty())
-        .unwrap_or(Path::new("."));
-    let project = match validate::check(&text, Some(dir)) {
-        Ok(project) => project,
-        Err(problems) => return report(&file, &problems),
-    };
-    let cuts: Vec<_> = project.cuts.iter().collect();
-    let plan = vidni_core::capture::plan(&project, dir, &cuts);
-    if plan.is_empty() {
-        say!("{}: every capture is taken", file.display());
-        return ExitCode::SUCCESS;
-    }
-    match vidni_media::capture::capture(&project, dir, &plan) {
-        Ok(taken) => {
-            say!(
-                "{}: {} taken",
-                file.display(),
-                count(taken.len(), "capture")
-            );
-            ExitCode::SUCCESS
-        }
-        Err(_) if vidni_media::cdp::interrupted() => {
-            eprintln!("vidni: interrupted; no still of an unfinished scene was kept");
-            ExitCode::from(130)
         }
         Err(e) => {
             eprintln!("vidni: {e}");

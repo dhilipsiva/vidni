@@ -26,8 +26,23 @@ Some inputs can't be made deterministic: a live web page, every Chromium render,
 | 2026-11-14 | same | capture: five captures of the nibli example's live page | identical on one host | `just capture-repeat`: the pixels and frames of all 46 stills agree across the five. One still, captured 40 times, gave one result |
 | 2026-11-14 | same | capture: a local copy of the example's site header at scale 3 | identical on one host | 80 captures gave one still. Before the three fixes of T6, about 1 capture in 6 differed in a few pixels of an icon |
 | 2026-11-14 | same | the listening check: whisper-cli 1.9.5 with `ggml-base.en`, on the nibli example's 57 takes and 57 draft clips | held to no tier; repeated on one host | two runs of `vidni hear`, and two of `vidni hear --draft`, printed the same transcripts and scores, and left the project folder's 223 files untouched |
+| 2026-11-14 | same | the encoder with x264's lookahead in the encoder's own thread (`sync-lookahead=0`): 451 frames of the 9:16 cut, around a crossfade | T2, on 1 to 32 cores | 40 encodes on 1, 2, 3, 4 and 32 cores gave one packet stream. With x264's default, a lookahead thread, 40 encodes gave 8 different ones (DECISIONS.md, T8). `just encode-t2`, run again with the fix, gave the same 25,089,781 bytes twice |
+| 2026-11-14 | same | the nibli example's final cuts, built by `vidni final` and twice more by each of two runs of `vidni repro` | T1 and T2 | five builds of each cut agree in every hash: one in the maintainer's own environment on 32 cores, and four in clean environments at other paths, two on 2 cores and two on 3. They agree in the resolved project, the timeline, the captions, the narration before and after normalization, the 8,441 frames, the packets and the file's bytes. `examples/nibli-syllogism/release.json` holds the hashes |
+| 2026-11-14 | same | the same 9:16 cut, with no network (`vidni repro --offline`) | T1 and T2 | two more builds, each in a namespace with no network, agree with the five above |
+| 2026-11-14 | same | the example's 54 captures, taken from the live page twice, two hours apart, with the fonts the flake pins | identical where the cuts show them | the final cuts built from each set have the same frame streams: the two hashes listed below, both times |
+| 2026-11-14 | same | the example's drafts (`vidni repro --draft`), with the draft voice speaking all 57 lines again in each build | T1 and T2 on one host, on 2, 3 and 32 cores | three builds of each cut agree in every hash, the narration's among them: Piper, seeded, gave the same PCM on 2 cores, on 3 and on 32 |
+| 2026-11-14 | same | the product against the reference: the example's final build, planned as `vidni final` plans it from fresh captures and the creator's takes | equal to golden, and to the reference's frames before encoding | `just parity product`: 46 of 46 checks. Each cut's timeline, captions and narration equal golden's, and its 20 sampled frames score SSIM 1.0000 against the reference's, with no channel more than 49 of 255 apart. The captures were taken with the maintainer's fonts and the frames drawn with the reference's faces, as golden's were |
 
-The compositor's frame streams (rgb24, every frame in order), drawn with IBM Plex Sans Bold (sha256 `19de5aec…c316`), IBM Plex Mono Bold (`44f6da8e…a6c7`) and Space Grotesk Bold (`be8709ab…368f`):
+The nibli example's final cuts, as approved (`long-r1` and `vertical-r1`), drawn with the fonts vidni pins and from captures taken with the flake's fonts:
+
+```
+long.mp4      8,441 frames  frames c27e3dbef168063755bc231a395444d85531d0695c94f6cb32c28488394b91c8
+                            file   d9987cbad416c53729d8425c6e683e0e4c2396a8e3a639020fd5c9d03c18b950
+vertical.mp4  8,441 frames  frames 7f1d9f0f086c0ab9025c04f533b283d749f20f3f5341815a9115eeddd8ffe125
+                            file   c152b5ebcdba3de951566676b123768a51b3fd701829d6421c66c1f5877b0d0c
+```
+
+The compositor's frame streams (rgb24, every frame in order) on the reference's captures, drawn with IBM Plex Sans Bold (sha256 `19de5aec…c316`), IBM Plex Mono Bold (`44f6da8e…a6c7`) and Space Grotesk Bold (`be8709ab…368f`):
 
 ```
 nibli-syllogism-16x9        9,189 frames  39d61b473952ca905d463fdb9aac2878067e3099f783a8e156b058d2e2801674
@@ -47,6 +62,7 @@ nibli-syllogism-voice-9x16  8,441 frames  97cc6585c827b80c014d03e7eb9f888cc56835
 
 **Encoding** (`vidni_media::encode`):
 - libx264 runs with a fixed thread count, preset and CRF. Its packets depend on the thread count, so the count never follows the host's cores.
+- libx264's lookahead runs in the encoder's own thread (`sync-lookahead=0`). In a thread of its own, which is x264's default with several threads, the packets depended on how the threads were scheduled (DECISIONS.md, T8).
 - `+bitexact` applies to the container and both codecs, and `-map_metadata -1` drops metadata. No date or version number enters the file; the encoder tag names the codec without its version.
 - The conversion from RGB to YUV is BT.709, with bit-exact, accurate rounding, and the colour tags say so.
 - `-cpuflags 0` stops ffmpeg's filters from choosing SIMD paths by CPU.
@@ -70,6 +86,12 @@ nibli-syllogism-voice-9x16  8,441 frames  97cc6585c827b80c014d03e7eb9f888cc56835
 - three things that varied from one launch to the next until they were pinned (DECISIONS.md, T6): a page above scale 1 is loaded twice, each layer is rastered as one tile, and vidni's style and highlight layer are in a document from its start.
 
 Five captures of a local scene give identical bytes, stills and frames alike (`just test-capture`, which CI runs), and so did five captures of the nibli example's live page. Each capture is filed by what it shows, frozen by hash when its cut is ratified, and never retaken unless its scene changes or `--refresh` asks for it (DECISIONS.md, T3).
+
+**Builds** (`vidni_media::build`):
+- A build's record (`<cut>.build.json`) names every input and output by its SHA-256. `vidni repro` builds twice more, from copies of the project at other paths, in clean environments and on other cores, and compares the records with each other and with the creator's own build (DECISIONS.md, T8).
+- Nothing in a build reads the clock, the time zone, the locale or the home folder, and the timeline names each clip by its path inside the project.
+- A build takes no captures. They are inputs, frozen with each still's frames when a cut is ratified.
+- The day a release is approved is read from the clock. It goes into `release.json` and into no output.
 
 **The listening check** (`vidni_media::hear`) is held to no tier, because no output depends on it (DECISIONS.md, T7):
 - It writes no file, and no build step reads what it hears.

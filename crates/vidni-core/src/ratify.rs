@@ -12,7 +12,7 @@
 //! content; only the release hashes them. Changing them leaves a cut ratified.
 
 use crate::capture::{self, Capture, canonical, sha256_hex};
-use crate::project::{Cut, Project};
+use crate::project::{Aspect, Cut, Project};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, BTreeSet};
@@ -45,6 +45,10 @@ pub struct Locked {
     pub scenes: BTreeMap<String, String>,
     /// Each capture's file, by capture key.
     pub captures: BTreeMap<String, String>,
+    /// Each web still's frames file, by capture key: the boxes its cameras
+    /// and highlights are drawn from.
+    #[serde(default)]
+    pub frames: BTreeMap<String, String>,
 }
 
 /// A cut's status, worked out from the lock.
@@ -126,8 +130,20 @@ pub fn content(project: &Project, cut: &Cut) -> Content {
     }
     let captures = capture::for_cut(project, cut);
     let keys: Vec<&str> = captures.iter().map(|c| c.key.as_str()).collect();
+    // The title band of a 9:16 cut shows the project's subtitle, so it is
+    // part of what that cut shows.
+    let subtitle = match cut.aspect {
+        Aspect::Portrait => project.meta.subtitle.as_deref(),
+        Aspect::Landscape => None,
+    };
     let frozen = json!({
-        "cut": {"id": cut.id, "aspect": cut.aspect, "size": cut.size(), "lines": cut.line_ids(project)},
+        "cut": {
+            "id": cut.id,
+            "aspect": cut.aspect,
+            "size": cut.size(),
+            "lines": cut.line_ids(project),
+            "subtitle": subtitle,
+        },
         "lines": line_values,
         "sections": sections,
         "scenes": scene_values,
@@ -170,38 +186,80 @@ pub fn status(project: &Project, project_dir: &Path, lock: &Lock) -> Vec<(String
     project
         .cuts
         .iter()
-        .map(|cut| {
-            let Some(locked) = lock.cuts.get(&cut.id) else {
-                return (cut.id.clone(), Status::Draft);
-            };
-            let now = content(project, cut);
-            let mut reasons = Vec::new();
-            if now.content != locked.content {
-                differences("line", &locked.lines, &now.lines, &mut reasons);
-                differences("scene", &locked.scenes, &now.scenes, &mut reasons);
-                let keys: BTreeSet<&String> = now.captures.iter().map(|c| &c.key).collect();
-                if keys != locked.captures.keys().collect() {
-                    reasons.push("its captures changed".into());
-                }
-                if reasons.is_empty() {
-                    reasons.push("its sections, size or line order changed".into());
-                }
-            }
-            for (key, sha) in &locked.captures {
-                match file_hash(&capture::path(project_dir, key)) {
-                    Some(now) if now == *sha => {}
-                    Some(_) => reasons.push(format!("capture {} changed on disk", &key[..12])),
-                    None => reasons.push(format!("capture {} is missing", &key[..12])),
-                }
-            }
-            let status = if reasons.is_empty() {
-                Status::Ratified
-            } else {
-                Status::Changed(reasons)
-            };
-            (cut.id.clone(), status)
-        })
+        .map(|cut| (cut.id.clone(), status_of(project, project_dir, lock, cut)))
         .collect()
+}
+
+/// One cut's status.
+pub fn status_of(project: &Project, project_dir: &Path, lock: &Lock, cut: &Cut) -> Status {
+    let Some(locked) = lock.cuts.get(&cut.id) else {
+        return Status::Draft;
+    };
+    let now = content(project, cut);
+    let mut reasons = Vec::new();
+    if now.content != locked.content {
+        differences("line", &locked.lines, &now.lines, &mut reasons);
+        differences("scene", &locked.scenes, &now.scenes, &mut reasons);
+        let keys: BTreeSet<&String> = now.captures.iter().map(|c| &c.key).collect();
+        if keys != locked.captures.keys().collect() {
+            reasons.push("its captures changed".into());
+        }
+        if reasons.is_empty() {
+            reasons.push("its sections, subtitle, size or line order changed".into());
+        }
+    }
+    // A still's frames are frozen with it. A lock that has the still and
+    // not its frames was written before they were, and can't vouch for them.
+    let unfrozen = now
+        .captures
+        .iter()
+        .filter(|c| matches!(c.source, capture::Source::Line(_)))
+        .filter(|c| locked.captures.contains_key(&c.key) && !locked.frames.contains_key(&c.key))
+        .count();
+    if unfrozen > 0 {
+        reasons.push(format!(
+            "the frames of {unfrozen} of its stills were never frozen; ratify it again"
+        ));
+    }
+    // Each frozen file, checked on disk. A few are named; many are counted,
+    // as when the captures were never restored from a backup.
+    let files = [
+        (
+            "capture",
+            "captures",
+            &locked.captures,
+            capture::path as fn(&Path, &str) -> PathBuf,
+        ),
+        (
+            "the frames of capture",
+            "stills' frames",
+            &locked.frames,
+            capture::frames_path,
+        ),
+    ];
+    for (one, many, frozen, path) in files {
+        let (mut changed, mut missing) = (Vec::new(), Vec::new());
+        for (key, sha) in frozen {
+            // A key is 64 hex digits; one from a lock edited by hand may not be.
+            let short = key.get(..12).unwrap_or(key);
+            match file_hash(&path(project_dir, key)) {
+                Some(now) if now == *sha => {}
+                Some(_) => changed.push(short),
+                None => missing.push(short),
+            }
+        }
+        for (keys, what) in [(changed, "changed on disk"), (missing, "went missing")] {
+            match keys.len() {
+                0..=3 => reasons.extend(keys.iter().map(|key| format!("{one} {key} {what}"))),
+                n => reasons.push(format!("{n} of its {} {many} {what}", frozen.len())),
+            }
+        }
+    }
+    if reasons.is_empty() {
+        Status::Ratified
+    } else {
+        Status::Changed(reasons)
+    }
 }
 
 fn differences(
@@ -220,6 +278,39 @@ fn differences(
     for id in locked.keys().filter(|id| !now.contains_key(*id)) {
         reasons.push(format!("{what} {id} was removed"));
     }
+}
+
+/// The captures in `plan` that mustn't be taken again: stills whose
+/// picture is still the one a ratified cut froze, and whose frames are
+/// missing or unreadable. Taking one again would put another picture in
+/// the place of a frozen one, which a page that has changed since can't
+/// give back. Each is a refusal that says what to do instead.
+pub fn frozen(project_dir: &Path, lock: &Lock, plan: &[Capture]) -> Vec<String> {
+    let mut refusals = Vec::new();
+    for c in plan
+        .iter()
+        .filter(|c| matches!(c.source, capture::Source::Line(_)))
+    {
+        let Some(picture) = file_hash(&capture::path(project_dir, &c.key)) else {
+            continue;
+        };
+        let cuts: Vec<&str> = lock
+            .cuts
+            .iter()
+            .filter(|(_, locked)| locked.captures.get(&c.key) == Some(&picture))
+            .map(|(id, _)| id.as_str())
+            .collect();
+        if let Some(first) = cuts.first() {
+            refusals.push(format!(
+                "the capture of {} is frozen by cut {}, and its frames can't be read; restore {}/{}.json from a backup, or run `vidni unratify --cut {first} --refresh` to take it afresh",
+                c.what,
+                cuts.join(" and "),
+                capture::DIR,
+                c.key
+            ));
+        }
+    }
+    refusals
 }
 
 /// The cuts named, or every cut when none is.
@@ -253,7 +344,7 @@ pub fn ratify(
         let missing: Vec<&Capture> = content
             .captures
             .iter()
-            .filter(|c| !capture::path(project_dir, &c.key).is_file())
+            .filter(|c| !capture::taken(project_dir, c))
             .collect();
         if !missing.is_empty() {
             return Err(format!(
@@ -264,23 +355,25 @@ pub fn ratify(
                 missing[0].what
             ));
         }
-        let captures = content
-            .captures
-            .iter()
-            .map(|c| {
-                (
-                    c.key.clone(),
-                    file_hash(&capture::path(project_dir, &c.key)).unwrap_or_default(),
-                )
-            })
-            .collect();
+        let hashes = |path: fn(&Path, &str) -> PathBuf, web_only: bool| {
+            content
+                .captures
+                .iter()
+                .filter(|c| !web_only || matches!(c.source, capture::Source::Line(_)))
+                .map(|c| {
+                    let sha = file_hash(&path(project_dir, &c.key)).unwrap_or_default();
+                    (c.key.clone(), sha)
+                })
+                .collect()
+        };
         lock.cuts.insert(
             cut.id.clone(),
             Locked {
                 content: content.content.clone(),
                 lines: content.lines.clone(),
                 scenes: content.scenes.clone(),
-                captures,
+                captures: hashes(capture::path, false),
+                frames: hashes(capture::frames_path, true),
             },
         );
         done.push((cut.id.clone(), content));
@@ -318,6 +411,11 @@ pub fn unratify(
         let path = capture::path(project_dir, &c.key);
         if !kept.contains(&c.key) && path.is_file() {
             fs::remove_file(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+            // A still's frames go with it.
+            let frames = capture::frames_path(project_dir, &c.key);
+            if frames.is_file() {
+                fs::remove_file(&frames).map_err(|e| format!("{}: {e}", frames.display()))?;
+            }
             deleted.push(path);
         }
     }

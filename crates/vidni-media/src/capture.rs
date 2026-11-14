@@ -10,7 +10,8 @@
 //! second apart, are identical. A scene's new stills are kept aside until
 //! its expectations have held and no script error or dialog has come up,
 //! and only then moved in, each with its frames beside it (`<key>.json`):
-//! every camera's box and every highlight's boxes, in CSS pixels.
+//! the boxes of every target of the scene and of the line's highlights,
+//! in CSS pixels. Cameras are framed from them when a cut is built.
 //!
 //! Chromium starts with the switches the reference's Playwright used, plus
 //! `--font-render-hinting=none` and `--force-color-profile=srgb`, and the
@@ -129,12 +130,17 @@ pub struct Limits {
     /// click's target to come out from under something, or an expectation
     /// to hold.
     pub patience: Duration,
+    /// Whether the capture runs with no network. Then anything a page
+    /// asks the network for is a fault, on any page: a still taken without
+    /// it would be kept as if it were whole.
+    pub offline: bool,
 }
 
 impl Default for Limits {
     fn default() -> Self {
         Self {
             patience: Duration::from_secs(30),
+            offline: false,
         }
     }
 }
@@ -157,24 +163,80 @@ pub fn switches() -> Vec<&'static str> {
     switches
 }
 
-/// A web still's frames, written beside it as `<key>.json`.
+/// A web still's frames, written beside it as `<key>.json`: where the
+/// scene's targets and the line's highlights are in the still, in CSS
+/// pixels. Cameras aren't in it. They are framed from the targets when a
+/// cut is built ([`Frames::camera`]), so a camera can change without a
+/// new capture.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Frames {
     /// The viewport in CSS pixels, and the device pixels per CSS pixel.
     pub viewport: [u32; 2],
     pub scale: u32,
-    /// Each camera's box in CSS pixels: the scene's cameras, plus
-    /// `viewport` and `highlights` (none when the line has no highlights).
-    pub cameras: BTreeMap<String, Option<[f64; 4]>>,
-    /// Each highlight's boxes, by target.
+    /// The boxes of each of the scene's targets, as far as they show; none
+    /// for a target that matches nothing in the still.
+    pub targets: BTreeMap<String, Vec<[f64; 4]>>,
+    /// Each highlight's boxes as drawn, by target.
     pub highlights: BTreeMap<String, Vec<[f64; 4]>>,
     /// The browser that took the still.
     pub browser: String,
 }
 
+/// The box around `boxes`, as the page runtime joins them; none of none.
+fn union<'b>(boxes: impl Iterator<Item = &'b [f64; 4]>) -> Option<[f64; 4]> {
+    let mut joined: Option<[f64; 4]> = None;
+    for b in boxes {
+        // Left, top, right and bottom, as the runtime's min and max take them.
+        let edges = [b[0], b[1], b[0] + b[2], b[1] + b[3]];
+        joined = Some(match joined {
+            None => edges,
+            Some(j) => [
+                j[0].min(edges[0]),
+                j[1].min(edges[1]),
+                j[2].max(edges[2]),
+                j[3].max(edges[3]),
+            ],
+        });
+    }
+    joined.map(|j| [j[0], j[1], j[2] - j[0], j[3] - j[1]])
+}
+
+impl Frames {
+    /// The box that camera `name` of `scene` frames in this still: the
+    /// viewport, the line's highlights together, or the scene's own camera,
+    /// which is the viewport or its targets together. None when the camera
+    /// isn't the scene's, or when nothing it names shows in the still.
+    pub fn camera(&self, name: &str, scene: &Scene) -> Option<[f64; 4]> {
+        let viewport = [
+            0.0,
+            0.0,
+            f64::from(self.viewport[0]),
+            f64::from(self.viewport[1]),
+        ];
+        match name {
+            "viewport" => Some(viewport),
+            "highlights" => union(self.highlights.values().flatten()),
+            _ => {
+                let camera = scene.cameras.get(name)?;
+                if camera.viewport {
+                    return Some(viewport);
+                }
+                union(
+                    camera
+                        .union
+                        .iter()
+                        .filter_map(|target| self.targets.get(target))
+                        .flatten(),
+                )
+            }
+        }
+    }
+}
+
 /// The file of a web still's frames.
 pub fn frames_path(project_dir: &Path, key: &str) -> PathBuf {
-    project_dir.join(keys::DIR).join(format!("{key}.json"))
+    keys::frames_path(project_dir, key)
 }
 
 /// Takes the captures in `plan` into the project folder. Each web scene
@@ -344,6 +406,14 @@ struct Page {
     world: Option<i64>,
     /// The page's requests in flight, each with when it was sent.
     loading: BTreeMap<String, Instant>,
+    /// The address each request asked for, by request.
+    asked: BTreeMap<String, String>,
+    /// What the page asked the network for and didn't get, each with why.
+    unreached: Vec<String>,
+    /// Whether a load that fails is a fault: for a page that is a file in
+    /// the project, whose parts should all be there, and for any page when
+    /// there is no network.
+    whole: bool,
 }
 
 impl Page {
@@ -387,6 +457,9 @@ impl Page {
             limits,
             world: None,
             loading: BTreeMap::new(),
+            asked: BTreeMap::new(),
+            unreached: Vec::new(),
+            whole: limits.offline,
         };
         page.call("Page.enable", json!({}))?;
         page.call("Inspector.enable", json!({}))?;
@@ -442,12 +515,17 @@ impl Page {
             Some(ColorScheme::Dark) => "dark",
             Some(ColorScheme::Light) | None => "light",
         };
-        Self::open(
+        let mut page = Self::open(
             scene.viewport.unwrap_or([1280, 720]),
             scene.scale.unwrap_or(1),
             scheme,
             limits,
-        )
+        )?;
+        // A page on the web may lose a load that doesn't matter to it; a
+        // file of the project's should have all its parts.
+        let remote = scene.url.starts_with("http://") || scene.url.starts_with("https://");
+        page.whole |= !remote;
+        Ok(page)
     }
 
     /// Renders a page scene at `size` for a cut of `aspect`, which
@@ -460,6 +538,8 @@ impl Page {
         limits: Limits,
     ) -> Result<Vec<u8>, String> {
         let mut page = Self::open(size, 1, "light", limits)?;
+        // A page scene is a file of the project's.
+        page.whole = true;
         page.goto(&address(dir, &scene.url.replace("{aspect}", aspect))?)?;
         if scene.transparent == Some(true) {
             page.call(
@@ -528,6 +608,8 @@ impl Page {
         let shown = |e: String| format!("{url}: {e}");
         self.browser.forget_events();
         self.loading.clear();
+        self.asked.clear();
+        self.unreached.clear();
         self.world = None;
         if self.scale != 1 {
             // The first load runs none of the page's scripts.
@@ -569,6 +651,8 @@ impl Page {
             )?;
             self.browser.forget_events();
             self.loading.clear();
+            self.asked.clear();
+            self.unreached.clear();
             self.call("Page.reload", json!({}))?;
             self.browser
                 .event(&self.session, "Page.loadEventFired", self.limits.patience)
@@ -646,6 +730,18 @@ impl Page {
                 dialog["message"].as_str().unwrap_or_default()
             ));
         }
+        if self.whole
+            && let Some(first) = self.unreached.first()
+        {
+            faults.push(format!(
+                "the page asked the network for {} that didn't load (the first: {first})",
+                match self.unreached.len() {
+                    1 => "a part".to_string(),
+                    n => format!("{n} parts"),
+                }
+            ));
+            self.unreached.clear();
+        }
         match faults.is_empty() {
             true => Ok(()),
             false => Err(faults.join("; ")),
@@ -682,14 +778,26 @@ impl Page {
             .take(&self.session, "Network.requestWillBeSent")
         {
             let id = e["requestId"].as_str().unwrap_or_default().to_string();
+            let url = e["request"]["url"].as_str().unwrap_or_default();
+            self.asked.insert(id.clone(), url.to_string());
             self.loading.insert(id, Instant::now());
             active = true;
         }
         for method in ["Network.loadingFinished", "Network.loadingFailed"] {
             for e in self.browser.take(&self.session, method) {
-                self.loading
-                    .remove(e["requestId"].as_str().unwrap_or_default());
+                let id = e["requestId"].as_str().unwrap_or_default();
+                self.loading.remove(id);
                 active = true;
+                // A load the page gave up itself, as on leaving, is no loss.
+                let lost = method == "Network.loadingFailed" && e["canceled"] != true;
+                if let (true, Some(url)) = (lost, self.asked.get(id))
+                    && ["http://", "https://", "ws://", "wss://"]
+                        .iter()
+                        .any(|scheme| url.starts_with(scheme))
+                {
+                    let why = e["errorText"].as_str().unwrap_or("it failed to load");
+                    self.unreached.push(format!("{url} ({why})"));
+                }
             }
         }
         active || self.loading.values().any(|sent| sent.elapsed() < NETWORK)
@@ -898,7 +1006,7 @@ impl Page {
         Ok(())
     }
 
-    /// Draws a line's highlights and frames its cameras.
+    /// Draws a line's highlights, and measures them and the scene's targets.
     fn still(
         &mut self,
         scene: &Scene,
@@ -917,20 +1025,17 @@ impl Page {
             .map(|name| Ok(json!([name, target(name)?])))
             .collect::<Result<_, String>>()?;
         let drawn = self.runtime(&format!("highlight({})", Value::Array(pairs)))?;
-        let mut cameras = Vec::new();
-        for (name, camera) in &scene.cameras {
-            let union: Vec<Value> = camera
-                .union
-                .iter()
-                .map(|t| target(t))
-                .collect::<Result<_, String>>()?;
-            cameras.push(json!([name, {"viewport": camera.viewport, "union": union}]));
-        }
-        let framed = self.runtime(&format!("cameras({}, {drawn})", Value::Array(cameras)))?;
+        // Every target is measured, not only the ones today's cameras name.
+        let all: Vec<Value> = scene
+            .targets
+            .keys()
+            .map(|name| Ok(json!([name, target(name)?])))
+            .collect::<Result<_, String>>()?;
+        let measured = self.runtime(&format!("targets({})", Value::Array(all)))?;
         Ok(Frames {
             viewport: self.viewport,
             scale: self.scale,
-            cameras: serde_json::from_value(framed).map_err(|e| e.to_string())?,
+            targets: serde_json::from_value(measured).map_err(|e| e.to_string())?,
             highlights: serde_json::from_value(drawn).map_err(|e| e.to_string())?,
             browser: browser.to_string(),
         })
@@ -990,6 +1095,95 @@ mod tests {
     use super::*;
 
     #[test]
+    fn a_camera_is_framed_from_the_targets_as_the_scene_names_them_now() {
+        let project = vidni_core::validate::check(
+            r##"schema = 1
+
+[meta]
+title = "Cameras"
+default_scene = "page"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "A line."
+
+[scenes.page]
+kind = "web"
+url = "https://example.com"
+
+[scenes.page.targets]
+tab-a = { css = "#a" }
+tab-b = { css = "#b" }
+gone = { css = "#gone" }
+
+[scenes.page.cameras]
+tabs = { union = ["tab-a", "tab-b"] }
+first = { union = ["tab-a"] }
+all = { viewport = true }
+nothing = { union = ["gone"] }
+"##,
+            None,
+        )
+        .unwrap_or_else(|p| panic!("{p:?}"));
+        let scene = project.scenes["page"].clone();
+        let frames = Frames {
+            viewport: [640, 360],
+            scale: 2,
+            targets: [
+                ("tab-a".to_string(), vec![[10.0, 40.0, 80.0, 30.0]]),
+                (
+                    "tab-b".to_string(),
+                    vec![[100.0, 40.5, 80.0, 30.0], [100.0, 90.0, 20.25, 10.0]],
+                ),
+                ("gone".to_string(), Vec::new()),
+            ]
+            .into(),
+            highlights: [("tab-b".to_string(), vec![[100.0, 40.5, 80.0, 30.0]])].into(),
+            browser: "a stand-in".into(),
+        };
+        assert_eq!(
+            frames.camera("tabs", &scene),
+            Some([10.0, 40.0, 170.0, 60.0])
+        );
+        assert_eq!(
+            frames.camera("first", &scene),
+            Some([10.0, 40.0, 80.0, 30.0])
+        );
+        let viewport = Some([0.0, 0.0, 640.0, 360.0]);
+        assert_eq!(frames.camera("all", &scene), viewport);
+        assert_eq!(frames.camera("viewport", &scene), viewport);
+        assert_eq!(
+            frames.camera("highlights", &scene),
+            Some([100.0, 40.5, 80.0, 30.0])
+        );
+        // A camera whose targets show nothing frames nothing, and so does
+        // one the scene doesn't have.
+        assert_eq!(frames.camera("nothing", &scene), None);
+        assert_eq!(frames.camera("elsewhere", &scene), None);
+        // The camera is the scene's as it is now: edited after the capture,
+        // it frames its new targets, with no new capture.
+        let mut edited = scene.clone();
+        edited.cameras.get_mut("tabs").unwrap().union = vec!["tab-b".into()];
+        assert_eq!(
+            frames.camera("tabs", &edited),
+            Some([100.0, 40.5, 80.0, 59.5])
+        );
+        // Without highlights there is no highlights camera.
+        let plain = Frames {
+            highlights: BTreeMap::new(),
+            ..frames
+        };
+        assert_eq!(plain.camera("highlights", &scene), None);
+    }
+
+    #[test]
     fn addresses_keep_urls_and_turn_project_files_into_file_urls() {
         let dir = tempfile::tempdir().unwrap();
         let odd = dir.path().join("videos #2 %41");
@@ -1020,7 +1214,7 @@ mod tests {
             "scroll(",
             "scrollTo(",
             "highlight(",
-            "cameras(",
+            "targets(",
             "read(",
         ] {
             assert!(RUNTIME.contains(call), "{call}");

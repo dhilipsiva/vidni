@@ -32,6 +32,7 @@ use vidni_media::compose::image::Image;
 pub mod candidate;
 pub mod capture;
 pub mod compose;
+pub mod product;
 pub mod selftest;
 
 /// The lowest SSIM a rendered frame may reach against its golden frame.
@@ -743,7 +744,7 @@ pub fn check_stills(candidate: &Path, reference_build: &Path, hashes: &Value, re
             Err(e) => report.fail(format!("{rel}: {e}")),
         }
     }
-    // Each still's frames: the compositor frames its cameras from them.
+    // Each still's cameras, framed as a build frames them from its frames.
     match reference_frames_of_stills(reference_build, hashes) {
         Ok(stills) => {
             for (rel, want) in stills {

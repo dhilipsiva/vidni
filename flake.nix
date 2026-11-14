@@ -75,6 +75,11 @@
         </fontconfig>
       '';
 
+      # The folders that hold the fonts vidni draws with, each pinned by
+      # SHA-256 in crates/vidni-core/src/fonts.toml. vidni looks for them in
+      # $VIDNI_FONTS and nowhere else (P3-VIDNI-06).
+      fontDirs = "${pkgs.ibm-plex}/share/fonts:${spaceGrotesk}/share/fonts";
+
       rustTools = [
         pkgs.rustc
         pkgs.cargo
@@ -83,6 +88,8 @@
         pkgs.just
         # fc-match and fc-list of the fontconfig whose rules fontsConf includes.
         pkgs.fontconfig
+        # unshare, for --offline, and taskset, for `vidni repro`.
+        pkgs.util-linux
       ];
 
       # Piper 1.8 draws its sampling noise inside the voice's ONNX graph, from
@@ -92,6 +99,27 @@
       piper = pkgs.piper-tts.overridePythonAttrs (old: {
         patches = (old.patches or [ ]) ++ [ ./nix/piper-seed.patch ];
       });
+
+      # The default draft voice, laid out as a voice store, with its files
+      # pinned as crates/vidni-core/src/voices.toml pins them. The build's
+      # tests draft with it (`just test-build`). A creator's own store is
+      # theirs to fill: `vidni voices fetch`.
+      voiceFile =
+        name: sha256:
+        pkgs.fetchurl {
+          url = "https://huggingface.co/rhasspy/piper-voices/resolve/6b9cfaacb4fb2e02a9621227e3c1a48bec9710c3/en/en_US/joe/medium/${name}";
+          inherit sha256;
+        };
+      pinnedVoices = pkgs.linkFarm "vidni-pinned-voices" [
+        {
+          name = "piper/en_US-joe-medium/en_US-joe-medium.onnx";
+          path = voiceFile "en_US-joe-medium.onnx" "abf4b998e34045cbd00eaf050de2de620f81ded6eb8b85a24b022a1c2b3f08d2";
+        }
+        {
+          name = "piper/en_US-joe-medium/en_US-joe-medium.onnx.json";
+          path = voiceFile "en_US-joe-medium.onnx.json" "7b5f0293c0bf5bda8e377be1696da84af798befeef31038e43beefc01fe858da";
+        }
+      ];
 
       # The model of the listening check, pinned by revision and hash
       # (P3-VIDNI-05). vidni reads it from $VIDNI_WHISPER_MODEL.
@@ -115,8 +143,9 @@
         version = "0.1.0";
         src = self;
         cargoLock.lockFile = ./Cargo.lock;
-        # The parity harness's frame tests drive ffmpeg.
+        # The parity harness's frame tests and the build's tests drive ffmpeg.
         nativeCheckInputs = [ pkgs.ffmpeg-headless ];
+        VIDNI_FONTS = fontDirs;
       };
     in
     {
@@ -129,18 +158,24 @@
         default = pkgs.mkShell {
           packages = rustTools ++ mediaTools ++ [ pkgs.rust-analyzer ];
           FONTCONFIG_FILE = fontsConf;
+          VIDNI_FONTS = fontDirs;
+          VIDNI_PINNED_VOICES = pinnedVoices;
           VIDNI_WHISPER_MODEL = whisperModel;
         };
         # CI's shell: the Rust toolchain and just, plus a headless ffmpeg for the
-        # parity tests, Chromium for the capture tests and whisper for the
-        # listening tests, without the other media tools.
+        # parity and build tests, Chromium for the capture tests, whisper for
+        # the listening tests and Piper for the build's, without the other
+        # media tools.
         ci = pkgs.mkShell {
           packages = rustTools ++ [
             pkgs.ffmpeg-headless
             pkgs.chromium
             pkgs.whisper-cpp
+            piper
           ];
           FONTCONFIG_FILE = fontsConf;
+          VIDNI_FONTS = fontDirs;
+          VIDNI_PINNED_VOICES = pinnedVoices;
           VIDNI_WHISPER_MODEL = whisperModel;
         };
       };

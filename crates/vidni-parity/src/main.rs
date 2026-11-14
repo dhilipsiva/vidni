@@ -3,6 +3,7 @@
 //! `vidni-parity compose-t1 [--reference DIR] [--example DIR] [--fonts CAPTION MONO DISPLAY]`
 //! `vidni-parity compose-stream [--reference DIR] [--example DIR]`
 //! `vidni-parity capture-repeat [--example DIR]`
+//! `vidni-parity product [--example DIR] [--golden DIR] [--reference DIR]`
 //!
 //! Compares a candidate folder with the golden outputs (TODO.md, P1-VIDNI-04).
 //! The stages are timeline, narration, encode, cuts, stills and all. With
@@ -14,15 +15,16 @@
 //! `compose-stream` compares every picture of every cut with the reference's
 //! own (P3-VIDNI-02). `capture-repeat` captures the example's web scene
 //! five times, each from scratch, and compares every still's pixels
-//! (P3-VIDNI-04).
+//! (P3-VIDNI-04). `product` checks the example's final build, as `vidni
+//! final` plans it from the example's own captures and takes, against the
+//! reference's cuts in the creator's voice (P3-VIDNI-06).
 
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use vidni_media::compose::render;
 use vidni_parity::candidate::build;
-use vidni_parity::compose::{
-    Faces, STREAM_TOLERANCE, Streamed, jobs, reference_faces, render, stream,
-};
+use vidni_parity::compose::{Faces, STREAM_TOLERANCE, Streamed, jobs, reference_faces, stream};
 use vidni_parity::{STAGES, Sources, check_stage, reference_as_candidate, selftest::selftest};
 
 const USAGE: &str = "usage: vidni-parity <timeline|narration|encode|cuts|stills|all> \
@@ -30,7 +32,8 @@ const USAGE: &str = "usage: vidni-parity <timeline|narration|encode|cuts|stills|
                      vidni-parity selftest [--golden DIR] [--reference DIR]\n       \
                      vidni-parity compose-t1 [--reference DIR] [--example DIR] [--fonts CAPTION MONO DISPLAY]\n       \
                      vidni-parity compose-stream [--reference DIR] [--example DIR]\n       \
-                     vidni-parity capture-repeat [--example DIR]";
+                     vidni-parity capture-repeat [--example DIR]\n       \
+                     vidni-parity product [--example DIR] [--golden DIR] [--reference DIR]";
 
 fn main() -> ExitCode {
     match run() {
@@ -53,6 +56,7 @@ fn run() -> Result<bool, String> {
         "compose-t1",
         "compose-stream",
         "capture-repeat",
+        "product",
     ]
     .contains(&stage.as_str())
         && !STAGES.contains(&stage.as_str())
@@ -109,6 +113,11 @@ fn run() -> Result<bool, String> {
         ("compose-t1", None, false) => compose_t1(&example, &sources.reference, fonts),
         ("compose-stream", None, false) => compose_stream(&example, &sources.reference),
         ("capture-repeat", None, false) => vidni_parity::capture::repeat(&example, &scratch, 5),
+        ("product", None, false) => {
+            let mut report = vidni_parity::Report::default();
+            vidni_parity::product::check(&example, &sources, &scratch, &mut report);
+            Ok(print("product", &report))
+        }
         ("selftest", _, _) => Err(format!("selftest takes no candidate\n{USAGE}")),
         (_, Some(c), false) => compare(&stage, &c, &sources, &scratch),
         (_, None, true) => {
@@ -142,7 +151,14 @@ fn compare(
     sources: &Sources,
     scratch: &Path,
 ) -> Result<bool, String> {
-    let report = check_stage(stage, candidate, sources, scratch)?;
+    Ok(print(
+        stage,
+        &check_stage(stage, candidate, sources, scratch)?,
+    ))
+}
+
+/// Prints a stage's report; true when every check passed.
+fn print(stage: &str, report: &vidni_parity::Report) -> bool {
     let passed = report.checks - report.failures.len();
     println!("parity {stage}: {passed} of {} checks pass", report.checks);
     if let Some((ssim, what)) = &report.lowest {
@@ -154,7 +170,7 @@ fn compare(
     for f in &report.failures {
         println!("  FAIL {f}");
     }
-    Ok(report.failures.is_empty() && report.checks > 0)
+    report.failures.is_empty() && report.checks > 0
 }
 
 /// T1 for the compositor: renders every cut twice, from scratch each time,
@@ -178,7 +194,7 @@ fn compose_t1(example: &Path, reference: &Path, fonts: Option<Faces>) -> Result<
         let mut hashes = Vec::new();
         for mut job in jobs(example, reference, &faces)? {
             let frames = job.composer.frames();
-            let (hash, drawn) = render(&mut job.composer, |_| Ok(()))?;
+            let (hash, drawn) = render(&mut job.composer, |_, _| Ok(()))?;
             hashes.push((job.name, frames, drawn, hash));
         }
         renders.push(hashes);

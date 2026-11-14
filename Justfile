@@ -103,9 +103,17 @@ capture-repeat *args:
 encode-t2:
     dir="$(mktemp -d)"; trap 'rm -rf "$dir"' EXIT; cargo run -q --release -p vidni-media --example t2_golden -- {{reference}}/out/nibli-syllogism-16x9.mp4 {{reference}}/build/narration.wav "$dir"
 
-# Build twice under a hermetic environment and compare (P3-VIDNI-06).
-repro:
-    @echo "not built yet: P3-VIDNI-06 adds vidni repro" >&2; exit 2
+# A small project from draft to approved through the `vidni` command, with `vidni repro` and
+# `--offline` (P3-VIDNI-06). It drafts with Piper and the pinned voice, captures with
+# Chromium, and needs unshare and taskset, as the dev shell has them.
+test-build:
+    VIDNI_VOICES="${VIDNI_VOICES:-$VIDNI_PINNED_VOICES}" cargo test -p vidni-cli --test build -- --ignored
+
+# Build an example's cuts twice from copies of it, in clean environments, at two paths and on
+# two sets of cores, and compare every hash (P3-VIDNI-06). `just repro nibli-syllogism --draft`
+# builds the drafts instead of the final cuts, which need the creator's takes.
+repro example="nibli-syllogism" *args:
+    cargo run -q --release -p vidni-cli -- repro examples/{{example}} {{args}}
 
 # Render an example project (P8-VIDNI-02).
 example name:

@@ -10,6 +10,15 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/dhilipsiva/vidni"
 authors = ["dhilipsiva <dhilipsiva@pm.me>"]
 
+# The tests draw whole frames, decode pictures and hash files, and an
+# unoptimized build takes many times as long over them. So the media crate
+# and every dependency are optimized in dev builds too.
+[profile.dev.package.vidni-media]
+opt-level = 2
+
+[profile.dev.package."*"]
+opt-level = 2
+
 [workspace.lints.rust]
 unsafe_code = "forbid"
 

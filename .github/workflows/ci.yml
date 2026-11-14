@@ -27,5 +27,13 @@ jobs:
         run: nix develop .#ci --command just test-capture
       - name: just test-hear
         run: nix develop .#ci --command just test-hear
+      - name: just test-build
+        env:
+          VIDNI_NO_SANDBOX: "1"
+        # --offline makes a user namespace, which the runner's AppArmor
+        # forbids until this setting allows it.
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+          nix develop .#ci --command just test-build
       - name: nix flake check
         run: nix flake check
