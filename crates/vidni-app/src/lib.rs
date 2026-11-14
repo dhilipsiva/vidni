@@ -7,5 +7,6 @@
 
 pub mod actions;
 pub mod app;
+pub mod editor;
 pub mod jobs;
 pub mod recent;

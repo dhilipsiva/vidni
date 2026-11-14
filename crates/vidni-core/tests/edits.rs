@@ -113,7 +113,7 @@ fn a_scene_value_keeps_its_comments() {
         f.text(),
         doc().replace("https://example.com", "https://example.org")
     );
-    f.set_title("Renamed");
+    f.set_title("Renamed").unwrap();
     assert_eq!(
         f.text(),
         doc()
@@ -258,7 +258,7 @@ proptest! {
                     }
                 }
                 Edit::SceneUrl(u) => f.set_scene_value("page", "url", u).unwrap(),
-                Edit::Title(t) => f.set_title(&t),
+                Edit::Title(t) => f.set_title(&t).unwrap(),
             }
         }
         let text = f.text();
@@ -289,4 +289,70 @@ proptest! {
             prop_assert_eq!(&line.say, &want.say);
         }
     }
+}
+
+#[test]
+fn an_edit_that_would_take_a_comment_or_part_a_line_from_its_tables_is_refused() {
+    // A key with a comment above it or beside it isn't taken out.
+    let with_say = doc().replace(
+        "show = \"Show a-1\" # show a-1\n",
+        "show = \"Show a-1\" # show a-1\n# why it is said so\nsay = \"Say a-1\"\nsource = \"a book\" # beside\ncamera = \"viewport\"\n",
+    );
+    let mut f = ProjectFile::parse(&with_say).unwrap();
+    assert_eq!(
+        f.set_line("a-1", LineField::Say, None),
+        Err(EditError::Commented("say"))
+    );
+    assert_eq!(
+        f.set_line("a-1", LineField::Source, None),
+        Err(EditError::Commented("source"))
+    );
+    assert_eq!(f.text(), with_say);
+    // A key with neither goes, and nothing else does.
+    f.set_line("a-1", LineField::Camera, None).unwrap();
+    assert_eq!(f.text(), with_say.replace("camera = \"viewport\"\n", ""));
+    assert!(f.line_has_comments("a-1") && !f.line_has_comments("nowhere"));
+
+    // A line with tables of its own is printed with them by their places
+    // in the file: nothing is added after it, and it isn't moved or removed.
+    let nested = doc().replace(
+        "show = \"Show a-2\" # show a-2\n",
+        "show = \"Show a-2\" # show a-2\n\n[[lines.do]]\nclick = \"somewhere\"\n",
+    ) + "\n[scenes.page.targets]\nsomewhere = { css = \"h1\" }\n";
+    let mut f = ProjectFile::parse(&nested).unwrap();
+    let refused = Err(EditError::Nested("a-2".into()));
+    assert_eq!(f.insert_line(Some("a-2"), "a-9", "a", "New"), refused);
+    assert_eq!(f.move_line("a-2", None), refused);
+    assert_eq!(f.move_line("a-1", Some("a-2")), refused);
+    assert_eq!(f.remove_line("a-2"), refused);
+    assert_eq!(f.text(), nested);
+    // Around it, lines are placed as ever, and its table stays its own.
+    f.insert_line(Some("a-3"), "a-9", "a", "New").unwrap();
+    f.set_line("a-2", LineField::Show, Some("Other words"))
+        .unwrap();
+    let text = f.text();
+    assert!(
+        text.contains("show = \"Other words\" # show a-2\n\n[[lines.do]]\nclick = \"somewhere\"\n\n# header a-3"),
+        "{text}"
+    );
+    vidni_core::validate::check(&text, None).unwrap();
+
+    // The last line of a script stays.
+    let one = doc();
+    let mut f = ProjectFile::parse(&one).unwrap();
+    for id in &IDS[1..] {
+        f.remove_line(id).unwrap();
+    }
+    let left = f.text();
+    assert_eq!(f.remove_line("a-1"), Err(EditError::LastLine));
+    assert_eq!(f.text(), left);
+
+    // A table written on one line has no place for a key.
+    let inline = doc().replace(
+        "# meta comment\n[meta]\ntitle = \"Edits\" # title comment\ndefault_scene = \"page\"\n",
+        "meta = { title = \"Edits\", default_scene = \"page\" }\n",
+    );
+    let mut f = ProjectFile::parse(&inline).unwrap();
+    assert_eq!(f.set_title("Other"), Err(EditError::Inline("meta")));
+    assert_eq!(f.text(), inline);
 }

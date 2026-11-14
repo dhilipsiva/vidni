@@ -28,14 +28,16 @@ lint:
 fmt:
     cargo fmt --all
 
-# Run the desktop app. Its window and its drawing find their libraries when it starts.
-app:
-    LD_LIBRARY_PATH="$VIDNI_WINDOW_LIBS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" VIDNI_VOICES="${VIDNI_VOICES:-$VIDNI_PINNED_VOICES}" cargo run -p vidni-app
+# Run the desktop app: `just app`, or `just app examples/hello` to open a project. Its window
+# and its drawing find their libraries when it starts.
+app *args:
+    LD_LIBRARY_PATH="$VIDNI_WINDOW_LIBS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" VIDNI_VOICES="${VIDNI_VOICES:-$VIDNI_PINNED_VOICES}" cargo run -p vidni-app -- {{args}}
 
 # Open the app's window where nobody sees it, in a headless Wayland compositor drawn in
-# software, and save a picture of it after five seconds: `just app-shot window.png`. It is
-# how the window is looked at on a machine with no screen to spare.
-app-shot out="app.png":
+# software, and save a picture of it after five seconds: `just app-shot window.png`, or
+# `just app-shot window.png examples/hello --script` for a project's script. It is how the
+# window is looked at on a machine with no screen to spare.
+app-shot out="app.png" *args:
     #!/usr/bin/env bash
     set -u
     cargo build -q -p vidni-app || exit 1
@@ -44,7 +46,7 @@ app-shot out="app.png":
     nix shell --inputs-from . nixpkgs#weston -c bash -c '
       weston --backend=headless --renderer=pixman --debug --socket=wl-vidni --width=1000 --height=760 >"$XDG_RUNTIME_DIR/weston.log" 2>&1 &
       compositor=$!; sleep 2
-      (WAYLAND_DISPLAY=wl-vidni DISPLAY= VIDNI_CONFIG="${VIDNI_CONFIG:-$XDG_RUNTIME_DIR/settings}" LD_LIBRARY_PATH="$VIDNI_WINDOW_LIBS" timeout 12 target/debug/vidni-app >"$XDG_RUNTIME_DIR/app.log" 2>&1 &)
+      (WAYLAND_DISPLAY=wl-vidni DISPLAY= VIDNI_CONFIG="${VIDNI_CONFIG:-$XDG_RUNTIME_DIR/settings}" LD_LIBRARY_PATH="$VIDNI_WINDOW_LIBS" timeout 12 target/debug/vidni-app {{args}} >"$XDG_RUNTIME_DIR/app.log" 2>&1 &)
       sleep 5; (cd "$XDG_RUNTIME_DIR" && WAYLAND_DISPLAY=wl-vidni weston-screenshooter); kill $compositor'
     shot="$(ls "$run"/wayland-screenshot-*.png 2>/dev/null | head -1)"
     if [ -n "$shot" ]; then cp "$shot" "{{out}}" && echo "{{out}}: the app's window"; else cat "$run/app.log" >&2; exit 1; fi

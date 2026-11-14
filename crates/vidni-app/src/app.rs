@@ -3,6 +3,7 @@
 //! the help.
 
 use crate::actions::{self, Action};
+use crate::editor::Editor;
 use crate::jobs::{self, Job};
 use crate::recent;
 use eframe::egui;
@@ -61,6 +62,15 @@ impl Project {
     }
 }
 
+/// What an open project shows.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Tab {
+    /// Its cuts, with where each stands.
+    Cuts,
+    /// Its script and scenes, in the editor.
+    Script,
+}
+
 /// The app.
 pub struct App {
     /// The folder of settings, when there is one to keep the list in.
@@ -69,6 +79,10 @@ pub struct App {
     pub recent: Vec<PathBuf>,
     /// The project that is open.
     pub project: Option<Project>,
+    /// The open project's file, in the editor.
+    pub editor: Option<Editor>,
+    /// Whether the open project shows its cuts or its script.
+    pub tab: Tab,
     /// The job that is running, or the last one that ran.
     pub job: Option<Job>,
     /// What the forms hold.
@@ -89,6 +103,8 @@ impl App {
             settings,
             recent,
             project: None,
+            editor: None,
+            tab: Tab::Cuts,
             job: None,
             new_name: String::new(),
             new_parent: home,
@@ -109,6 +125,7 @@ impl App {
                 self.note = e;
             }
         }
+        self.editor = Some(Editor::open(folder));
         self.project = Some(project);
     }
 
@@ -160,7 +177,16 @@ impl App {
                 }
                 match self.project.clone() {
                     None => self.browser(ui),
-                    Some(project) => self.cuts(ui, &project),
+                    Some(project) => {
+                        ui.horizontal(|ui| {
+                            ui.selectable_value(&mut self.tab, Tab::Cuts, "Cuts");
+                            ui.selectable_value(&mut self.tab, Tab::Script, "Script");
+                        });
+                        match self.tab {
+                            Tab::Cuts => self.cuts(ui, &project),
+                            Tab::Script => self.script(ui, &project),
+                        }
+                    }
                 }
                 if !self.note.is_empty() {
                     ui.separator();
@@ -283,6 +309,19 @@ impl App {
                     ui.end_row();
                 }
             });
+    }
+
+    /// The project's file, in the editor. A cut's standing follows from
+    /// the file, so it is read again whenever the file is saved.
+    fn script(&mut self, ui: &mut egui::Ui, project: &Project) {
+        let Some(editor) = &mut self.editor else {
+            return;
+        };
+        let before = editor.text.clone();
+        editor.ui(ui);
+        if editor.text != before {
+            self.project = Some(Project::read(&project.folder));
+        }
     }
 
     /// The job: its command, how far it is, and what it has said.

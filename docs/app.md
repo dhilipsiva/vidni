@@ -9,7 +9,8 @@
 From vidni's folder, in its Nix shell ([quickstart](quickstart.md)):
 
 ```sh
-just app
+just app                     # opens on the list of projects
+just app examples/hello      # opens a project
 ```
 
 The app keeps the list of projects you opened in `recent`, in its folder of settings: `$VIDNI_CONFIG`, or `vidni` under `$XDG_CONFIG_HOME`, or `~/.config/vidni`.
@@ -28,6 +29,21 @@ The app keeps the list of projects you opened in `recent`, in its folder of sett
 - **A project.** Its title, its folder, and each cut with where it stands, in `vidni status`'s own words.
 - **Jobs.** A command that takes time runs as a job, one at a time. The job's panel shows the command as you would type it, a bar for the frames of a render, and everything the command says. When it ends, the project is read again.
 - **Help.** The table above, drawn from the same list the app builds its commands from, so the two can't differ.
+
+## The script editor
+
+An open project has two tabs: **Cuts**, and **Script**, which is its file in an editor.
+
+- **Forms.** The title; every line under its section, each shown with its ID; and the scenes. Pick a line to open its form: what it shows, what is said when that differs, its section, scene and cameras, and the source of its facts. Apply saves the fields that changed. A line can be moved up or down, removed, or followed by a new one.
+- **Source.** The file's own text, to edit as text. Save source saves it when it is a valid project.
+- **Nothing invalid is saved.** An edit that would leave the file invalid, in a form or in the source, isn't written: what is wrong is listed under **Not saved**, each problem at its line and column, in `vidni validate`'s words. The file stays as it was.
+- **Comments are kept.** A form changes the value it names and leaves every other byte of the file where it was: every comment, blank line and key, and the file's line endings. A comment written above a line belongs to that line, and moves with it.
+- **What would lose a comment is refused,** and said: clearing a key that has a comment above or beside it, and removing a line that has comments of its own. Those are done in the source view, where the comment is in front of you.
+- **Editing by hand at the same time is safe.** Every edit is made to the file as it is on disk at that moment, so a change made in another editor in between is kept, and shows in the app at once. What you have typed in a form and not applied stays typed. Text typed in the source view is of the file as it was when it was read: if the file has changed since, Save source refuses, and Read from disk takes the file in again.
+- **An empty field** is a key that isn't in the file: clearing "Said, when it differs" removes `say`. A scene's key is taken out in the source view.
+- **A line with tables of its own,** written as `[[lines.do]]` under it, is edited in place by the forms, and added after, moved or removed only in the source view: the forms don't move a line's tables with it.
+
+The forms cover what a script is mostly made of. Everything else in a project file (targets, cameras, cuts, the publishing table) is edited in the source view for now.
 
 ## Accessibility
 

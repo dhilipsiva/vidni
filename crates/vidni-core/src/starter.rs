@@ -289,7 +289,7 @@ pub fn files(
         format!("the new project isn't valid: {}", problems.join("; "))
     };
     let mut project = ProjectFile::parse(&text).map_err(listed)?;
-    project.set_title(title);
+    project.set_title(title).map_err(|e| e.to_string())?;
     let text = fmt::format(&project.text()).map_err(listed)?;
     Ok(vec![
         (PROJECT_FILE, text),

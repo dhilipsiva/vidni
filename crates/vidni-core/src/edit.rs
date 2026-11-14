@@ -18,6 +18,15 @@ pub enum EditError {
     LineExists(String),
     /// The key can't be removed: every line needs it.
     Required(&'static str),
+    /// The key has a comment, which would go with it.
+    Commented(&'static str),
+    /// The line has tables of its own, such as `[[lines.do]]`, which an
+    /// edit that places lines would part it from.
+    Nested(String),
+    /// The script would have no line left.
+    LastLine,
+    /// The table is written inline, so it has no place for the key.
+    Inline(&'static str),
 }
 
 impl fmt::Display for EditError {
@@ -27,6 +36,19 @@ impl fmt::Display for EditError {
             EditError::UnknownScene(id) => write!(f, "there is no scene {id:?} with its own table"),
             EditError::LineExists(id) => write!(f, "a line {id:?} already exists"),
             EditError::Required(key) => write!(f, "every line needs {key}"),
+            EditError::Commented(key) => write!(
+                f,
+                "{key} has a comment, which would go with it; take the key out in the file's own text"
+            ),
+            EditError::Nested(id) => write!(
+                f,
+                "line {id:?} has tables of its own in the file, such as [[lines.do]]; add, move or remove around it in the file's own text"
+            ),
+            EditError::LastLine => write!(f, "a script needs a line"),
+            EditError::Inline(table) => write!(
+                f,
+                "{table} is written on one line in the file, which this can't edit; edit it in the file's own text"
+            ),
         }
     }
 }
@@ -108,6 +130,11 @@ impl ProjectFile {
         match value {
             Some(v) => set_value(line, field.key(), Value::from(v), LINE),
             None if field.required() => return Err(EditError::Required(field.key())),
+            // A key goes with the comment above it and the one beside
+            // it, so a key that has either is left for a person to remove.
+            None if commented(line, field.key()) => {
+                return Err(EditError::Commented(field.key()));
+            }
             None => {
                 line.remove(field.key());
             }
@@ -139,8 +166,15 @@ impl ProjectFile {
         if self.line_ids().iter().any(|l| l == id) {
             return Err(EditError::LineExists(id.into()));
         }
+        if self.lines().is_none() {
+            return Err(EditError::Inline("lines"));
+        }
         let at = match after {
-            Some(a) => self.line_index(a)? + 1,
+            Some(a) => {
+                let i = self.line_index(a)?;
+                self.plain(i)?;
+                i + 1
+            }
             None => 0,
         };
         let mut table = Table::new();
@@ -152,11 +186,57 @@ impl ProjectFile {
         Ok(())
     }
 
-    /// Removes a line, with its comments.
+    /// Removes a line, with its comments: what is written above its
+    /// heading belongs to it ([`Self::line_has_comments`]).
     pub fn remove_line(&mut self, id: &str) -> Result<(), EditError> {
         let i = self.line_index(id)?;
+        if self.line_ids().len() == 1 {
+            return Err(EditError::LastLine);
+        }
+        self.plain(i)?;
         self.lines_mut().remove(i);
         Ok(())
+    }
+
+    /// Refuses a line that has tables of its own: they are printed after
+    /// it by their own places in the file, which placing lines doesn't move.
+    fn plain(&self, i: usize) -> Result<(), EditError> {
+        let Some(line) = self.lines().and_then(|lines| lines.get(i)) else {
+            return Ok(());
+        };
+        let nested = line.iter().any(|(_, item)| match item {
+            Item::ArrayOfTables(_) => true,
+            Item::Table(table) => !table.is_dotted(),
+            _ => false,
+        });
+        match nested {
+            true => Err(EditError::Nested(
+                line.get("id")
+                    .and_then(Item::as_str)
+                    .unwrap_or_default()
+                    .into(),
+            )),
+            false => Ok(()),
+        }
+    }
+
+    /// Whether line `id` has a comment of its own: above its heading,
+    /// above one of its keys, or beside one of its values. Removing the
+    /// line removes them.
+    pub fn line_has_comments(&self, id: &str) -> bool {
+        let Some(line) = self
+            .line_index(id)
+            .ok()
+            .and_then(|i| self.lines().and_then(|lines| lines.get(i)))
+        else {
+            return false;
+        };
+        let above = line
+            .decor()
+            .prefix()
+            .and_then(|p| p.as_str())
+            .is_some_and(|p| p.contains('#'));
+        above || line.iter().any(|(key, _)| commented(line, key))
     }
 
     /// Moves a line, with its comments, after the line `after`, or first
@@ -168,6 +248,11 @@ impl ProjectFile {
         }
         if after == Some(id) {
             return Ok(());
+        }
+        self.plain(from)?;
+        if let Some(a) = after {
+            let i = self.line_index(a)?;
+            self.plain(i)?;
         }
         let table = self.lines_mut().remove(from);
         let at = match after {
@@ -207,10 +292,14 @@ impl ProjectFile {
     }
 
     /// Sets the video's title.
-    pub fn set_title(&mut self, title: &str) {
-        if let Some(meta) = self.doc.get_mut("meta").and_then(Item::as_table_mut) {
-            set_value(meta, "title", Value::from(title), META);
-        }
+    pub fn set_title(&mut self, title: &str) -> Result<(), EditError> {
+        let meta = self
+            .doc
+            .get_mut("meta")
+            .and_then(Item::as_table_mut)
+            .ok_or(EditError::Inline("meta"))?;
+        set_value(meta, "title", Value::from(title), META);
+        Ok(())
     }
 
     fn lines(&self) -> Option<&ArrayOfTables> {
@@ -244,6 +333,22 @@ impl ProjectFile {
         table.set_position(Some(position + 1));
         self.lines_mut().insert(at, table);
     }
+}
+
+/// Whether `key` of `table` has a comment above it or beside it.
+fn commented(table: &Table, key: &str) -> bool {
+    let above = table
+        .key(key)
+        .and_then(|k| k.leaf_decor().prefix())
+        .and_then(|p| p.as_str())
+        .is_some_and(|p| p.contains('#'));
+    let beside = table
+        .get(key)
+        .and_then(Item::as_value)
+        .and_then(|v| v.decor().suffix())
+        .and_then(|s| s.as_str())
+        .is_some_and(|s| s.contains('#'));
+    above || beside
 }
 
 /// Moves every table printed after `position` one place later.
