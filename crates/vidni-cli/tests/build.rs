@@ -205,14 +205,39 @@ fn a_project_goes_from_draft_to_approved_and_its_builds_repeat() {
     assert_eq!(
         names(&dir.join("out")),
         [
+            "instagram-reels",
             "long.captioned.mp4",
             "long.en.srt",
             "long.en.vtt",
             "long.mp4",
             "short.en.srt",
             "short.en.vtt",
-            "short.mp4"
+            "short.mp4",
+            "whatsapp-status",
+            "youtube",
+            "youtube-shorts"
         ]
+    );
+    // P6-VIDNI-04: each platform has the upload of each cut made for it.
+    assert_eq!(
+        names(&dir.join("out/youtube/long")),
+        [
+            "long.en.srt",
+            "long.en.vtt",
+            "long.mp4",
+            "metadata.md",
+            "thumbnail-1.png"
+        ]
+    );
+    assert_eq!(
+        names(&dir.join("out/instagram-reels/short")),
+        ["cover.png", "metadata.md", "short.mp4"]
+    );
+    assert!(
+        built.contains(
+            "out/youtube-shorts/short: the upload for youtube-shorts, with its metadata.md\n"
+        ),
+        "{built}"
     );
     assert_eq!(ok(dir, &["status"]), "long   ratified\nshort  ratified\n");
 
@@ -412,7 +437,8 @@ fn a_project_goes_from_draft_to_approved_and_its_builds_repeat() {
         assert!(!dir.join(gone).exists(), "{gone}");
     }
     ok(dir, &["verify"]);
-    assert_eq!(names(&dir.join("out")).len(), 7);
+    // The seven delivered files, and the four platforms' folders.
+    assert_eq!(names(&dir.join("out")).len(), 11);
     // Then the assets themselves, and what was delivered.
     for wiped in ["takes", "build", "out"] {
         fs::remove_dir_all(dir.join(wiped)).unwrap();
