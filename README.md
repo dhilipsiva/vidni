@@ -25,6 +25,9 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 - Card scenes are drawn from five templates (title, section, bullets, quote, end) in the project's theme. The default theme is built in; `examples/themes/quine` is the nibli example's.
 - `vidni hear` listens to each line's audio with whisper and flags a line that doesn't sound like its script. It only advises.
 - `vidni draft` renders each cut in the draft voice, to watch before recording. Drafted again with nothing changed, it renders nothing.
+- One script makes several cuts: a long cut and shorts, each picking its lines, with lines that are only for some (`only`).
+- A 9:16 cut is laid out clear of what its platforms' apps cover, QA lists what an app would hide, and every build writes review frames with the covered edges shaded.
+- A 16:9 cut for YouTube is a clean master with caption files, a captioned variant, and a chapter list from its sections.
 - `vidni ratify` and `vidni status` freeze cuts.
 - `vidni final` builds each ratified cut from your takes, `vidni approve` records it as a release, and `vidni repro` checks that a build repeats.
 - `vidni backup` copies the takes and frozen captures to two places and lists them in `assets.lock`; `vidni verify` checks them, `vidni restore` brings them back, and `vidni gc` deletes what can be made again.
@@ -38,7 +41,7 @@ The nibli example goes from draft to approved through these commands ([docs/spec
 | `crates/` | The Rust workspace: `vidni-core`, `vidni-media`, `vidni-record`, `vidni-cli` and `vidni-app`, plus `vidni-parity`, the dev tool that compares a Rust stage with the golden outputs (`just parity`) |
 | `reference/` | The Python and Node pipeline that made the first video. Each Rust stage must match its golden outputs before it replaces its counterpart. |
 | `golden/` | The reference's golden outputs: hashes, timelines, captions and framemd5 logs |
-| `examples/` | Example projects. `nibli-syllogism/` is the first video; its takes are kept out of git and listed in `assets.lock`. |
+| `examples/` | Example projects. `hello/` is a one-minute video of cards and a picture that drafts with no network (`just example hello`). `nibli-syllogism/` is the first video; its takes are kept out of git and listed in `assets.lock`. |
 | `tools/` | Development scripts |
 
 ## Develop
@@ -59,3 +62,5 @@ Licensed under either of
 - MIT license ([LICENSE-MIT](LICENSE-MIT))
 
 at your option.
+
+vidni runs other programs and draws with other people's fonts and voices. [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) lists each with its licence, and says what the GPL programs among them (ffmpeg with x264, Piper, eSpeak NG) ask of anyone who passes them on. `just notices` writes it again.

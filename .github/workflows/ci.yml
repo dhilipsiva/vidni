@@ -37,5 +37,11 @@ jobs:
         run: |
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
           nix develop .#ci --command just test-build
+      - name: just example hello
+        env:
+          VIDNI_NO_SANDBOX: "1"
+        run: nix develop .#ci --command just example hello
+      - name: just notices check
+        run: nix develop .#ci --command just notices check
       - name: nix flake check
         run: nix flake check

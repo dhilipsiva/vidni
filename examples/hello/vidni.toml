@@ -1,0 +1,172 @@
+#:schema ../../docs/vidni.schema.json
+# Hello, vidni: a short video about vidni itself, made of cards and one
+# picture. It needs no browser and no network, and it is nobody's in
+# particular: copy it to start your own.
+
+schema = 1
+
+[meta]
+title = "Hello, vidni"
+subtitle = "a video from a text file"
+language = "en"
+default_scene = "flow"
+
+[voice]
+draft = "piper:en_US-joe-medium"
+respell = [{ text = "vidni", say = "vid nee" }]
+
+# A long cut for YouTube: a clean master, a captioned variant and chapters.
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+# A vertical cut for Shorts, Reels and WhatsApp Status, laid out clear of their apps.
+[[cuts]]
+id = "vertical"
+aspect = "9:16"
+
+[sections.welcome]
+label = "hello"
+
+[sections.how]
+label = "how it works"
+
+[sections.same]
+label = "the same every time"
+
+[sections.yours]
+label = ""
+chapter = "Start your own"
+
+[[lines]]
+id = "welcome-1"
+section = "welcome"
+show = "Hello. This video was made by vidni, from one text file."
+scene = "open"
+
+[[lines]]
+id = "welcome-2"
+section = "welcome"
+show = "Nobody recorded a screen for it, and nobody edited a timeline."
+scene = "open"
+
+[[lines]]
+id = "welcome-3"
+section = "welcome"
+show = "Each line you hear is a line in that file, and each picture is a scene the file names."
+scene = "open"
+
+[[lines]]
+id = "how-1"
+section = "how"
+show = "You write the script, one narrated line at a time."
+camera = "script"
+
+[[lines]]
+id = "how-2"
+section = "how"
+show = "vidni drafts it in a synthetic voice, so you can watch the video before you record anything."
+camera = "draft"
+
+[[lines]]
+id = "how-3"
+section = "how"
+show = "When the draft is right, you record each line in your own voice."
+camera = "record"
+
+[[lines]]
+id = "how-4"
+section = "how"
+show = "The final build puts your takes in place of the draft voice, and checks what it made."
+camera = "final"
+
+[[lines]]
+id = "how-5"
+section = "how"
+show = "It checks the picture, the loudness, the captions and the chapters, and that nothing sits under an app's buttons."
+scene = "checks"
+
+[[lines]]
+id = "same-1"
+section = "same"
+show = "vidni is built to repeat itself."
+scene = "repeat"
+
+[[lines]]
+id = "same-2"
+section = "same"
+show = "The same script, the same takes and the same pictures give the same frames, every time."
+scene = "repeat"
+
+[[lines]]
+id = "same-3"
+section = "same"
+show = "So you can change one line a year from now, and nothing else moves."
+scene = "repeat"
+
+[[lines]]
+id = "yours-1"
+section = "yours"
+show = "To start your own video, run vidni new, and edit the file it gives you."
+scene = "end"
+
+[[lines]]
+id = "yours-2"
+section = "yours"
+show = "Then run vidni draft, and watch what you wrote."
+scene = "end"
+
+[[lines]]
+id = "yours-3"
+section = "yours"
+show = "This example is in vidni's repository, under examples."
+scene = "end"
+
+[scenes.open]
+kind = "card"
+template = "title"
+title = "Hello, vidni"
+subtitle = "a video made from a text file"
+
+# The one picture: an SVG file, drawn by vidni itself. Its parts are named
+# by their rectangles, and each camera frames one.
+[scenes.flow]
+kind = "image"
+url = "flow.svg"
+# Drawn at twice its size, so that it stays sharp when the camera moves in.
+scale = 2
+
+[scenes.flow.targets]
+script = { rect = [60, 250, 250, 220] }
+draft = { rect = [360, 250, 250, 220] }
+record = { rect = [660, 250, 250, 220] }
+final = { rect = [960, 250, 250, 220] }
+
+[scenes.flow.cameras]
+script = { union = ["script", "draft"] }
+draft = { union = ["draft", "record"] }
+record = { union = ["record", "final"] }
+final = { union = ["final"] }
+
+[scenes.checks]
+kind = "card"
+template = "bullets"
+title = "What a final build checks"
+items = [
+  "The picture's size and frame rate",
+  "The loudness",
+  "The captions and the chapters",
+  "That nothing sits under an app's buttons",
+]
+
+[scenes.repeat]
+kind = "card"
+template = "section"
+title = "The same every time"
+subtitle = "same script, same takes, same frames"
+
+[scenes.end]
+kind = "card"
+template = "end"
+title = "vidni new my-video"
+subtitle = "github.com/dhilipsiva/vidni"

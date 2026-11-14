@@ -152,6 +152,11 @@
         # The parity harness's frame tests and the build's tests drive ffmpeg.
         nativeCheckInputs = [ pkgs.ffmpeg-headless ];
         VIDNI_FONTS = fontDirs;
+        # The licences and the third-party notices go wherever vidni goes
+        # (P8-VIDNI-04).
+        postInstall = ''
+          install -Dm644 -t $out/share/doc/vidni LICENSE-MIT LICENSE-APACHE THIRD-PARTY-NOTICES.md
+        '';
       };
     in
     {

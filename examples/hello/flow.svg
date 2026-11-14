@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#101014"/>
+  <g font-family="IBM Plex Sans" font-weight="700" fill="#f5f4f0" text-anchor="middle">
+    <g font-size="34">
+      <rect x="60" y="250" width="250" height="220" rx="18" fill="#1c1c24" stroke="#3c3c4a" stroke-width="3"/>
+      <text x="185" y="345">script</text>
+      <rect x="360" y="250" width="250" height="220" rx="18" fill="#1c1c24" stroke="#3c3c4a" stroke-width="3"/>
+      <text x="485" y="345">draft</text>
+      <rect x="660" y="250" width="250" height="220" rx="18" fill="#1c1c24" stroke="#3c3c4a" stroke-width="3"/>
+      <text x="785" y="345">record</text>
+      <rect x="960" y="250" width="250" height="220" rx="18" fill="#1c1c24" stroke="#f2542d" stroke-width="3"/>
+      <text x="1085" y="345">final</text>
+    </g>
+    <g font-size="22" fill="#9a99a4">
+      <text x="185" y="400">one line at a time</text>
+      <text x="485" y="400">a synthetic voice</text>
+      <text x="785" y="400">your own voice</text>
+      <text x="1085" y="400">built and checked</text>
+    </g>
+  </g>
+  <g stroke="#9a99a4" stroke-width="5" fill="none">
+    <path d="M310 360 H348"/>
+    <path d="M610 360 H648"/>
+    <path d="M910 360 H948"/>
+    <path d="M334 346 L348 360 L334 374"/>
+    <path d="M634 346 L648 360 L634 374"/>
+    <path d="M934 346 L948 360 L934 374"/>
+  </g>
+</svg>

@@ -125,6 +125,12 @@ test-build:
 repro example="nibli-syllogism" *args:
     cargo run -q --release -p vidni-cli -- repro examples/{{example}} {{args}}
 
-# Render an example project (P8-VIDNI-02).
-example name:
-    @echo "not built yet: P8-VIDNI-02 adds the examples ({{name}})" >&2; exit 2
+# Write THIRD-PARTY-NOTICES.md again from what vidni pins: its crates, fonts, voices, tools and
+# models (P8-VIDNI-04). `just notices check` fails when the file is out of date.
+notices mode="write":
+    python3 -I tools/notices.py {{mode}}
+
+# Draft an example project with no network: `just example hello` (P8-VIDNI-02). The nibli
+# example shows a page on the web, so it drafts offline only once its captures are taken.
+example name *args:
+    VIDNI_VOICES="${VIDNI_VOICES:-$VIDNI_PINNED_VOICES}" cargo run -q --release -p vidni-cli -- draft examples/{{name}} --offline {{args}}
