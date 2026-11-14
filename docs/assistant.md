@@ -79,6 +79,10 @@ vidni: ratified.lock was changed: only `vidni ratify`, run by a person, writes i
 
 The check can be got round by an assistant that sets out to: it is a guard against mistakes and a statement of the rules, not a sandbox. For a hard limit, run the assistant where it can write only those two files.
 
+## A reference implementation
+
+[`assistants/claude-code/vidni/SKILL.md`](../assistants/claude-code/vidni/SKILL.md) is a skill for Claude Code that follows this protocol: copy its folder into a project's `.claude/skills/`, or your own `~/.claude/skills/`. It drafts lines and card scenes from a topic and a facts file, and applies the notes in `notes.md`. Another assistant needs the same instructions in its own form; nothing in vidni is specific to one.
+
 ## A round of work
 
 1. The person runs `vidni assistant`, and says what they want: a topic and their material, or "apply my notes".

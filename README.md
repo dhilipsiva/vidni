@@ -26,7 +26,7 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 | [platforms.md](docs/platforms.md) | What each platform takes, and what to check before uploading |
 | [determinism.md](docs/determinism.md) | What repeats, where, and how it was measured |
 | [app.md](docs/app.md) | The desktop app, as far as it is built |
-| [assistant.md](docs/assistant.md) | What an LLM may do in a project, and how vidni holds it to that |
+| [assistant.md](docs/assistant.md) | What an LLM may do in a project, and how vidni holds it to that; [a Claude Code skill](assistants/claude-code/vidni/SKILL.md) follows it |
 | [faq.md](docs/faq.md) | Short answers |
 
 **To help:** [CONTRIBUTING.md](CONTRIBUTING.md) says how to set up and what a change needs, and everyone taking part follows the [code of conduct](CODE_OF_CONDUCT.md). Issues start from a template: something that is wrong, or an idea. [CHANGELOG.md](CHANGELOG.md) lists what each release changed.
