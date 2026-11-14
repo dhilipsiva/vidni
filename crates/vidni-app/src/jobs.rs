@@ -160,7 +160,16 @@ mod tests {
             job.lines[0]
         );
         assert!(job.lines.iter().all(|(stream, _)| *stream == Stream::Out));
-        assert!(woken.load(std::sync::atomic::Ordering::SeqCst) > job.lines.len());
+        // The window is woken for each line, and once more for the end, which
+        // the job's thread does after it has handed the code over.
+        let began = std::time::Instant::now();
+        while woken.load(std::sync::atomic::Ordering::SeqCst) <= job.lines.len() {
+            assert!(
+                began.elapsed() < std::time::Duration::from_secs(10),
+                "the end of the job woke nobody"
+            );
+            std::thread::yield_now();
+        }
         // A command that fails says why on the other stream, with its code.
         let (code, said) = now(&["status", "/nowhere/at/all"]);
         assert_eq!(code, 2);
