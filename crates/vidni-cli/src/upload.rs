@@ -17,6 +17,7 @@
 use crate::{Loaded, load};
 use std::fs;
 use std::io::{BufRead, Write};
+#[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
@@ -75,12 +76,15 @@ fn read_credentials(dir: &Path) -> Result<(PathBuf, Credentials), String> {
             file.display()
         )
     })?;
+    // Where files have such modes, the secret is its owner's alone.
+    #[cfg(unix)]
     if meta.permissions().mode() & 0o077 != 0 {
         return Err(format!(
             "{} can be read by others on this machine, and it holds a secret: `chmod 600` it",
             file.display()
         ));
     }
+    let _ = &meta;
     let text = fs::read_to_string(&file).map_err(|e| format!("{}: {e}", file.display()))?;
     let credentials =
         serde_json::from_str(&text).map_err(|e| format!("{}: {e}", file.display()))?;

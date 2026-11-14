@@ -11,3 +11,5 @@ __pycache__/
 !golden/framemd5/*.gz
 # What `just release` builds.
 /release/
+# What packaging/package.sh builds.
+/dist/

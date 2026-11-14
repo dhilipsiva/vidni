@@ -4,7 +4,9 @@
 //! util-linux, and a kernel that lets a user make namespaces.
 
 use std::ffi::OsString;
+#[cfg(unix)]
 use std::os::unix::fs::MetadataExt;
+#[cfg(unix)]
 use std::os::unix::process::CommandExt;
 use std::process::{Command, ExitCode, Stdio};
 
@@ -60,6 +62,13 @@ pub fn verify() -> Result<(), String> {
 /// `unshare` with a network namespace that holds nothing, in a user
 /// namespace that keeps the user's own ID. (Mapped to root instead, as
 /// `unshare -r` does, Chromium would refuse to start.)
+#[cfg(not(unix))]
+pub fn wrapper() -> Result<Vec<OsString>, String> {
+    Err("--offline makes a network namespace, which only Linux has".into())
+}
+
+/// See the note above: the same, where there are namespaces to make.
+#[cfg(unix)]
 pub fn wrapper() -> Result<Vec<OsString>, String> {
     // A process's folder in /proc belongs to the user it runs as.
     let me = std::fs::metadata("/proc/self").map_err(|e| format!("/proc/self: {e}"))?;
@@ -100,12 +109,19 @@ pub fn again() -> ExitCode {
         (_, Err(e)) => format!("vidni's own file: {e}"),
         (Ok(wrapper), Ok(exe)) => {
             let (name, value) = mark();
-            let error = Command::new(&wrapper[0])
+            let mut command = Command::new(&wrapper[0]);
+            command
                 .args(&wrapper[1..])
                 .arg(exe)
                 .args(std::env::args_os().skip(1).filter(|a| a != "--offline"))
-                .env(name, value)
-                .exec();
+                .env(name, value);
+            #[cfg(unix)]
+            let error = command.exec();
+            #[cfg(not(unix))]
+            let error = match command.status() {
+                Ok(status) => return ExitCode::from(status.code().unwrap_or(1) as u8),
+                Err(error) => error,
+            };
             format!("unshare: {error}")
         }
     };

@@ -6,6 +6,7 @@
 use crate::build::cant;
 use crate::{Loaded, count, load};
 use std::collections::BTreeMap;
+#[cfg(unix)]
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -91,7 +92,11 @@ pub fn backup(path: &Path, to: &[PathBuf]) -> ExitCode {
         return code;
     }
     // On one disk with the project, a backup goes when the disk goes.
+    #[cfg(unix)]
     let disk = |path: &Path| std::fs::metadata(path).map(|meta| meta.dev()).ok();
+    // Elsewhere a disk can't be told from a path: no two are called the same.
+    #[cfg(not(unix))]
+    let disk = |path: &Path| Some(path.to_path_buf());
     if places.iter().all(|place| disk(place) == disk(dir)) {
         tell!(
             "vidni: warning: every place is on the disk the project is on; one of them should be off this machine"

@@ -1,0 +1,84 @@
+name: platforms
+
+# Builds vidni's command line for macOS and Windows, packs it, and drafts
+# the hello example from the package on the runner (P9-VIDNI-02). The
+# builds aren't signed.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "crates/**"
+      - "Cargo.*"
+      - "packaging/**"
+      - "examples/hello/**"
+      - ".github/workflows/platforms.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-macos
+          - os: windows-latest
+            target: x86_64-windows
+    name: build, pack and draft hello (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: the Rust toolchain
+        run: rustup toolchain install stable --profile minimal && rustup default stable && rustc --version
+      - name: build
+        run: cargo build --release --locked -p vidni-cli
+      - name: pack
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)
+          echo "name=vidni-$version-${{ matrix.target }}" >> "$GITHUB_ENV"
+          packaging/package.sh "vidni-$version-${{ matrix.target }}"
+      - name: unpack it somewhere else
+        run: |
+          mkdir "$RUNNER_TEMP/try"
+          case "${{ matrix.target }}" in
+            *windows) (cd "$RUNNER_TEMP/try" && 7z x -bso0 "$GITHUB_WORKSPACE/dist/$name.zip") ;;
+            *) tar -xzf "dist/$name.tar.gz" -C "$RUNNER_TEMP/try" ;;
+          esac
+          ls "$RUNNER_TEMP/try/$name"
+      - name: ffmpeg
+        run: |
+          case "${{ matrix.target }}" in
+            *windows) choco install ffmpeg -y --no-progress ;;
+            *) brew install ffmpeg ;;
+          esac
+          ffmpeg -version | head -n 1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Piper, seeded
+        run: |
+          python -m pip install --quiet piper-tts==1.8.0
+          python "$RUNNER_TEMP/try/$name/setup/seed-piper.py"
+          piper --help | grep -- --seed
+      - name: the fonts
+        run: bash "$RUNNER_TEMP/try/$name/setup/fonts.sh"
+      - name: draft the hello example, from the package
+        run: |
+          cd "$RUNNER_TEMP/try/$name"
+          bin/vidni --version
+          bin/vidni voices fetch piper:en_US-joe-medium
+          bin/vidni draft examples/hello
+          ls -l examples/hello/build/draft
+          test -s examples/hello/build/draft/long.mp4
+          ffprobe -v error -show_entries format=duration -of csv=p=0 examples/hello/build/draft/long.mp4
+          bin/vidni status examples/hello
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ env.name }}
+          path: dist/${{ env.name }}.*

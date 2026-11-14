@@ -10,6 +10,7 @@ use crate::{Loaded, load, offline};
 use std::collections::BTreeSet;
 use std::ffi::OsString;
 use std::fs::{self, File};
+#[cfg(unix)]
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitCode, Stdio};
@@ -299,9 +300,10 @@ impl Recipe {
             .env("TMPDIR", &tmp)
             .stdin(Stdio::null())
             .stdout(log)
-            .stderr(errors)
-            // A group of its own, so that an interrupt can end all of it.
-            .process_group(0);
+            .stderr(errors);
+        // A group of its own, so that an interrupt can end all of it.
+        #[cfg(unix)]
+        command.process_group(0);
         if self.offline.is_some() {
             let (mark, value) = offline::mark();
             command.env(mark, value);

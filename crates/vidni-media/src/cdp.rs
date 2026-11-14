@@ -14,6 +14,7 @@
 //!
 //! `VIDNI_CDP_DEBUG=1` prints every message from Chromium to stderr.
 
+#[cfg(unix)]
 use command_fds::{CommandFdExt, FdMapping};
 use serde_json::{Value, json};
 use std::collections::VecDeque;
@@ -107,6 +108,9 @@ impl Browser {
         if roomy {
             command.env("TMPDIR", profile.path());
         }
+        // Chromium reads its commands on descriptor 3 and writes its
+        // messages on 4: a pipe by number, which only Unix can hand over.
+        #[cfg(unix)]
         command
             .fd_mappings(vec![
                 FdMapping {
@@ -119,6 +123,15 @@ impl Browser {
                 },
             ])
             .map_err(|e| shown(&e))?;
+        #[cfg(not(unix))]
+        {
+            let _ = (&commands_in, &messages_out);
+            return Err(
+                "a web or page scene is captured in Chromium, which vidni drives on Linux and \
+                 macOS only; on Windows, use card, image, terminal and code scenes"
+                    .to_string(),
+            );
+        }
         let mut child = command.spawn().map_err(|e| shown(&e))?;
         // The command holds the child's ends of the pipes; dropping it closes
         // ours, so that Chromium's exit closes the message pipe.

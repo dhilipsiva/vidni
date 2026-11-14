@@ -41,6 +41,7 @@ mod offline;
 mod published;
 mod record;
 mod repro;
+#[cfg(unix)]
 mod setup;
 mod takes;
 mod upload;
@@ -626,7 +627,13 @@ fn dispatch_one(command: Command) -> ExitCode {
         Command::Capture { path } => build::capture(&path),
         Command::Platforms { grid: None } => platforms(),
         Command::Platforms { grid: Some(dir) } => grid(&dir),
+        #[cfg(unix)]
         Command::Setup { from, mirror } => setup::setup(from.as_deref(), mirror.as_deref()),
+        #[cfg(not(unix))]
+        Command::Setup { .. } => {
+            tell!("vidni: `vidni setup` is for the portable bundle on Linux");
+            ExitCode::FAILURE
+        }
         Command::Voices { action: None } => voices(),
         Command::Voices {
             action: Some(VoicesAction::Fetch { id }),
@@ -829,7 +836,11 @@ fn link_takes(lines: &[vidni_core::takes::LineTake], dir: &Path) -> ExitCode {
     let linked = fs::create_dir_all(dir).and_then(|_| {
         lines.iter().enumerate().try_for_each(|(k, line)| {
             let target = std::path::absolute(&line.path)?;
-            std::os::unix::fs::symlink(target, dir.join(format!("{k:03}.wav")))
+            let link = dir.join(format!("{k:03}.wav"));
+            #[cfg(unix)]
+            return std::os::unix::fs::symlink(target, link);
+            #[cfg(windows)]
+            return std::os::windows::fs::symlink_file(target, link);
         })
     });
     match linked {
