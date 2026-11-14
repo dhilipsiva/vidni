@@ -446,7 +446,10 @@ Grammar, as in the workspace TODO, one line per item: `- [ ] **P<m>-VIDNI-<nn>**
     - **No live upload has been made,** and `docs/upload.md` says so in its first paragraph.
 - [ ] **P9-VIDNI-02** (LOW) Build for macOS, then Windows: the builds are unsigned, and the docs explain the OS warnings (amended A5). *Done when:* the hello example renders on each OS from its packaged build on CI runners. [L]
 - [ ] **P9-VIDNI-03** (LOW) Support other languages: per-line translations and dubbed cuts, with the creator's voice per language. The second language is Tamil: the assistant prepares the translations, and the maintainer corrects them and records the takes (amended A6). *Done when:* the nibli example has a Tamil cut built from its own takes. [L]
-- [ ] **P9-VIDNI-04** (LOW) Evaluate more draft voices, starting with Kokoro, seeded, with pinned weights and offline loading, measuring repeatability, intelligibility and licence; naturalness is not judged (amended A7). *Done when:* `docs/voices.md` records the results, and an accepted voice is pinned by sha256. [M]
+- [x] **P9-VIDNI-04** (LOW) Evaluate more draft voices, starting with Kokoro, seeded, with pinned weights and offline loading, measuring repeatability, intelligibility and licence; naturalness is not judged (amended A7). *Done when:* `docs/voices.md` records the results, and an accepted voice is pinned by sha256. [M]
+    - **Done 2026-11-14** (DECISIONS T36). `docs/voices.md` records the results for five Piper voices and two Kokoro voices: takes that are the same in two processes with one seed (15 of 15 for all seven), the share of 155 words that whisper.cpp heard (96.1% to 100%), and each licence as its model card states it. `tools/voices_eval.py` is the measurement.
+    - **Kokoro:** seeded, with weights pinned by SHA-256 (the hash its model card states) and loaded with `HF_HUB_OFFLINE=1`. It repeats, is understood, and is Apache-2.0. It isn't a vidni voice yet, since it needs a second engine among the pinned tools; the page says so.
+    - **Accepted and pinned by sha256:** `piper:en_US-kristin-medium` and `piper:en_US-john-medium`, in `voices.toml`. `vidni voices fetch` fetched both, and a draft in the first was heard as scripted by `vidni hear`.
 
 ## Where the reference pieces go (`reference/`)
 

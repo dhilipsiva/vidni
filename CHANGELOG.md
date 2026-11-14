@@ -21,6 +21,7 @@ The first release.
 - **Determinism you can check.** A build records every input and tool. `vidni repro` builds a cut twice in clean environments and compares every hash; `--offline` builds with no network. Frames, sound and captions are the same bytes on any host with the pinned tools.
 - **Assets out of git:** takes and captures are locked by hash, and `vidni backup`, `verify`, `restore` and `gc` look after them.
 - **A desktop app,** `vidni-app`: projects, a script editor that keeps every comment, a preview player, review notes, the gates, a recording studio and an export panel. Everything it does is a `vidni` command, shown in its help.
+- **Three draft voices free for any use:** `en_US-joe-medium`, and `en_US-kristin-medium` and `en_US-john-medium`, each measured for repeatability and intelligibility ([docs/voices.md](docs/voices.md)).
 - **An upload to YouTube, if you ask for one.** `vidni upload` sends a cut's newest release through YouTube's Data API with your own OAuth client, after you type the release's name. It is off until you set it up, and has been run against a made-up API only.
 - **A protocol for assistants.** An LLM may edit `vidni.toml` and `notes.md` and nothing else, and the gates stay a person's: with `VIDNI_ASSISTANT` set, those commands refuse and `vidni validate` fails on any other change.
 - **Two ways to install on Linux:** `nix run github:dhilipsiva/vidni`, and a portable bundle whose `vidni setup` fetches the pinned tools by their SHA-256, with no root. Both draft the same bytes.

@@ -71,6 +71,8 @@ A draft voice is a model trained on recordings of a person, and its licence is i
 |---|---|---|---|---|
 | piper:en_US-joe-medium | CC0-1.0 | yes | Trained on the OHF-Voice voice datasets (CC0), fine-tuned from the rdh base model (CC0). | https://huggingface.co/rhasspy/piper-voices/blob/6b9cfaacb4fb2e02a9621227e3c1a48bec9710c3/en/en_US/joe/medium/MODEL_CARD |
 | piper:en_US-ryan-medium | CC-BY-NC-SA-4.0 | no | Trained on the RyanSpeech dataset (CC BY-NC-SA 4.0), fine-tuned from the rdh base model (CC0). | https://huggingface.co/rhasspy/piper-voices/blob/6b9cfaacb4fb2e02a9621227e3c1a48bec9710c3/en/en_US/ryan/medium/MODEL_CARD |
+| piper:en_US-kristin-medium | public domain | yes | A woman's voice. Its model card gives the dataset as LibriVox recordings, in the public domain (about 11.5 hours); trained from scratch. | https://huggingface.co/rhasspy/piper-voices/blob/6b9cfaacb4fb2e02a9621227e3c1a48bec9710c3/en/en_US/kristin/medium/MODEL_CARD |
+| piper:en_US-john-medium | public domain | yes | A man's voice. Its model card gives the dataset as LibriVox recordings, in the public domain (about 12.5 hours); fine-tuned from the kristin voice. | https://huggingface.co/rhasspy/piper-voices/blob/6b9cfaacb4fb2e02a9621227e3c1a48bec9710c3/en/en_US/john/medium/MODEL_CARD |
 
 ## Models
 

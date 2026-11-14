@@ -506,3 +506,10 @@ Added as the items are built.
 - **curl carries it,** as it carries downloads, with every secret on curl's standard input and none among its arguments, where other users of the machine could read them.
 - **Tested against a made-up API only,** and the docs say so in their first paragraph: the sign-in, the session, the file, a withdrawn token, a spent quota, a dead address, and the refusals before anything is asked. Whether the real API takes exactly these requests isn't shown.
 - **Captions and thumbnails aren't uploaded.** They are other API calls, with their own quotas and failures; the upload's folder has them for YouTube Studio.
+
+### T36. Two more Piper voices are accepted; Kokoro passes and waits for its engine
+- **2026-11-14, P9-VIDNI-04 (A7).** `tools/voices_eval.py` measures a voice on 15 sentences: the same samples from two processes with one seed, and the share of words whisper.cpp hears right. Naturalness isn't judged.
+- **Accepted and pinned:** `piper:en_US-kristin-medium` and `piper:en_US-john-medium`. Both repeat, are understood as well as the default voice, and their model cards give public-domain LibriVox recordings as their data. Their licence is written as "public domain", as the cards have it, and not as CC0, which is a licence nobody applied.
+- **Not accepted:** `norman` (the listener loses more of its words) and `bryce` (its card names no dataset).
+- **Kokoro passes all three measurements,** with pinned weights and offline loading, and isn't a vidni voice yet: it is another engine, PyTorch and a text front end, to be pinned beside Piper. The item asked for an evaluation and for an accepted voice to be pinned; the evaluation is in `docs/voices.md` with Kokoro's hashes, and the voices pinned are the two that vidni can speak today.
+- **The measurements are one machine's.** Piper's repeatability across machines is already vidni's own claim, within its pins; Kokoro's would have to be shown before it became one.
