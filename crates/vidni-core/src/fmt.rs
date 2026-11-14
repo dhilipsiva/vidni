@@ -79,7 +79,7 @@ const TIMING: &[&str] = &["lead_in", "line_gap", "section_gap", "tail"];
 const LINT: &[&str] = &["banned"];
 const STYLE: &[&str] = &["theme"];
 const MUSIC: &[&str] = &["track"];
-const SECTION: &[&str] = &["label"];
+const SECTION: &[&str] = &["label", "chapter"];
 pub(crate) const LINE: &[&str] = &[
     "id",
     "section",

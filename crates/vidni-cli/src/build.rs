@@ -297,6 +297,9 @@ fn released(release: &release::Release) {
         build.t1.srt,
         build.t1.vtt
     );
+    if let Some(chapters) = &build.t1.chapters {
+        say!("  t1 chapters     {chapters}");
+    }
     say!("  t1 pcm          {}", build.t1.pcm);
     for (name, output) in &build.outputs {
         say!(

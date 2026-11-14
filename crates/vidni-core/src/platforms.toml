@@ -19,6 +19,7 @@ max_upload = 900
 max_size_mb = 256000
 loudness = { integrated = -14.0, true_peak = -1.0, basis = "measured" }
 captions = "file"
+chapters = true
 safe_zone = { top = 0.0, bottom = 0.0, left = 0.0, right = 0.0, basis = "none" }
 verified_on = "2026-11-13"
 sources = [
@@ -26,12 +27,14 @@ sources = [
   "https://support.google.com/youtube/answer/171664",
   "https://support.google.com/youtube/answer/6375112",
   "https://support.google.com/youtube/answer/2734698",
+  "https://support.google.com/youtube/answer/9884579",
   "https://www.meterplugs.com/blog/2019/09/18/youtube-changes-loudness-reference-to-14-lufs.html",
 ]
 notes = [
   "15 minutes is the default; an account that verifies a phone number can upload up to 12 hours or 256 GB, whichever is less.",
   "YouTube publishes no loudness target; -14 LUFS is an independent measurement of its playback normalization (2019).",
   "Caption files (SRT, VTT and others) are uploaded in YouTube Studio.",
+  "Chapters are a list of times and titles in the description: the first at 00:00, at least three, in ascending order, each 10 seconds or longer (checked 2026-11-14).",
 ]
 
 [[platform]]

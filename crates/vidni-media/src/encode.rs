@@ -51,7 +51,9 @@ impl Settings {
     }
 
     /// The ffmpeg arguments, from the first input to the output.
-    pub fn args(&self, audio: &Path, out: &Path) -> Vec<String> {
+    /// `chapters` is a file of chapters in ffmpeg's metadata format, to
+    /// write into the file; without one the file has none.
+    pub fn args(&self, audio: &Path, chapters: Option<&Path>, out: &Path) -> Vec<String> {
         let mut args: Vec<String> = [
             "-nostdin",
             "-hide_banner",
@@ -78,6 +80,14 @@ impl Settings {
             "-i".into(),
             audio.display().to_string(),
         ]);
+        if let Some(chapters) = chapters {
+            args.extend([
+                "-f".into(),
+                "ffmetadata".into(),
+                "-i".into(),
+                chapters.display().to_string(),
+            ]);
+        }
         args.extend(
             [
                 "-map", "0:v:0", "-map", "1:a:0",
@@ -99,12 +109,19 @@ impl Settings {
             "-b:a".into(),
             format!("{}k", self.audio_kbps),
         ]);
+        // The chapters come from the third input, when there is one. Then
+        // only the file's own metadata is dropped: dropping all of it
+        // would take the chapters' titles too.
+        let (metadata, chapters) = match chapters {
+            Some(_) => ("-map_metadata:g", "2"),
+            None => ("-map_metadata", "-1"),
+        };
         args.extend(
             [
-                "-map_metadata",
+                metadata,
                 "-1",
                 "-map_chapters",
-                "-1",
+                chapters,
                 "-fflags",
                 "+bitexact",
                 "-flags:v",
@@ -135,8 +152,19 @@ pub struct Encoder {
 impl Encoder {
     /// Starts ffmpeg writing `out`, with `audio` as the sound.
     pub fn start(settings: &Settings, audio: &Path, out: &Path) -> Result<Self, String> {
+        Self::start_with(settings, audio, None, out)
+    }
+
+    /// Starts ffmpeg writing `out`, with `audio` as the sound and the
+    /// chapters of the metadata file `chapters`.
+    pub fn start_with(
+        settings: &Settings,
+        audio: &Path,
+        chapters: Option<&Path>,
+        out: &Path,
+    ) -> Result<Self, String> {
         let mut child = Command::new("ffmpeg")
-            .args(settings.args(audio, out))
+            .args(settings.args(audio, chapters, out))
             .stdin(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
@@ -280,4 +308,33 @@ pub fn loudnorm(src: &Path, dst: &Path, target: Target) -> Result<(), String> {
         ])
         .arg(dst))
     .map(|_| ())
+}
+
+/// Chapters in ffmpeg's metadata format: each from its start to the next
+/// one's, and the last to `total` seconds.
+pub fn chapter_metadata(chapters: &[vidni_core::chapters::Chapter], total: f64) -> String {
+    // `=`, `;`, `#`, `\` and a line's end are the format's own.
+    let escaped = |title: &str| -> String {
+        title
+            .chars()
+            .flat_map(|c| match c {
+                '=' | ';' | '#' | '\\' | '\n' => vec!['\\', c],
+                _ => vec![c],
+            })
+            .collect()
+    };
+    let mut text = String::from(";FFMETADATA1\n");
+    for (i, chapter) in chapters.iter().enumerate() {
+        let start = u64::from(chapter.start) * 1000;
+        let end = chapters
+            .get(i + 1)
+            .map_or((total * 1000.0).round() as u64, |next| {
+                u64::from(next.start) * 1000
+            });
+        text.push_str(&format!(
+            "[CHAPTER]\nTIMEBASE=1/1000\nSTART={start}\nEND={end}\ntitle={}\n",
+            escaped(&chapter.title)
+        ));
+    }
+    text
 }

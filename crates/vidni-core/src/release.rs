@@ -74,6 +74,9 @@ pub struct T1 {
     pub pcm: String,
     /// The narration track after loudness normalization, as it is encoded.
     pub pcm_normalized: String,
+    /// The chapter list, when the cut has one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub chapters: Option<String>,
 }
 
 /// One encoded file of a cut.
@@ -179,6 +182,9 @@ impl Record {
             if mine != theirs {
                 found.push(format!("t1 {name}"));
             }
+        }
+        if a.chapters != b.chapters {
+            found.push("t1 chapters".to_string());
         }
         let names: std::collections::BTreeSet<&String> =
             self.outputs.keys().chain(other.outputs.keys()).collect();
@@ -318,6 +324,11 @@ pub fn look(project: &Project, cut: &Cut) -> Value {
     // the look it had before vidni knew of them.
     if let Some(covered) = cut.covered() {
         look["cut"]["covered"] = json!(covered);
+    }
+    // A cut for a platform that shows chapters is named by its sections'
+    // chapter titles too; another cut's look doesn't know of them.
+    if crate::chapters::wanted(cut) {
+        look["chapters"] = json!(crate::chapters::titles(project));
     }
     look
 }
@@ -606,6 +617,7 @@ mod tests {
                 vtt: hash("vtt"),
                 pcm: hash("pcm"),
                 pcm_normalized: hash("norm"),
+                chapters: None,
             },
             outputs: BTreeMap::from([(
                 format!("{cut}.mp4"),

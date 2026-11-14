@@ -120,7 +120,10 @@ pub fn content(project: &Project, cut: &Cut) -> Content {
         let value = r["lines"][i].clone();
         lines.insert(line.id.clone(), hash(&value));
         line_values.push(value);
-        sections.insert(line.section.clone(), r["sections"][&line.section].clone());
+        // A section's label is shown; its chapter title isn't, so it is
+        // left to the release's hash, with the title of the video.
+        let label = json!({ "label": r["sections"][&line.section]["label"] });
+        sections.insert(line.section.clone(), label);
         for id in line
             .scene_in(project)
             .into_iter()

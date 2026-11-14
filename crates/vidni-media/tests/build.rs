@@ -894,3 +894,155 @@ box = { union = ["box"] }
     capture_with(&p, dir, &plan, Limits::default()).unwrap();
     assert_ne!(fs::read(capture::path(dir, key)).unwrap(), first);
 }
+
+/// A 16:9 cut for YouTube: `sections` sections of card lines, the last
+/// with `last` lines and the others with four. A line's take is 2.5 s
+/// and the gaps 0.2 s, so four lines last some 11 s.
+fn chaptered(sections: usize, last: usize) -> String {
+    let mut text = String::from(
+        "schema = 1\n\n[meta]\ntitle = \"Chapters\"\ndefault_scene = \"card\"\n\n\
+         [timing]\nlead_in = 0.1\nline_gap = 0.2\nsection_gap = 0.2\ntail = 0.2\n\n\
+         [[cuts]]\nid = \"long\"\naspect = \"16:9\"\n\n",
+    );
+    for s in 0..sections {
+        let label = ["first things", "the middle", "last words", "more"][s];
+        text.push_str(&format!("[sections.s{s}]\nlabel = \"{label}\"\n\n"));
+    }
+    for s in 0..sections {
+        let lines = if s + 1 == sections { last } else { 4 };
+        for n in 0..lines {
+            text.push_str(&format!(
+                "[[lines]]\nid = \"s{s}-{n}\"\nsection = \"s{s}\"\nshow = \"Line {n} of section {s}.\"\n\n"
+            ));
+        }
+    }
+    text.push_str("[scenes.card]\nkind = \"page\"\nurl = \"card.html\"\n");
+    text
+}
+
+#[test]
+fn a_long_cut_has_a_clean_master_a_captioned_variant_and_its_chapters() {
+    let (dir, p) = drafted(&chaptered(3, 4));
+    let dir = dir.path();
+    record_takes(dir, &p, None);
+    let lock = ratified(dir, &p);
+    let long = cut(&p, "long");
+    let record = build::final_build(&p, dir, &lock, long, &setup(), &mut quiet()).unwrap();
+    assert_eq!(record.problems(), Vec::<String>::new());
+    // The master is clean, and the variant has the captions drawn in (D7).
+    let captions: Vec<(&str, bool)> = record
+        .outputs
+        .iter()
+        .map(|(name, o)| (name.as_str(), o.captions))
+        .collect();
+    assert_eq!(
+        captions,
+        [("long.captioned.mp4", true), ("long.mp4", false)]
+    );
+    // Each section is a chapter, from the second its picture comes in.
+    let list = fs::read_to_string(dir.join("out/long.chapters.txt")).unwrap();
+    assert_eq!(
+        list,
+        "0:00 First things\n0:10 The middle\n0:21 Last words\n"
+    );
+    assert_eq!(
+        record.t1.chapters.as_deref(),
+        Some(vidni_core::release::file_hash(&dir.join("out/long.chapters.txt")).unwrap())
+            .as_deref()
+    );
+    let mut delivered: Vec<String> = fs::read_dir(dir.join("out"))
+        .unwrap()
+        .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+        .collect();
+    delivered.sort();
+    assert_eq!(
+        delivered,
+        [
+            "long.captioned.mp4",
+            "long.chapters.txt",
+            "long.en.srt",
+            "long.en.vtt",
+            "long.mp4"
+        ]
+    );
+    // Both pictures hold the chapters.
+    for name in ["long.mp4", "long.captioned.mp4"] {
+        let probe = std::process::Command::new("ffprobe")
+            .args(["-v", "error", "-show_entries", "chapter_tags=title"])
+            .args(["-of", "csv=p=0"])
+            .arg(dir.join("out").join(name))
+            .output()
+            .unwrap();
+        assert_eq!(
+            String::from_utf8_lossy(&probe.stdout),
+            "First things\nThe middle\nLast words\n",
+            "{name}"
+        );
+    }
+    // The build is kept as any other, and approved with its list.
+    let mut steps = Vec::new();
+    let mut watch = |step: Step| {
+        if step == Step::Kept {
+            steps.push("kept");
+        }
+    };
+    build::final_build(&p, dir, &lock, long, &setup(), &mut watch).unwrap();
+    assert_eq!(steps, ["kept"]);
+    let release = match build::approve(&p, dir, &lock, long, &setup(), "2026-11-14").unwrap() {
+        vidni_core::release::Approval::Approved(release) => release,
+        other => panic!("{other:?}"),
+    };
+    let files: Vec<String> = vidni_core::assets::delivered(&p, &release)
+        .into_iter()
+        .map(|a| a.path)
+        .collect();
+    assert!(
+        files.contains(&"long.chapters.txt".to_string()),
+        "{files:?}"
+    );
+    // A list that is gone from out is missed.
+    fs::remove_file(dir.join("out/long.chapters.txt")).unwrap();
+    let reasons = refused(build::approve(&p, dir, &lock, long, &setup(), "2026-11-14"));
+    assert!(
+        reasons[0].starts_with("out/long.chapters.txt isn't the file"),
+        "{reasons:?}"
+    );
+}
+
+#[test]
+fn chapters_that_youtube_would_ignore_fail_qa_and_two_sections_make_no_list() {
+    // The last of three sections has one line: a chapter of some 3 s.
+    let (dir, p) = drafted(&chaptered(3, 1));
+    let dir = dir.path();
+    record_takes(dir, &p, None);
+    let lock = ratified(dir, &p);
+    let reasons = refused(build::final_build(
+        &p,
+        dir,
+        &lock,
+        cut(&p, "long"),
+        &setup(),
+        &mut quiet(),
+    ));
+    assert_eq!(reasons.len(), 3, "{reasons:?}");
+    for (reason, file) in reasons[1..].iter().zip(["long.captioned.mp4", "long.mp4"]) {
+        assert!(
+            reason.starts_with(&format!("{file}: chapter \"Last words\" lasts 3."))
+                && reason.ends_with("only when each lasts 10 s or more"),
+            "{reason}"
+        );
+    }
+    assert!(!dir.join("out").exists());
+
+    // Two sections are no list: no file, no chapters in the picture, no problem.
+    let (dir, p) = drafted(&chaptered(2, 4));
+    let dir = dir.path();
+    record_takes(dir, &p, None);
+    let lock = ratified(dir, &p);
+    let record =
+        build::final_build(&p, dir, &lock, cut(&p, "long"), &setup(), &mut quiet()).unwrap();
+    assert_eq!(record.problems(), Vec::<String>::new());
+    assert_eq!(record.t1.chapters, None);
+    assert!(!dir.join("out/long.chapters.txt").exists());
+    assert!(!dir.join("build/final/long.chapters.txt").exists());
+}

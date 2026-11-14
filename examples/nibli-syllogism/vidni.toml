@@ -73,10 +73,11 @@ theme = "../themes/quine"
 
 # The reference burns captions into both cuts. The vertical cut runs about
 # five minutes, which is too long for the short-video platforms.
+# The long cut is a clean master with caption files, and a variant with
+# the captions drawn in (the default for 16:9).
 [[cuts]]
 id = "long"
 aspect = "16:9"
-captions = "burned"
 platforms = ["youtube"]
 
 [[cuts]]
@@ -107,8 +108,10 @@ lines = [
 [music]
 track = "none"
 
+# The first and the last section show no label; each still names a chapter.
 [sections.intro]
 label = ""
+chapter = "Intro"
 
 [sections.symbolic]
 label = "symbolic reasoning"
@@ -121,6 +124,7 @@ label = "neuro-symbolic architecture"
 
 [sections.nibli]
 label = "nibli"
+chapter = "nibli" # A chapter's title is the label with a capital; the engine's name has none.
 
 [sections.syllogism]
 label = "the syllogism"
@@ -136,6 +140,7 @@ label = "a real FALSE"
 
 [sections.end]
 label = ""
+chapter = "Try it yourself"
 
 [[lines]]
 id = "short-hook"

@@ -28,6 +28,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use vidni_core::capture::{self, sha256_hex};
+use vidni_core::chapters::{self, Chapter};
 use vidni_core::project::{Aspect, Captions, Cut, Line, Project, Scene};
 use vidni_core::ratify;
 use vidni_core::release::{self, Approval, Output, Record, Sources, T1, Tools, Voice};
@@ -232,6 +233,8 @@ pub struct Plan<'p> {
     pictures: Vec<(String, bool)>,
     faces: Faces,
     look: Look,
+    /// The cut's chapters; none when it has no list.
+    chapters: Vec<Chapter>,
     tools: Tools,
     pub sources: Sources,
     /// Everything the build depends on, as one hash.
@@ -390,6 +393,10 @@ pub fn plan<'p>(
         .map(|json| json + "\n")
         .map_err(|e| Stop::Failed(e.to_string()))?;
     let shots = shots(project, dir, cut, &lines).map_err(Stop::Failed)?;
+    let chapters = match chapters::wanted(cut) {
+        true => chapters::of(project, &timeline),
+        false => Vec::new(),
+    };
     // A draft is for watching, so it is one picture, with the captions a
     // viewer would see. The final build makes every picture the cut asks for.
     let name = |suffix: &str| format!("{}{suffix}.mp4", cut.id);
@@ -418,6 +425,7 @@ pub fn plan<'p>(
         pictures,
         faces: setup.faces.clone(),
         look: Look::of(&setup.theme),
+        chapters,
         tools,
         sources,
         inputs,
@@ -493,10 +501,19 @@ impl Plan<'_> {
         ]
     }
 
-    /// The files a final build delivers: its pictures and its captions.
+    /// The chapter list's file, `<cut>.chapters.txt`, when the cut has one.
+    fn chapters_file(&self) -> Option<String> {
+        (!self.chapters.is_empty()).then(|| format!("{}.chapters.txt", self.cut.id))
+    }
+
+    /// The files a final build delivers: its pictures, its captions and
+    /// its chapter list.
     fn deliverables(&self) -> Vec<String> {
         let pictures = self.pictures.iter().map(|(name, _)| name.clone());
-        pictures.chain(self.caption_files()).collect()
+        pictures
+            .chain(self.caption_files())
+            .chain(self.chapters_file())
+            .collect()
     }
 }
 
@@ -519,6 +536,10 @@ pub fn kept(plan: &Plan, dir: &Path) -> Option<Record> {
     let [timeline, narration, normalized] = plan.working_files();
     let [srt, vtt] = plan.caption_files();
     let t1 = &record.t1;
+    // A cut with a chapter list has its file, and a cut without has none.
+    if plan.chapters_file().is_some() != t1.chapters.is_some() {
+        return None;
+    }
     let mut files = vec![
         (timeline, &t1.timeline),
         (srt, &t1.srt),
@@ -526,6 +547,7 @@ pub fn kept(plan: &Plan, dir: &Path) -> Option<Record> {
         (narration, &t1.pcm),
         (normalized, &t1.pcm_normalized),
     ];
+    files.extend(plan.chapters_file().zip(t1.chapters.as_ref()));
     files.extend(
         record
             .outputs
@@ -584,7 +606,20 @@ pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<
         vtt: write(&at(&vtt), timeline::vtt(&plan.timeline).as_bytes())?,
         pcm: String::new(),
         pcm_normalized: String::new(),
+        chapters: None,
     };
+    // The chapter list, to paste into a description; and the same
+    // chapters as ffmpeg reads them, to write into each picture.
+    let metadata = at(&format!("{cut}.chapters.ffmeta"));
+    if let Some(name) = plan.chapters_file() {
+        t1.chapters = Some(write(
+            &at(&name),
+            chapters::text(&plan.chapters).as_bytes(),
+        )?);
+        let text = encode::chapter_metadata(&plan.chapters, plan.timeline.total);
+        write(&metadata, text.as_bytes())?;
+    }
+    let metadata = t1.chapters.is_some().then_some(metadata);
 
     progress(Step::Stage("narration"));
     let narration_path = at(&narration);
@@ -604,7 +639,12 @@ pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<
         let part = at(&format!("{name}.part.mp4"));
         let mp4 = at(name);
         let of = composer.frames();
-        let mut encoder = Encoder::start(&Settings::new(width, height), &normalized, &part)?;
+        let mut encoder = Encoder::start_with(
+            &Settings::new(width, height),
+            &normalized,
+            metadata.as_deref(),
+            &part,
+        )?;
         let rendered = compose::render(&mut composer, |f, bytes| {
             encoder.push(bytes)?;
             progress(Step::Frames {
@@ -632,7 +672,7 @@ pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<
                 loudness: Target::default().integrated,
                 tolerance: LOUDNESS_TOLERANCE,
                 captions: Some((srt_path.clone(), cues)),
-                chapters: None,
+                chapters: plan.chapters.clone(),
             },
         )?;
         // What the picture draws where an app would cover it fails QA too.
@@ -737,11 +777,14 @@ fn deliver(plan: &Plan, dir: &Path) -> Result<(), String> {
         fs::copy(from.join(name), to.join(name))
             .map_err(|e| format!("{}: {e}", to.join(name).display()))?;
     }
-    // A captioned variant from when the cut asked for one is no longer the cut's.
-    let variant = format!("{}.captioned.mp4", plan.cut.id);
-    let stale = to.join(&variant);
-    if !delivered.contains(&variant) && stale.is_file() {
-        fs::remove_file(&stale).map_err(|e| format!("{}: {e}", stale.display()))?;
+    // A captioned variant or a chapter list from when the cut had one is
+    // no longer the cut's.
+    for ending in ["captioned.mp4", "chapters.txt"] {
+        let name = format!("{}.{ending}", plan.cut.id);
+        let stale = to.join(&name);
+        if !delivered.contains(&name) && stale.is_file() {
+            fs::remove_file(&stale).map_err(|e| format!("{}: {e}", stale.display()))?;
+        }
     }
     Ok(())
 }
@@ -798,6 +841,10 @@ pub fn approve(
     }
     let [srt, vtt] = plan.caption_files();
     let mut delivered: Vec<(&str, &str)> = vec![(&srt, &record.t1.srt), (&vtt, &record.t1.vtt)];
+    let chapters = plan.chapters_file();
+    if let (Some(name), Some(sha)) = (&chapters, &record.t1.chapters) {
+        delivered.push((name, sha));
+    }
     delivered.extend(
         record
             .outputs

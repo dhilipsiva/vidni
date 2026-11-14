@@ -4,7 +4,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use vidni_media::encode::{Encoder, Settings, Target, loudnorm};
+use vidni_core::chapters::Chapter;
+use vidni_media::encode::{Encoder, Settings, Target, chapter_metadata, loudnorm};
 use vidni_media::{framemd5, qa};
 
 const W: u32 = 320;
@@ -73,6 +74,10 @@ fn the_container_carries_no_dates_or_version_numbers() {
     let dir = tempfile::tempdir().unwrap();
     let out = dir.path().join("a.mp4");
     encode(&tone(dir.path()), &out);
+    no_dates_or_versions(&out);
+}
+
+fn no_dates_or_versions(out: &Path) {
     let probe = Command::new("ffprobe")
         .args([
             "-v",
@@ -82,7 +87,7 @@ fn the_container_carries_no_dates_or_version_numbers() {
             "-of",
             "json",
         ])
-        .arg(&out)
+        .arg(out)
         .output()
         .unwrap();
     let info: serde_json::Value = serde_json::from_slice(&probe.stdout).unwrap();
@@ -126,7 +131,7 @@ fn loudnorm_reaches_its_target_and_qa_passes_a_good_cut() {
         loudness: -16.0,
         tolerance: 1.5,
         captions: Some((srt.clone(), 2)),
-        chapters: None,
+        chapters: Vec::new(),
     };
     let report = qa::check(&out, &expect).unwrap();
     assert_eq!(report.problems, Vec::<String>::new(), "{}", report.summary);
@@ -136,16 +141,122 @@ fn loudnorm_reaches_its_target_and_qa_passes_a_good_cut() {
         duration: 5.0,
         loudness: -23.0,
         captions: Some((srt, 3)),
-        chapters: Some(vec![(0.0, "Intro".into())]),
+        chapters: vec![Chapter {
+            start: 0,
+            title: "Intro".into(),
+        }],
         ..expect
     };
     let problems = qa::check(&out, &wrong).unwrap().problems;
-    assert_eq!(problems.len(), 5, "{problems:#?}");
+    assert_eq!(problems.len(), 7, "{problems:#?}");
     assert!(problems[0].starts_with("the picture is 320x180, not 1920x180"));
     assert!(problems[1].starts_with("it lasts 2.0"));
     assert!(problems[2].contains("more than 1.5 LU from -23 LUFS"));
     assert!(problems[3].ends_with("has 2 cues, and the timeline 3"));
-    assert_eq!(problems[4], "it has 0 chapters, not the 1 the cut defines");
+    assert_eq!(
+        problems[4],
+        "the list has 1 of the 3 chapters that YouTube shows a list from"
+    );
+    assert!(problems[5].starts_with("chapter \"Intro\" lasts 2 s;"));
+    assert_eq!(problems[6], "it has 0 chapters, not the 1 the cut defines");
+
+    // Captions that a picture of this length can't show are named too.
+    fs::write(
+        dir.path().join("late.srt"),
+        "1\n00:00:00,500 --> 00:00:01,500\nOne.\n\n2\n00:00:01,000 --> 00:00:03,000\nTwo.\n\n",
+    )
+    .unwrap();
+    let late = qa::Expect {
+        captions: Some((dir.path().join("late.srt"), 2)),
+        ..qa::Expect {
+            chapters: Vec::new(),
+            ..wrong.clone()
+        }
+    };
+    let problems = qa::check(&out, &late).unwrap().problems;
+    assert_eq!(
+        problems[3..],
+        [
+            "caption 2 starts before caption 1 ends",
+            "caption 2 ends at 3.00 s, after the picture does at 2.00 s"
+        ],
+        "{problems:#?}"
+    );
+}
+
+#[test]
+fn chapters_are_written_into_the_file_and_checked_against_its_length() {
+    let dir = tempfile::tempdir().unwrap();
+    // 31 seconds of a tone and of the pattern.
+    let audio = dir.path().join("long.wav");
+    let made = Command::new("ffmpeg")
+        .args(["-nostdin", "-loglevel", "error", "-y", "-f", "lavfi", "-i"])
+        .arg("sine=frequency=440:duration=31:sample_rate=48000")
+        .arg(&audio)
+        .status()
+        .unwrap();
+    assert!(made.success());
+    let normalized = dir.path().join("norm.wav");
+    loudnorm(&audio, &normalized, Target::default()).unwrap();
+    let chapter = |start, title: &str| Chapter {
+        start,
+        title: title.into(),
+    };
+    // A title with the marks the metadata format keeps for itself.
+    let chapters = vec![
+        chapter(0, "Intro"),
+        chapter(10, "What = which; #2 \\ more"),
+        chapter(20, "The end"),
+    ];
+    let metadata = dir.path().join("chapters.ffmeta");
+    fs::write(&metadata, chapter_metadata(&chapters, 31.0)).unwrap();
+    let encode = |out: &Path| {
+        let settings = Settings::new(W, H);
+        let mut encoder =
+            Encoder::start_with(&settings, &normalized, Some(&metadata), out).unwrap();
+        for n in 0..31 * 30 {
+            encoder.push(&frame(n % 7)).unwrap();
+        }
+        encoder.finish().unwrap();
+    };
+    let (a, b) = (dir.path().join("a.mp4"), dir.path().join("b.mp4"));
+    encode(&a);
+    encode(&b);
+    // The chapters don't cost the file its repeatability.
+    assert_eq!(fs::read(&a).unwrap(), fs::read(&b).unwrap());
+    no_dates_or_versions(&a);
+    let expect = qa::Expect {
+        width: W,
+        height: H,
+        fps: 30,
+        duration: 31.0,
+        loudness: -16.0,
+        tolerance: 1.5,
+        captions: None,
+        chapters: chapters.clone(),
+    };
+    let report = qa::check(&a, &expect).unwrap();
+    assert_eq!(report.problems, Vec::<String>::new(), "{}", report.summary);
+    // Another list than the file's is a problem, and so is a file with
+    // chapters when the cut has none.
+    let mut other = chapters.clone();
+    other[1].title = "Something else".into();
+    let wrong = qa::Expect {
+        chapters: other,
+        ..expect.clone()
+    };
+    assert_eq!(
+        qa::check(&a, &wrong).unwrap().problems,
+        ["its chapter 2 is \"What = which; #2 \\\\ more\" at 10 s, not \"Something else\" at 10 s"]
+    );
+    let none = qa::Expect {
+        chapters: Vec::new(),
+        ..expect
+    };
+    assert_eq!(
+        qa::check(&a, &none).unwrap().problems,
+        ["it has 3 chapters, not the 0 the cut defines"]
+    );
 }
 
 #[test]

@@ -7,6 +7,7 @@
 
 pub mod assets;
 pub mod capture;
+pub mod chapters;
 pub mod edit;
 pub mod fmt;
 pub mod fonts;

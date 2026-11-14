@@ -288,6 +288,12 @@ pub fn delivered(project: &Project, release: &Release) -> Vec<Asset> {
         path: format!("{stem}.vtt"),
         sha256: build.t1.vtt.clone(),
     });
+    if let Some(chapters) = &build.t1.chapters {
+        files.push(Asset {
+            path: format!("{}.chapters.txt", build.cut),
+            sha256: chapters.clone(),
+        });
+    }
     files
 }
 

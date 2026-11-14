@@ -44,6 +44,10 @@ pub struct Profile {
     pub max_size_mb: Option<u32>,
     pub loudness: Loudness,
     pub captions: CaptionStyle,
+    /// Whether the platform shows chapters, read from a list of times
+    /// and titles in the description.
+    #[serde(default)]
+    pub chapters: bool,
     pub safe_zone: SafeZone,
     /// The day these facts were last checked, YYYY-MM-DD.
     pub verified_on: String,

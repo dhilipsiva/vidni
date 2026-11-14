@@ -191,6 +191,10 @@ pub struct Section {
     /// Shown on screen while the section plays, and used for chapters. Empty
     /// for none.
     pub label: String,
+    /// The section's title in a chapter list, when it isn't the label.
+    /// Empty to stay in the chapter before.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chapter: Option<String>,
 }
 
 /// One narrated line.

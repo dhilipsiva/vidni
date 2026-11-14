@@ -168,6 +168,7 @@ That file is [`examples/themes/quine`](../examples/themes/quine/theme.toml), the
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `label` | string | `""` | Shown on screen while the section plays, and used for chapters. Empty for none. |
+| `chapter` | string | the label, with a capital first letter | The section's title in a chapter list ([Chapters](#chapters)). Empty to stay in the chapter before. |
 
 Sections come in the order of their first line, and a section's lines must be together. A section with no lines is an error.
 
@@ -694,6 +695,38 @@ Then it builds the cut into `build/final/` and runs QA on each file. A build tha
 | `<cut>.mp4` | The cut. Its captions are drawn in when `captions` is `burned`. |
 | `<cut>.captioned.mp4` | The variant with captions drawn in, when `captions` is `both` |
 | `<cut>.<language>.srt`, `.vtt` | The captions as files, to upload |
+| `<cut>.chapters.txt` | The chapter list, to paste into the description, when the cut has one ([Chapters](#chapters)) |
+
+**A long cut for YouTube** is a 16:9 cut with the default `captions`, `both`. Its `<cut>.mp4` is the clean master, to upload with the caption files; viewers turn captions on and off, and YouTube can translate them. Its `<cut>.captioned.mp4` is the same picture with the captions drawn in, for places that take no caption file (DECISIONS.md, D7).
+
+**QA checks the captions against each file:** the caption file has as many cues as the timeline, each cue starts after the one before it ends, and none ends after the picture does.
+
+### Chapters
+
+A cut for a platform that shows chapters gets a chapter list from its sections. Only YouTube does (`vidni platforms`), so by default only a 16:9 cut has one.
+
+```text
+0:00 Intro
+0:13 Symbolic reasoning
+0:36 Theorem proving
+```
+
+- **Each section is a chapter,** titled by its `chapter`, or else by its label with a capital first letter.
+- **A section with neither,** or with `chapter = ""`, stays in the chapter before it. So do sections that follow one another under the same title.
+- **The first chapter starts at 0:00.** When the first section has no title, the chapter has the project's.
+- **Each later chapter starts** at the whole second in which the picture changes to its section.
+
+YouTube shows a list only when it starts at 00:00, has three chapters or more, and each lasts 10 seconds or longer. It ignores a list that breaks a rule, and says nothing. So:
+- **A cut with fewer than three chapters has no list:** no file, and no problem.
+- **A chapter shorter than 10 seconds is a QA problem,** measured against the file's own length. Give its section `chapter = ""` to join it to the chapter before, or make it longer.
+
+```text
+long.mp4: chapter "Last words" lasts 3.3 s; YouTube shows a video's chapters only when each lasts 10 s or more
+```
+
+The list is `<cut>.chapters.txt`, delivered with the cut. The same chapters are written into each of the cut's pictures, where a player shows them, and QA checks that each file holds exactly the cut's list.
+
+A section's `chapter` isn't part of what a cut shows and says: changing it leaves the cut ratified, and makes the next approval a new release.
 
 ### What a build is made from: `<cut>.build.json`
 
@@ -704,10 +737,10 @@ Every build writes a record beside its files, `build/draft/<cut>.build.json` or 
 | `sources.content` | What the cut shows and says: the hash that ratifying freezes |
 | `sources.audio` | Each line's clip |
 | `sources.captures` | Each capture's picture and frames |
-| `sources.look` | The gaps, the look, the title and subtitle, and the cut's own settings |
+| `sources.look` | The gaps, the look, the title and subtitle, and the cut's own settings; what its platforms' apps cover, when they cover something; and its sections' chapter titles, when a platform of its shows chapters |
 | `tools` | vidni's and ffmpeg's versions, each font file, and the encoder's settings |
 | `inputs` | All of the above and the cut's timeline, as one hash |
-| `t1` | The timeline, the captions, and the narration before and after loudness normalization |
+| `t1` | The timeline, the captions, the chapter list when there is one, and the narration before and after loudness normalization |
 | `outputs.<file>` | For each encoded file: its frames before encoding (T1), its packets and its bytes (T2), and what QA measured |
 
 Two builds with the same `inputs` must have the same `t1` and `outputs`: that is what [`vidni repro`](#checking-that-a-build-repeats-vidni-repro) checks. The tiers are described in [`determinism.md`](determinism.md).

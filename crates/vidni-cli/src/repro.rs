@@ -337,6 +337,9 @@ fn compare(cut: &str, a: &Record, b: &Record) -> Vec<String> {
         short(&a.t1.srt),
         short(&a.t1.vtt)
     );
+    if let Some(chapters) = &a.t1.chapters {
+        say!("  t1 chapters         {}", short(chapters));
+    }
     say!("  t1 pcm              {}", short(&a.t1.pcm));
     say!("  t1 pcm, normalized  {}", short(&a.t1.pcm_normalized));
     for (name, output) in &a.outputs {

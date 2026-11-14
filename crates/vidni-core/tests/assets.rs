@@ -141,6 +141,7 @@ fn released() -> Releases {
             vtt: hash("vtt"),
             pcm: hash("pcm"),
             pcm_normalized: hash("normalized"),
+            chapters: None,
         },
         outputs: BTreeMap::from([(
             "long.mp4".to_string(),

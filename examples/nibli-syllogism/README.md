@@ -11,8 +11,17 @@ vidni final examples/nibli-syllogism --cut long --cut vertical    # the two full
 
 The two full cuts are ratified and approved:
 - `ratified.lock` freezes what they show and say.
-- `release.json` records the releases `long-r1` and `vertical-r1`, each with the hashes of its build.
+- `release.json` records their releases, each with the hashes of its build. The newest are `long-r3` and `vertical-r2`.
 - `vidni repro` built both cuts again, on other cores and at other paths, and every hash agreed (docs/determinism.md).
+
+The long cut is delivered as YouTube takes it ([The final build](../../docs/spec.md#the-final-build-vidni-final)):
+
+| File in `out/` | What it is |
+|---|---|
+| `long.mp4` | The clean master |
+| `long.en.srt`, `long.en.vtt` | Its captions, to upload with it |
+| `long.captioned.mp4` | The same picture with the captions drawn in, as the reference's cut had them |
+| `long.chapters.txt` | Its ten chapters, to paste into the description. The same chapters are in both pictures. |
 
 The final cuts need the creator's takes and the captures the cuts froze, and both are kept out of git. Without them, `vidni status` reports the cuts as changed and `vidni final` refuses them. `vidni draft` still works: it captures the playground as it is now, and builds the cuts in the draft voice.
 

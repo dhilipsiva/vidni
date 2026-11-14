@@ -861,6 +861,13 @@
       "description": "A run of lines under one label.",
       "type": "object",
       "properties": {
+        "chapter": {
+          "description": "The section's title in a chapter list, when it isn't the label.\nEmpty to stay in the chapter before.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "label": {
           "description": "Shown on screen while the section plays, and used for chapters. Empty\nfor none.",
           "type": "string",

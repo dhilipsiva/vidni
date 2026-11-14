@@ -5,6 +5,7 @@ use serde_json::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use vidni_core::chapters::{self, Chapter};
 
 /// What a cut must be.
 #[derive(Debug, Clone, PartialEq)]
@@ -19,8 +20,8 @@ pub struct Expect {
     pub tolerance: f64,
     /// The caption file, and the number of cues the timeline has.
     pub captions: Option<(PathBuf, usize)>,
-    /// Each chapter's start in seconds and its title, when the cut has chapters.
-    pub chapters: Option<Vec<(f64, String)>>,
+    /// The cut's chapters; none when it has no list.
+    pub chapters: Vec<Chapter>,
 }
 
 /// What QA measured, and what fails.
@@ -118,8 +119,13 @@ pub fn check(mp4: &Path, expect: &Expect) -> Result<Report, String> {
                 srt.display()
             ));
         }
+        problems.extend(captions(&text, duration));
     }
-    if let Some(want) = &expect.chapters {
+    // The file holds the cut's chapters and no others, and the list keeps
+    // YouTube's rules in a video as long as this file.
+    {
+        let want = &expect.chapters;
+        problems.extend(chapters::problems(want, duration));
         let got: Vec<(f64, String)> = info["chapters"]
             .as_array()
             .into_iter()
@@ -139,12 +145,28 @@ pub fn check(mp4: &Path, expect: &Expect) -> Result<Report, String> {
             && got
                 .iter()
                 .zip(want)
-                .all(|(g, w)| (g.0 - w.0).abs() < 0.001 && g.1 == w.1);
-        if !same {
+                .all(|(g, w)| (g.0 - f64::from(w.start)).abs() < 0.001 && g.1 == w.title);
+        if got.len() != want.len() {
             problems.push(format!(
                 "it has {} chapters, not the {} the cut defines",
                 got.len(),
                 want.len()
+            ));
+        } else if !same {
+            // The first one that differs says what went wrong.
+            let (n, (g, w)) = got
+                .iter()
+                .zip(want)
+                .enumerate()
+                .find(|(_, (g, w))| (g.0 - f64::from(w.start)).abs() >= 0.001 || g.1 != w.title)
+                .expect("a chapter differs");
+            problems.push(format!(
+                "its chapter {} is {:?} at {} s, not {:?} at {} s",
+                n + 1,
+                g.1,
+                g.0,
+                w.title,
+                w.start
             ));
         }
     }
@@ -153,6 +175,43 @@ pub fn check(mp4: &Path, expect: &Expect) -> Result<Report, String> {
         lufs.map_or("loudness unknown".to_string(), |l| format!("{l} LUFS"))
     );
     Ok(Report { summary, problems })
+}
+
+/// How the cues of an SRT file miss a picture of `duration` seconds: a
+/// cue that ends before it starts, starts before the one before it ends,
+/// or runs past the end of the picture.
+fn captions(srt: &str, duration: f64) -> Vec<String> {
+    let seconds = |clock: &str| -> Option<f64> {
+        let (hms, ms) = clock.trim().split_once(',')?;
+        let mut parts = hms.split(':').map(|p| p.parse::<f64>().ok());
+        let (h, m, s) = (parts.next()??, parts.next()??, parts.next()??);
+        Some(h * 3600.0 + m * 60.0 + s + ms.parse::<f64>().ok()? / 1000.0)
+    };
+    let mut problems = Vec::new();
+    let mut before = 0.0;
+    for (n, line) in srt.lines().filter(|l| l.contains("-->")).enumerate() {
+        let n = n + 1;
+        let times = line
+            .split_once("-->")
+            .and_then(|(a, b)| Some((seconds(a)?, seconds(b)?)));
+        let Some((start, end)) = times else {
+            problems.push(format!("caption {n} has no times: {line:?}"));
+            continue;
+        };
+        if end <= start {
+            problems.push(format!("caption {n} ends before it starts"));
+        }
+        if start < before {
+            problems.push(format!("caption {n} starts before caption {} ends", n - 1));
+        }
+        if end > duration + 0.05 {
+            problems.push(format!(
+                "caption {n} ends at {end:.2} s, after the picture does at {duration:.2} s"
+            ));
+        }
+        before = end;
+    }
+    problems
 }
 
 /// The integrated loudness of a file's audio, in LUFS (EBU R 128).

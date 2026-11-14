@@ -44,6 +44,17 @@ vertical.mp4  8,441 frames  frames 7f1d9f0f086c0ab9025c04f533b283d749f20f3f53418
                             file   c152b5ebcdba3de951566676b123768a51b3fd701829d6421c66c1f5877b0d0c
 ```
 
+Since then the long cut has become a clean master with a captioned variant, and has chapters (`long-r3`, 2026-11-14). The captioned variant has the frames above, and `vidni repro examples/nibli-syllogism --cut long` built both pictures twice, on cores 0,1 and on cores 29,30,31, with every T1 and T2 hash equal and equal to the approved build's:
+
+```
+long.captioned.mp4  8,441 frames  frames c27e3dbef168063755bc231a395444d85531d0695c94f6cb32c28488394b91c8
+                                  file   d3c52d04d4030febeba81ca47890916a283f3a848279448fbd58e14c295cbd32
+long.mp4            8,441 frames  frames b2e1cdb1530e8a0b66178c07f56b8b487d1c4bc7a9e85813ce08892e8d7cf100
+                                  file   3445455bba04104ddb398b84a83041cee1091ee311867958d50f7c9b92f66a64
+```
+
+The files differ from `long-r1`'s because chapters are written into them; the vertical cut's file is the one above still.
+
 The compositor's frame streams (rgb24, every frame in order) on the reference's captures, drawn with IBM Plex Sans Bold (sha256 `19de5aec…c316`), IBM Plex Mono Bold (`44f6da8e…a6c7`) and Space Grotesk Bold (`be8709ab…368f`):
 
 ```
