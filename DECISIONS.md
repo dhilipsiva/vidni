@@ -369,3 +369,12 @@ Added as the items are built.
 - **`published.json` is told, not found out.** vidni uploads nothing (D8), so `vidni published` records where a release went. An upload names its release, and releases are kept for good, so the bytes behind an address can be named. A second upload of a cut to the same platform at another address is a second record.
 - **`vidni where <line>`** joins the three records: the project (which cuts say the line), the final builds' timelines (when), and the releases and uploads (where). It is how one finds the descriptions to paste again.
 - **`UPLOAD.md` is per platform,** beside its cuts' folders, and is written whenever a cut is exported: it lists every cut the project makes for the platform, with its release and its addresses.
+
+### T22. The app runs the command line's commands, in its own process
+- **2026-11-14, P7-VIDNI-01.** The app's actions are `vidni` commands. `vidni-cli` became a library: `vidni_cli::run` runs a command in-process and returns its exit code, and `console::listen` hears what it says in the place of stdout and stderr. The `vidni` binary is that library on the process's arguments.
+  - **Why not a second set of calls into the core.** A command is more than its core function: it is the order of its checks, what it refuses and the words it says. Two front ends that each wrote that out would differ within a month, and P7-VIDNI-05 asks that the app's gates refuse what the command line's do, in the same words. Run in-process, they are the same code.
+  - **No subprocess.** The app links the commands and calls them on a thread of its own, so it needs no `vidni` on the path and no parsing of exit statuses.
+  - **A job is a command on a thread,** with its lines handed over a channel. One runs at a time. A render's progress is read off the lines it says, which are the command line's own.
+- **The help is drawn from the list the commands are built from** (`actions.rs`): each kind of action has the command line that does the same, and a unit test types each action out and holds it to its line of help.
+- **eframe with glow, and AccessKit on.** The tests drive the window through AccessKit with `egui_kittest`, by the names of the controls, and the harness fails a control that has no name. They need no display. `just app-shot` opens the real window in a headless Wayland compositor and saves a picture of it.
+- **`vidni new --in DIR`** was added for the app: a command can't change the process's working folder under another thread.

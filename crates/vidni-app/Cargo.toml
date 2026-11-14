@@ -8,9 +8,31 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+[lib]
+name = "vidni_app"
+path = "src/lib.rs"
+
 [[bin]]
 name = "vidni-app"
 path = "src/main.rs"
 
 [lints]
 workspace = true
+
+[dependencies]
+# AccessKit is on, so that a screen reader can read the app, and so that
+# its tests can find each control by its name (DECISIONS.md, D9).
+eframe = { version = "0.37.0", default-features = false, features = [
+  "accesskit",
+  "default_fonts",
+  "glow",
+  "wayland",
+  "x11",
+] }
+vidni-cli = { path = "../vidni-cli" }
+vidni-core = { path = "../vidni-core" }
+
+[dev-dependencies]
+egui = "0.37.0"
+egui_kittest = "0.37.0"
+tempfile = "3.27.0"

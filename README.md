@@ -23,6 +23,7 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 | [recording.md](docs/recording.md) | Recording your narration, and keeping takes consistent |
 | [platforms.md](docs/platforms.md) | What each platform takes, and what to check before uploading |
 | [determinism.md](docs/determinism.md) | What repeats, where, and how it was measured |
+| [app.md](docs/app.md) | The desktop app, as far as it is built |
 | [faq.md](docs/faq.md) | Short answers |
 
 **Status:** being built, item by item, from [`TODO.md`](TODO.md). The decisions behind it are in [`DECISIONS.md`](DECISIONS.md). So far:
@@ -44,7 +45,7 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 - `vidni final` builds each ratified cut from your takes, `vidni approve` records it as a release, and `vidni repro` checks that a build repeats.
 - `vidni backup` copies the takes and frozen captures to two places and lists them in `assets.lock`; `vidni verify` checks them, `vidni restore` brings them back, and `vidni gc` deletes what can be made again.
 
-The nibli example goes from draft to approved through these commands ([docs/spec.md](docs/spec.md#from-draft-to-release)). The desktop app isn't built yet.
+The nibli example goes from draft to approved through these commands ([docs/spec.md](docs/spec.md#from-draft-to-release)). The desktop app has its shell: projects, each cut's standing, and drafting as a job ([docs/app.md](docs/app.md)).
 
 ## Layout
 

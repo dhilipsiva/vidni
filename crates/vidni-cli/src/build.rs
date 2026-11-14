@@ -3,7 +3,7 @@
 //! here they are only run and reported.
 
 use crate::{Loaded, count, load};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use vidni_core::project::{Cut, Project};
 use vidni_core::release::{self, Approval, Record};
@@ -396,7 +396,7 @@ pub fn approve(path: &Path, cuts: &[String]) -> ExitCode {
     }
 }
 
-pub fn new(name: &str, from: Option<&Path>) -> ExitCode {
+pub fn new(name: &str, from: Option<&Path>, parent: &Path) -> ExitCode {
     use vidni_core::starter;
     if !vidni_core::validate::valid_id(name) {
         tell!(
@@ -412,8 +412,18 @@ pub fn new(name: &str, from: Option<&Path>) -> ExitCode {
             return cant(format!("{}: {e}", file.display()));
         }
     };
-    let dir = Path::new(name);
-    let made = starter::files(&starter::title_of(name), outline.as_ref())
+    if !parent.is_dir() {
+        return cant(format!("{}: there is no such folder", parent.display()));
+    }
+    // In this folder, the project is named as it was asked for.
+    let dir = match parent == Path::new(".") {
+        true => PathBuf::from(name),
+        false => parent.join(name),
+    };
+    let dir = dir.as_path();
+    let title = starter::title_of(name);
+    let name = &dir.display().to_string();
+    let made = starter::files(&title, outline.as_ref())
         .and_then(|files| starter::write(dir, &files).map(|()| files));
     let files = match made {
         Ok(files) => files,

@@ -132,6 +132,19 @@
       # to ALSA; PipeWire and PulseAudio stand behind it (P4-VIDNI-01).
       soundLibs = [ pkgs.alsa-lib ];
 
+      # The desktop app opens its window through winit and draws with
+      # OpenGL. Both find these libraries when the app starts, not when
+      # it is built, so they are named to the loader (P7-VIDNI-01).
+      windowLibs = pkgs.lib.makeLibraryPath [
+        pkgs.wayland
+        pkgs.libxkbcommon
+        pkgs.libGL
+        pkgs.libx11
+        pkgs.libxcursor
+        pkgs.libxi
+        pkgs.libxrandr
+      ];
+
       # The external tools vidni drives, pinned by this flake (DECISIONS D3).
       mediaTools = [
         pkgs.ffmpeg-full
@@ -170,6 +183,7 @@
           packages = rustTools ++ mediaTools ++ [ pkgs.rust-analyzer ];
           nativeBuildInputs = [ pkgs.pkg-config ];
           buildInputs = soundLibs;
+          VIDNI_WINDOW_LIBS = windowLibs;
           FONTCONFIG_FILE = fontsConf;
           VIDNI_FONTS = fontDirs;
           VIDNI_PINNED_VOICES = pinnedVoices;

@@ -28,9 +28,31 @@ lint:
 fmt:
     cargo fmt --all
 
-# Run the desktop app.
+# Run the desktop app. Its window and its drawing find their libraries when it starts.
 app:
-    cargo run -p vidni-app
+    LD_LIBRARY_PATH="$VIDNI_WINDOW_LIBS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" VIDNI_VOICES="${VIDNI_VOICES:-$VIDNI_PINNED_VOICES}" cargo run -p vidni-app
+
+# Open the app's window where nobody sees it, in a headless Wayland compositor drawn in
+# software, and save a picture of it after five seconds: `just app-shot window.png`. It is
+# how the window is looked at on a machine with no screen to spare.
+app-shot out="app.png":
+    #!/usr/bin/env bash
+    set -u
+    cargo build -q -p vidni-app || exit 1
+    run="$(mktemp -d /tmp/vidni-shot.XXXX)"; chmod 700 "$run"; trap 'rm -rf "$run"' EXIT
+    export XDG_RUNTIME_DIR="$run"
+    nix shell --inputs-from . nixpkgs#weston -c bash -c '
+      weston --backend=headless --renderer=pixman --debug --socket=wl-vidni --width=1000 --height=760 >"$XDG_RUNTIME_DIR/weston.log" 2>&1 &
+      compositor=$!; sleep 2
+      (WAYLAND_DISPLAY=wl-vidni DISPLAY= VIDNI_CONFIG="${VIDNI_CONFIG:-$XDG_RUNTIME_DIR/settings}" LD_LIBRARY_PATH="$VIDNI_WINDOW_LIBS" timeout 12 target/debug/vidni-app >"$XDG_RUNTIME_DIR/app.log" 2>&1 &)
+      sleep 5; (cd "$XDG_RUNTIME_DIR" && WAYLAND_DISPLAY=wl-vidni weston-screenshooter); kill $compositor'
+    shot="$(ls "$run"/wayland-screenshot-*.png 2>/dev/null | head -1)"
+    if [ -n "$shot" ]; then cp "$shot" "{{out}}" && echo "{{out}}: the app's window"; else cat "$run/app.log" >&2; exit 1; fi
+
+# The app's tests that draft a project (P7-VIDNI-01): they need Piper and its voice, Chromium
+# and ffmpeg, as the dev shell has them. The rest of the app's tests run in `just test`.
+test-app:
+    VIDNI_VOICES="${VIDNI_VOICES:-$VIDNI_PINNED_VOICES}" cargo test -p vidni-app --test app -- --ignored
 
 # Build the flake's checks (the workspace build and its tests).
 check:

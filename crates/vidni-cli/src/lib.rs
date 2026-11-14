@@ -64,6 +64,9 @@ enum Command {
         /// sections, and its paragraphs and list items become lines.
         #[arg(long, value_name = "OUTLINE")]
         from: Option<PathBuf>,
+        /// The folder to make the project's folder in. Default: this one.
+        #[arg(long = "in", value_name = "DIR", default_value = ".")]
+        parent: PathBuf,
     },
     /// Print the recording sheet: each line to read, with whether it has a
     /// take and how long the draft voice took over it.
@@ -408,7 +411,7 @@ fn dispatch(command: Command) -> ExitCode {
         return ExitCode::from(2);
     }
     match command {
-        Command::New { name, from } => build::new(&name, from.as_deref()),
+        Command::New { name, from, parent } => build::new(&name, from.as_deref(), &parent),
         Command::Plan { path, cuts } => build::plan(&path, &cuts),
         Command::Record {
             path,
