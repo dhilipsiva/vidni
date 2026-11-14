@@ -94,9 +94,9 @@ The `platforms` workflow builds vidni's command line for macOS (Apple silicon) a
 
 **What differs from Linux:**
 
-- **The tools are your system's, not vidni's pins.** A video builds the same way twice on your machine. It isn't byte for byte the video Linux builds: another ffmpeg encodes other bytes.
+- **The tools are your system's, not vidni's pins.** A video builds the same way twice on your machine. It isn't byte for byte the video Linux builds: another ffmpeg encodes other bytes, and the draft voice's takes come out a little longer or shorter on another system's maths library.
 - **Web and page scenes** need Chromium. On macOS, `VIDNI_CHROMIUM` names its program; this wasn't tried on a runner. On Windows they aren't supported: vidni hands Chromium its pipes in a way only Unix has. Cards, pictures, terminal and code scenes work on both.
 - **`--offline`, `vidni repro` and `vidni setup`** are Linux's.
 - **The desktop app and recording** weren't tried on either system.
 
-**How it was tried:** on GitHub's `macos-latest` and `windows-latest` runners, the workflow builds the command, packs it, unpacks the archive elsewhere, sets up as above, and drafts the hello example from the package: 2,131 frames, 71 seconds, on each.
+**How it was tried:** on GitHub's `macos-latest` and `windows-latest` runners, the workflow builds the command, packs it, unpacks the archive elsewhere, sets up as above, and drafts the hello example from the package. The 16:9 cut came to 2,131 frames (71.0 s) on Windows and 2,120 frames (70.6 s) on macOS: the draft voice's takes differ a little in length between systems, which is the first of the differences above.
