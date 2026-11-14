@@ -10,9 +10,9 @@ bundle=$PWD
 export PATH="$bundle/bin:$PATH"
 vidni --version
 
-# `vidni setup` fetches the tools. There is no release to fetch them from
-# yet, so the release's folder stands in for its address: the same
-# download, check, unpack and move.
+# `vidni setup` fetches the tools. The bundle under test may not be a
+# published release, so the release's folder stands in for its address:
+# the same download, check, unpack and move.
 vidni setup --mirror file:///release
 # A second run finds everything in place, and fetches nothing.
 vidni setup --mirror file:///nowhere | tee "$HOME/second.log"
