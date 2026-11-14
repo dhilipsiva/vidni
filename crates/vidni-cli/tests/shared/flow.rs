@@ -103,7 +103,7 @@ pub fn ok_in(dir: &Path, args: &[&str]) -> String {
 }
 
 /// Runs vidni and expects it to succeed; its stdout.
-fn ok(dir: &Path, args: &[&str]) -> String {
+pub fn ok(dir: &Path, args: &[&str]) -> String {
     let (code, stdout, stderr) = vidni(dir, args);
     assert_eq!(code, Some(0), "vidni {args:?}:\n{stdout}\n{stderr}");
     stdout
@@ -117,7 +117,7 @@ fn refused(dir: &Path, args: &[&str]) -> String {
 }
 
 /// Records each line: its draft clip stands in for the creator's take.
-fn record(dir: &Path) {
+pub fn record(dir: &Path) {
     let project = vidni_core::validate::check(PROJECT, Some(dir)).unwrap();
     let lock = voices::read_lock(dir).unwrap();
     let pack = voices::find(&project.voice.draft, None).unwrap().unwrap();

@@ -1092,6 +1092,19 @@ fn export(plan: &Plan, dir: &Path, record: &Record) -> Result<Exports, String> {
         };
         let metadata = folder.join("metadata.md");
         fs::write(&metadata, upload.metadata()).map_err(made(&metadata))?;
+        // The same words for `vidni upload`, beside the build's record
+        // and out of what is delivered.
+        let words = json!({
+            "title": publish::title(project, &profile.id),
+            "description": upload.description(),
+            "tags": project.publish.tags,
+            "video": video,
+        });
+        let facts = dir
+            .join(Voice::Takes.dir())
+            .join(format!("{}.upload.{}.json", cut.id, profile.id));
+        let text = serde_json::to_string_pretty(&words).expect("JSON serializes") + "\n";
+        fs::write(&facts, text).map_err(made(&facts))?;
         warnings.extend(
             upload
                 .problems(plan.timeline.total)

@@ -1473,3 +1473,105 @@ fn an_assistants_session_is_held_to_the_protocol() {
     assert_eq!(code, Some(1), "{err}");
     assert_eq!(assistant(&["validate", demo]).0, Some(0));
 }
+
+#[test]
+fn signing_in_keeps_the_token_outside_any_project() {
+    use std::io::{BufRead, BufReader, Read, Write};
+    use std::os::unix::fs::PermissionsExt;
+    let dir = tempfile::tempdir().unwrap();
+    let secret = dir.path().join("youtube.json");
+    fs::write(
+        &secret,
+        r#"{"client_id":"the client","client_secret":"s3cret"}"#,
+    )
+    .unwrap();
+    fs::set_permissions(&secret, fs::Permissions::from_mode(0o600)).unwrap();
+    // A made-up token service: one request, one token.
+    let service = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let api = format!("http://{}", service.local_addr().unwrap());
+    let asked = std::thread::spawn(move || {
+        let (mut stream, _) = service.accept().unwrap();
+        let mut request = vec![0u8; 8192];
+        let n = stream.read(&mut request).unwrap();
+        let body = r#"{"access_token":"a","refresh_token":"kept-for-later"}"#;
+        let reply = format!(
+            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        );
+        stream.write_all(reply.as_bytes()).unwrap();
+        String::from_utf8_lossy(&request[..n]).into_owned()
+    });
+    let mut child = Command::new(env!("CARGO_BIN_EXE_vidni"))
+        .args(["upload", "--login"])
+        .env("VIDNI_YOUTUBE", &secret)
+        .env("VIDNI_YOUTUBE_API", &api)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    // It says where to go, and waits for the browser to come back.
+    let mut said = BufReader::new(child.stdout.take().unwrap());
+    let mut lines = Vec::new();
+    let back = loop {
+        let mut line = String::new();
+        assert!(said.read_line(&mut line).unwrap() > 0, "{lines:?}");
+        if let Some(rest) = line.strip_prefix("waiting for the browser to come back to ") {
+            break rest.split_whitespace().next().unwrap().to_string();
+        }
+        lines.push(line);
+    };
+    let address = lines
+        .iter()
+        .find(|l| l.contains("/auth?"))
+        .expect("an address");
+    assert!(address.contains("client_id=the%20client"), "{address}");
+    assert!(
+        address.contains("scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube.upload"),
+        "{address}"
+    );
+    assert!(address.contains("access_type=offline"), "{address}");
+    assert!(!address.contains("s3cret"), "{address}");
+    // The browser comes back with a code.
+    let mut browser = std::net::TcpStream::connect(back.trim_start_matches("http://")).unwrap();
+    browser
+        .write_all(b"GET /?code=4%2Fthe-code&scope=x HTTP/1.1\r\nHost: localhost\r\n\r\n")
+        .unwrap();
+    let mut page = String::new();
+    browser.read_to_string(&mut page).unwrap();
+    assert!(page.contains("vidni is signed in."), "{page}");
+    let out = child.wait_with_output().unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    // The code was exchanged, with the client's secret, for a token …
+    let exchange = asked.join().unwrap();
+    assert!(exchange.starts_with("POST /token "), "{exchange}");
+    assert!(exchange.contains("code=4%2Fthe-code"), "{exchange}");
+    assert!(exchange.contains("client_secret=s3cret"), "{exchange}");
+    assert!(
+        exchange.contains("grant_type=authorization_code"),
+        "{exchange}"
+    );
+    // … which is kept in the file, still the person's alone.
+    let kept: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&secret).unwrap()).unwrap();
+    assert_eq!(kept["refresh_token"], "kept-for-later");
+    assert_eq!(kept["client_id"], "the client");
+    assert_eq!(
+        fs::metadata(&secret).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
+
+    // With no credentials file, it says where one goes and how to make it.
+    let out = Command::new(env!("CARGO_BIN_EXE_vidni"))
+        .args(["upload", "--login"])
+        .env("VIDNI_YOUTUBE", dir.path().join("none.json"))
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(1));
+    let err = String::from_utf8_lossy(&out.stderr);
+    assert!(err.contains("there are no YouTube credentials in"), "{err}");
+    assert!(err.contains("docs/upload.md"), "{err}");
+}

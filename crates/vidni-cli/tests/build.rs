@@ -209,3 +209,229 @@ fn a_new_project_drafts_as_it_is() {
     let offline = ok_in(work.path(), &["draft", "tour", "--offline"]);
     assert!(offline.contains("tour/build/draft/long.mp4: "), "{offline}");
 }
+
+/// A made-up YouTube on this machine: it answers each request with the
+/// next reply, and hands over each request's first line.
+fn made_up_youtube(replies: usize) -> (String, std::sync::mpsc::Receiver<String>) {
+    use std::io::{Read, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let session = format!("{base}/upload/session/1");
+    let (seen, requests) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        for n in 0..replies {
+            let Ok((mut stream, _)) = listener.accept() else {
+                return;
+            };
+            let mut request = Vec::new();
+            let mut block = [0u8; 65536];
+            let (mut head_end, mut length) = (None, 0usize);
+            loop {
+                let got = stream.read(&mut block).unwrap_or(0);
+                if got == 0 {
+                    break;
+                }
+                request.extend_from_slice(&block[..got]);
+                if head_end.is_none()
+                    && let Some(at) = request.windows(4).position(|w| w == b"\r\n\r\n")
+                {
+                    head_end = Some(at + 4);
+                    let head = String::from_utf8_lossy(&request[..at]).to_lowercase();
+                    length = head
+                        .lines()
+                        .find_map(|l| l.strip_prefix("content-length:"))
+                        .and_then(|v| v.trim().parse().ok())
+                        .unwrap_or(0);
+                    if head.contains("expect: 100-continue") {
+                        let _ = stream.write_all(b"HTTP/1.1 100 Continue\r\n\r\n");
+                    }
+                }
+                if head_end.is_some_and(|end| request.len() >= end + length) {
+                    break;
+                }
+            }
+            let first = String::from_utf8_lossy(&request);
+            let _ = seen.send(format!(
+                "{} ({} bytes)",
+                first.lines().next().unwrap_or_default(),
+                length
+            ));
+            let (headers, body) = match n % 3 {
+                0 => (String::new(), r#"{"access_token":"t"}"#),
+                1 => (format!("Location: {session}\r\n"), ""),
+                _ => (String::new(), r#"{"id":"vid123"}"#),
+            };
+            let reply = format!(
+                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n{headers}Connection: close\r\n\r\n{body}",
+                body.len()
+            );
+            let _ = stream.write_all(reply.as_bytes());
+        }
+    });
+    (base, requests)
+}
+
+#[test]
+#[ignore = "needs Piper and its voice, Chromium, ffmpeg and curl; run `just test-build`"]
+fn an_approved_release_is_uploaded_once_its_name_is_typed() {
+    use std::io::Write;
+    use std::os::unix::fs::PermissionsExt;
+    flow::through(binary);
+    let work = tempfile::tempdir().unwrap();
+    let dir = &work.path().join("video");
+    fs::create_dir(dir).unwrap();
+    fs::write(dir.join("vidni.toml"), PROJECT).unwrap();
+    fs::write(dir.join("card.html"), CARD).unwrap();
+    for step in [&["draft"][..], &["ratify"], &[]] {
+        match step.is_empty() {
+            true => flow::record(dir),
+            false => {
+                flow::ok(dir, step);
+            }
+        }
+    }
+    flow::ok(dir, &["final", "--cut", "long"]);
+    flow::ok(dir, &["approve", "--cut", "long"]);
+    let video = dir.join("out/youtube/long/long.mp4");
+    let size = fs::metadata(&video).unwrap().len();
+
+    // The person's credentials: outside the project, and theirs alone.
+    let secret = work.path().join("youtube.json");
+    fs::write(
+        &secret,
+        r#"{"client_id":"c","client_secret":"s","refresh_token":"r"}"#,
+    )
+    .unwrap();
+    fs::set_permissions(&secret, fs::Permissions::from_mode(0o600)).unwrap();
+    // `vidni upload`, with what the person types.
+    let upload = |args: &[&str], typed: &str, api: &str, more: &[(&str, &str)]| {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_vidni"));
+        command
+            .arg("upload")
+            .arg(dir)
+            .args(args)
+            .env("VIDNI_YOUTUBE", &secret)
+            .env("VIDNI_YOUTUBE_API", api)
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped());
+        for (name, value) in more {
+            command.env(name, value);
+        }
+        let mut child = command.spawn().unwrap();
+        child
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(typed.as_bytes())
+            .unwrap();
+        let out = child.wait_with_output().unwrap();
+        (
+            out.status.code(),
+            String::from_utf8_lossy(&out.stdout).into_owned(),
+            String::from_utf8_lossy(&out.stderr).into_owned(),
+        )
+    };
+    let nobody = "http://127.0.0.1:9";
+
+    // Anything but the release's name stops it, and nothing is sent:
+    // nobody listens where it would have gone.
+    for typed in ["", "yes\n", "long\n"] {
+        let (code, out, err) = upload(&["--cut", "long"], typed, nobody, &[]);
+        assert_eq!(code, Some(1), "{typed:?}: {out}{err}");
+        assert!(out.contains("  release  long-r1\n"), "{out}");
+        assert!(
+            out.contains("type the release's name to upload it"),
+            "{out}"
+        );
+        assert_eq!(err, "vidni: nothing was uploaded\n");
+    }
+    assert!(!dir.join("published.json").exists());
+
+    // The name typed: a token, a session, the file; and the upload is
+    // recorded with its release.
+    let (api, requests) = made_up_youtube(3);
+    let (code, out, err) = upload(&["--cut", "long"], "long-r1\n", &api, &[]);
+    assert_eq!(code, Some(0), "{out}{err}");
+    assert!(
+        out.contains(&format!(
+            "long: long-r1 is on YouTube, private, at {api}/watch/vid123\n"
+        )),
+        "{out}"
+    );
+    let sent: Vec<String> = requests.iter().take(3).collect();
+    assert!(sent[0].starts_with("POST /token "), "{sent:?}");
+    assert!(
+        sent[1].starts_with(
+            "POST /upload/youtube/v3/videos?uploadType=resumable&part=snippet,status "
+        ),
+        "{sent:?}"
+    );
+    assert_eq!(
+        sent[2],
+        format!("PUT /upload/session/1 HTTP/1.1 ({size} bytes)")
+    );
+    let listed = flow::ok(dir, &["published"]);
+    assert!(
+        listed.contains("long-r1") && listed.contains("/watch/vid123"),
+        "{listed}"
+    );
+    // The same release isn't uploaded twice.
+    let (code, _, err) = upload(&["--cut", "long"], "long-r1\n", nobody, &[]);
+    assert_eq!(code, Some(1));
+    assert!(
+        err.starts_with("vidni: long-r1 is published on youtube already, at "),
+        "{err}"
+    );
+
+    // What can't be uploaded is said before anything is asked.
+    let refused = |args: &[&str], more: &[(&str, &str)]| {
+        let (code, out, err) = upload(args, "long-r1\n", nobody, more);
+        assert_eq!(code, Some(1), "{args:?}: {out}");
+        assert!(!out.contains("type the release's name"), "{args:?}: {out}");
+        err
+    };
+    // A cut with no release.
+    let err = refused(&["--cut", "short", "--platform", "youtube-shorts"], &[]);
+    assert!(err.starts_with("vidni: cut short has no release;"), "{err}");
+    // Another platform, and a visibility that isn't one.
+    let err = refused(&["--cut", "long", "--platform", "linkedin"], &[]);
+    assert_eq!(
+        err,
+        "vidni: vidni uploads to YouTube only; linkedin is uploaded by hand\n"
+    );
+    let err = refused(&["--cut", "long", "--privacy", "everyone"], &[]);
+    assert!(err.contains("isn't a visibility"), "{err}");
+    // An assistant.
+    let err = refused(&["--cut", "long"], &[("VIDNI_ASSISTANT", "1")]);
+    assert!(
+        err.starts_with("vidni: an assistant never uploads"),
+        "{err}"
+    );
+
+    // Credentials that others can read, or that are in the project, are
+    // refused; so is a delivered file that isn't the approved one.
+    fs::remove_file(dir.join("published.json")).unwrap();
+    fs::set_permissions(&secret, fs::Permissions::from_mode(0o644)).unwrap();
+    let err = refused(&["--cut", "long"], &[]);
+    assert!(
+        err.contains("can be read by others on this machine"),
+        "{err}"
+    );
+    fs::set_permissions(&secret, fs::Permissions::from_mode(0o600)).unwrap();
+    let inside = dir.join("youtube.json");
+    fs::copy(&secret, &inside).unwrap();
+    let err = refused(
+        &["--cut", "long"],
+        &[("VIDNI_YOUTUBE", inside.to_str().unwrap())],
+    );
+    assert!(err.contains("is inside the project"), "{err}");
+    fs::remove_file(&inside).unwrap();
+    let whole = fs::read(&video).unwrap();
+    fs::write(&video, &whole[..whole.len() - 1]).unwrap();
+    let err = refused(&["--cut", "long"], &[]);
+    assert!(
+        err.contains("isn't the file that was approved as long-r1"),
+        "{err}"
+    );
+}

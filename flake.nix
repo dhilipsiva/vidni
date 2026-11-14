@@ -171,9 +171,11 @@
         buildInputs = soundLibs;
         # The parity harness's frame tests and the build's tests drive ffmpeg.
         # A code scene's test reads a file at a commit with git.
+        # The upload's tests talk to a made-up API with curl.
         nativeCheckInputs = [
           pkgs.ffmpeg-headless
           pkgs.gitMinimal
+          pkgs.curl
         ];
         VIDNI_FONTS = fontDirs;
         # The licences and the third-party notices go wherever vidni goes

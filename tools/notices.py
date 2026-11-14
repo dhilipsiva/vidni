@@ -31,7 +31,7 @@ TOOLS = [
     ("espeak-ng", "eSpeak NG", "turns text into phonemes for Piper"),
     ("onnxruntime", "ONNX Runtime", "runs Piper's voice models"),
     ("whisper-cpp", "whisper.cpp", "listens to takes for `vidni hear`"),
-    ("curl", "curl", "downloads a voice for `vidni voices fetch`"),
+    ("curl", "curl", "downloads a voice for `vidni voices fetch`, and talks to YouTube for `vidni upload`"),
     ("git", "git", "reads a code scene's file at a commit"),
     ("mermaid-cli", "Mermaid CLI", "draws a Mermaid diagram for an image scene"),
 ]

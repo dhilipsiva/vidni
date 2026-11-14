@@ -24,6 +24,7 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 | [keys.md](docs/keys.md) | Every key of `vidni.toml`, generated from the schema |
 | [recording.md](docs/recording.md) | Recording your narration, and keeping takes consistent |
 | [platforms.md](docs/platforms.md) | What each platform takes, and what to check before uploading |
+| [upload.md](docs/upload.md) | Having vidni upload a release to YouTube, if you want it to |
 | [determinism.md](docs/determinism.md) | What repeats, where, and how it was measured |
 | [app.md](docs/app.md) | The desktop app, as far as it is built |
 | [assistant.md](docs/assistant.md) | What an LLM may do in a project, and how vidni holds it to that; [a Claude Code skill](assistants/claude-code/vidni/SKILL.md) follows it |

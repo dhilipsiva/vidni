@@ -43,6 +43,7 @@ mod record;
 mod repro;
 mod setup;
 mod takes;
+mod upload;
 
 #[derive(Parser)]
 #[command(
@@ -351,6 +352,27 @@ enum Command {
         #[arg(long, value_name = "TAG", requires = "cut")]
         release: Option<String>,
     },
+    /// Upload a cut's newest release to YouTube, after asking: you type
+    /// the release's name before anything is sent. It needs your own
+    /// OAuth client, kept outside the project (docs/upload.md). vidni
+    /// uploads nothing unless you run this.
+    Upload {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// The cut to upload.
+        #[arg(long, value_name = "ID", required_unless_present = "login")]
+        cut: Option<String>,
+        /// `youtube`, or `youtube-shorts` for a 9:16 cut.
+        #[arg(long, value_name = "ID", default_value = "youtube")]
+        platform: String,
+        /// Who can see it: private, unlisted or public.
+        #[arg(long, default_value = "private")]
+        privacy: String,
+        /// Sign in to YouTube in your browser, and keep the token.
+        #[arg(long, conflicts_with = "cut")]
+        login: bool,
+    },
     /// Say where a line is: the cuts that say it, when in each, each
     /// cut's releases, and where each is published.
     Where {
@@ -497,6 +519,7 @@ fn a_persons(command: &Command) -> Option<&'static str> {
             "moving and deleting assets is a person's to do"
         }
         Command::Setup { .. } => "setting vidni up is a person's to do",
+        Command::Upload { .. } => "an assistant never uploads",
         _ => return None,
     })
 }
@@ -509,7 +532,9 @@ fn writes(command: &Command) -> Option<(PathBuf, &'static [&'static str])> {
             (path.clone(), &["ratified.lock"])
         }
         Command::Approve { path, .. } => (path.clone(), &["release.json"]),
-        Command::Published { path, .. } => (path.clone(), &["published.json"]),
+        Command::Published { path, .. } | Command::Upload { path, .. } => {
+            (path.clone(), &["published.json"])
+        }
         Command::Draft { path, .. } | Command::Speak { path } | Command::Hear { path, .. } => {
             (path.clone(), &["voice.lock"])
         }
@@ -616,6 +641,14 @@ fn dispatch_one(command: Command) -> ExitCode {
         } => published::record(&path, &cut, &platform, &url, release.as_deref()),
         Command::Published { path, .. } => published::list(&path),
         Command::Where { line, path } => published::whereabouts(&path, &line),
+        Command::Upload { login: true, .. } => upload::login(),
+        Command::Upload {
+            path,
+            cut,
+            platform,
+            privacy,
+            ..
+        } => upload::upload(&path, &cut.unwrap_or_default(), &platform, &privacy),
         Command::Notes { path, line, set } => notes(&path, line.as_deref().zip(set.as_deref())),
         Command::Changes { path } => changes(&path),
         Command::Frozen { path, cuts } => frozen(&path, &cuts),

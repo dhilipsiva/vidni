@@ -53,11 +53,11 @@ These refuse when `VIDNI_ASSISTANT` is set. The assistant asks the person to run
 | `vidni ratify`, `vidni unratify` | Ratifying says "this is what I mean to say and show". |
 | `vidni record`, `vidni takes --pick`, `--trim` | The narration is the person's own voice. |
 | `vidni approve` | Approving says "this is what I release". |
-| `vidni published` (recording an upload) | Only the person knows what they uploaded. |
+| `vidni published` (recording an upload), `vidni upload` | Only the person uploads, and only they know what they uploaded. |
 | `vidni backup`, `vidni restore`, `vidni gc`, `vidni setup` | They move and delete what can't be made again. |
 
 - **A changed cut stays changed.** When the assistant's edit regresses a ratified cut, `vidni status` says so, and that is the right outcome. The assistant doesn't work round it: it tells the person which cut changed and why, and the person ratifies again or doesn't.
-- **The assistant never uploads.** vidni uploads nothing by itself. Where an upload command exists, it is the person's, with a confirmation for each upload, and it refuses for an assistant.
+- **The assistant never uploads.** vidni uploads nothing by itself. `vidni upload` is the person's, with a confirmation for each upload, and it refuses for an assistant.
 - **The assistant doesn't unset `VIDNI_ASSISTANT`,** start a session over, or edit `build/assistant.json`. A session started again by the assistant is refused.
 
 ## What `vidni validate` checks for an assistant

@@ -496,3 +496,13 @@ Added as the items are built.
 - **A command's own file is noted again by the command,** so a person who ratifies while the assistant works, or the assistant's own draft writing `voice.lock`, doesn't fail the check.
 - **It is a guard, not a sandbox,** and the document says so. An assistant that unsets the variable isn't stopped by vidni; a person who needs that runs the assistant where it can write two files.
 - **`vidni final` is the assistant's to run.** It builds only what a person ratified and recorded, and releases nothing: approval is the gate after it.
+
+### T35. An upload is a release, typed by name, through the person's own client
+- **2026-11-14, P9-VIDNI-01 (R9, A4).** `vidni upload` is opt-in three times over: it does nothing without a credentials file the person made, it uploads only when run, and each run asks for the release's name before anything is sent. A flag that skips the question isn't offered.
+- **A release, not a file.** It refuses a cut with no release, and a delivered file whose hash isn't the release's, so what is on YouTube is something `release.json` names. It then records the upload itself, as `vidni published` would.
+- **Private by default.** YouTube locks an unaudited client's uploads private anyway, and a wrong upload that nobody saw costs nothing.
+- **The OAuth client is the person's** (R9). vidni ships none: a client's secret in an open repository is nobody's secret, and its quota would be everyone's. The file is refused when it is inside the project or readable by others.
+- **Sign-in is the loopback flow** for desktop apps: the browser comes back to a port on this machine. Only `youtube.upload` is asked for.
+- **curl carries it,** as it carries downloads, with every secret on curl's standard input and none among its arguments, where other users of the machine could read them.
+- **Tested against a made-up API only,** and the docs say so in their first paragraph: the sign-in, the session, the file, a withdrawn token, a spent quota, a dead address, and the refusals before anything is asked. Whether the real API takes exactly these requests isn't shown.
+- **Captions and thumbnails aren't uploaded.** They are other API calls, with their own quotas and failures; the upload's folder has them for YouTube Studio.
