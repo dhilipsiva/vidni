@@ -265,7 +265,19 @@ Grammar, as in the workspace TODO, one line per item: `- [ ] **P<m>-VIDNI-<nn>**
     - **Found on the way:** the reference's chain meant to drop 0.30 s for the stop key and dropped 0.10 s, because its second `atrim` read timestamps that started at 0.20 s. The 57 takes were made that way, so vidni drops 0.10 s.
 
     `vidni record`, the terminal front end, is P4-VIDNI-02.
-- [ ] **P4-VIDNI-02** (LOW) Port the terminal recorder `vidni record` with crossterm: the single-key flow (space, Enter, Esc, p, r, arrow keys), resuming, reviewing a section, recording a line shared by several cuts once, and showing stale takes. *Done when:* pty tests cover a silent take, a double press, Esc, keep and resume on a two-cut project. [M]
+- [x] **P4-VIDNI-02** (LOW) Port the terminal recorder `vidni record` with crossterm: the single-key flow (space, Enter, Esc, p, r, arrow keys), resuming, reviewing a section, recording a line shared by several cuts once, and showing stale takes. *Done when:* pty tests cover a silent take, a double press, Esc, keep and resume on a two-cut project. [M]
+  - Evidence (2026-11-14): `crates/vidni-cli/tests/record.rs` runs `vidni record` in a pseudo-terminal on a project with two cuts that share a line. `just test-record` runs it, and so does CI. It covers:
+    - **a silent take:** discarded with "There was no speech in that take", and the line stays; so does a take of half a second;
+    - **a double press:** the second space comes while the screen settles, and the take it started goes on;
+    - **Esc:** in the review it discards the new take, and while recording it cancels the take and leaves no raw take;
+    - **keep:** enter keeps the take and moves to the next line still to record; `q` keeps it and ends the session;
+    - **resume:** a new session starts at the first line with no take of its present words. With `--cut short` only the short cut's own line is left, since the line it shares with the long cut was recorded once;
+    - **stale takes:** a line reworded after it was recorded says its take is of other words, and the session starts there;
+    - **a section:** `--section` goes through one section's lines, and `s` plays a section's takes;
+    - **the mic check** (`--test`): the room is recorded and measured, a line is read, and only the room tone is kept;
+    - **an interrupt:** Ctrl-C or a termination signal keeps nothing that wasn't kept, puts the terminal back, and exits with 130.
+
+    The takes are recorded from a made-up input and played through ALSA's null device: nobody is recorded and no sound is made. `just test-hear` records a spoken clip the same way, and the review says "matches the script 1.00" for its own line and shows what was heard for another. On the nibli example the recorder shows each of the 57 lines with its saved take and the draft voice's pace. The tests passed nine times in a row, three of them with every core busy.
 - [ ] **P4-VIDNI-03** (LOW) Add a deterministic voice chain before loudness: high-pass, de-click, compression and de-esser. Gaps are filled with room tone instead of digital silence. *Done when:* QA reports every cut within ±1 LU of its target with true peak at or below −1 dBTP, and no digital-silence stretch longer than 50 ms. [M]
 - [ ] **P4-VIDNI-04** (LOW) Make takes non-destructive: trims are stored as data, `vidni takes <line>` re-picks or re-trims a take, each take records its session metadata, and QA flags level jumps between sessions. *Done when:* re-picking an older take changes only that line. [M]
 - [ ] **P4-VIDNI-05** (LOW) Add `vidni backup`, `restore`, `verify` and `gc`, with two destinations, one of them off the machine. `gc` deletes only files that can be rebuilt. *Done when:* wiping the assets, then running `vidni restore` and `vidni final`, reproduces the T2 hashes in `release.json`. [S]

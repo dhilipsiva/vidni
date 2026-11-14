@@ -251,3 +251,9 @@ Added as the items are built.
 - **A raw take is written once.** Its file is created new and never opened for writing again. The trimmed take waits as `<hash>.wav.new`, a name no take has, until it is kept or discarded.
 - **The microphone is asked for 48 kHz** when it offers that, with as few channels as it has, and is mixed down to one. The takes so far are at 48 kHz, and it is the rate the cuts are encoded at.
 - **The microphone's path is tested on ALSA's `null` device,** an input that gives zeros and needs no sound card, so the test hears nobody (`just test-record`). The maintainer's microphone was not recorded from in this work.
+- **2026-11-14, P4-VIDNI-02: the terminal recorder.** `vidni record` is the reference's recorder, key for key, on crossterm, with the project's own lines in the place of numbered files.
+  - **The review settles once.** Keys are ignored for 0.4 s when the review appears, so that the key that stopped the take, pressed twice, doesn't keep or discard it. The reference settled again after every playback; vidni doesn't, so a take can be kept as soon as it has played.
+  - **Esc while recording leaves no raw take.** The reference left the file. A take that was stopped is a raw take; one that was cancelled was never a take.
+  - **Reviewing a section** is `s`, which plays the section's kept takes one after another, and `--section`, which goes through one section's lines.
+  - **The tests run it in a pseudo-terminal** with a made-up input (`VIDNI_RECORD_INPUT`) and ALSA's null output, so they hear nobody and make no sound. The listening check's part is tested with a recording as the input, in `just test-hear`.
+  - **Playback** stretches a take to the output's rate by straight lines between samples when the output doesn't offer the take's rate. It is for listening, and no output is made from it.

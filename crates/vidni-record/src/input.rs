@@ -99,6 +99,37 @@ impl Synthetic {
     }
 }
 
+/// A made-up input from words, for tests and demonstrations. It runs at
+/// the pace of a real input, at `rate` unless it is a recording:
+/// - `silence`;
+/// - `tone:<hz>:<level>`, with the level as a part of full scale, such as
+///   `tone:220:0.3`;
+/// - `wav:<file>`: half a second of silence, the recording in the file,
+///   and silence after it, at the recording's rate.
+pub fn made_up(words: &str, rate: u32) -> Result<Synthetic, String> {
+    let unknown = || format!("{words:?} isn't an input: silence, tone:<hz>:<level> or wav:<file>");
+    if let Some(file) = words.strip_prefix("wav:") {
+        let (recorded, rate) = crate::take::read(std::path::Path::new(file))?;
+        let mut samples = vec![0; rate as usize / 2];
+        samples.extend(recorded);
+        return Ok(Synthetic::samples(rate, samples).paced());
+    }
+    let parts: Vec<&str> = words.split(':').collect();
+    let input = match parts.as_slice() {
+        ["silence"] => Synthetic::silence(rate),
+        ["tone", hz, level] => {
+            let hz: f64 = hz.parse().map_err(|_| unknown())?;
+            let level: f64 = level.parse().map_err(|_| unknown())?;
+            if !(hz > 0.0 && (0.0..=1.0).contains(&level)) {
+                return Err(unknown());
+            }
+            Synthetic::tone(rate, hz, level)
+        }
+        _ => return Err(unknown()),
+    };
+    Ok(input.paced())
+}
+
 impl Input for Synthetic {
     fn name(&self) -> String {
         "a made-up input".to_string()

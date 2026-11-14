@@ -17,10 +17,13 @@ workspace = true
 
 [dependencies]
 clap = { version = "4.6.7", features = ["derive"] }
+crossterm = "0.29.0"
 ctrlc = { version = "3.5.2", features = ["termination"] }
 tempfile = "3.27.0"
 vidni-core = { path = "../vidni-core" }
 vidni-media = { path = "../vidni-media" }
+vidni-record = { path = "../vidni-record" }
 
 [dev-dependencies]
 hound = "3.5.1"
+portable-pty = "0.9.0"

@@ -8,10 +8,13 @@
 //!   candidate that is trimmed from it and kept or discarded.
 //! - [`clean`]: the guard against a take with nothing in it, and the trim.
 //! - [`room`]: room tone, recorded during the mic check.
+//! - [`play`]: playing a take back.
 
 pub mod clean;
 pub mod input;
 #[cfg(feature = "mic")]
 pub mod mic;
+#[cfg(feature = "mic")]
+pub mod play;
 pub mod room;
 pub mod take;

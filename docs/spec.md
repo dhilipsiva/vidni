@@ -245,6 +245,35 @@ Introduction
 
 The sheet only reads the project. It speaks nothing and writes no file.
 
+## Recording: `vidni record`
+
+`vidni record` is the recorder, in the terminal. It shows one line at a time, with the words to say, and takes single keys, with no Enter.
+
+| When | Keys |
+|---|---|
+| Ready | `space` record · `p` play the saved take · `s` play the section's takes · `←` `→` move between lines · `q` quit |
+| Recording | `space` or `enter` stop · `esc` cancel |
+| Review | `enter` keep and go on · `p` play · `r` record again · `esc` discard · `q` keep and quit |
+
+- **While a take is recorded**, a meter shows its level, and a timer runs beside the time the draft voice took over the line.
+- **A take with nothing in it** is discarded with a message, and the line stays: one shorter than 0.8 s, or with no speech ([what is kept of a take](#what-is-kept-of-a-take)).
+- **A take that passes** is trimmed and shown for review with its length and its peak, and a warning when it is too hot or too quiet. Where the listening check is at hand, the review says how the take matches the script, and what was heard when that isn't the script. It only advises.
+- **Nothing replaces a line's take until you keep the new one.** Discarded or cancelled, the line is as it was. Every raw take that was stopped stays in `raw/`.
+- **For a moment after the screen changes, keys are ignored** (0.4 s), so that a double press isn't taken for an answer.
+- **The session resumes.** It starts at the first line with no take of its present words, and after a take is kept it moves to the next such line. A line whose take is of other words says so. A line that several cuts use is recorded once.
+
+| Flag | What it does |
+|---|---|
+| `--cut ID` | The lines of that cut only; repeat for more |
+| `--section ID` | One section's lines only |
+| `--from LINE` | Start at that line |
+| `--only LINE` | Record that line again; repeat for more. The session goes through them in script order |
+| `--test` | The mic check: the room is recorded for three seconds, then you read a line, and both are measured. It keeps the room tone and records no line |
+
+The microphone is the system's default input, or the one whose name holds `$VIDNI_MIC`. Takes play through the default output, or the one whose name holds `$VIDNI_SPEAKER`. `$VIDNI_RECORD_INPUT` puts a made-up input in the microphone's place, for tests and demonstrations: `silence`, `tone:<hz>:<level>` or `wav:<file>`.
+
+`vidni record` needs a terminal, and exits with 2 without one.
+
 ## The listening check: `vidni hear`
 
 `vidni hear` listens to each line's audio with whisper and says how close what it hears is to the script. It points you at a line that may have been read, or synthesized, differently from its words: a dropped word, a stumble, a name the draft voice garbles.

@@ -696,3 +696,37 @@ fn plan_marks_what_is_recorded_and_lists_the_cuts_asked_for() {
     );
     assert_eq!(vidni_in(work.path(), &["plan", "gone"]).0, Some(2));
 }
+
+#[test]
+fn record_says_what_it_cant_do_before_it_takes_the_terminal() {
+    let work = tempfile::tempdir().unwrap();
+    assert_eq!(vidni_in(work.path(), &["new", "demo"]).0, Some(0));
+    let dir = work.path().join("demo");
+    for (args, said) in [
+        (
+            &["record", "--section", "outro"][..],
+            "vidni: there is no section \"outro\"\n",
+        ),
+        (
+            &["record", "--only", "intro-9"][..],
+            "vidni: there is no line \"intro-9\" in the cuts to record\n",
+        ),
+        (
+            &["record", "--cut", "short"][..],
+            "vidni: there is no cut \"short\"\n",
+        ),
+    ] {
+        let (code, _, stderr) = vidni_in(&dir, args);
+        assert_eq!((code, stderr.as_str()), (Some(1), said), "{args:?}");
+    }
+    // It reads single keys, so it needs a terminal; here it has none.
+    let (code, _, stderr) = vidni_in(&dir, &["record"]);
+    assert_eq!(
+        (code, stderr.as_str()),
+        (
+            Some(2),
+            "vidni: vidni record reads single keys: run it in a terminal\n"
+        )
+    );
+    assert!(!dir.join("takes").exists());
+}

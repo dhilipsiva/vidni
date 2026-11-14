@@ -22,6 +22,7 @@ macro_rules! say {
 
 mod build;
 mod offline;
+mod record;
 mod repro;
 
 #[derive(Parser)]
@@ -57,6 +58,28 @@ enum Command {
         /// The cut whose lines to list; repeat for more. Default: every cut.
         #[arg(long = "cut", value_name = "ID")]
         cuts: Vec<String>,
+    },
+    /// Record your own takes in the terminal, one line at a time, with
+    /// single keys: space starts a take and stops it.
+    Record {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// The cut whose lines to record; repeat for more. Default: every cut.
+        #[arg(long = "cut", value_name = "ID")]
+        cuts: Vec<String>,
+        /// Go through one section's lines only.
+        #[arg(long, value_name = "ID")]
+        section: Option<String>,
+        /// Start at this line, not at the first one still to record.
+        #[arg(long, value_name = "LINE")]
+        from: Option<String>,
+        /// Record this line again; repeat for more.
+        #[arg(long = "only", value_name = "LINE")]
+        only: Vec<String>,
+        /// Check the microphone and the room, and record no line.
+        #[arg(long)]
+        test: bool,
     },
     /// Check a project file, and report each problem at its line and column.
     Validate {
@@ -228,12 +251,14 @@ enum VoicesAction {
 fn main() -> ExitCode {
     // On Ctrl-C or a termination signal, a running Chromium is asked to stop,
     // so that the capture unwinds and leaves nothing behind, and so are the
-    // two builds of a repro. With neither running, or on a second signal,
+    // two builds of a repro, and a recording session, which has the
+    // terminal to put back. With none running, or on a second signal,
     // vidni exits at once.
     let _ = ctrlc::set_handler(|| {
-        // Both are asked: a capture never runs inside a repro's own process.
+        // Each is asked: only one of them runs in a process.
         let (capture, builds) = (vidni_media::cdp::interrupt(), repro::interrupt());
-        if !capture && !builds {
+        let recording = record::interrupt();
+        if !capture && !builds && !recording {
             std::process::exit(130);
         }
     });
@@ -248,6 +273,21 @@ fn main() -> ExitCode {
     match command {
         Command::New { name, from } => build::new(&name, from.as_deref()),
         Command::Plan { path, cuts } => build::plan(&path, &cuts),
+        Command::Record {
+            path,
+            cuts,
+            section,
+            from,
+            only,
+            test,
+        } => record::record(
+            &path,
+            &cuts,
+            section.as_deref(),
+            from.as_deref(),
+            &only,
+            test,
+        ),
         Command::Validate { path } => validate(&path),
         Command::Fmt { path, check } => fmt(&path, check),
         Command::Takes { path, link } => takes(&path, link.as_deref()),

@@ -92,11 +92,14 @@ test-capture:
 # (P3-VIDNI-05): the library on its own, and `vidni hear` on a small project.
 test-hear:
     cargo test -p vidni-media -p vidni-cli --test hear -- --ignored
+    cargo test -p vidni-cli --test record the_review_says -- --ignored
 
-# The microphone's path through cpal, on ALSA's null device, which gives zeros: nothing is
-# heard (P4-VIDNI-01).
+# The microphone's path through cpal, on ALSA's null device, which gives zeros (P4-VIDNI-01),
+# and `vidni record` in a pseudo-terminal, recording a made-up input (P4-VIDNI-02). Nothing
+# is heard and nobody is recorded.
 test-record:
     cargo test -p vidni-record --test mic -- --ignored
+    cargo test -p vidni-cli --test record -- --ignored --skip the_review_says
 
 # Capture the example's web scene five times, each from scratch, and compare every still's
 # pixels. It reads the live page over the network, so it measures that page as much as vidni

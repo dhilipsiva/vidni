@@ -207,6 +207,12 @@ impl Recording {
     }
 }
 
+/// How long the take at `path` is, in seconds; none when it can't be read.
+pub fn seconds(path: &Path) -> Option<f64> {
+    let reader = hound::WavReader::open(path).ok()?;
+    Some(f64::from(reader.duration()) / f64::from(reader.spec().sample_rate.max(1)))
+}
+
 /// The samples of a take, and their rate.
 pub fn read(path: &Path) -> Result<(Vec<i16>, u32), String> {
     let shown = |e: hound::Error| format!("{}: {e}", path.display());
