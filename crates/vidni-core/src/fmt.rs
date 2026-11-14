@@ -116,7 +116,8 @@ pub(crate) const SCENE: &[&str] = &[
 ];
 const PAGE_SIZE: &[&str] = &["landscape", "portrait"];
 const TARGET: &[&str] = &[
-    "css", "any", "text_of", "text", "exclude", "attr", "pick", "merge", "line", "grow", "unique",
+    "css", "rect", "any", "text_of", "text", "exclude", "attr", "pick", "merge", "line", "grow",
+    "unique",
 ];
 const TEXT_RULE: &[&str] = &["starts_with", "contains", "matches"];
 const ATTR: &[&str] = &["name", "matches"];

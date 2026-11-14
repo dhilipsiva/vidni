@@ -1,0 +1,24 @@
+# expect: 20:7: a part of an image is rect = [x, y, width, height], with a width and a height above 0
+schema = 1
+
+[meta]
+title = "Pictures"
+default_scene = "diagram"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "A picture."
+
+[scenes.diagram]
+kind = "image"
+url = "diagram.svg"
+
+[scenes.diagram.targets]
+box = { css = "rect" }
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

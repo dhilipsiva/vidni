@@ -343,15 +343,15 @@ examples/nibli-syllogism/vidni.toml: 55 heard as scripted, 2 worth a listen (bel
 
 | Key | Type | Kinds | Meaning |
 |---|---|---|---|
-| `kind` | `"web"`, `"page"` or `"card"` | all | `web`: a page captured at a fixed viewport and framed by the virtual camera. `page`: an HTML file rendered at each cut's own size, for cards and overlays. `card`: a card drawn from one of the theme's templates; see [Cards](#cards). |
-| `url` | string | web, page | `web`: the page's address, or a file in the project folder. `page`: a file in the project folder, where `{aspect}` becomes `16x9` or `9x16` |
+| `kind` | `"web"`, `"page"`, `"card"` or `"image"` | all | `web`: a page captured at a fixed viewport and framed by the virtual camera. `page`: an HTML file rendered at each cut's own size, for cards and overlays. `card`: a card drawn from one of the theme's templates; see [Cards](#cards). `image`: a picture in the project folder, framed by the virtual camera; see [Images](#images). |
+| `url` | string | web, page, image | `web`: the page's address, or a file in the project folder. `page`: a file in the project folder, where `{aspect}` becomes `16x9` or `9x16`. `image`: a PNG or SVG file in the project folder |
 | `viewport` | `[width, height]` | web | CSS pixels. Default `[1280, 720]`. |
-| `scale` | integer | web | Device pixels per CSS pixel. Default 1. |
+| `scale` | integer | web, image | `web`: device pixels per CSS pixel. `image`: how many times its size an SVG is drawn at. Default 1. |
 | `color_scheme` | `"light"` or `"dark"` | web | The colour scheme the page is asked for |
 | `setup` | array of actions | web | Run once, after the page loads |
-| `targets` | table of targets | web | Named parts of the page; see [Targets](#targets) |
-| `cameras` | table of cameras | web | Named framings; see [Cameras](#cameras) |
-| `default_camera` | string | web | The camera of a line that names none. Default `viewport`. |
+| `targets` | table of targets | web, image | Named parts of the page; see [Targets](#targets) |
+| `cameras` | table of cameras | web, image | Named framings; see [Cameras](#cameras) |
+| `default_camera` | string | web, image | The camera of a line that names none. Default `viewport`. |
 | `vertical_follows_highlights` | number | web | In 9:16 cuts, a line whose highlights are at most this many CSS pixels wide is framed on them |
 | `transparent` | boolean | page | Rendered on a transparent background, as an overlay |
 | `size` | `{ landscape = [w, h], portrait = [w, h] }` | page | The rendered size for each orientation. Default: the cut's size. |
@@ -386,6 +386,29 @@ subtitle = "a five-minute tour"
 ```
 
 Long text wraps, and the whole card sits in the middle of the frame. A line on a card scene takes no `do`, `highlight` or `camera`. A card's words are part of what its cut shows, so changing them after the cut is ratified makes it `changed`.
+
+### Images
+
+An image scene is a picture under the virtual camera: a PNG, used as it is, or an SVG, which vidni draws itself. A part of the picture is a target with a rectangle, in the picture's own pixels (an SVG's own units), and cameras frame those parts as they do on a web scene.
+
+```toml
+[scenes.diagram]
+kind = "image"
+url = "diagram.svg"
+scale = 2                  # an SVG drawn at twice its size stays sharp when the camera moves in
+
+[scenes.diagram.targets]
+draft = { rect = [490, 270, 300, 180] }   # x, y, width, height
+
+[scenes.diagram.cameras]
+draft = { union = ["draft"] }
+```
+
+- **A line on an image scene** takes `camera` and `camera_vertical`. It takes no `do` and no `highlight`.
+- **An SVG's text** is set in the fonts vidni pins ([Fonts](#fonts)), by the family the SVG names, and in no font of the system's. So the picture is the same on every machine.
+- **The picture is a capture** like any other: one for all the lines that show it, taken by `vidni draft` or `vidni capture` with no browser, frozen when its cut is ratified, and taken again when its file changes ([When a capture is out of date](#when-a-capture-is-out-of-date)).
+
+[`examples/images`](../examples/images) has an SVG diagram and a PNG chart.
 
 ### Targets
 

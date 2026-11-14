@@ -143,7 +143,7 @@ pub fn build_for(
                 project
                     .scenes
                     .get(*id)
-                    .is_some_and(|s| s.kind != SceneKind::Web)
+                    .is_some_and(|s| matches!(s.kind, SceneKind::Page | SceneKind::Card))
             })
             .map(str::to_string);
         entries.push(Entry {

@@ -37,7 +37,7 @@ use std::path::{Component, Path, PathBuf};
 use std::time::{Duration, Instant};
 use vidni_core::capture::{self as keys, Capture, Files, Source};
 use vidni_core::onscreen::{self, Reading, Readings};
-use vidni_core::project::{Action, ColorScheme, Project, Scene};
+use vidni_core::project::{Action, ColorScheme, Project, Scene, SceneKind};
 
 const RUNTIME: &str = include_str!("capture/runtime.js");
 
@@ -286,6 +286,26 @@ pub fn capture_with(
         if !wants {
             continue;
         }
+        // A picture is read, not browsed: one capture for all its lines.
+        if scene.kind == SceneKind::Image {
+            let mut done: Vec<&str> = Vec::new();
+            for line in project
+                .lines
+                .iter()
+                .filter(|l| l.scene_in(project) == Some(id.as_str()))
+            {
+                let Some(capture) = wanted.get(line.id.as_str()) else {
+                    continue;
+                };
+                if done.contains(&capture.key.as_str()) {
+                    continue;
+                }
+                picture(dir, scene, &capture.key).map_err(|e| format!("scene {id}: {e}"))?;
+                done.push(&capture.key);
+                taken.push((*capture).clone());
+            }
+            continue;
+        }
         // The scene's stills wait here until it has passed.
         let aside = tempfile::Builder::new()
             .prefix(".scene-")
@@ -354,6 +374,64 @@ pub fn capture_with(
         }
     }
     Ok(taken)
+}
+
+/// Takes an image scene's capture: its picture as a PNG (an SVG is drawn
+/// at the scene's scale, with the fonts vidni is given and no others), the
+/// boxes of its targets as its frames, and the record of its file.
+fn picture(dir: &Path, scene: &Scene, key: &str) -> Result<(), String> {
+    let name = scene.url.as_str();
+    let file = dir.join(name);
+    let bytes = fs::read(&file).map_err(|e| format!("{name}: {e}"))?;
+    let sha = keys::sha256_hex(&bytes);
+    let (png, viewport, scale) = if name.to_lowercase().ends_with(".svg") {
+        let mut options = resvg::usvg::Options {
+            resources_dir: file.parent().map(Path::to_path_buf),
+            ..Default::default()
+        };
+        // Text is set in the fonts vidni pins, where they are found.
+        let dirs = vidni_core::fonts::dirs();
+        for font in vidni_core::fonts::all() {
+            if let Some(data) = vidni_core::fonts::find(&font, &dirs)
+                .ok()
+                .and_then(|path| fs::read(path).ok())
+            {
+                options.fontdb_mut().load_font_data(data);
+            }
+        }
+        let tree =
+            resvg::usvg::Tree::from_data(&bytes, &options).map_err(|e| format!("{name}: {e}"))?;
+        let scale = scene.scale.unwrap_or(1);
+        let (w, h) = (tree.size().width().ceil(), tree.size().height().ceil());
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(w as u32 * scale, h as u32 * scale)
+            .ok_or_else(|| format!("{name}: a picture needs a width and a height"))?;
+        let grown = resvg::tiny_skia::Transform::from_scale(scale as f32, scale as f32);
+        resvg::render(&tree, grown, &mut pixmap.as_mut());
+        let png = pixmap.encode_png().map_err(|e| format!("{name}: {e}"))?;
+        (png, [w as u32, h as u32], scale)
+    } else {
+        let image = crate::compose::image::Image::load_png(&file)?;
+        (bytes, [image.width, image.height], 1)
+    };
+    let frames = Frames {
+        viewport,
+        scale,
+        targets: scene
+            .targets
+            .iter()
+            .filter_map(|(name, target)| Some((name.clone(), vec![target.rect?])))
+            .collect(),
+        highlights: BTreeMap::new(),
+        browser: format!("vidni {}", vidni_core::VERSION),
+    };
+    let json = serde_json::to_string_pretty(&frames).map_err(|e| e.to_string())?;
+    write(&frames_path(dir, key), (json + "\n").as_bytes())?;
+    let files: Files = [(name.to_string(), Some(sha))].into();
+    write(
+        &keys::files_path(dir, key),
+        keys::files_json(&files).as_bytes(),
+    )?;
+    write(&keys::path(dir, key), &png)
 }
 
 fn write(path: &Path, bytes: &[u8]) -> Result<(), String> {

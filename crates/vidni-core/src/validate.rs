@@ -513,6 +513,27 @@ impl Rules {
             return;
         };
         match scene.kind {
+            SceneKind::Image => {
+                for (key, set) in [
+                    ("do", !line.actions.is_empty()),
+                    ("highlight", !line.highlight.is_empty()),
+                ] {
+                    if set {
+                        self.add(
+                            at(key),
+                            format!("{key} needs a web scene, and {id:?} is an image scene"),
+                        );
+                    }
+                }
+                for (key, camera) in [
+                    ("camera", &line.camera),
+                    ("camera_vertical", &line.camera_vertical),
+                ] {
+                    if let Some(camera) = camera {
+                        self.camera_ref(at(key), camera, id, scene);
+                    }
+                }
+            }
             SceneKind::Page | SceneKind::Card => {
                 for (key, set) in [
                     ("do", !line.actions.is_empty()),
@@ -758,6 +779,61 @@ impl Rules {
                 }
             }
             SceneKind::Card => self.card(id, s, &web_only, &page_only),
+            SceneKind::Image => self.image(id, s, dir, &page_only),
+        }
+    }
+
+    /// An image scene: a PNG or SVG file of the project's, with parts of it
+    /// named by their rectangles, and cameras on them.
+    fn image(&mut self, id: &str, s: &Scene, dir: Option<&Path>, page_only: &[(&str, bool)]) {
+        let at = |key: &str| path!["scenes", id, key];
+        let not_for_images = [
+            ("viewport", s.viewport.is_some()),
+            ("color_scheme", s.color_scheme.is_some()),
+            ("setup", !s.setup.is_empty()),
+        ];
+        for (key, set) in not_for_images.iter().chain(page_only) {
+            if *set {
+                self.add(at(key), format!("{key} isn't for image scenes"));
+            }
+        }
+        let file = s.url.split(['?', '#']).next().unwrap_or_default();
+        let lower = file.to_lowercase();
+        if s.on_the_web() || file != s.url {
+            self.add(
+                at("url"),
+                "an image scene shows a file in the project folder",
+            );
+        } else if !(lower.ends_with(".png") || lower.ends_with(".svg")) {
+            self.add(at("url"), "an image scene shows a PNG or an SVG file");
+        } else {
+            self.project_file(at("url"), &s.url, dir);
+        }
+        if s.scale == Some(0) {
+            self.add(at("scale"), "scale must be 1 or more");
+        }
+        for (tid, t) in &s.targets {
+            let here = path!["scenes", id, "targets", tid.as_str()];
+            if !valid_id(tid) {
+                self.add(here.clone(), id_rule("target", tid));
+            }
+            let only_rect = Target {
+                rect: t.rect,
+                ..Target::default()
+            };
+            match t.rect {
+                Some([_, _, w, h]) if *t == only_rect && w > 0.0 && h > 0.0 => {}
+                _ => self.add(
+                    here,
+                    "a part of an image is rect = [x, y, width, height], with a width and a height above 0",
+                ),
+            }
+        }
+        for (cid, c) in &s.cameras {
+            self.camera(id, s, cid, c);
+        }
+        if let Some(camera) = &s.default_camera {
+            self.camera_ref(at("default_camera"), camera, id, s);
         }
     }
 
@@ -843,6 +919,12 @@ impl Rules {
             p.push(Seg::from(key));
             p
         };
+        if t.rect.is_some() {
+            self.add(
+                with("rect"),
+                "rect names a part of an image scene's picture",
+            );
+        }
         match (&t.css, t.any.is_empty()) {
             (None, true) => self.add(at.clone(), "a target needs css, or any = [matchers]"),
             (Some(_), false) => self.add(with("any"), "set css or any, not both"),

@@ -173,6 +173,9 @@ struct Item {
     card: Option<PathBuf>,
     /// A card drawn for this cut.
     drawn: Option<Image>,
+    /// The size of the page or picture a still is of, in CSS pixels: what
+    /// its framing is measured in.
+    space: Option<[u64; 2]>,
     still: Option<(PathBuf, f64)>,
     overlay: Option<Image>,
     rect: Option<[f64; 4]>,
@@ -241,6 +244,7 @@ impl Composer {
                     label: shot.label,
                     card: None,
                     drawn: Some(super::card::render(&card, &layout, fonts, faces, look)),
+                    space: None,
                     still: None,
                     overlay,
                     rect: None,
@@ -250,6 +254,7 @@ impl Composer {
                     label: shot.label,
                     card: Some(path),
                     drawn: None,
+                    space: None,
                     still: None,
                     overlay,
                     rect: None,
@@ -270,6 +275,7 @@ impl Composer {
                         label: shot.label,
                         card: None,
                         drawn: None,
+                        space: Some(viewport.map(f64::to_bits)),
                         still: Some((path, scale)),
                         overlay,
                         rect: Some(rect),
@@ -280,11 +286,16 @@ impl Composer {
             items.push(item);
         }
         // A page line after a card starts from the framing before the card.
-        let mut previous: Option<[f64; 4]> = None;
+        // A framing is measured on its own page or picture, so a line on a
+        // picture of another size starts from its own framing.
+        let mut previous: Option<([u64; 2], [f64; 4])> = None;
         for item in items.iter_mut() {
-            if let Some(rect) = item.rect {
-                item.from_rect = Some(previous.unwrap_or(rect));
-                previous = Some(rect);
+            if let (Some(rect), Some(space)) = (item.rect, item.space) {
+                let from = previous
+                    .filter(|(before, _)| *before == space)
+                    .map_or(rect, |(_, rect)| rect);
+                item.from_rect = Some(from);
+                previous = Some((space, rect));
             }
         }
         // Pictures change halfway through the pause before each line.

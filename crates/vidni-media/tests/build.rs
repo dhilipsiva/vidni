@@ -774,3 +774,103 @@ fn a_cut_of_cards_is_drawn_without_a_capture_and_changes_with_its_words() {
         long.outputs["long.mp4"].frames
     );
 }
+
+#[test]
+fn a_picture_is_captured_without_a_browser_and_framed_by_its_parts() {
+    use vidni_media::capture::{Limits, capture_with};
+    let dir = tempfile::tempdir().unwrap();
+    let dir = dir.path();
+    let svg = r##"<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360">
+  <rect width="640" height="360" fill="#101014"/>
+  <rect x="400" y="100" width="160" height="120" fill="#f2542d"/>
+  <text x="40" y="200" font-family="IBM Plex Sans" font-weight="700" font-size="40" fill="#fff">Words</text>
+</svg>"##;
+    fs::write(dir.join("diagram.svg"), svg).unwrap();
+    let text = r#"schema = 1
+
+[meta]
+title = "Pictures"
+default_scene = "diagram"
+
+[timing]
+lead_in = 0.1
+line_gap = 0.2
+section_gap = 0.2
+tail = 0.2
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "The whole picture."
+
+[[lines]]
+id = "main-2"
+section = "main"
+show = "And a part of it."
+camera = "box"
+
+[scenes.diagram]
+kind = "image"
+url = "diagram.svg"
+scale = 2
+
+[scenes.diagram.targets]
+box = { rect = [400, 100, 160, 120] }
+
+[scenes.diagram.cameras]
+box = { union = ["box"] }
+"#;
+    let p = project(dir, text);
+    let cuts: Vec<&Cut> = p.cuts.iter().collect();
+    // Both lines show one picture: one capture, taken with no browser.
+    let plan = capture::plan(&p, dir, &cuts);
+    assert_eq!(plan.len(), 1);
+    assert_eq!(plan[0].file.as_deref(), Some("diagram.svg"));
+    let taken = capture_with(&p, dir, &plan, Limits::default()).unwrap();
+    assert_eq!(taken, plan);
+    assert!(capture::plan(&p, dir, &cuts).is_empty());
+    let key = &plan[0].key;
+    let picture = Image::load_png(&capture::path(dir, key)).unwrap();
+    assert_eq!(
+        (picture.width, picture.height),
+        (1280, 720),
+        "drawn at twice its size"
+    );
+    let frames: Frames =
+        serde_json::from_str(&fs::read_to_string(capture::frames_path(dir, key)).unwrap()).unwrap();
+    assert_eq!((frames.viewport, frames.scale), ([640, 360], 2));
+    assert_eq!(frames.targets["box"], [[400.0, 100.0, 160.0, 120.0]]);
+    // Taken again, it is the same picture, byte for byte.
+    let first = fs::read(capture::path(dir, key)).unwrap();
+    capture_with(&p, dir, &plan, Limits::default()).unwrap();
+    assert_eq!(fs::read(capture::path(dir, key)).unwrap(), first);
+    // The cut builds from it, and builds the same again.
+    record_takes(dir, &p, None);
+    let lock = ratified(dir, &p);
+    let afresh = Setup {
+        again: true,
+        ..setup()
+    };
+    let long = cut(&p, "long");
+    let built = build::final_build(&p, dir, &lock, long, &afresh, &mut quiet()).unwrap();
+    let again = build::final_build(&p, dir, &lock, long, &afresh, &mut quiet()).unwrap();
+    assert_eq!(again, built);
+    // The picture's file changes: its capture is out of date, and the cut
+    // that froze it is no longer the ratified one.
+    fs::write(dir.join("diagram.svg"), svg.replace("#f2542d", "#2f5fd0")).unwrap();
+    assert_eq!(capture::plan(&p, dir, &cuts).len(), 1);
+    assert_eq!(
+        ratify::status_of(&p, dir, &lock, long),
+        ratify::Status::Changed(vec![
+            "diagram.svg has changed since 1 of its captures was taken".into()
+        ])
+    );
+    capture_with(&p, dir, &plan, Limits::default()).unwrap();
+    assert_ne!(fs::read(capture::path(dir, key)).unwrap(), first);
+}

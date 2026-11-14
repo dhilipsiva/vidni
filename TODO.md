@@ -300,6 +300,9 @@ Grammar, as in the workspace TODO, one line per item: `- [ ] **P<m>-VIDNI-<nn>**
 - [ ] **P5-VIDNI-02** (LOW) Add a terminal scene: a command transcript (recorded text, or a pinned command run in a sandbox) drawn as a styled terminal, with line highlights. *Done when:* an example renders a nibli REPL session from a transcript file, with T1 equal across runs. [M]
 - [ ] **P5-VIDNI-03** (LOW) Add a code scene: a file excerpt at a pinned git revision, with syntax highlighting and line highlights. *Done when:* an example renders a Rust excerpt at a commit, with T1 equal across runs. [M]
 - [ ] **P5-VIDNI-04** (LOW) Add image and diagram scenes: PNG and SVG through resvg, and Mermaid through a pinned CLI, all under the virtual camera. *Done when:* the examples render with T1 equal across runs. [S]
+  - Evidence (2026-11-14), for PNG and SVG (the v0.1 half; Mermaid is still to do, so the item stays open): `examples/images` shows an SVG diagram and a PNG chart under the camera, with cards around them, and `vidni repro examples/images --draft` gives equal T1 and T2 hashes across two clean builds.
+    - `kind = "image"` scenes name a file; targets are rectangles; cameras frame them. A picture is a capture taken with no browser (DECISIONS.md, T13), so it is frozen, backed up and taken again as a still is.
+    - A media test captures an SVG twice with the same bytes, builds a cut from it twice with the same record, and sees the capture go out of date when the file changes.
 - [ ] **P5-VIDNI-05** (LOW) Make overlays templates (chip rows, flow diagrams, callouts) instead of the two hard-coded ones. *Done when:* the nibli verdict and firewall overlays are expressed as data. [S]
 
 ### P6. Cuts, shorts and exports

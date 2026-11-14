@@ -1,0 +1,96 @@
+#:schema ../../docs/vidni.schema.json
+# Pictures under the virtual camera: an SVG diagram and a PNG chart, with
+# cards around them. Nothing here needs a browser or the network.
+
+schema = 1
+
+[meta]
+title = "Pictures under the camera"
+subtitle = "an example"
+language = "en"
+default_scene = "diagram"
+
+[voice]
+draft = "piper:en_US-joe-medium"
+respell = [{ text = "vidni", say = "vid nee" }]
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[[cuts]]
+id = "vertical"
+aspect = "9:16"
+
+[sections.main]
+label = "pictures"
+
+[[lines]]
+id = "open-1"
+section = "main"
+show = "A scene can be a picture."
+scene = "open"
+
+[[lines]]
+id = "diagram-1"
+section = "main"
+show = "This diagram is an SVG file, drawn by vidni itself."
+
+[[lines]]
+id = "diagram-2"
+section = "main"
+show = "The camera moves to the part a line is about."
+camera = "draft"
+
+[[lines]]
+id = "chart-1"
+section = "main"
+show = "A PNG works the same way."
+scene = "chart"
+
+[[lines]]
+id = "chart-2"
+section = "main"
+show = "Here the camera frames the bar in colour."
+scene = "chart"
+camera = "marked"
+
+[[lines]]
+id = "end-1"
+section = "main"
+show = "And the same pictures come out on every run."
+scene = "end"
+
+[scenes.open]
+kind = "card"
+template = "title"
+title = "Pictures under the camera"
+subtitle = "SVG and PNG scenes"
+
+[scenes.diagram]
+kind = "image"
+url = "diagram.svg"
+# An SVG is drawn at twice its size, so that it stays sharp when the camera moves in.
+scale = 2
+
+[scenes.diagram.targets]
+draft = { rect = [490, 270, 300, 180] }
+
+[scenes.diagram.cameras]
+draft = { union = ["draft"] }
+
+[scenes.chart]
+kind = "image"
+url = "chart.png"
+
+[scenes.chart.targets]
+marked = { rect = [620, 170, 80, 330] }
+
+[scenes.chart.cameras]
+marked = { union = ["marked"] }
+
+[scenes.end]
+kind = "card"
+template = "end"
+title = "That is all"
+subtitle = "examples/images"

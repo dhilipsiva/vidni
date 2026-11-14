@@ -280,3 +280,9 @@ Added as the items are built.
   - Five templates: title, section, bullets, quote and end. Each is tested against a PNG snapshot in both themes and both shapes (20 snapshots, 640 KB).
 - **A scene's new keys aren't written when they are unset,** so the resolved project of a project without cards is byte for byte what it was, and no ratified cut or capture key changed.
 - **`vidni repro` copies a theme's file** to the same place beside each copy, since a theme may sit beside the project, as the example's does.
+
+### T13. Pictures as scenes
+- **2026-11-14, P5-VIDNI-04 (images; Mermaid comes later).** An image scene is a PNG or an SVG under the virtual camera. Its parts are targets with rectangles, and its cameras are the web scene's cameras.
+- **A picture is a capture.** It gets a key, a PNG in `build/captures/`, a frames file with its targets' boxes, and the record of its file. So everything that holds for a still holds for a picture with no new rule: it is frozen when its cut is ratified, listed as an asset, and taken again when its file changes. Only the taking differs: no browser.
+- **SVG is drawn by resvg,** at the scene's `scale`. Its text is set only in the fonts vidni pins, loaded by hash, so no font of the system's can change the picture.
+- **A framing stays with pictures of its size.** The camera eases from the framing of the line before. That framing is in the page's own pixels, so it is carried over only between stills of one size; a line on a picture of another size starts from its own framing. The first cut with two pictures of different sizes read past the end of the smaller one. With one page, as in the nibli example, nothing changes: its final cuts were built again with the same hashes.

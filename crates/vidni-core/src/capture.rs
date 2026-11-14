@@ -177,9 +177,18 @@ pub fn line_keys(project: &Project) -> BTreeMap<String, String> {
         let Some(id) = line.scene_in(project) else {
             continue;
         };
-        let Some(scene) = project.scenes.get(id).filter(|s| s.kind == SceneKind::Web) else {
+        let Some(scene) = project.scenes.get(id) else {
             continue;
         };
+        // A picture is one capture, whichever of its lines shows it: the
+        // picture itself, with the boxes of its targets.
+        if scene.kind == SceneKind::Image {
+            keys.insert(line.id.clone(), hash(&json!({ "image": web_spec(scene) })));
+            continue;
+        }
+        if scene.kind != SceneKind::Web {
+            continue;
+        }
         let (steps, waits) = done
             .entry(id)
             .or_insert_with(|| (Vec::new(), expected(id, "setup")));

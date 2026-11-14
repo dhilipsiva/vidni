@@ -725,7 +725,7 @@
           }
         },
         "kind": {
-          "description": "`web`: a page captured at a fixed viewport and framed by the virtual\ncamera. `page`: an HTML file rendered at each cut's own size, for\ncards and overlays. `card`: a card drawn from one of the theme's\ntemplates.",
+          "description": "`web`: a page captured at a fixed viewport and framed by the virtual\ncamera. `page`: an HTML file rendered at each cut's own size, for\ncards and overlays. `card`: a card drawn from one of the theme's\ntemplates. `image`: a picture in the project folder, PNG or SVG,\nframed by the virtual camera.",
           "$ref": "#/$defs/SceneKind"
         },
         "quote": {
@@ -807,7 +807,7 @@
           "default": null
         },
         "url": {
-          "description": "web: the page's address. page: a file in the project folder;\n`{aspect}` becomes `16x9` or `9x16`.",
+          "description": "web: the page's address. page: a file in the project folder;\n`{aspect}` becomes `16x9` or `9x16`. image: the picture's file.",
           "type": "string"
         },
         "vertical_follows_highlights": {
@@ -846,7 +846,8 @@
       "enum": [
         "web",
         "page",
-        "card"
+        "card",
+        "image"
       ]
     },
     "Section": {
@@ -955,6 +956,19 @@
             }
           ],
           "default": null
+        },
+        "rect": {
+          "description": "On an image scene: a part of the picture, as `[x, y, width,\nheight]` in its own pixels (an SVG's, in its own units).",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "maxItems": 4,
+          "minItems": 4
         },
         "text": {
           "description": "Keep the elements whose text matches.",

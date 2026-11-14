@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#101014"/>
+  <g font-family="IBM Plex Sans" font-weight="700" font-size="34" fill="#f5f4f0" text-anchor="middle">
+    <rect x="90" y="270" width="300" height="180" rx="18" fill="#1c1c24" stroke="#3c3c4a" stroke-width="3"/>
+    <text x="240" y="372">vidni.toml</text>
+    <rect x="490" y="270" width="300" height="180" rx="18" fill="#1c1c24" stroke="#f2542d" stroke-width="3"/>
+    <text x="640" y="372">vidni draft</text>
+    <rect x="890" y="270" width="300" height="180" rx="18" fill="#1c1c24" stroke="#3c3c4a" stroke-width="3"/>
+    <text x="1040" y="372">long.mp4</text>
+  </g>
+  <g stroke="#9a99a4" stroke-width="5" fill="none">
+    <path d="M390 360 H478"/>
+    <path d="M790 360 H878"/>
+    <path d="M462 344 L478 360 L462 376"/>
+    <path d="M862 344 L878 360 L862 376"/>
+  </g>
+</svg>

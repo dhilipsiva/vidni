@@ -290,10 +290,11 @@ pub struct Scene {
     /// `web`: a page captured at a fixed viewport and framed by the virtual
     /// camera. `page`: an HTML file rendered at each cut's own size, for
     /// cards and overlays. `card`: a card drawn from one of the theme's
-    /// templates.
+    /// templates. `image`: a picture in the project folder, PNG or SVG,
+    /// framed by the virtual camera.
     pub kind: SceneKind,
     /// web: the page's address. page: a file in the project folder;
-    /// `{aspect}` becomes `16x9` or `9x16`.
+    /// `{aspect}` becomes `16x9` or `9x16`. image: the picture's file.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub url: String,
     /// card: the template it is drawn from.
@@ -355,6 +356,7 @@ pub enum SceneKind {
     Web,
     Page,
     Card,
+    Image,
 }
 
 /// The templates a card scene is drawn from.
@@ -426,6 +428,10 @@ pub struct Target {
     /// The union of other matchers, instead of `css`.
     #[serde(default)]
     pub any: Vec<Target>,
+    /// On an image scene: a part of the picture, as `[x, y, width,
+    /// height]` in its own pixels (an SVG's, in its own units).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rect: Option<[f64; 4]>,
 }
 
 /// Which of a target's matches to keep.
