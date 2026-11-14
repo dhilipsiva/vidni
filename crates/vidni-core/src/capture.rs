@@ -202,6 +202,22 @@ pub fn for_cut(project: &Project, cut: &Cut) -> Vec<Capture> {
     found
 }
 
+/// Whether `capture` is of a page on the web, which needs the network,
+/// rather than of a file in the project folder.
+pub fn on_the_web(project: &Project, capture: &Capture) -> bool {
+    let scene = match &capture.source {
+        Source::Line(id) => project
+            .lines
+            .iter()
+            .find(|line| &line.id == id)
+            .and_then(|line| line.scene_in(project)),
+        Source::Page { scene, .. } => Some(scene.as_str()),
+    };
+    scene
+        .and_then(|id| project.scenes.get(id))
+        .is_some_and(Scene::on_the_web)
+}
+
 /// Whether the project folder holds `capture`: its picture and, for a web
 /// still, frames that a cut can be framed from. A still without them can't
 /// be used, so it counts as not taken.
@@ -242,5 +258,63 @@ mod tests {
     fn canonical_json_sorts_keys_at_every_level() {
         let a = json!({"b": 1, "a": {"y": [true, null], "x": "é"}});
         assert_eq!(canonical(&a), r#"{"a":{"x":"é","y":[true,null]},"b":1}"#);
+    }
+
+    #[test]
+    fn a_capture_is_on_the_web_when_its_scenes_address_is() {
+        let text = r#"schema = 1
+
+[meta]
+title = "Where the pages are"
+default_scene = "site"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "A page on the web."
+
+[[lines]]
+id = "main-2"
+section = "main"
+show = "A page in the project folder."
+scene = "local"
+
+[[lines]]
+id = "main-3"
+section = "main"
+show = "A card."
+scene = "card"
+
+[scenes.site]
+kind = "web"
+url = "https://example.com/a?b=1"
+
+[scenes.local]
+kind = "web"
+url = "pages/local.html?tab=2"
+
+[scenes.card]
+kind = "page"
+url = "card.html"
+"#;
+        let project = crate::validate::check(text, None).unwrap();
+        let web: Vec<(String, bool)> = for_cut(&project, &project.cuts[0])
+            .into_iter()
+            .map(|c| (c.what.clone(), on_the_web(&project, &c)))
+            .collect();
+        assert_eq!(
+            web,
+            [
+                ("line main-1".to_string(), true),
+                ("line main-2".to_string(), false),
+                ("page card at 1920x1080 for 16x9".to_string(), false),
+            ]
+        );
     }
 }

@@ -159,7 +159,14 @@ Grammar, as in the workspace TODO, one line per item: `- [ ] **P<m>-VIDNI-<nn>**
     - WhatsApp Status now takes 90 s, where an earlier note in this file said 60 s.
 
     Tests check that every profile is complete and sourced, that the defaults match D6, and that the CLI lists each profile with its date and https sources.
-- [ ] **P2-VIDNI-08** (LOW) Add `vidni new <slug> [--from outline.md]`, where outline headings become sections and paragraphs become lines, and `vidni plan`, which prints the recording sheet. *Done when:* `vidni new demo && vidni draft demo` renders with no edits. [S]
+- [x] **P2-VIDNI-08** (LOW) Add `vidni new <slug> [--from outline.md]`, where outline headings become sections and paragraphs become lines, and `vidni plan`, which prints the recording sheet. *Done when:* `vidni new demo && vidni draft demo` renders with no edits. [S]
+  - Evidence (2026-11-14): `vidni new demo && vidni draft demo` renders both cuts with no edits, in 11 s: `demo/build/draft/long.mp4` (1920x1080) and `demo/build/draft/vertical.mp4` (1080x1920), 218 frames each, 7.25 s, -17 LUFS. `just test-build` runs exactly that (`a_new_project_drafts_as_it_is`).
+    - **`vidni new <name>`** writes `vidni.toml`, `page.html` and a `.gitignore`. The scene is that page, a file in the project folder, so a first draft needs no network: the same test drafts a second new project with `--offline`. The project is valid and in the canonical layout. A folder that exists is left alone, and the name must be an ID.
+    - **`--from outline.md`** makes the first `#` heading the title, every other heading a section, and each paragraph and list item a line. IDs come from the headings (`## Draft, then record!` gives `draft-then-record-1`). An outline with no line makes no project.
+    - **`vidni plan`** prints each line's spoken form under its section's label, marked `[x]` recorded, `[~]` stale or `[ ]` to record, with how long the draft voice took over it, and totals. `--cut` lists one cut's lines. It writes nothing.
+    - **Found on the way:** `--offline` refused every web scene, even one whose page is a file in the project folder. Now it refuses only a page on the web that isn't captured yet.
+
+    Tests: `starter` (5) and `sheet` (1) unit tests, three CLI tests of `new` and `plan`, and the end-to-end test. `vidni repro demo --draft --offline` on a new project: T1 and T2 equal. docs/spec.md describes both commands.
 - [ ] **P2-VIDNI-09** (LOW) Add a content-addressed cache for every stage: a TTS clip by hash(spoken text, voice, seed, params), a still by hash(scene spec, source revision), and a render by hash(inputs). *Done when:* a second `vidni draft` with nothing changed renders nothing and finishes in under 10 s. [M]
 
 ### P3. Media stages in Rust, each behind parity

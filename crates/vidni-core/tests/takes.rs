@@ -34,6 +34,12 @@ fn states(dir: &Path, text: &str) -> Vec<(String, &'static str)> {
 
 fn recorded() -> (tempfile::TempDir, ProjectFile) {
     let dir = tempfile::tempdir().unwrap();
+    // The template's scene is a page in the project's folder.
+    fs::write(
+        dir.path().join(vidni_core::starter::PAGE_FILE),
+        "<!doctype html>",
+    )
+    .unwrap();
     record_every_line(dir.path(), TEMPLATE);
     (dir, ProjectFile::parse(TEMPLATE).unwrap())
 }

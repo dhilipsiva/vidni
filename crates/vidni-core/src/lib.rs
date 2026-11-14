@@ -15,6 +15,7 @@ pub mod project;
 pub mod ratify;
 pub mod release;
 pub mod spoken;
+pub mod starter;
 pub mod takes;
 pub mod timeline;
 pub mod validate;
@@ -23,7 +24,8 @@ pub mod voices;
 /// The vidni version, shared by every crate and front end.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// A new project's `vidni.toml`, with a comment on each part. It is in the
+/// A new project's `vidni.toml`, with a comment on each part
+/// ([`starter`] gives the files that go with it). It is in the
 /// canonical layout, so `vidni fmt` leaves it unchanged.
 pub const TEMPLATE: &str = include_str!("template.toml");
 

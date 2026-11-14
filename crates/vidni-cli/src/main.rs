@@ -37,6 +37,27 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Start a project: a folder with a vidni.toml and the page its scene
+    /// shows, which `vidni draft` renders as it is.
+    New {
+        /// The project's name, and its folder's: lowercase words joined by
+        /// hyphens, such as my-first-video.
+        name: String,
+        /// Take the script from an outline in Markdown: its headings become
+        /// sections, and its paragraphs and list items become lines.
+        #[arg(long, value_name = "OUTLINE")]
+        from: Option<PathBuf>,
+    },
+    /// Print the recording sheet: each line to read, with whether it has a
+    /// take and how long the draft voice took over it.
+    Plan {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// The cut whose lines to list; repeat for more. Default: every cut.
+        #[arg(long = "cut", value_name = "ID")]
+        cuts: Vec<String>,
+    },
     /// Check a project file, and report each problem at its line and column.
     Validate {
         /// A project folder, or its vidni.toml.
@@ -217,6 +238,8 @@ fn main() -> ExitCode {
         return ExitCode::from(2);
     }
     match command {
+        Command::New { name, from } => build::new(&name, from.as_deref()),
+        Command::Plan { path, cuts } => build::plan(&path, &cuts),
         Command::Validate { path } => validate(&path),
         Command::Fmt { path, check } => fmt(&path, check),
         Command::Takes { path, link } => takes(&path, link.as_deref()),

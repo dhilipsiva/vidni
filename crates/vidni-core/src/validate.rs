@@ -657,7 +657,7 @@ impl Rules {
             ("transparent", s.transparent.is_some()),
             ("size", s.size.is_some()),
         ];
-        let remote = s.url.starts_with("http://") || s.url.starts_with("https://");
+        let remote = s.on_the_web();
         match s.kind {
             SceneKind::Web => {
                 for (key, set) in page_only {

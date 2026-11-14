@@ -342,3 +342,62 @@ fn offline_a_page_on_the_web_isnt_captured() {
     );
     assert!(!dir.join("build/captures").exists());
 }
+
+/// Runs vidni in the folder `dir` and expects it to succeed; its stdout.
+fn ok_in(dir: &Path, args: &[&str]) -> String {
+    let out = Command::new(env!("CARGO_BIN_EXE_vidni"))
+        .args(args)
+        .current_dir(dir)
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout).into_owned();
+    assert!(
+        out.status.success(),
+        "vidni {args:?}:\n{stdout}\n{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    stdout
+}
+
+#[test]
+#[ignore = "needs Piper and its voice, Chromium, ffmpeg and unshare; run `just test-build`"]
+fn a_new_project_drafts_as_it_is() {
+    // P2-VIDNI-08: `vidni new demo && vidni draft demo` renders with no edits.
+    let work = tempfile::tempdir().unwrap();
+    ok_in(work.path(), &["new", "demo"]);
+    let drafted = ok_in(work.path(), &["draft", "demo"]);
+    // Its page is captured once for each of its two lines' highlights.
+    assert!(
+        drafted.contains("demo/vidni.toml: 2 captures taken\n"),
+        "{drafted}"
+    );
+    for cut in [
+        "demo/build/draft/long.mp4: ",
+        "demo/build/draft/vertical.mp4: ",
+    ] {
+        assert!(drafted.contains(cut), "{cut}:\n{drafted}");
+    }
+    for file in ["long.mp4", "long.en.srt", "vertical.mp4"] {
+        assert!(
+            work.path().join("demo/build/draft").join(file).is_file(),
+            "{file}"
+        );
+    }
+    // Its sheet now has the draft voice's pace for each line.
+    let sheet = ok_in(work.path(), &["plan", "demo"]);
+    assert!(
+        sheet.contains(" in the draft voice, without the pauses\n"),
+        "{sheet}"
+    );
+
+    // And it needs no network: a second new project, from an outline,
+    // drafts in a namespace that has none.
+    fs::write(
+        work.path().join("outline.md"),
+        "# A tour\n\nWelcome to the tour.\n\n## The end\n\nThat was all of it.\n",
+    )
+    .unwrap();
+    ok_in(work.path(), &["new", "tour", "--from", "outline.md"]);
+    let offline = ok_in(work.path(), &["draft", "tour", "--offline"]);
+    assert!(offline.contains("tour/build/draft/long.mp4: "), "{offline}");
+}

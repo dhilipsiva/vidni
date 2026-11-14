@@ -44,13 +44,26 @@ const SCRAMBLED: &str = r#"#:schema https://raw.githubusercontent.com/dhilipsiva
 
 
 schema=1
-# What the lines show: here, a web page under the virtual camera.
+# Parts of the page, by name, for highlights and cameras to point at.
+[scenes.page.targets]
+heading = {css="h1"}
+steps   = { css = "ol" }
+# What the lines show: here, a page under the virtual camera. page.html is
+# a file in this folder, and a web address works the same way.
 [scenes.page]
-url   =   "https://example.com"
+# A 9:16 cut frames a line's highlights when they are no wider than this.
+vertical_follows_highlights = 640
+url   =   "page.html"
+# Device pixels for each CSS pixel: 2 keeps text sharp when the camera moves in.
+scale = 2
 kind = "web"
 # The script, one narrated line at a time. A line's ID never changes: your
 # takes are filed under it.
 [[lines]]
+# The parts of the page that get a box around them while the line plays.
+highlight = [
+  "heading",
+]
 show = "Hello, and welcome."
 section = "intro"
 id = "intro-1"
@@ -58,6 +71,7 @@ id = "intro-1"
 
 [[lines]]
   id = "intro-2"
+  highlight = ["steps"]
   show = "This video was made with vidni."    # Edit the words; the ID stays.
   section = "intro"
 # What the video is.

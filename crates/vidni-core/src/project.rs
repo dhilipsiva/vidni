@@ -242,7 +242,7 @@ impl Project {
     pub fn scene_files(&self) -> Vec<String> {
         let mut files: Vec<String> = Vec::new();
         for scene in self.scenes.values() {
-            if scene.url.starts_with("http://") || scene.url.starts_with("https://") {
+            if scene.on_the_web() {
                 continue;
             }
             let file = scene.url.split(['?', '#']).next().unwrap_or_default();
@@ -254,6 +254,14 @@ impl Project {
             }
         }
         files
+    }
+}
+
+impl Scene {
+    /// Whether the scene's address is on the web, rather than a file in
+    /// the project folder.
+    pub fn on_the_web(&self) -> bool {
+        self.url.starts_with("http://") || self.url.starts_with("https://")
     }
 }
 

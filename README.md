@@ -15,8 +15,9 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 
 **Status:** being built, item by item, from [`TODO.md`](TODO.md). The decisions behind it are in [`DECISIONS.md`](DECISIONS.md). So far:
 
+- `vidni new` starts a project that renders as it is, from an outline when you have one.
 - `vidni validate` checks a project file against [schema 1](docs/spec.md), and `vidni fmt` puts it in the canonical layout.
-- `vidni takes` tracks the recorded takes.
+- `vidni takes` tracks the recorded takes, and `vidni plan` prints the recording sheet.
 - `vidni voices` lists the draft voices with their licences, and `vidni speak` speaks every line in the draft voice, seeded so that it repeats.
 - `vidni capture` captures web scenes and page scenes through Chromium, as the cuts need them.
 - `vidni hear` listens to each line's audio with whisper and flags a line that doesn't sound like its script. It only advises.

@@ -118,6 +118,7 @@ fn takes_lists_each_lines_take_and_links_the_current_ones() {
     let dir = tempfile::tempdir().unwrap();
     let project = dir.path().to_str().unwrap();
     fs::write(dir.path().join("vidni.toml"), vidni_core::TEMPLATE).unwrap();
+    fs::write(dir.path().join("page.html"), "<!doctype html>").unwrap();
     let listing = |args: &[&str]| String::from_utf8(vidni(args).stdout).unwrap();
     let before = listing(&["takes", project]);
     assert!(
@@ -169,6 +170,7 @@ fn status_ratify_and_unratify_work_from_the_hashes() {
     let dir = tempfile::tempdir().unwrap();
     let project = dir.path().to_str().unwrap();
     fs::write(dir.path().join("vidni.toml"), vidni_core::TEMPLATE).unwrap();
+    fs::write(dir.path().join("page.html"), "<!doctype html>").unwrap();
     let out = |args: &[&str]| {
         let o = vidni(args);
         (
@@ -543,4 +545,144 @@ fn approve_exits_2_when_the_releases_cant_be_read() {
             "{command}: {stderr}"
         );
     }
+}
+
+/// Runs vidni in the folder `dir`; its exit code, stdout and stderr.
+fn vidni_in(dir: &Path, args: &[&str]) -> (Option<i32>, String, String) {
+    let out = Command::new(env!("CARGO_BIN_EXE_vidni"))
+        .args(args)
+        .current_dir(dir)
+        .output()
+        .unwrap();
+    (
+        out.status.code(),
+        String::from_utf8_lossy(&out.stdout).into_owned(),
+        String::from_utf8_lossy(&out.stderr).into_owned(),
+    )
+}
+
+#[test]
+fn new_starts_a_project_that_is_valid_and_in_the_canonical_layout() {
+    let work = tempfile::tempdir().unwrap();
+    let (code, stdout, stderr) = vidni_in(work.path(), &["new", "my-demo"]);
+    assert_eq!(code, Some(0), "{stderr}");
+    assert_eq!(
+        stdout,
+        "my-demo: a new project, \"My demo\"\n  \
+         my-demo/vidni.toml  2 lines in 1 section, 1 scene, 2 cuts\n  \
+         my-demo/page.html   the page its scene shows\n  \
+         my-demo/.gitignore  keeps build/, out/ and takes/ out of git\n\
+         next: `vidni draft my-demo` renders it as it is\n"
+    );
+    let (code, stdout, _) = vidni_in(work.path(), &["validate", "my-demo"]);
+    assert_eq!(code, Some(0));
+    assert_eq!(
+        stdout,
+        "my-demo/vidni.toml: ok: 2 lines in 1 section, 1 scene, 2 cuts\n"
+    );
+    assert_eq!(
+        vidni_in(work.path(), &["fmt", "--check", "my-demo"]).0,
+        Some(0)
+    );
+    // Its sheet lists the lines to read; nothing is spoken or recorded yet.
+    let (code, sheet, stderr) = vidni_in(work.path(), &["plan", "my-demo"]);
+    assert_eq!(code, Some(0), "{stderr}");
+    assert_eq!(
+        sheet,
+        "My demo: the recording sheet\n\
+         2 lines in 1 section, 9 words; 0 recorded, 0 stale, 2 to record; \
+         the draft voice hasn't spoken them yet\n\
+         \n\
+         Introduction\n  \
+         [ ] intro-1        -  Hello, and welcome.\n  \
+         [ ] intro-2        -  This video was made with vidni.\n"
+    );
+    // A folder that is there is left alone, and a name must be an ID.
+    let (code, _, stderr) = vidni_in(work.path(), &["new", "my-demo"]);
+    assert_eq!(
+        (code, stderr.as_str()),
+        (Some(1), "vidni: my-demo already exists\n")
+    );
+    let (code, _, stderr) = vidni_in(work.path(), &["new", "My Demo"]);
+    assert_eq!(code, Some(1));
+    assert!(stderr.ends_with("\"My Demo\" isn't\n"), "{stderr}");
+    assert!(!work.path().join("My Demo").exists());
+}
+
+#[test]
+fn new_takes_its_script_from_an_outline() {
+    let work = tempfile::tempdir().unwrap();
+    fs::write(
+        work.path().join("outline.md"),
+        "# A tour\n\nWelcome.\n\n## The parts\n\n- The first part.\n- The second part.\n",
+    )
+    .unwrap();
+    let (code, stdout, stderr) = vidni_in(work.path(), &["new", "tour", "--from", "outline.md"]);
+    assert_eq!(code, Some(0), "{stderr}");
+    assert!(
+        stdout.starts_with(
+            "tour: a new project, \"A tour\"\n  tour/vidni.toml  3 lines in 2 sections, 1 scene, 2 cuts\n"
+        ),
+        "{stdout}"
+    );
+    let (_, sheet, _) = vidni_in(work.path(), &["plan", "tour", "--cut", "long"]);
+    assert!(
+        sheet.ends_with(
+            "(intro)\n  [ ] intro-1            -  Welcome.\n\n\
+             The parts\n  [ ] the-parts-1        -  The first part.\n  \
+             [ ] the-parts-2        -  The second part.\n"
+        ),
+        "{sheet}"
+    );
+    // An outline that can't be read, or that has no line, makes no project.
+    let (code, _, stderr) = vidni_in(work.path(), &["new", "other", "--from", "gone.md"]);
+    assert_eq!(code, Some(2), "{stderr}");
+    assert!(stderr.starts_with("vidni: gone.md: "), "{stderr}");
+    fs::write(work.path().join("empty.md"), "# Only a title\n").unwrap();
+    let (code, _, stderr) = vidni_in(work.path(), &["new", "other", "--from", "empty.md"]);
+    assert_eq!(
+        (code, stderr.as_str()),
+        (
+            Some(1),
+            "vidni: the outline has no paragraph or list item to make a line of\n"
+        )
+    );
+    assert!(!work.path().join("other").exists());
+}
+
+#[test]
+fn plan_marks_what_is_recorded_and_lists_the_cuts_asked_for() {
+    let work = tempfile::tempdir().unwrap();
+    assert_eq!(vidni_in(work.path(), &["new", "demo"]).0, Some(0));
+    let dir = work.path().join("demo");
+    // A take where `vidni takes` says the first line's goes, and one of
+    // other words for the second.
+    let (_, takes, _) = vidni_in(&dir, &["takes"]);
+    let first = takes.lines().next().unwrap();
+    let take = dir.join(first.split_whitespace().nth(2).unwrap());
+    fs::create_dir_all(take.parent().unwrap()).unwrap();
+    fs::write(&take, b"a take").unwrap();
+    let other = dir.join("takes/intro-2/0000000000000000.wav");
+    fs::create_dir_all(other.parent().unwrap()).unwrap();
+    fs::write(&other, b"a take of other words").unwrap();
+    let (code, sheet, stderr) = vidni_in(&dir, &["plan", "--cut", "vertical"]);
+    assert_eq!(code, Some(0), "{stderr}");
+    assert_eq!(
+        sheet,
+        "Demo: the recording sheet\n\
+         2 lines in 1 section, 9 words; 1 recorded, 1 stale, 0 to record; \
+         the draft voice hasn't spoken them yet\n\
+         \n\
+         Introduction\n  \
+         [x] intro-1        -  Hello, and welcome.\n  \
+         [~] intro-2        -  This video was made with vidni.\n"
+    );
+    // The sheet is only read: it leaves the project folder as it was.
+    assert!(!dir.join("build").exists() && !dir.join("voice.lock").exists());
+    let (code, _, stderr) = vidni_in(&dir, &["plan", "--cut", "short"]);
+    assert_eq!(
+        (code, stderr.as_str()),
+        (Some(1), "vidni: there is no cut \"short\"\n")
+    );
+    assert_eq!(vidni_in(work.path(), &["plan", "gone"]).0, Some(2));
 }

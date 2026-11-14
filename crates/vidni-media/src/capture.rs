@@ -523,8 +523,7 @@ impl Page {
         )?;
         // A page on the web may lose a load that doesn't matter to it; a
         // file of the project's should have all its parts.
-        let remote = scene.url.starts_with("http://") || scene.url.starts_with("https://");
-        page.whole |= !remote;
+        page.whole |= !scene.on_the_web();
         Ok(page)
     }
 

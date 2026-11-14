@@ -44,13 +44,26 @@ label = "Introduction"
 id = "intro-1"
 section = "intro"
 show = "Hello, and welcome."
+# The parts of the page that get a box around them while the line plays.
+highlight = ["heading"]
 
 [[lines]]
 id = "intro-2"
 section = "intro"
 show = "This video was made with vidni." # Edit the words; the ID stays.
+highlight = ["steps"]
 
-# What the lines show: here, a web page under the virtual camera.
+# What the lines show: here, a page under the virtual camera. page.html is
+# a file in this folder, and a web address works the same way.
 [scenes.page]
 kind = "web"
-url = "https://example.com"
+url = "page.html"
+# Device pixels for each CSS pixel: 2 keeps text sharp when the camera moves in.
+scale = 2
+# A 9:16 cut frames a line's highlights when they are no wider than this.
+vertical_follows_highlights = 640
+
+# Parts of the page, by name, for highlights and cameras to point at.
+[scenes.page.targets]
+heading = { css = "h1" }
+steps = { css = "ol" }

@@ -39,6 +39,28 @@ aspect = "16:9"
 
 Later items make use of keys that schema 1 already fixes. For example, capture (P3-VIDNI-04) acts on targets and cameras, and the compositor (P3-VIDNI-02) frames them. Their meaning is set here, so a project written today keeps working.
 
+## Starting a project: `vidni new`
+
+`vidni new <name>` makes a folder called `<name>` in the current folder, holding a project that renders as it is:
+
+```text
+<name>/vidni.toml   two lines in one section, one web scene, a 16:9 cut and a 9:16 cut
+<name>/page.html    the page the scene shows
+<name>/.gitignore   keeps build/, out/ and takes/ out of git
+```
+
+- **The name** is an ID ([IDs](#ids)), and the title is made from it: `my-first-video` is titled "My first video".
+- **The scene** is a page in the project folder, so `vidni new demo && vidni draft demo` renders with no edits and no network.
+- **A folder that is there already** is left as it is, and the command fails.
+
+`vidni new <name> --from outline.md` takes the script from an outline written in Markdown:
+- **The title** is the first heading, when it is a `#` heading that comes before everything else.
+- **Every other heading** starts a section, and is its label. The section's ID is made from the heading's first four words, so `## How it works, briefly` is `how-it-works-briefly`. A heading with no letter or digit that an ID can hold is `section-<n>`, and a second section of the same name ends in `-2`.
+- **Each paragraph** is a line, and so is each list item. A line's ID is its section's ID and its number in the section, from 1: `how-it-works-briefly-1`. Lines that come before any heading go in a section called `intro`.
+- **Inline marks** are dropped. A link or an image is its text, and the marks of bold (`**`, `__`) and of code go. Fenced code is left out, and a quote loses its `>`.
+
+Every line shows the starter page. An outline with no paragraph and no list item makes no project.
+
 ## Top level
 
 | Key | Type | Required | What it is |
@@ -188,6 +210,26 @@ files = [
 **The cache.** Clips are cached in `build/voice/<line-id>/<key>-<seed>.wav`, where the key is the first 16 hex digits of a SHA-256 over what the voice is given (the line's `say` or `show`, with `voice.respell` applied), the pack's ID and file hashes, and `voice.length_scale`. A draft speaks only what the cache doesn't hold. Clearing `build/` and drafting again gives the same PCM, from `voice.lock`.
 
 **Licences.** A voice whose licence doesn't allow commercial use may still be drafted with, but its audio can't go into a cut that is used commercially. `vidni validate`, `vidni speak` and `vidni draft` warn about such a voice, and about one whose licence vidni can't find.
+
+## The recording sheet: `vidni plan`
+
+`vidni plan` prints what there is to record: every line in script order, under its section's label, with the words to say.
+
+```text
+My first video: the recording sheet
+2 lines in 1 section, 9 words; 0 recorded, 0 stale, 2 to record; about 0:04 in the draft voice, without the pauses
+
+Introduction
+  [ ] intro-1    1.7 s  Hello, and welcome.
+  [ ] intro-2    2.3 s  This video was made with vidni.
+```
+
+- **The words** are the line's spoken form ([Takes and spoken words](#takes-and-spoken-words)): what you read aloud, not what the captions show.
+- **The mark** is `[x]` for a line with a current take, `[~]` for a line whose takes are all of other words, and `[ ]` for a line with none.
+- **The time** is how long the draft voice took over the line as it is now, as a pace to read at. A line the draft voice hasn't spoken yet has `-`.
+- **`--cut ID`**, which can be repeated, lists those cuts' lines only.
+
+The sheet only reads the project. It speaks nothing and writes no file.
 
 ## The listening check: `vidni hear`
 
@@ -503,8 +545,8 @@ Interrupted, it ends both builds and removes its copies. It needs `taskset`, fro
 ### Without the network: `--offline`
 
 `vidni draft --offline` and `vidni final --offline` run in a namespace that has no network, so a build that reaches for the network fails instead of passing by luck:
-- Page scenes are files, so they are still captured. One that asks the network for a part fails, and no capture of it is kept.
-- A web scene whose capture isn't taken yet is refused, by name.
+- A page in the project folder is still captured, whether it is a page scene or a web scene's `url`. One that asks the network for a part fails, and no capture of it is kept.
+- A web scene on the web whose capture isn't taken yet is refused, by name.
 - Nothing can be connected to. A name can still be looked up where the host's resolver answers through a socket in the file system.
 
 The command checks that it has no route to the network before it does anything else. It needs `unshare`, from util-linux, and a kernel that lets a user make namespaces. It runs on Linux only.

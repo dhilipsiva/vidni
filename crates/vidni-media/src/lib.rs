@@ -11,6 +11,7 @@ pub mod encode;
 pub mod hear;
 pub mod narration;
 pub mod qa;
+pub mod sheet;
 pub mod tts;
 
 use std::process::{Command, Output};

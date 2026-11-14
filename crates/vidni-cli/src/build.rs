@@ -138,10 +138,11 @@ pub(crate) fn take_captures(loaded: &Loaded, cuts: &[&Cut]) -> Result<(), ExitCo
     if !frozen.is_empty() {
         return Err(stopped(Stop::Refused(frozen)));
     }
-    // Without the network, a page on the web can only fail slowly.
+    // Without the network, a page on the web can only fail slowly; a page
+    // in the project folder is captured as ever.
     let web: Vec<&capture::Capture> = plan
         .iter()
-        .filter(|c| matches!(c.source, capture::Source::Line(_)))
+        .filter(|c| capture::on_the_web(project, c))
         .collect();
     if let (true, Some(first)) = (crate::offline::inside(), web.first()) {
         eprintln!(
@@ -351,4 +352,123 @@ pub fn approve(path: &Path, cuts: &[String]) -> ExitCode {
         Ok(()) => ExitCode::SUCCESS,
         Err(code) => code,
     }
+}
+
+pub fn new(name: &str, from: Option<&Path>) -> ExitCode {
+    use vidni_core::starter;
+    if !vidni_core::validate::valid_id(name) {
+        eprintln!(
+            "vidni: a project's name is lowercase letters and digits, in words joined by hyphens, such as my-first-video; {name:?} isn't"
+        );
+        return ExitCode::FAILURE;
+    }
+    let outline = match from.map(std::fs::read_to_string) {
+        None => None,
+        Some(Ok(text)) => Some(starter::outline(&text)),
+        Some(Err(e)) => {
+            let file = from.unwrap_or(Path::new(""));
+            return cant(format!("{}: {e}", file.display()));
+        }
+    };
+    let dir = Path::new(name);
+    let made = starter::files(&starter::title_of(name), outline.as_ref())
+        .and_then(|files| starter::write(dir, &files).map(|()| files));
+    let files = match made {
+        Ok(files) => files,
+        Err(e) => {
+            eprintln!("vidni: {e}");
+            return ExitCode::FAILURE;
+        }
+    };
+    // Said as `vidni validate` says it, from the file just written.
+    let project = files
+        .first()
+        .and_then(|(_, text)| vidni_core::validate::check(text, Some(dir)).ok());
+    let Some(project) = project else {
+        return cant(format!("{name}: the new project didn't come out valid"));
+    };
+    say!("{name}: a new project, {:?}", project.meta.title);
+    say!(
+        "  {name}/{}  {} in {}, {}, {}",
+        starter::PROJECT_FILE,
+        count(project.lines.len(), "line"),
+        count(project.sections.len(), "section"),
+        count(project.scenes.len(), "scene"),
+        count(project.cuts.len(), "cut")
+    );
+    say!("  {name}/{}   the page its scene shows", starter::PAGE_FILE);
+    say!("  {name}/.gitignore  keeps build/, out/ and takes/ out of git");
+    say!("next: `vidni draft {name}` renders it as it is");
+    ExitCode::SUCCESS
+}
+
+/// A length in seconds as minutes and seconds: `5:06`.
+fn clock(seconds: f64) -> String {
+    let whole = seconds.round() as u64;
+    format!("{}:{:02}", whole / 60, whole % 60)
+}
+
+pub fn plan(path: &Path, cuts: &[String]) -> ExitCode {
+    use vidni_media::sheet::{self, Take};
+    let loaded = match load(path) {
+        Ok(loaded) => loaded,
+        Err(code) => return code,
+    };
+    let Loaded { dir, project, .. } = &loaded;
+    let listed = chosen(project, cuts).and_then(|cuts| {
+        // The draft voice's pack tells which clips are of the lines as
+        // they are now; without it the sheet has no pace.
+        let pack = voices::find(&project.voice.draft, voices::store().as_deref()).map_err(cant)?;
+        sheet::sheet(project, dir, &cuts, pack.as_ref()).map_err(cant)
+    });
+    let rows = match listed {
+        Ok(rows) => rows,
+        Err(code) => return code,
+    };
+    let n = |take: Take| rows.iter().filter(|r| r.take == take).count();
+    let words: usize = rows.iter().map(|r| r.text.split_whitespace().count()).sum();
+    let mut sections: Vec<&str> = rows.iter().map(|r| r.section.as_str()).collect();
+    sections.dedup();
+    let paced: Vec<f64> = rows.iter().filter_map(|r| r.pace).collect();
+    let pace = match paced.len() {
+        0 => "the draft voice hasn't spoken them yet".to_string(),
+        spoken if spoken == rows.len() => format!(
+            "about {} in the draft voice, without the pauses",
+            clock(paced.iter().sum())
+        ),
+        spoken => format!("{spoken} of them spoken by the draft voice"),
+    };
+    say!("{}: the recording sheet", project.meta.title);
+    say!(
+        "{} in {}, {}; {} recorded, {} stale, {} to record; {pace}",
+        count(rows.len(), "line"),
+        count(sections.len(), "section"),
+        count(words, "word"),
+        n(Take::Recorded),
+        n(Take::Stale),
+        n(Take::Missing)
+    );
+    let width = rows.iter().map(|r| r.id.len()).max().unwrap_or(0);
+    let mut section = None;
+    for row in &rows {
+        if section != Some(&row.section) {
+            section = Some(&row.section);
+            say!("");
+            match row.label.is_empty() {
+                true => say!("({})", row.section),
+                false => say!("{}", row.label),
+            }
+        }
+        let mark = match row.take {
+            Take::Recorded => "[x]",
+            Take::Stale => "[~]",
+            Take::Missing => "[ ]",
+        };
+        let pace = match row.pace {
+            Some(seconds) => format!("{seconds:5.1} s"),
+            None => "      -".to_string(),
+        };
+        say!("  {mark} {:width$}  {pace}  {}", row.id, row.text);
+    }
+    ExitCode::SUCCESS
 }
