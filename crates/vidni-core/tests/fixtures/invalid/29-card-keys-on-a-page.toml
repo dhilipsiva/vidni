@@ -1,0 +1,22 @@
+# expect: 18:12: template is for card scenes, and "page" isn't one
+schema = 1
+
+[meta]
+title = "Cards"
+default_scene = "page"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "A page."
+
+[scenes.page]
+kind = "web"
+url = "https://example.com"
+template = "title"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

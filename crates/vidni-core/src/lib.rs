@@ -18,6 +18,7 @@ pub mod release;
 pub mod spoken;
 pub mod starter;
 pub mod takes;
+pub mod theme;
 pub mod timeline;
 pub mod validate;
 pub mod voices;

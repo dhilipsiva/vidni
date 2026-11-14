@@ -18,7 +18,7 @@ use std::process::{Command, Stdio};
 use vidni_core::project::Project;
 use vidni_core::timeline;
 use vidni_media::build::camera_name;
-use vidni_media::compose::cut::{Composer, LANDSCAPE, Layout, PORTRAIT, Picture, Shot, Type};
+use vidni_media::compose::cut::{Composer, LANDSCAPE, Layout, Look, PORTRAIT, Picture, Shot, Type};
 use vidni_media::compose::text::Fonts;
 
 /// The reference's three faces (caption, mono, display): the pattern
@@ -209,6 +209,8 @@ pub fn jobs(example: &Path, reference: &Path, faces: &Faces) -> Result<Vec<Job>,
         display: fonts.load(&faces.display)?,
     };
     let subtitle = project.meta.subtitle.clone().unwrap_or_default();
+    // The example's theme is the reference's look.
+    let look = Look::of(&vidni_core::theme::load(example, &project.style.theme)?);
     let mut jobs = Vec::new();
     for ((variant, suffix), clips) in VARIANTS
         .into_iter()
@@ -218,7 +220,9 @@ pub fn jobs(example: &Path, reference: &Path, faces: &Faces) -> Result<Vec<Job>,
         let timeline = timeline::build(&project, &infos)?;
         for layout in [LANDSCAPE, PORTRAIT] {
             let shots = shots(&project, &capture, &layout, &build)?;
-            let composer = Composer::new(layout, &timeline, shots, &mut fonts, &faces, &subtitle)?;
+            let composer = Composer::new(
+                layout, &timeline, shots, &mut fonts, &faces, &look, &subtitle,
+            )?;
             jobs.push(Job {
                 variant,
                 cut: layout.name,

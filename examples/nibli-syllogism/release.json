@@ -57,6 +57,83 @@
             }
           }
         }
+      },
+      {
+        "tag": "long-r2",
+        "approved": "2026-11-14",
+        "build": {
+          "cut": "long",
+          "voice": "takes",
+          "inputs": "8bfb28148b1b1924da5ffbe8e9fd5718b38753daceaa09320f23c14f4296b883",
+          "sources": {
+            "content": "b897925711c65ba3103ebf73ca99026de9cc0f76ec83a0617f84e2f861e531c7",
+            "audio": "fe03ac20e5aa4b1c8422f10d9cff9d3b229a59b938a6ed86381abcfa6599780f",
+            "look": "9ae1f7780c91f5c18221c126932a1e6bb296c279cdd67c5c80bc3f47ca3e3cb6",
+            "captures": "0b36287c7d30ede2e7677346c32a717bd5d067b83d175c65ebbcae5f65ad5215"
+          },
+          "t1": {
+            "timeline": "ddaba1a3b3f89e06fecdd8910c824e7f32189e95ed4ab1a7fcbc2b8178611611",
+            "srt": "78bad89fc48315b789dd8e8350f22e0b19ada4630abdf74eae17906e0d24744e",
+            "vtt": "df6b6c453c02748ae3f19f78142bbae28fb82ad1d5cdb44f6934a1ff13a03045",
+            "pcm": "ef80d645e0f1ed9351d86def1813c70ec9993e8c20fd85e966bc2a019bb78f43",
+            "pcm_normalized": "06a25bf0779071d281ab55c59b9d521027256b7a7af23c4bed73c29609902126"
+          },
+          "outputs": {
+            "long.mp4": {
+              "captions": true,
+              "frames": "c27e3dbef168063755bc231a395444d85531d0695c94f6cb32c28488394b91c8",
+              "frame_count": 8441,
+              "packets": "87dcddef0cf07c53667b89e32008cbeb62e4c4c05d3b014972e6a44a130a8f01",
+              "mp4": "d9987cbad416c53729d8425c6e683e0e4c2396a8e3a639020fd5c9d03c18b950",
+              "qa": "1920x1080 h264 30/1 fps; aac 48000 Hz 2 ch; 281.37 s; -16.7 LUFS",
+              "problems": []
+            }
+          },
+          "tools": {
+            "vidni": "0.1.0",
+            "ffmpeg": "9.0.2",
+            "fonts": {
+              "IBMPlexMono-Bold.otf": "27a69e26eb871f52431f45fef5e938acd45e752d9132faaf38aa4a045168b3b6",
+              "IBMPlexSans-Bold.otf": "19de5aec74215119b3f8f7d1b1f0e0eba867bee2d2c65c5761b287d67581c316",
+              "SpaceGrotesk-Bold.otf": "be8709abe941dcc98f3625663b340ca20dc90cd6806ee76bd68b568097b6368f"
+            },
+            "engine": {
+              "audio_kbps": 160,
+              "compositor": 2,
+              "crf": 18,
+              "fps": 30,
+              "loudness": [
+                -16.0,
+                -1.5,
+                11.0
+              ],
+              "preset": "slow",
+              "theme": {
+                "colors": {
+                  "accent": "#f2542d",
+                  "edge": "#3a3a4a",
+                  "frame": "#0b0b10",
+                  "ink": "#f4f3ef",
+                  "label": "#07070ad2",
+                  "muted": "#908f9a",
+                  "panel": "#07070ade",
+                  "rule": "#2a2a38"
+                },
+                "fonts": {
+                  "display": "space-grotesk-bold",
+                  "mono": "ibm-plex-mono-bold",
+                  "text": "ibm-plex-sans-bold"
+                },
+                "label": {
+                  "mark": "//"
+                },
+                "name": "quine"
+              },
+              "threads": 4,
+              "x264": "sync-lookahead=0"
+            }
+          }
+        }
       }
     ],
     "vertical": [
@@ -110,6 +187,83 @@
                 11.0
               ],
               "preset": "slow",
+              "threads": 4,
+              "x264": "sync-lookahead=0"
+            }
+          }
+        }
+      },
+      {
+        "tag": "vertical-r2",
+        "approved": "2026-11-14",
+        "build": {
+          "cut": "vertical",
+          "voice": "takes",
+          "inputs": "8d49b0936a38de85812f09242d1a817fec6976397b8fc393a1cc04d9b7723bb5",
+          "sources": {
+            "content": "9bc3153c889987483f10f501a673097d80049f4422d785554a69a32e82091a18",
+            "audio": "fe03ac20e5aa4b1c8422f10d9cff9d3b229a59b938a6ed86381abcfa6599780f",
+            "look": "82863fb6c1ac6e29b3d7a9b743c3a84ad97226c1b19e959b35a797e03d2454df",
+            "captures": "0801017d4f16bebe349e063f9396fa9b3a7d1499e5e4aa607be4d97c6f107121"
+          },
+          "t1": {
+            "timeline": "ddaba1a3b3f89e06fecdd8910c824e7f32189e95ed4ab1a7fcbc2b8178611611",
+            "srt": "78bad89fc48315b789dd8e8350f22e0b19ada4630abdf74eae17906e0d24744e",
+            "vtt": "df6b6c453c02748ae3f19f78142bbae28fb82ad1d5cdb44f6934a1ff13a03045",
+            "pcm": "ef80d645e0f1ed9351d86def1813c70ec9993e8c20fd85e966bc2a019bb78f43",
+            "pcm_normalized": "06a25bf0779071d281ab55c59b9d521027256b7a7af23c4bed73c29609902126"
+          },
+          "outputs": {
+            "vertical.mp4": {
+              "captions": true,
+              "frames": "7f1d9f0f086c0ab9025c04f533b283d749f20f3f5341815a9115eeddd8ffe125",
+              "frame_count": 8441,
+              "packets": "5214fc325d72cd959af3b4cbe943aa796eb849ea2ab7e06ab54df455301cf8e9",
+              "mp4": "c152b5ebcdba3de951566676b123768a51b3fd701829d6421c66c1f5877b0d0c",
+              "qa": "1080x1920 h264 30/1 fps; aac 48000 Hz 2 ch; 281.37 s; -16.7 LUFS",
+              "problems": []
+            }
+          },
+          "tools": {
+            "vidni": "0.1.0",
+            "ffmpeg": "9.0.2",
+            "fonts": {
+              "IBMPlexMono-Bold.otf": "27a69e26eb871f52431f45fef5e938acd45e752d9132faaf38aa4a045168b3b6",
+              "IBMPlexSans-Bold.otf": "19de5aec74215119b3f8f7d1b1f0e0eba867bee2d2c65c5761b287d67581c316",
+              "SpaceGrotesk-Bold.otf": "be8709abe941dcc98f3625663b340ca20dc90cd6806ee76bd68b568097b6368f"
+            },
+            "engine": {
+              "audio_kbps": 160,
+              "compositor": 2,
+              "crf": 18,
+              "fps": 30,
+              "loudness": [
+                -16.0,
+                -1.5,
+                11.0
+              ],
+              "preset": "slow",
+              "theme": {
+                "colors": {
+                  "accent": "#f2542d",
+                  "edge": "#3a3a4a",
+                  "frame": "#0b0b10",
+                  "ink": "#f4f3ef",
+                  "label": "#07070ad2",
+                  "muted": "#908f9a",
+                  "panel": "#07070ade",
+                  "rule": "#2a2a38"
+                },
+                "fonts": {
+                  "display": "space-grotesk-bold",
+                  "mono": "ibm-plex-mono-bold",
+                  "text": "ibm-plex-sans-bold"
+                },
+                "label": {
+                  "mark": "//"
+                },
+                "name": "quine"
+              },
               "threads": 4,
               "x264": "sync-lookahead=0"
             }

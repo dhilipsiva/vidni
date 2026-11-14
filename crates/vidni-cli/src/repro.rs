@@ -418,7 +418,7 @@ fn run(
             takes.extend(clips.into_iter().map(|(_, clip)| clip));
         }
     }
-    setup(false)?;
+    setup(loaded, false)?;
     let mut environment: Vec<(String, OsString)> = vec![
         ("PATH".into(), std::env::var_os("PATH").unwrap_or_default()),
         ("TZ".into(), "UTC".into()),
@@ -507,6 +507,18 @@ fn run(
     let files = inputs(project, dir, file, &cuts, &takes);
     for run in &runs {
         copy_inputs(dir, &run.project, &files)?;
+        // A theme is a folder the project names, which may be beside it:
+        // its file goes to the same place beside each copy.
+        let named = &project.style.theme;
+        if named != "default" {
+            let theme = Path::new(named).join(vidni_core::theme::FILE);
+            let to = run.project.join(&theme);
+            let copied = to
+                .parent()
+                .map_or(Ok(()), fs::create_dir_all)
+                .and_then(|()| fs::copy(dir.join(&theme), &to).map(drop));
+            copied.map_err(|e| cant(format!("{}: {e}", dir.join(&theme).display())))?;
+        }
     }
     interrupted("nothing was built")?;
     let recipe = Recipe {

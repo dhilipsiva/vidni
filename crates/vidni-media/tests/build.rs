@@ -77,7 +77,11 @@ fn fixture(name: &str) -> PathBuf {
 
 /// The build's tools, with one pinned face standing for all three.
 fn setup() -> Setup {
-    Setup::with(Faces::all(&fixture("fonts/IBMPlexSans-Bold.otf"))).unwrap()
+    Setup::with(
+        Faces::all(&fixture("fonts/IBMPlexSans-Bold.otf")),
+        vidni_core::theme::Theme::default_theme(),
+    )
+    .unwrap()
 }
 
 fn project(dir: &Path, text: &str) -> Project {
@@ -659,4 +663,114 @@ fn approving_needs_the_final_build_as_it_was_delivered() {
         ["cut short isn't ratified; `vidni ratify --cut short` freezes it"]
     );
     assert_eq!(release::read(dir).unwrap().cuts["short"], [first]);
+}
+
+/// A project whose every scene is a card drawn from a template: it has
+/// nothing to capture.
+const CARDS: &str = r#"schema = 1
+
+[meta]
+title = "Cards"
+default_scene = "open"
+
+[timing]
+lead_in = 0.1
+line_gap = 0.2
+section_gap = 0.2
+tail = 0.2
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[[cuts]]
+id = "short"
+aspect = "9:16"
+
+[sections.main]
+
+[[lines]]
+id = "open-1"
+section = "main"
+show = "A title card opens the video."
+
+[[lines]]
+id = "points-1"
+section = "main"
+show = "Then a list makes two points."
+scene = "points"
+
+[scenes.open]
+kind = "card"
+template = "title"
+title = "Cards from templates"
+subtitle = "drawn, not captured"
+
+[scenes.points]
+kind = "card"
+template = "bullets"
+title = "Two points"
+items = ["A card needs no browser", "A theme changes its look"]
+"#;
+
+#[test]
+fn a_cut_of_cards_is_drawn_without_a_capture_and_changes_with_its_words() {
+    let dir = tempfile::tempdir().unwrap();
+    let dir = dir.path();
+    let p = project(dir, CARDS);
+    let cuts: Vec<&Cut> = p.cuts.iter().collect();
+    assert!(
+        capture::plan(&p, dir, &cuts).is_empty(),
+        "nothing to capture"
+    );
+    record_takes(dir, &p, None);
+    let lock = ratified(dir, &p);
+    let built = |p: &Project, id: &str| {
+        build::final_build(p, dir, &lock, cut(p, id), &setup(), &mut quiet()).unwrap()
+    };
+    let (long, short) = (built(&p, "long"), built(&p, "short"));
+    assert!(long.problems().is_empty() && short.problems().is_empty());
+    assert!(!dir.join("build/captures").exists());
+    // The two shapes are two pictures, and each repeats.
+    assert_ne!(
+        long.outputs["long.mp4"].frames,
+        short.outputs["short.mp4"].frames
+    );
+    let afresh = Setup {
+        again: true,
+        ..setup()
+    };
+    let again = build::final_build(&p, dir, &lock, cut(&p, "long"), &afresh, &mut quiet()).unwrap();
+    assert_eq!(again, long);
+    // A card's words are a part of what its cut shows: changed, the cut is
+    // no longer the ratified one.
+    let reworded = project(dir, &CARDS.replace("Two points", "Two things"));
+    let refusals = refused(build::final_build(
+        &reworded,
+        dir,
+        &lock,
+        cut(&reworded, "long"),
+        &setup(),
+        &mut quiet(),
+    ));
+    assert_eq!(
+        refusals,
+        ["cut long has changed since it was ratified: scene points changed"]
+    );
+    // Another theme is another look: other inputs, and other frames.
+    let quine = vidni_core::theme::load(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples"),
+        "themes/quine",
+    )
+    .unwrap();
+    let themed = Setup {
+        theme: quine,
+        ..setup()
+    };
+    let other = build::final_build(&p, dir, &lock, cut(&p, "long"), &themed, &mut quiet()).unwrap();
+    assert_ne!(other.inputs, long.inputs);
+    assert_ne!(
+        other.outputs["long.mp4"].frames,
+        long.outputs["long.mp4"].frames
+    );
 }

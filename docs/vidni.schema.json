@@ -682,6 +682,13 @@
       "description": "What lines show.",
       "type": "object",
       "properties": {
+        "by": {
+          "description": "card: whose words a `quote` card's are.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "cameras": {
           "description": "web: named framings. `viewport` and `highlights` are always defined.",
           "type": "object",
@@ -710,9 +717,23 @@
           ],
           "default": null
         },
+        "items": {
+          "description": "card: the points of a `bullets` card.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "kind": {
-          "description": "`web`: a page captured at a fixed viewport and framed by the virtual\ncamera. `page`: an HTML file rendered at each cut's own size, for\ncards and overlays.",
+          "description": "`web`: a page captured at a fixed viewport and framed by the virtual\ncamera. `page`: an HTML file rendered at each cut's own size, for\ncards and overlays. `card`: a card drawn from one of the theme's\ntemplates.",
           "$ref": "#/$defs/SceneKind"
+        },
+        "quote": {
+          "description": "card: the words of a `quote` card.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "scale": {
           "description": "web: device pixels per CSS pixel. Default 1.",
@@ -744,6 +765,13 @@
           ],
           "default": null
         },
+        "subtitle": {
+          "description": "card: a second, smaller line (`title`, `section`, `end`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "targets": {
           "description": "web: named parts of the page, for highlights, cameras, actions and\nexpectations.",
           "type": "object",
@@ -751,6 +779,24 @@
             "$ref": "#/$defs/Target"
           },
           "default": {}
+        },
+        "template": {
+          "description": "card: the template it is drawn from.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Template"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "title": {
+          "description": "card: its title (`title`, `section`, `bullets`, `end`).",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "transparent": {
           "description": "page: rendered on a transparent background, as an overlay.",
@@ -791,8 +837,7 @@
       },
       "additionalProperties": false,
       "required": [
-        "kind",
-        "url"
+        "kind"
       ]
     },
     "SceneKind": {
@@ -800,7 +845,8 @@
       "type": "string",
       "enum": [
         "web",
-        "page"
+        "page",
+        "card"
       ]
     },
     "Section": {
@@ -937,6 +983,36 @@
         }
       },
       "additionalProperties": false
+    },
+    "Template": {
+      "description": "The templates a card scene is drawn from.",
+      "oneOf": [
+        {
+          "description": "A title and a subtitle: a video's opening card.",
+          "type": "string",
+          "const": "title"
+        },
+        {
+          "description": "A section's name, with a line above it.",
+          "type": "string",
+          "const": "section"
+        },
+        {
+          "description": "A title and a list of points.",
+          "type": "string",
+          "const": "bullets"
+        },
+        {
+          "description": "A quotation, and whose it is.",
+          "type": "string",
+          "const": "quote"
+        },
+        {
+          "description": "A closing card: a title and a line under it, centred.",
+          "type": "string",
+          "const": "end"
+        }
+      ]
     },
     "TextMatch": {
       "description": "A string to match exactly, after collapsing whitespace, or a table with one of starts_with, contains or matches.",

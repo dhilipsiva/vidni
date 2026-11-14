@@ -288,7 +288,15 @@ Grammar, as in the workspace TODO, one line per item: `- [ ] **P<m>-VIDNI-<nn>**
     - **The example's `assets.lock`** is now in the order vidni writes, by the bytes of the path. It lists the same 269 files with the same hashes.
 
 ### P5. Scenes
-- [ ] **P5-VIDNI-01** (LOW) Build card and slide scenes from theme templates (title, section, bullets, quote, end card), with themes as token files: a neutral default theme, and QUINE in `examples/themes/`. *Done when:* both themes render every template, and each template has a snapshot test. [M]
+- [x] **P5-VIDNI-01** (LOW) Build card and slide scenes from theme templates (title, section, bullets, quote, end card), with themes as token files: a neutral default theme, and QUINE in `examples/themes/`. *Done when:* both themes render every template, and each template has a snapshot test. [M]
+  - Evidence (2026-11-14): `crates/vidni-media/tests/cards.rs` draws each of the five templates (title, section, bullets, quote, end) in both themes and both shapes, and compares each with its PNG snapshot in `tests/fixtures/cards/<theme>/`: 20 snapshots. It runs in `cargo test`, with no browser.
+    - **Themes are token files:** eight colours, three fonts and the mark before a label (`theme.toml`). The default theme is built in; `examples/themes/quine` holds the look the reference drew. `[style] theme` names a theme folder.
+    - **A card scene** is `kind = "card"` with a `template` and its words. The compositor draws it at each cut's size, so it has no capture. A cut made only of cards builds with nothing in `build/captures/`.
+    - **The nibli example names the QUINE theme,** and its final cuts have the frames and files they had: `c27e3dbe…91c8` and `d9987cba…b950` for the long cut, `7f1d9f0f…e125` and `c152b5eb…0d0c` for the vertical one. A theme is now one of a build's inputs, so they were approved again, as `long-r2` and `vertical-r2`.
+    - **Both halves were done together** (DECISIONS.md, T12): once the default look became plain, the example needed its own theme at once.
+    - **Left as it was:** highlight boxes on a still are ember in every theme, since they are part of the capture.
+
+    Checked after the change: `just parity cuts` 80 of 80, `just parity product` 46 of 46, `just compose-t1`, `vidni repro` on the example, and the tool-dependent suites.
 - [ ] **P5-VIDNI-02** (LOW) Add a terminal scene: a command transcript (recorded text, or a pinned command run in a sandbox) drawn as a styled terminal, with line highlights. *Done when:* an example renders a nibli REPL session from a transcript file, with T1 equal across runs. [M]
 - [ ] **P5-VIDNI-03** (LOW) Add a code scene: a file excerpt at a pinned git revision, with syntax highlighting and line highlights. *Done when:* an example renders a Rust excerpt at a commit, with T1 equal across runs. [M]
 - [ ] **P5-VIDNI-04** (LOW) Add image and diagram scenes: PNG and SVG through resvg, and Mermaid through a pinned CLI, all under the virtual camera. *Done when:* the examples render with T1 equal across runs. [S]

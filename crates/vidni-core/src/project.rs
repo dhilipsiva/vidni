@@ -267,7 +267,7 @@ impl Scene {
     /// without its query and fragment, and with `{aspect}` as written.
     /// None for an address on the web.
     pub fn file(&self) -> Option<&str> {
-        match self.on_the_web() {
+        match self.on_the_web() || self.kind == SceneKind::Card {
             true => None,
             false => self.url.split(['?', '#']).next(),
         }
@@ -289,11 +289,31 @@ impl Line {
 pub struct Scene {
     /// `web`: a page captured at a fixed viewport and framed by the virtual
     /// camera. `page`: an HTML file rendered at each cut's own size, for
-    /// cards and overlays.
+    /// cards and overlays. `card`: a card drawn from one of the theme's
+    /// templates.
     pub kind: SceneKind,
     /// web: the page's address. page: a file in the project folder;
     /// `{aspect}` becomes `16x9` or `9x16`.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub url: String,
+    /// card: the template it is drawn from.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub template: Option<Template>,
+    /// card: its title (`title`, `section`, `bullets`, `end`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    /// card: a second, smaller line (`title`, `section`, `end`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subtitle: Option<String>,
+    /// card: the points of a `bullets` card.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub items: Vec<String>,
+    /// card: the words of a `quote` card.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quote: Option<String>,
+    /// card: whose words a `quote` card's are.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub by: Option<String>,
     /// web: the viewport in CSS pixels. Default `[1280, 720]`.
     #[serde(default)]
     pub viewport: Option<[u32; 2]>,
@@ -334,6 +354,23 @@ pub struct Scene {
 pub enum SceneKind {
     Web,
     Page,
+    Card,
+}
+
+/// The templates a card scene is drawn from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum Template {
+    /// A title and a subtitle: a video's opening card.
+    Title,
+    /// A section's name, with a line above it.
+    Section,
+    /// A title and a list of points.
+    Bullets,
+    /// A quotation, and whose it is.
+    Quote,
+    /// A closing card: a title and a line under it, centred.
+    End,
 }
 
 /// A colour scheme a web scene can ask for.

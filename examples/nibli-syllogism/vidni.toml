@@ -67,6 +67,10 @@ banned = [
   '\bcompil\w*[^.]*\bLLM',
 ]
 
+# The look: near-black, ember and Space Grotesk, as the reference drew it.
+[style]
+theme = "../themes/quine"
+
 # The reference burns captions into both cuts. The vertical cut runs about
 # five minutes, which is too long for the short-video platforms.
 [[cuts]]

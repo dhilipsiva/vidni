@@ -51,3 +51,7 @@ The captures there now were taken on 2026-11-14, with the fonts vidni's flake pi
 ## The draft voice
 
 `vidni speak examples/nibli-syllogism` speaks every line in the draft voice, piper:en_US-joe-medium, after `vidni voices fetch piper:en_US-joe-medium` has fetched it; `vidni draft` begins with the same step. `voice.lock` records the seed each line's take was kept at, so a redraft gives the same audio: clearing `build/` and drafting again gives the same PCM (docs/determinism.md). These are vidni's own takes, not the reference's: the reference ran Piper unseeded, so its synthetic clips can't be repeated.
+
+## The look
+
+`[style] theme = "../themes/quine"` names the example's theme: near-black, an ember accent, Space Grotesk for titles and `//` before each label, as the reference pipeline drew it. With it the final cuts have the frames and files they had before themes existed, and they were approved again as `long-r2` and `vertical-r2` because the theme is now one of a build's inputs.

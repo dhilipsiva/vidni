@@ -128,7 +128,40 @@ All values are seconds, zero or more.
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `theme` | string | `"default"` | `default`, or the path of a theme folder (P5-VIDNI-01) |
+| `theme` | string | `"default"` | `default`, or the path of a theme folder, from the project folder |
+
+### Themes
+
+A theme is the look of a cut: its colours, its fonts, and the mark before a section's label. Where things sit and how big they are is the same in every theme. The built-in `default` theme is dark and plain, in IBM Plex. A theme of your own is a folder with a `theme.toml`:
+
+```toml
+name = "quine"
+
+[colors]
+frame = "#0b0b10"     # behind everything: cards, and the bands around a 9:16 view
+rule = "#2a2a38"      # the rules between the bands
+ink = "#f4f3ef"       # text
+muted = "#908f9a"     # text that matters less
+accent = "#f2542d"    # the mark before a label, and a card's rule
+panel = "#07070ade"   # the box behind captions; the last two digits are how solid it is
+label = "#07070ad2"   # the box behind a section's label
+edge = "#3a3a4a"      # the edge of both boxes
+
+[fonts]
+text = "ibm-plex-sans-bold"     # captions, and a card's running text
+mono = "ibm-plex-mono-bold"     # labels and small type
+display = "space-grotesk-bold"  # titles
+
+[label]
+mark = "//"           # written before a label, in the accent colour; "" for none
+```
+
+- **Colours** are `#rrggbb`; `panel` and `label` may be `#rrggbbaa`.
+- **Fonts** are named by the IDs vidni pins them under ([Fonts](#fonts)): `ibm-plex-sans-bold`, `ibm-plex-mono-bold` and `space-grotesk-bold`.
+- **A theme isn't part of what a cut shows and says,** so changing it leaves a cut ratified. It is part of a build's inputs: the cut is built again, and a release of it is a new one.
+- **Highlight boxes** on a web scene's stills keep their ember outline in every theme: they are in the still as it was captured.
+
+That file is [`examples/themes/quine`](../examples/themes/quine/theme.toml), the look of the nibli example.
 
 ## `[sections.<id>]`
 
@@ -310,8 +343,8 @@ examples/nibli-syllogism/vidni.toml: 55 heard as scripted, 2 worth a listen (bel
 
 | Key | Type | Kinds | Meaning |
 |---|---|---|---|
-| `kind` | `"web"` or `"page"` | both | `web`: a page captured at a fixed viewport and framed by the virtual camera. `page`: an HTML file rendered at each cut's own size, for cards and overlays. |
-| `url` | string | both | `web`: the page's address, or a file in the project folder. `page`: a file in the project folder, where `{aspect}` becomes `16x9` or `9x16` |
+| `kind` | `"web"`, `"page"` or `"card"` | all | `web`: a page captured at a fixed viewport and framed by the virtual camera. `page`: an HTML file rendered at each cut's own size, for cards and overlays. `card`: a card drawn from one of the theme's templates; see [Cards](#cards). |
+| `url` | string | web, page | `web`: the page's address, or a file in the project folder. `page`: a file in the project folder, where `{aspect}` becomes `16x9` or `9x16` |
 | `viewport` | `[width, height]` | web | CSS pixels. Default `[1280, 720]`. |
 | `scale` | integer | web | Device pixels per CSS pixel. Default 1. |
 | `color_scheme` | `"light"` or `"dark"` | web | The colour scheme the page is asked for |
@@ -323,7 +356,36 @@ examples/nibli-syllogism/vidni.toml: 55 heard as scripted, 2 worth a listen (bel
 | `transparent` | boolean | page | Rendered on a transparent background, as an overlay |
 | `size` | `{ landscape = [w, h], portrait = [w, h] }` | page | The rendered size for each orientation. Default: the cut's size. |
 
-A key that belongs to the other kind is an error. A page scene's file must exist in the project folder, and so must a web scene's file when its `url` isn't an `http` or `https` address. The check runs for both orientations when the name holds `{aspect}`.
+| `template` | `"title"`, `"section"`, `"bullets"`, `"quote"` or `"end"` | card | The template the card is drawn from |
+| `title` | string | card | The card's title (`title`, `section`, `bullets`, `end`) |
+| `subtitle` | string | card | A second, smaller line (`title`, `section`, `end`) |
+| `items` | array of strings | card | The points of a `bullets` card |
+| `quote` | string | card | The words of a `quote` card |
+| `by` | string | card | Whose words they are |
+
+A key that belongs to another kind is an error. A page scene's file must exist in the project folder, and so must a web scene's file when its `url` isn't an `http` or `https` address. The check runs for both orientations when the name holds `{aspect}`.
+
+### Cards
+
+A card scene is drawn by vidni from a template, in the theme's colours and fonts, at each cut's own size. It needs no page, no browser and no capture, and it is the same picture on every machine.
+
+| Template | Shows | Needs | May have |
+|---|---|---|---|
+| `title` | A short rule, a large title, and a line under it | `title` | `subtitle` |
+| `section` | A small line in the accent colour, and a section's name | `title` | `subtitle` |
+| `bullets` | A title, and a list of points | `title`, `items` | |
+| `quote` | A quotation beside a rule, and whose it is | `quote` | `by` |
+| `end` | A title and a line under it, centred | `title` | `subtitle` |
+
+```toml
+[scenes.open]
+kind = "card"
+template = "title"
+title = "The LLM drafts, the engine decides"
+subtitle = "a five-minute tour"
+```
+
+Long text wraps, and the whole card sits in the middle of the frame. A line on a card scene takes no `do`, `highlight` or `camera`. A card's words are part of what its cut shows, so changing them after the cut is ratified makes it `changed`.
 
 ### Targets
 
@@ -417,7 +479,7 @@ How Chromium runs:
 - Pages are told to reduce motion, and a web scene gets the colour scheme it asks for.
 - Fonts are the ones fontconfig offers. vidni's flake pins them (IBM Plex, Space Grotesk, DejaVu, Liberation, Noto and Noto Color Emoji), so a page's fallback fonts don't depend on the host there. Chinese, Japanese and Korean aren't covered yet.
 
-Highlight boxes are drawn in the nibli example's look, an ember outline, until themes take them over (P5-VIDNI-01).
+Highlight boxes are drawn with an ember outline, in every theme: they are part of the still.
 
 ## `[[cuts]]`
 
@@ -648,7 +710,7 @@ For `draft`, `final`, `approve` and `repro`:
 
 ### Fonts
 
-vidni draws captions and labels with font files it pins by SHA-256: IBM Plex Sans Bold, IBM Plex Mono Bold and Space Grotesk Bold, until themes name their own (P5-VIDNI-01). It looks for them in the folders that `VIDNI_FONTS` names (separated by `:`), else in `$XDG_DATA_HOME/vidni/fonts`, else in `~/.local/share/vidni/fonts`, and never among the system's fonts. A file with the right name and other bytes is refused. vidni's Nix shell sets `VIDNI_FONTS`.
+vidni draws with font files it pins by SHA-256: IBM Plex Sans Bold, IBM Plex Mono Bold and Space Grotesk Bold. A theme names the three it uses ([Themes](#themes)). It looks for them in the folders that `VIDNI_FONTS` names (separated by `:`), else in `$XDG_DATA_HOME/vidni/fonts`, else in `~/.local/share/vidni/fonts`, and never among the system's fonts. A file with the right name and other bytes is refused. vidni's Nix shell sets `VIDNI_FONTS`.
 
 ## Layout: `vidni fmt`
 

@@ -49,9 +49,9 @@ pub(crate) fn cant(why: String) -> ExitCode {
 
 /// What a build runs with, or why it can't start. With `again`, a cut is
 /// built even when nothing has changed since its last build.
-pub(crate) fn setup(again: bool) -> Result<Setup, ExitCode> {
+pub(crate) fn setup(loaded: &Loaded, again: bool) -> Result<Setup, ExitCode> {
     build::check_tools()
-        .and_then(|()| Setup::find())
+        .and_then(|()| Setup::find(&loaded.project, &loaded.dir))
         .map(|setup| Setup { again, ..setup })
         .map_err(cant)
 }
@@ -222,7 +222,7 @@ pub fn draft(path: &Path, cuts: &[String], again: bool) -> ExitCode {
     };
     let made = chosen(&loaded.project, cuts).and_then(|cuts| {
         // What can't start is found out before anything is spoken.
-        let setup = setup(again)?;
+        let setup = setup(&loaded, again)?;
         let pack = speak_lines(&loaded)?;
         take_captures(&loaded, &cuts)?;
         for cut in cuts {
@@ -266,7 +266,7 @@ pub fn finish(path: &Path, cuts: &[String], again: bool) -> ExitCode {
         if !refusals.is_empty() {
             return Err(stopped(Stop::Refused(refusals)));
         }
-        let setup = setup(again)?;
+        let setup = setup(&loaded, again)?;
         for cut in cuts {
             let mut progress = progress(&cut.id);
             let record = build::final_build(project, dir, &lock, cut, &setup, &mut progress)
@@ -333,7 +333,7 @@ pub fn approve(path: &Path, cuts: &[String]) -> ExitCode {
         if allowed.is_empty() {
             return refused.map_or(Ok(()), Err);
         }
-        let setup = setup(false)?;
+        let setup = setup(&loaded, false)?;
         let day = release::today();
         for cut in allowed {
             match build::approve(project, dir, &lock, cut, &setup, &day) {

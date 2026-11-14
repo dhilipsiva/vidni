@@ -513,7 +513,7 @@ impl Rules {
             return;
         };
         match scene.kind {
-            SceneKind::Page => {
+            SceneKind::Page | SceneKind::Card => {
                 for (key, set) in [
                     ("do", !line.actions.is_empty()),
                     ("highlight", !line.highlight.is_empty()),
@@ -523,7 +523,14 @@ impl Rules {
                     if set {
                         self.add(
                             at(key),
-                            format!("{key} needs a web scene, and {id:?} is a page scene"),
+                            format!(
+                                "{key} needs a web scene, and {id:?} is a {} scene",
+                                if scene.kind == SceneKind::Card {
+                                    "card"
+                                } else {
+                                    "page"
+                                }
+                            ),
                         );
                     }
                 }
@@ -637,8 +644,26 @@ impl Rules {
         if !valid_id(id) {
             self.add(path!["scenes", id], id_rule("scene", id));
         }
-        if s.url.trim().is_empty() {
+        if s.kind != SceneKind::Card && s.url.trim().is_empty() {
             self.add(at("url"), "url is empty");
+        }
+        let card_only = [
+            ("template", s.template.is_some()),
+            ("title", s.title.is_some()),
+            ("subtitle", s.subtitle.is_some()),
+            ("items", !s.items.is_empty()),
+            ("quote", s.quote.is_some()),
+            ("by", s.by.is_some()),
+        ];
+        if s.kind != SceneKind::Card {
+            for (key, set) in card_only {
+                if set {
+                    self.add(
+                        at(key),
+                        format!("{key} is for card scenes, and {id:?} isn't one"),
+                    );
+                }
+            }
         }
         let web_only = [
             ("viewport", s.viewport.is_some()),
@@ -732,6 +757,63 @@ impl Rules {
                     self.add(at("size"), "each size needs a width and a height above 0");
                 }
             }
+            SceneKind::Card => self.card(id, s, &web_only, &page_only),
+        }
+    }
+
+    /// A card scene: a template, and the words that template shows.
+    fn card(&mut self, id: &str, s: &Scene, web_only: &[(&str, bool)], page_only: &[(&str, bool)]) {
+        use crate::project::Template;
+        let at = |key: &str| path!["scenes", id, key];
+        let others = [("url", !s.url.is_empty())];
+        for (key, set) in others.iter().chain(web_only).chain(page_only) {
+            if *set {
+                self.add(
+                    at(key),
+                    format!("{key} isn't for card scenes: a card is drawn from its template"),
+                );
+            }
+        }
+        let Some(template) = s.template else {
+            self.add(
+                at("kind"),
+                "a card scene needs a template: title, section, bullets, quote or end",
+            );
+            return;
+        };
+        // What each template shows: (key, whether it is set, needed, allowed).
+        let (title, text, list, quoted) = match template {
+            Template::Title | Template::Section | Template::End => (true, true, false, false),
+            Template::Bullets => (true, false, true, false),
+            Template::Quote => (false, false, false, true),
+        };
+        let name = format!("{template:?}").to_lowercase();
+        let fields = [
+            (
+                "title",
+                s.title.as_deref().is_some_and(|t| !t.trim().is_empty()),
+                title,
+                title,
+            ),
+            ("subtitle", s.subtitle.is_some(), false, text),
+            ("items", !s.items.is_empty(), list, list),
+            (
+                "quote",
+                s.quote.as_deref().is_some_and(|q| !q.trim().is_empty()),
+                quoted,
+                quoted,
+            ),
+            ("by", s.by.is_some(), false, quoted),
+        ];
+        for (key, set, needed, allowed) in fields {
+            if needed && !set {
+                self.add(at("template"), format!("a {name} card needs {key}"));
+            } else if set && !allowed {
+                self.add(at(key), format!("a {name} card shows no {key}"));
+            }
+        }
+        if s.items.iter().any(|item| item.trim().is_empty()) {
+            self.add(at("items"), "an item is empty");
         }
     }
 

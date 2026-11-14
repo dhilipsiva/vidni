@@ -97,6 +97,12 @@ pub(crate) const LINE: &[&str] = &[
 pub(crate) const SCENE: &[&str] = &[
     "kind",
     "url",
+    "template",
+    "title",
+    "subtitle",
+    "items",
+    "quote",
+    "by",
     "viewport",
     "scale",
     "color_scheme",

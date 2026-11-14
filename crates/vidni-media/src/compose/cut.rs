@@ -3,13 +3,15 @@
 //! capture, pictures crossfade between lines, and section labels, overlays
 //! and captions are drawn on top.
 //!
-//! The geometry, colours and type are the reference's (the QUINE look of
-//! the nibli example); P5-VIDNI-01 moves them into theme files.
+//! The geometry is the reference's. The colours, the faces and the mark
+//! before a label are the theme's ([`Look`]); with the QUINE theme of the
+//! nibli example the frames are the reference's own.
 
 use super::image::Image;
 use super::pillow;
 use super::text::{Font, Fonts, Pen};
 use std::path::PathBuf;
+use vidni_core::theme::{self, Theme};
 use vidni_core::timeline::Timeline;
 
 /// Frames per second.
@@ -21,11 +23,44 @@ const XFADE: f64 = 0.35;
 /// Where 16:9 overlays sit, below the section label.
 const OVERLAY_Y: i32 = 100;
 
-const VOID: [u8; 3] = [11, 11, 16];
-const LINE: [u8; 3] = [42, 42, 56];
-const INK: [u8; 3] = [244, 243, 239];
-const MUTED: [u8; 3] = [144, 143, 154];
-const EMBER: [u8; 3] = [242, 84, 45];
+/// A theme's colours and marks, as the compositor draws with them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Look {
+    pub frame: [u8; 3],
+    pub rule: [u8; 3],
+    pub ink: [u8; 3],
+    pub muted: [u8; 3],
+    pub accent: [u8; 3],
+    /// The box behind captions, the box behind a label, and their edge.
+    pub panel: [u8; 4],
+    pub label: [u8; 4],
+    pub edge: [u8; 4],
+    /// Written before a label, in the accent colour.
+    pub mark: String,
+}
+
+impl Look {
+    /// The look of `theme`, whose tokens were checked when it was read.
+    pub fn of(theme: &Theme) -> Self {
+        let rgba = |color: &str| theme::rgba(color).unwrap_or([0, 0, 0, 255]);
+        let rgb = |color: &str| {
+            let [r, g, b, _] = rgba(color);
+            [r, g, b]
+        };
+        let colors = &theme.colors;
+        Self {
+            frame: rgb(&colors.frame),
+            rule: rgb(&colors.rule),
+            ink: rgb(&colors.ink),
+            muted: rgb(&colors.muted),
+            accent: rgb(&colors.accent),
+            panel: rgba(&colors.panel),
+            label: rgba(&colors.label),
+            edge: rgba(&colors.edge),
+            mark: theme.label.mark.clone(),
+        }
+    }
+}
 
 /// A cut's frame and where its screen view sits.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -88,6 +123,8 @@ pub enum Picture {
         scale: f64,
     },
     Card(PathBuf),
+    /// A card drawn from one of the theme's templates, at the cut's size.
+    Drawn(super::card::Card),
 }
 
 /// A crop (CSS pixels) of the cut's aspect that frames `target` between
@@ -134,10 +171,19 @@ pub fn ease(x: f64) -> f64 {
 struct Item {
     label: String,
     card: Option<PathBuf>,
+    /// A card drawn for this cut.
+    drawn: Option<Image>,
     still: Option<(PathBuf, f64)>,
     overlay: Option<Image>,
     rect: Option<[f64; 4]>,
     from_rect: Option<[f64; 4]>,
+}
+
+impl Item {
+    /// Whether the item fills the frame: a card, rendered or drawn.
+    fn full(&self) -> bool {
+        self.card.is_some() || self.drawn.is_some()
+    }
 }
 
 struct CueAt {
@@ -157,6 +203,7 @@ pub struct Composer {
     images: Vec<(PathBuf, Image)>,
     /// Whether captions are drawn into the picture.
     captions: bool,
+    look: Look,
 }
 
 impl Composer {
@@ -168,6 +215,7 @@ impl Composer {
         shots: Vec<Shot>,
         fonts: &mut Fonts,
         faces: &Type,
+        look: &Look,
         subtitle: &str,
     ) -> Result<Self, String> {
         if shots.len() != timeline.sentences.len() {
@@ -189,9 +237,19 @@ impl Composer {
                 .transpose()?
                 .map(|o| o.to_rgba());
             let item = match shot.picture {
+                Picture::Drawn(card) => Item {
+                    label: shot.label,
+                    card: None,
+                    drawn: Some(super::card::render(&card, &layout, fonts, faces, look)),
+                    still: None,
+                    overlay,
+                    rect: None,
+                    from_rect: None,
+                },
                 Picture::Card(path) => Item {
                     label: shot.label,
                     card: Some(path),
+                    drawn: None,
                     still: None,
                     overlay,
                     rect: None,
@@ -211,6 +269,7 @@ impl Composer {
                     Item {
                         label: shot.label,
                         card: None,
+                        drawn: None,
                         still: Some((path, scale)),
                         overlay,
                         rect: Some(rect),
@@ -241,13 +300,13 @@ impl Composer {
                     start: cue.start,
                     end: cue.end,
                 });
-                cue_pieces.push(render_cue(&layout, fonts, faces, &cue.text));
+                cue_pieces.push(render_cue(&layout, fonts, faces, look, &cue.text));
             }
         }
         let mut label_pieces = Vec::new();
         for item in &items {
             if !label_pieces.iter().any(|(l, _, _)| *l == item.label) {
-                let (img, pos) = render_label(&layout, fonts, faces, &item.label, subtitle);
+                let (img, pos) = render_label(&layout, fonts, faces, look, &item.label, subtitle);
                 label_pieces.push((item.label.clone(), img, pos));
             }
         }
@@ -261,6 +320,7 @@ impl Composer {
             total: timeline.total,
             images: Vec::new(),
             captions: true,
+            look: look.clone(),
         })
     }
 
@@ -336,7 +396,7 @@ impl Composer {
         let mut picture = self.visual(i, rect)?;
         if fade < 1.0 && i > 0 {
             let prev_rect = match rect {
-                Some(r) if self.items[i - 1].card.is_none() => Some(r),
+                Some(r) if !self.items[i - 1].full() => Some(r),
                 _ => self.items[i - 1].rect,
             };
             let old = self.visual(i - 1, prev_rect)?;
@@ -361,6 +421,9 @@ impl Composer {
 
     /// The item's picture over the whole frame (screen view or card), before captions.
     fn visual(&mut self, i: usize, rect: Option<[f64; 4]>) -> Result<Image, String> {
+        if let Some(drawn) = &self.items[i].drawn {
+            return Ok(drawn.clone());
+        }
         if let Some(card) = self.items[i].card.clone() {
             let img = self.image(&card)?;
             if (img.width, img.height) != self.layout.size {
@@ -394,27 +457,38 @@ impl Composer {
             return Ok(view);
         }
         let (fw, fh) = self.layout.size;
-        let mut frame = Image::new(fw, fh, &VOID);
+        let mut frame = Image::new(fw, fh, &self.look.frame);
         pillow::paste(&mut frame, &view, vx as i32, vy as i32);
-        pillow::line_h(&mut frame, 0, fw as i32, vy as i32 - 1, &LINE, 2);
-        pillow::line_h(&mut frame, 0, fw as i32, (vy + vh) as i32, &LINE, 2);
+        pillow::line_h(&mut frame, 0, fw as i32, vy as i32 - 1, &self.look.rule, 2);
+        pillow::line_h(
+            &mut frame,
+            0,
+            fw as i32,
+            (vy + vh) as i32,
+            &self.look.rule,
+            2,
+        );
         Ok(frame)
     }
 
     fn decorate(&self, frame: &mut Image, i: usize, cue: Option<usize>) {
         let item = &self.items[i];
         let portrait = self.layout.name == "9x16";
-        if item.card.is_none()
+        if !item.full()
             && (!item.label.is_empty() || portrait)
             && let Some((_, img, (x, y))) =
                 self.label_pieces.iter().find(|(l, _, _)| *l == item.label)
         {
             pillow::paste_masked(frame, img, *x, *y);
         }
-        if let (Some(overlay), None) = (&item.overlay, &item.card) {
+        if let (Some(overlay), false) = (&item.overlay, item.full()) {
             let x = (self.layout.size.0 as i32 - overlay.width as i32).div_euclid(2);
             if portrait {
-                pillow::rectangle(frame, (0, 0, self.layout.size.0 as i32, 329), &VOID);
+                pillow::rectangle(
+                    frame,
+                    (0, 0, self.layout.size.0 as i32, 329),
+                    &self.look.frame,
+                );
                 pillow::paste_masked(frame, overlay, x, 0);
             } else {
                 pillow::paste_masked(frame, overlay, x, OVERLAY_Y);
@@ -437,7 +511,13 @@ pub enum FrameKey {
 }
 
 /// Greedy word wrap at `width` pixels, as the reference wraps.
-fn wrap(fonts: &mut Fonts, font: &Font, size: f32, text: &str, width: f32) -> Vec<String> {
+pub(super) fn wrap(
+    fonts: &mut Fonts,
+    font: &Font,
+    size: f32,
+    text: &str,
+    width: f32,
+) -> Vec<String> {
     let mut lines = Vec::new();
     let mut current = String::new();
     for word in text.split_whitespace() {
@@ -460,7 +540,13 @@ fn wrap(fonts: &mut Fonts, font: &Font, size: f32, text: &str, width: f32) -> Ve
 
 /// A caption cue: a rounded box at the bottom of the 16:9 frame, or lines
 /// in the band under the 9:16 view.
-fn render_cue(layout: &Layout, fonts: &mut Fonts, faces: &Type, text: &str) -> (Image, (i32, i32)) {
+fn render_cue(
+    layout: &Layout,
+    fonts: &mut Fonts,
+    faces: &Type,
+    look: &Look,
+    text: &str,
+) -> (Image, (i32, i32)) {
     let (w, h) = (layout.size.0 as i32, layout.size.1 as i32);
     if layout.name == "16x9" {
         let size = 42.0;
@@ -476,8 +562,8 @@ fn render_cue(layout: &Layout, fonts: &mut Fonts, faces: &Type, text: &str) -> (
             &mut img,
             (0, 0, bw - 1, bh - 1),
             14,
-            &[7, 7, 10, 222],
-            &[58, 58, 74, 255],
+            &look.panel,
+            &look.edge,
         );
         for (i, line) in lines.iter().enumerate() {
             let y = 18.0 + (i as i32 * lh) as f32 + lh as f32 / 2.0;
@@ -488,7 +574,7 @@ fn render_cue(layout: &Layout, fonts: &mut Fonts, faces: &Type, text: &str) -> (
                 Pen {
                     font: &faces.caption,
                     size,
-                    ink: INK,
+                    ink: look.ink,
                 },
                 "mm",
             );
@@ -509,7 +595,7 @@ fn render_cue(layout: &Layout, fonts: &mut Fonts, faces: &Type, text: &str) -> (
             Pen {
                 font: &faces.caption,
                 size,
-                ink: INK,
+                ink: look.ink,
             },
             "mm",
         );
@@ -523,44 +609,49 @@ fn render_label(
     layout: &Layout,
     fonts: &mut Fonts,
     faces: &Type,
+    look: &Look,
     label: &str,
     subtitle: &str,
 ) -> (Image, (i32, i32)) {
+    // The mark and the space after it, when the theme has one.
+    let mark = match look.mark.is_empty() {
+        true => String::new(),
+        false => format!("{} ", look.mark),
+    };
     if layout.name == "16x9" {
         let size = 26.0;
-        let w = (fonts.length(&faces.mono, size, &format!("// {label}")) + 40.0) as i32;
+        let w = (fonts.length(&faces.mono, size, &format!("{mark}{label}")) + 40.0) as i32;
         let mut img = Image::new(w as u32, 54, &[0, 0, 0, 0]);
-        pillow::rounded_rectangle(
-            &mut img,
-            (0, 0, w - 1, 53),
-            10,
-            &[7, 7, 10, 210],
-            &[58, 58, 74, 255],
-        );
+        pillow::rounded_rectangle(&mut img, (0, 0, w - 1, 53), 10, &look.label, &look.edge);
         let mono = |ink| Pen {
             font: &faces.mono,
             size,
             ink,
         };
-        fonts.draw(&mut img, (20.0, 27.0), "//", mono(EMBER), "lm");
-        let x = 20.0 + fonts.length(&faces.mono, size, "// ");
-        fonts.draw(&mut img, (x, 27.0), label, mono(INK), "lm");
+        if !mark.is_empty() {
+            fonts.draw(&mut img, (20.0, 27.0), &look.mark, mono(look.accent), "lm");
+        }
+        let x = 20.0 + fonts.length(&faces.mono, size, &mark);
+        fonts.draw(&mut img, (x, 27.0), label, mono(look.ink), "lm");
         return (img, (32, 30));
     }
-    let mut img = Image::new(layout.size.0, 330, &[VOID[0], VOID[1], VOID[2], 255]);
+    let [r, g, b] = look.frame;
+    let mut img = Image::new(layout.size.0, 330, &[r, g, b, 255]);
     let size = 30.0;
-    fonts.draw(
-        &mut img,
-        (80.0, 118.0),
-        "//",
-        Pen {
-            font: &faces.mono,
-            size,
-            ink: EMBER,
-        },
-        "ls",
-    );
-    let x = 80.0 + fonts.length(&faces.mono, size, "// ");
+    if !mark.is_empty() {
+        fonts.draw(
+            &mut img,
+            (80.0, 118.0),
+            &look.mark,
+            Pen {
+                font: &faces.mono,
+                size,
+                ink: look.accent,
+            },
+            "ls",
+        );
+    }
+    let x = 80.0 + fonts.length(&faces.mono, size, &mark);
     fonts.draw(
         &mut img,
         (x, 118.0),
@@ -568,7 +659,7 @@ fn render_label(
         Pen {
             font: &faces.mono,
             size,
-            ink: MUTED,
+            ink: look.muted,
         },
         "ls",
     );
@@ -587,7 +678,7 @@ fn render_label(
             Pen {
                 font: &faces.display,
                 size: 74.0,
-                ink: INK,
+                ink: look.ink,
             },
             "ls",
         );
@@ -684,7 +775,8 @@ mod tests {
             sentences: vec![line(0, 0.4, 2.0), line(1, 4.0, 5.0)],
         };
         let shots = vec![card("red.png", RED), card("blue.png", BLUE)];
-        Composer::new(LANDSCAPE, &timeline, shots, &mut fonts, &faces, "").unwrap()
+        let look = Look::of(&Theme::default_theme());
+        Composer::new(LANDSCAPE, &timeline, shots, &mut fonts, &faces, &look, "").unwrap()
     }
 
     #[test]

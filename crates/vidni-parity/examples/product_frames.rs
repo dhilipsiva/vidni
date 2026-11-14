@@ -20,13 +20,18 @@ fn main() -> Result<(), String> {
         .iter()
         .find(|c| &c.id == cut)
         .ok_or("no such cut")?;
-    let plan =
-        build::plan(&project, &dir, cut, Voice::Takes, None, &Setup::find()?).map_err(|stop| {
-            match stop {
-                Stop::Refused(reasons) => reasons.join("; "),
-                Stop::Failed(e) => e,
-            }
-        })?;
+    let plan = build::plan(
+        &project,
+        &dir,
+        cut,
+        Voice::Takes,
+        None,
+        &Setup::find(&project, &dir)?,
+    )
+    .map_err(|stop| match stop {
+        Stop::Refused(reasons) => reasons.join("; "),
+        Stop::Failed(e) => e,
+    })?;
     let mut composer = plan.composer(true)?;
     let out = PathBuf::from(out);
     std::fs::create_dir_all(&out).map_err(|e| e.to_string())?;

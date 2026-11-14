@@ -47,11 +47,14 @@ fn compare(
     let takes = fs::canonicalize(&takes).map_err(|e| format!("{}: {e}", takes.display()))?;
     std::os::unix::fs::symlink(takes, work.join("takes")).map_err(|e| format!("takes: {e}"))?;
     let faces = reference_faces()?;
-    let setup = Setup::with(Faces {
-        caption: faces.caption,
-        mono: faces.mono,
-        display: faces.display,
-    })?;
+    let setup = Setup::with(
+        Faces {
+            caption: faces.caption,
+            mono: faces.mono,
+            display: faces.display,
+        },
+        vidni_core::theme::load(example, &project.style.theme)?,
+    )?;
     let hashes = load_json(&sources.golden.join("hashes.json"))?;
     let golden_timeline = load_json(&sources.golden.join("timeline-voice.json"))?;
     let golden_srt = fs::read_to_string(sources.golden.join("nibli-syllogism-voice.en.srt"))

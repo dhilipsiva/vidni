@@ -17,7 +17,8 @@
 //! that build, still current, and its files as they were delivered.
 
 use crate::capture::Frames;
-use crate::compose::cut::{Composer, FPS, LANDSCAPE, Layout, PORTRAIT, Picture, Shot, Type};
+use crate::compose::card::Card;
+use crate::compose::cut::{Composer, FPS, LANDSCAPE, Layout, Look, PORTRAIT, Picture, Shot, Type};
 use crate::compose::text::Fonts;
 use crate::encode::{self, Encoder, Settings, Target};
 use crate::{compose, narration, qa, run};
@@ -30,24 +31,17 @@ use vidni_core::capture::{self, sha256_hex};
 use vidni_core::project::{Aspect, Captions, Cut, Line, Project, Scene};
 use vidni_core::ratify;
 use vidni_core::release::{self, Approval, Output, Record, Sources, T1, Tools, Voice};
+use vidni_core::theme::{self, Theme};
 use vidni_core::timeline::{self, Clip, Timeline};
 use vidni_core::voices::{self, Pack};
 use vidni_core::{VERSION, fonts};
-
-/// The fonts of vidni's look, as caption, mono and display. Themes will
-/// name their own (P5-VIDNI-01).
-pub const LOOK: [&str; 3] = [
-    "ibm-plex-sans-bold",
-    "ibm-plex-mono-bold",
-    "space-grotesk-bold",
-];
 
 /// How far a cut's loudness may be from its target, in LU.
 const LOUDNESS_TOLERANCE: f64 = 1.5;
 
 /// Counts the changes to what the compositor draws. A change makes every
 /// earlier build's record out of date.
-const COMPOSITOR: u32 = 1;
+const COMPOSITOR: u32 = 2;
 
 /// The font files a cut is drawn with.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -58,17 +52,17 @@ pub struct Faces {
 }
 
 impl Faces {
-    /// The pinned fonts of vidni's look, found in `dirs` and checked by
-    /// their SHA-256.
-    pub fn pinned(dirs: &[PathBuf]) -> Result<Self, String> {
+    /// The fonts `theme` names, found in `dirs` and checked by their
+    /// SHA-256.
+    pub fn pinned(theme: &Theme, dirs: &[PathBuf]) -> Result<Self, String> {
         let find = |id: &str| {
             let font = fonts::get(id).ok_or_else(|| format!("no pinned font {id}"))?;
             fonts::find(&font, dirs)
         };
         Ok(Self {
-            caption: find(LOOK[0])?,
-            mono: find(LOOK[1])?,
-            display: find(LOOK[2])?,
+            caption: find(&theme.fonts.text)?,
+            mono: find(&theme.fonts.mono)?,
+            display: find(&theme.fonts.display)?,
         })
     }
 
@@ -95,24 +89,30 @@ pub struct Setup {
     pub ffmpeg: String,
     /// Build even when an earlier build of the same inputs is still whole.
     pub again: bool,
+    /// The theme the cuts are drawn in.
+    pub theme: Theme,
 }
 
 impl Setup {
-    /// The pinned fonts from the font folders, and the ffmpeg on the path.
-    pub fn find() -> Result<Self, String> {
+    /// The theme of the project in `dir`, its fonts from the font
+    /// folders, and the ffmpeg on the path.
+    pub fn find(project: &Project, dir: &Path) -> Result<Self, String> {
+        let theme = theme::load(dir, &project.style.theme)?;
         Ok(Self {
-            faces: Faces::pinned(&fonts::dirs())?,
+            faces: Faces::pinned(&theme, &fonts::dirs())?,
             ffmpeg: ffmpeg_version()?,
             again: false,
+            theme,
         })
     }
 
-    /// `faces`, with the ffmpeg on the path.
-    pub fn with(faces: Faces) -> Result<Self, String> {
+    /// `faces` and `theme`, with the ffmpeg on the path.
+    pub fn with(faces: Faces, theme: Theme) -> Result<Self, String> {
         Ok(Self {
             faces,
             ffmpeg: ffmpeg_version()?,
             again: false,
+            theme,
         })
     }
 
@@ -133,6 +133,7 @@ impl Setup {
             fonts,
             engine: json!({
                 "compositor": COMPOSITOR,
+                "theme": self.theme,
                 "fps": settings.fps,
                 "crf": settings.crf,
                 "preset": settings.preset,
@@ -230,6 +231,7 @@ pub struct Plan<'p> {
     /// drawn into it.
     pictures: Vec<(String, bool)>,
     faces: Faces,
+    look: Look,
     tools: Tools,
     pub sources: Sources,
     /// Everything the build depends on, as one hash.
@@ -282,9 +284,11 @@ fn shots(project: &Project, dir: &Path, cut: &Cut, lines: &[&Line]) -> Result<Ve
             let scene_id = line
                 .scene_in(project)
                 .ok_or_else(|| format!("line {} shows no scene", line.id))?;
-            let picture = match page(scene_id) {
-                Some(card) => Picture::Card(card),
-                None => {
+            let drawn = project.scenes.get(scene_id).and_then(Card::of);
+            let picture = match (drawn, page(scene_id)) {
+                (Some(card), _) => Picture::Drawn(card),
+                (None, Some(card)) => Picture::Card(card),
+                (None, None) => {
                     let scene = project
                         .scenes
                         .get(scene_id)
@@ -406,6 +410,7 @@ pub fn plan<'p>(
         shots,
         pictures,
         faces: setup.faces.clone(),
+        look: Look::of(&setup.theme),
         tools,
         sources,
         inputs,
@@ -439,6 +444,7 @@ impl Plan<'_> {
             self.shots.clone(),
             &mut fonts,
             &faces,
+            &self.look,
             &subtitle,
         )?;
         Ok(match captions {
@@ -954,6 +960,7 @@ column = { union = ["side"] }
                     camera
                 }
                 Picture::Card(card) => panic!("{} is no still", card.display()),
+                Picture::Drawn(card) => panic!("{card:?} is no still"),
             })
             .collect()
     }

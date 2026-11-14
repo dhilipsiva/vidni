@@ -1,0 +1,22 @@
+# expect: 17:12: a bullets card needs items
+schema = 1
+
+[meta]
+title = "Cards"
+default_scene = "open"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "A card."
+
+[scenes.open]
+kind = "card"
+template = "bullets"
+title = "A list with no points"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"

@@ -1,0 +1,23 @@
+# QUINE: the look of the nibli example, as the reference pipeline drew it.
+# Near-black, with an ember accent, Space Grotesk for titles, and `//`
+# before each label. `[style] theme = "../themes/quine"` names it.
+
+name = "quine"
+
+[colors]
+frame = "#0b0b10"
+rule = "#2a2a38"
+ink = "#f4f3ef"
+muted = "#908f9a"
+accent = "#f2542d"
+panel = "#07070ade"
+label = "#07070ad2"
+edge = "#3a3a4a"
+
+[fonts]
+text = "ibm-plex-sans-bold"
+mono = "ibm-plex-mono-bold"
+display = "space-grotesk-bold"
+
+[label]
+mark = "//"

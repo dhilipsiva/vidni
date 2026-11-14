@@ -1,0 +1,31 @@
+# vidni's default theme (DECISIONS.md, D12): dark and plain, in IBM Plex.
+# A theme is this file in a folder of its own; `[style] theme` names the
+# folder. docs/spec.md describes each token.
+
+name = "default"
+
+[colors]
+# Behind everything: cards, and the bands around a 9:16 cut's view.
+frame = "#101014"
+# Thin rules between the bands.
+rule = "#2c2c36"
+# Text, and text that matters less.
+ink = "#f5f4f0"
+muted = "#9a99a4"
+# What draws the eye: the mark before a label, a card's rule.
+accent = "#f2542d"
+# The box behind captions and labels, and its edge. The last two digits
+# are how solid it is.
+panel = "#08080cde"
+label = "#08080cd2"
+edge = "#3c3c4a"
+
+[fonts]
+# Each names a font vidni pins (`fonts.toml`).
+text = "ibm-plex-sans-bold"
+mono = "ibm-plex-mono-bold"
+display = "ibm-plex-sans-bold"
+
+[label]
+# Written before a section's label, in the accent colour. Empty for none.
+mark = ""
