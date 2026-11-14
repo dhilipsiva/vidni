@@ -43,6 +43,11 @@ pub struct Timeline {
 }
 
 impl Timeline {
+    /// The timeline a build wrote at `path`, when there is one to read.
+    pub fn read(path: &std::path::Path) -> Option<Self> {
+        serde_json::from_str(&std::fs::read_to_string(path).ok()?).ok()
+    }
+
     /// Makes the timeline end `seconds` after its last line does: the last
     /// picture is held that long, in the place of the tail.
     pub fn hold(&mut self, seconds: f64) {

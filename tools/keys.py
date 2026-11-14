@@ -27,6 +27,7 @@ TOP = [
     ("captions", "[captions]"),
     ("music", "[music]"),
     ("publish", "[publish]"),
+    ("errata", "[[errata]]"),
     ("sections", "[sections.<id>]"),
     ("lines", "[[lines]]"),
     ("scenes", "[scenes.<id>]"),

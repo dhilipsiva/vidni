@@ -921,6 +921,17 @@ fn export(plan: &Plan, dir: &Path, record: &Record) -> Result<Exports, String> {
             .map(|(name, _)| name.clone())
     };
     let ids = cut.line_ids(project);
+    // The corrections to lines this cut says, each with the second its
+    // line starts at here.
+    let corrections: Vec<(u32, String, String)> = project
+        .errata
+        .iter()
+        .filter_map(|erratum| {
+            let line = ids.iter().position(|id| *id == erratum.line)?;
+            let at = plan.timeline.sentences[line].start as u32;
+            Some((at, erratum.on.clone(), erratum.text.clone()))
+        })
+        .collect();
     let (mut warnings, mut refused) = (Vec::new(), Vec::new());
     // Each picture is measured once, however many platforms take it.
     let mut measured: BTreeMap<String, vidni_core::platforms::Upload> = BTreeMap::new();
@@ -1031,6 +1042,7 @@ fn export(plan: &Plan, dir: &Path, record: &Record) -> Result<Exports, String> {
             platform: profile,
             chapters: &plan.chapters,
             synthetic: record.voice == Voice::Draft,
+            corrections: &corrections,
             video: &video,
             captions: &captions,
             images: &images,
@@ -1043,6 +1055,46 @@ fn export(plan: &Plan, dir: &Path, record: &Record) -> Result<Exports, String> {
                 .into_iter()
                 .map(|problem| format!("cut {}: {problem}", cut.id)),
         );
+    }
+    // Each platform's UPLOAD.md: every cut of the project made for it,
+    // with its release and where it is published.
+    let releases = release::read(dir)?;
+    let published = vidni_core::published::read(dir)?;
+    for profile in &profiles {
+        let cuts: Vec<&Cut> = project
+            .cuts
+            .iter()
+            .filter(|c| c.platforms().contains(&profile.id))
+            .collect();
+        let folder = out.join(&profile.id);
+        if !folder.is_dir() {
+            continue;
+        }
+        // A platform's folder with no cut's folder left in it goes.
+        let holds_a_cut = fs::read_dir(&folder)
+            .map_err(made(&folder))?
+            .flatten()
+            .any(|entry| entry.path().is_dir());
+        if cuts.is_empty() || !holds_a_cut {
+            let _ = fs::remove_file(folder.join("UPLOAD.md"));
+            let _ = fs::remove_dir(&folder);
+            continue;
+        }
+        let listed: Vec<publish::Listed> = cuts
+            .iter()
+            .map(|c| publish::Listed {
+                cut: &c.id,
+                exported: folder.join(&c.id).is_dir(),
+                release: releases.latest(&c.id).map(|r| r.tag.as_str()),
+                published: published
+                    .of(&c.id)
+                    .filter(|u| u.platform == profile.id)
+                    .map(|u| (u.url.as_str(), u.release.as_str()))
+                    .collect(),
+            })
+            .collect();
+        let file = folder.join("UPLOAD.md");
+        fs::write(&file, publish::upload_md(profile, &listed)).map_err(made(&file))?;
     }
     Ok(Exports { refused, warnings })
 }

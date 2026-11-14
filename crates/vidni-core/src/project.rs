@@ -55,6 +55,9 @@ pub struct Project {
     /// tags, links, titles and thumbnails.
     #[serde(default, skip_serializing_if = "Publish::is_empty")]
     pub publish: Publish,
+    /// Corrections to what a published video says, by line.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub errata: Vec<Erratum>,
     /// Text that must be on screen when a scene is captured.
     #[serde(default)]
     pub expectations: Vec<Expectation>,
@@ -114,6 +117,20 @@ impl Publish {
     pub fn is_empty(&self) -> bool {
         self == &Self::default()
     }
+}
+
+/// A correction to what a line says, made after the video was published
+/// (TODO.md, P6-VIDNI-07). It goes into the description of every cut that
+/// uses the line, and changes no picture.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Erratum {
+    /// The line that is wrong.
+    pub line: String,
+    /// The day of the correction, as `2026-11-20`.
+    pub on: String,
+    /// What is right.
+    pub text: String,
 }
 
 /// A link under a description.

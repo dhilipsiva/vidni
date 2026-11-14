@@ -102,6 +102,16 @@ What goes with the video where it is uploaded: its description, tags, links, tit
 | `thumbnails` | array of [Thumbnail](#thumbnail) |  | Up to three thumbnails for a 16:9 cut, each a frame of a line. With none, there is one: the cut's first line, with the title. |
 | `titles` | table of string, by name |  | The title on a platform, by profile ID, where it isn't `meta.title`. |
 
+## `[[errata]]`
+
+Corrections to what a published video says, by line.
+
+| Key | Value | Required | Meaning |
+|---|---|---|---|
+| `line` | string | yes | The line that is wrong. |
+| `on` | string | yes | The day of the correction, as `2026-11-20`. |
+| `text` | string | yes | What is right. |
+
 ## `[sections.<id>]`
 
 The sections, by ID. They come in the order of their first line.

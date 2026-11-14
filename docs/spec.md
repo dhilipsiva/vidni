@@ -732,6 +732,59 @@ After a cut is delivered, `vidni final` writes a folder for each platform the cu
 - **What an upload would be cut short for is a warning too:** a description over YouTube's 5,000 characters or Instagram's 2,200, a thumbnail over 2 MB, an end screen on a video under 25 seconds.
 - **A synthetic voice is said.** Should a final cut ever hold one, its description says so, and the steps name Meta's Add AI label, which Meta asks for on a reel narrated with a realistic synthetic voice. Today a final cut is always in your own voice.
 
+## `[[errata]]`
+
+A correction to what a line says, made after the video is published. A platform won't swap the file of a published video (YouTube can't), so what a video got wrong is said beside it.
+
+| Key | Type | Meaning |
+|---|---|---|
+| `line` | string | The line that is wrong |
+| `on` | string | The day of the correction, as `2026-11-20` |
+| `text` | string | What is right |
+
+```toml
+[[errata]]
+line = "trace-4"
+on = "2026-11-20"
+text = "The rule cited is source number one, not number zero."
+```
+
+`vidni final` writes each correction into the description of every cut that says the line, under `Corrections:`, with where in that cut the line starts:
+
+```text
+Corrections:
+3:32 (2026-11-20): The rule cited is source number one, not number zero.
+```
+
+Nothing is rendered again, and the cuts stay ratified and approved: a correction is words beside the video. The line itself stays as it was said. To change what the video says, change the line, record it, and approve the cut as a new release, which is then a new upload.
+
+### Where a cut is published, and where a line is
+
+vidni uploads nothing, so you tell it where a cut went:
+
+```text
+$ vidni published --cut long --platform youtube --url https://youtu.be/abc
+long: long-r5 is published on youtube at https://youtu.be/abc
+```
+
+It records the upload in `published.json`, in the project folder, with the release that was uploaded: the cut's newest, or the one `--release` names. `vidni published` alone lists them. A corrected video at a new address is a second record; the first stays.
+
+`vidni where <line>`, run in the project folder, says which cuts say a line, when in each, each cut's newest release, and where each is published. Those are the descriptions to paste again after a correction:
+
+```text
+$ vidni where trace-4
+trace-4: “Adam eats” cites recorded source #1: every animal eats.
+  long: at 3:32; newest release long-r5
+    long-r5 on youtube: https://youtu.be/abc
+  vertical: at 3:32; newest release vertical-r4
+    not published
+  1 correction to it in [[errata]]; `vidni final` writes it into each description
+```
+
+Each platform's folder in `out/` has an `UPLOAD.md`: its cuts with their releases and addresses, what to tell vidni after an upload, and what to do when a published video is wrong.
+
+**A release is never changed.** `release.json` keeps every release of every cut, with the hashes of its files, so the file behind each address can always be named.
+
 ## `[[expectations]]`
 
 An expectation is text a web scene must show. A capture stops when the page shows anything else, so a video never narrates a page that changed underneath it.

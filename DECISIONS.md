@@ -361,3 +361,11 @@ Added as the items are built.
   - **A line said faster than 20 characters a second keeps its captions up into the pause after it.** Seven cues of the example's own narration were read at just over 20. The captions then run up to a quarter of a second behind the voice at the end of such a line, which a reader doesn't notice and a rule about reading speed is for.
   - **The example's `vertical` no longer has the reference's frames** (T14 said it did): its captions are drawn in, and they are cut readably now. Its clean pictures are what they were.
 - **Contrast is worked out from the theme, not measured on frames:** the ink against the panel laid over white and over black, which bounds every picture behind it.
+
+### T21. Corrections, and where things are published
+- **2026-11-14, P6-VIDNI-07.** A published video can't be changed in place: YouTube doesn't replace the file of a published video. So there are two ways to correct one, and vidni keeps them apart.
+  - **A correction beside the video** is an `[[errata]]` entry: the line, the day and what is right. It goes into the description of every cut that says the line, with the second the line starts at in that cut. It is in no hash, so nothing is rendered and nothing is released again; the folders in `out/` are made afresh, and the descriptions are pasted again.
+  - **A corrected video** is the line changed, recorded, built and approved: the next release, at a new address.
+- **`published.json` is told, not found out.** vidni uploads nothing (D8), so `vidni published` records where a release went. An upload names its release, and releases are kept for good, so the bytes behind an address can be named. A second upload of a cut to the same platform at another address is a second record.
+- **`vidni where <line>`** joins the three records: the project (which cuts say the line), the final builds' timelines (when), and the releases and uploads (where). It is how one finds the descriptions to paste again.
+- **`UPLOAD.md` is per platform,** beside its cuts' folders, and is written whenever a cut is exported: it lists every cut the project makes for the platform, with its release and its addresses.

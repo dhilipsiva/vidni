@@ -259,6 +259,124 @@ fn a_project_goes_from_draft_to_approved_and_its_builds_repeat() {
         ok(dir, &["status"]),
         "long   ratified; approved as long-r1\nshort  ratified; approved as short-r1\n"
     );
+    // P6-VIDNI-07: once a cut is published, what a line got wrong is
+    // corrected beside the video. Both cuts say main-2.
+    let said = ok(
+        dir,
+        &[
+            "published",
+            "--cut",
+            "long",
+            "--platform",
+            "youtube",
+            "--url",
+            "https://youtu.be/abc",
+        ],
+    );
+    assert_eq!(
+        said,
+        "long: long-r1 is published on youtube at https://youtu.be/abc\n  \
+         `vidni final` writes it into the platform's UPLOAD.md\n"
+    );
+    assert!(
+        refused(
+            dir,
+            &[
+                "published",
+                "--cut",
+                "long",
+                "--platform",
+                "tiktok",
+                "--url",
+                "https://x"
+            ]
+        )
+        .contains("cut long isn't made for tiktok")
+    );
+    let before = fs::read_to_string(dir.join("vidni.toml")).unwrap();
+    let unchanged = |name: &str| {
+        fs::metadata(dir.join("build/final").join(name))
+            .unwrap()
+            .modified()
+            .unwrap()
+    };
+    let rendered = (unchanged("long.mp4"), unchanged("short.mp4"));
+    let corrected = format!(
+        "{before}\n[[errata]]\nline = \"main-2\"\non = \"2026-11-20\"\ntext = \"The draft voice speaks second, not first.\"\n"
+    );
+    fs::write(dir.join("vidni.toml"), corrected).unwrap();
+    ok(dir, &["final"]);
+    // Nothing is rendered, and both cuts are still what was approved.
+    assert_eq!((unchanged("long.mp4"), unchanged("short.mp4")), rendered);
+    assert_eq!(
+        ok(dir, &["status"]),
+        "long   ratified; approved as long-r1\nshort  ratified; approved as short-r1\n"
+    );
+    // Every description of a cut that says the line has the correction,
+    // with where in that cut the line is.
+    let block = |file: &str| {
+        let text = fs::read_to_string(dir.join("out").join(file)).unwrap();
+        let at = text
+            .find("Corrections:\n")
+            .unwrap_or_else(|| panic!("{file}:\n{text}"));
+        text[at..].lines().nth(1).unwrap().to_string()
+    };
+    let in_long = block("youtube/long/metadata.md");
+    assert!(
+        in_long.ends_with(" (2026-11-20): The draft voice speaks second, not first."),
+        "{in_long}"
+    );
+    for short in ["youtube-shorts", "instagram-reels", "whatsapp-status"] {
+        let in_short = block(&format!("{short}/short/metadata.md"));
+        assert!(
+            in_short.starts_with("0:00 (2026-11-20): The draft voice"),
+            "{in_short}"
+        );
+        // The line comes later in the long cut, after main-1.
+        assert_ne!(in_short, in_long);
+    }
+    // Where the line is, and where it is published.
+    let whereabouts = ok_in(dir, &["where", "main-2"]);
+    let lines: Vec<&str> = whereabouts.lines().collect();
+    assert_eq!(
+        lines[0],
+        "main-2: Each of its lines is spoken by the draft voice first."
+    );
+    assert!(
+        lines[1].starts_with("  long: at 0:0") && lines[1].ends_with("; newest release long-r1"),
+        "{whereabouts}"
+    );
+    assert_eq!(lines[2], "    long-r1 on youtube: https://youtu.be/abc");
+    assert_eq!(lines[3], "  short: at 0:00; newest release short-r1");
+    assert_eq!(lines[4], "    not published");
+    assert!(
+        lines[5].starts_with("  1 correction to it in [[errata]]"),
+        "{whereabouts}"
+    );
+    assert_eq!(ok_in(dir, &["where", "main-1"]).lines().count(), 3);
+    // Each platform's UPLOAD.md lists its cuts, and says what YouTube can't do.
+    let upload = fs::read_to_string(dir.join("out/youtube/UPLOAD.md")).unwrap();
+    assert!(
+        upload.contains(
+            "- `long/`: release long-r1\n  - published as long-r1: https://youtu.be/abc\n"
+        ),
+        "{upload}"
+    );
+    assert!(
+        upload.contains("YouTube can't replace the file of a published video"),
+        "{upload}"
+    );
+    assert!(
+        fs::read_to_string(dir.join("out/whatsapp-status/UPLOAD.md"))
+            .unwrap()
+            .contains("- `short/`: release short-r1\n  - not published yet\n")
+    );
+    assert_eq!(ok(dir, &["published"]).lines().count(), 1);
+    // The rest of this test goes on from the project as it was.
+    fs::write(dir.join("vidni.toml"), before).unwrap();
+    fs::remove_file(dir.join("published.json")).unwrap();
+    ok(dir, &["final"]);
+
     let already = ok(dir, &["approve", "--cut", "long"]);
     assert!(
         already.starts_with("long: already approved as long-r1, on "),

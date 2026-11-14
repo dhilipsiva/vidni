@@ -15,6 +15,13 @@
         "$ref": "#/$defs/Cut"
       }
     },
+    "errata": {
+      "description": "Corrections to what a published video says, by line.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Erratum"
+      }
+    },
     "expectations": {
       "description": "Text that must be on screen when a scene is captured.",
       "type": "array",
@@ -380,6 +387,30 @@
       "required": [
         "id",
         "aspect"
+      ]
+    },
+    "Erratum": {
+      "description": "A correction to what a line says, made after the video was published\n(TODO.md, P6-VIDNI-07). It goes into the description of every cut that\nuses the line, and changes no picture.",
+      "type": "object",
+      "properties": {
+        "line": {
+          "description": "The line that is wrong.",
+          "type": "string"
+        },
+        "on": {
+          "description": "The day of the correction, as `2026-11-20`.",
+          "type": "string"
+        },
+        "text": {
+          "description": "What is right.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "line",
+        "on",
+        "text"
       ]
     },
     "Expectation": {

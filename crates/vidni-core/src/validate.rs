@@ -999,6 +999,24 @@ impl Rules {
                 );
             }
         }
+        for (i, erratum) in p.errata.iter().enumerate() {
+            let at = |key: &str| path!["errata", i, key];
+            if !p.lines.iter().any(|line| line.id == erratum.line) {
+                self.add(at("line"), format!("unknown line {:?}", erratum.line));
+            }
+            let day = erratum.on.as_bytes();
+            let dated = day.len() == 10
+                && day.iter().enumerate().all(|(n, b)| match n {
+                    4 | 7 => *b == b'-',
+                    _ => b.is_ascii_digit(),
+                });
+            if !dated {
+                self.add(at("on"), "a correction's day is written as 2026-11-20");
+            }
+            if erratum.text.trim().is_empty() {
+                self.add(at("text"), "a correction says what is right");
+            }
+        }
         for (c, cut) in p.cuts.iter().enumerate() {
             let Some(hold) = cut.end_hold else { continue };
             let at = path!["cuts", c, "end_hold"];

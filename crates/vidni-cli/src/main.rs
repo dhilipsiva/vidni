@@ -23,6 +23,7 @@ macro_rules! say {
 mod backup;
 mod build;
 mod offline;
+mod published;
 mod record;
 mod repro;
 mod takes;
@@ -238,6 +239,34 @@ enum Command {
         #[arg(long = "cut", value_name = "ID")]
         cuts: Vec<String>,
     },
+    /// Record where a cut was published, in published.json; or, with no
+    /// flags, list what is published where.
+    Published {
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// The cut that was uploaded.
+        #[arg(long, value_name = "ID", requires_all = ["platform", "url"])]
+        cut: Option<String>,
+        /// The platform it was uploaded to.
+        #[arg(long, value_name = "ID", requires_all = ["cut", "url"])]
+        platform: Option<String>,
+        /// The video's address there.
+        #[arg(long, requires_all = ["cut", "platform"])]
+        url: Option<String>,
+        /// The release that was uploaded. Default: the cut's newest.
+        #[arg(long, value_name = "TAG", requires = "cut")]
+        release: Option<String>,
+    },
+    /// Say where a line is: the cuts that say it, when in each, each
+    /// cut's releases, and where each is published.
+    Where {
+        /// The line's ID.
+        line: String,
+        /// A project folder, or its vidni.toml.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+    },
     /// Back up the project's assets, its takes and the captures its
     /// ratified cuts froze, to two places, and list them in assets.lock.
     Backup {
@@ -396,6 +425,15 @@ fn main() -> ExitCode {
             path, cuts, again, ..
         } => build::finish(&path, &cuts, again),
         Command::Approve { path, cuts } => build::approve(&path, &cuts),
+        Command::Published {
+            path,
+            cut: Some(cut),
+            platform: Some(platform),
+            url: Some(url),
+            release,
+        } => published::record(&path, &cut, &platform, &url, release.as_deref()),
+        Command::Published { path, .. } => published::list(&path),
+        Command::Where { line, path } => published::whereabouts(&path, &line),
         Command::Backup { path, to } => backup::backup(&path, &to),
         Command::Verify { path, to } => backup::verify(&path, &to),
         Command::Restore { path, from } => backup::restore(&path, &from),

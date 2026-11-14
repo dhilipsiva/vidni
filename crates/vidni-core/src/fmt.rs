@@ -61,6 +61,7 @@ pub(crate) const ROOT: &[&str] = &[
     "captions",
     "music",
     "publish",
+    "errata",
     "sections",
     "lines",
     "scenes",
@@ -160,6 +161,7 @@ const CUT: &[&str] = &[
 ];
 const PUBLISH: &[&str] = &["description", "tags", "links", "titles", "thumbnails"];
 const LINK: &[&str] = &["label", "url"];
+const ERRATUM: &[&str] = &["line", "on", "text"];
 const THUMBNAIL: &[&str] = &["line", "title"];
 const EXPECTATION: &[&str] = &["scene", "at", "target", "text", "texts"];
 
@@ -187,6 +189,7 @@ fn key_order(path: &[String]) -> Option<&'static [&'static str]> {
         ["scenes", _, "targets", _, rest @ ..] => target_part(rest),
         ["cuts", "#"] => Some(CUT),
         ["publish"] => Some(PUBLISH),
+        ["errata", "#"] => Some(ERRATUM),
         ["publish", "links", "#"] => Some(LINK),
         ["publish", "thumbnails", "#"] => Some(THUMBNAIL),
         ["expectations", "#"] => Some(EXPECTATION),

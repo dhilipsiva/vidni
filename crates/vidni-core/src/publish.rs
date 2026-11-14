@@ -62,6 +62,9 @@ pub struct Upload<'a> {
     pub chapters: &'a [Chapter],
     /// Whether any of the narration is a synthetic voice.
     pub synthetic: bool,
+    /// The corrections to lines of this cut: for each, the second its
+    /// line starts at in the cut, the day, and what is right.
+    pub corrections: &'a [(u32, String, String)],
     /// The video's file, its caption files and its images, as they are
     /// named in the upload's folder.
     pub video: &'a str,
@@ -95,6 +98,15 @@ impl Upload<'_> {
         }
         if self.synthetic {
             parts.push("The narration is a synthetic voice.".to_string());
+        }
+        // A published video can't be changed, so what it got wrong is
+        // said beside it, with where in the video it is.
+        if !self.corrections.is_empty() {
+            let mut block = vec!["Corrections:".to_string()];
+            for (at, on, text) in self.corrections {
+                block.push(format!("{} ({on}): {text}", crate::platforms::clock(*at)));
+            }
+            parts.push(block.join("\n"));
         }
         // Instagram's tags go at the end of its caption.
         if self.platform.id == "instagram-reels" && !publish.tags.is_empty() {
@@ -270,10 +282,112 @@ impl Upload<'_> {
     }
 }
 
+/// One cut on a platform, for the platform's `UPLOAD.md`.
+pub struct Listed<'a> {
+    pub cut: &'a str,
+    /// Whether its folder is there: it was exported.
+    pub exported: bool,
+    /// Its newest release, when it has one.
+    pub release: Option<&'a str>,
+    /// Where it has been published: each address, with the release there.
+    pub published: Vec<(&'a str, &'a str)>,
+}
+
+/// A platform's `UPLOAD.md`: its cuts, what to tell vidni after an
+/// upload, and what to do when a published video is wrong.
+pub fn upload_md(platform: &Profile, cuts: &[Listed]) -> String {
+    let (id, name) = (platform.id.as_str(), platform.name.as_str());
+    let mut text = format!(
+        "# Uploading to {name}\n\n\
+         vidni uploads nothing: this is what to do by hand. Each cut has a folder here, with its \
+         video and a `metadata.md` that holds its title, its description and its own steps.\n\n\
+         ## The cuts\n\n"
+    );
+    for listed in cuts {
+        let release = match listed.release {
+            Some(tag) => format!("release {tag}"),
+            None => "not approved yet (`vidni approve`)".to_string(),
+        };
+        let folder = match listed.exported {
+            true => format!("`{}/`", listed.cut),
+            false => format!("`{}` (not exported: `vidni final` says why)", listed.cut),
+        };
+        text.push_str(&format!("- {folder}: {release}\n"));
+        for (url, tag) in &listed.published {
+            text.push_str(&format!("  - published as {tag}: {url}\n"));
+        }
+        if listed.published.is_empty() {
+            text.push_str("  - not published yet\n");
+        }
+    }
+    let example = cuts.first().map_or("long", |listed| listed.cut);
+    text.push_str(&format!(
+        "\n## After an upload\n\n\
+         Tell vidni where the video is, so that it can say later which published videos hold a line:\n\n\
+         ```sh\nvidni published --cut {example} --platform {id} --url <its address>\n```\n\n\
+         It goes into `published.json`, with the release that was uploaded.\n\n\
+         ## When a published video is wrong\n\n"
+    ));
+    text.push_str(&match id.starts_with("youtube") {
+        true => "- **YouTube can't replace the file of a published video.** A corrected video is a new upload, at a new address, without the first one's views and comments.\n".to_string(),
+        false => format!("- **A published video usually can't be swapped for another.** Check what {name} allows; a corrected video is otherwise a new upload.\n"),
+    });
+    text.push_str(
+        "- **For what a line got wrong, add a correction** to `vidni.toml` and run `vidni final`. \
+         It goes into the description of every cut that says the line, with where in the video it is, \
+         and nothing is rendered again:\n\n\
+         ```toml\n[[errata]]\nline = \"intro-2\"\non = \"2026-11-20\"\ntext = \"What is right.\"\n```\n\n\
+         - **`vidni where <line>`** lists the cuts that say a line, when in each, and where each is published: \
+         the descriptions to paste again.\n\
+         - **A release is never changed.** A cut that is built again after a change is approved as the next release, \
+         and `release.json` keeps every one, so the file at each address can always be named.\n",
+    );
+    text
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::platforms;
+
+    #[test]
+    fn a_platforms_upload_file_lists_its_cuts_and_says_what_cant_be_undone() {
+        let youtube = platforms::get("youtube").unwrap();
+        let cuts = [
+            Listed {
+                cut: "long",
+                exported: true,
+                release: Some("long-r2"),
+                published: vec![("https://youtu.be/a", "long-r1")],
+            },
+            Listed {
+                cut: "talk",
+                exported: false,
+                release: None,
+                published: Vec::new(),
+            },
+        ];
+        let text = upload_md(&youtube, &cuts);
+        assert!(text.starts_with("# Uploading to YouTube\n"), "{text}");
+        assert!(
+            text.contains(
+                "- `long/`: release long-r2\n  - published as long-r1: https://youtu.be/a\n"
+            ),
+            "{text}"
+        );
+        assert!(text.contains("- `talk` (not exported: `vidni final` says why): not approved yet (`vidni approve`)\n  - not published yet\n"), "{text}");
+        assert!(
+            text.contains("vidni published --cut long --platform youtube --url <its address>"),
+            "{text}"
+        );
+        assert!(
+            text.contains("**YouTube can't replace the file of a published video.**"),
+            "{text}"
+        );
+        assert!(text.contains("[[errata]]"), "{text}");
+        let status = platforms::get("whatsapp-status").unwrap();
+        assert!(upload_md(&status, &cuts[..1]).contains("Check what WhatsApp Status allows"));
+    }
 
     fn project() -> Project {
         let text = crate::TEMPLATE.to_string()
@@ -303,6 +417,7 @@ youtube-shorts = "vidni in a minute"
             platform,
             chapters,
             synthetic,
+            corrections: &[],
             video: &files.0,
             captions: &files.1,
             images: &files.2,
@@ -433,6 +548,46 @@ youtube-shorts = "vidni in a minute"
             "{text}"
         );
         assert_eq!(title(&bare, "youtube-shorts"), "My first video");
+    }
+
+    #[test]
+    fn corrections_go_into_the_description_with_where_they_are() {
+        let p = project();
+        let youtube = platforms::get("youtube").unwrap();
+        let files = ("long.mp4".to_string(), Vec::new(), Vec::new());
+        let corrections = [
+            (
+                83,
+                "2026-11-20".to_string(),
+                "The rule is line two, not line one.".to_string(),
+            ),
+            (
+                3700,
+                "2026-12-01".to_string(),
+                "It is 2026, not 2025.".to_string(),
+            ),
+        ];
+        let mut up = upload(&p, 0, &youtube, &[], &files, false);
+        up.corrections = &corrections;
+        let description = up.description();
+        assert!(
+            description.ends_with(
+                "The code: https://github.com/dhilipsiva/vidni\n\nCorrections:\n\
+                 1:23 (2026-11-20): The rule is line two, not line one.\n\
+                 1:01:40 (2026-12-01): It is 2026, not 2025."
+            ),
+            "{description}"
+        );
+        // On Instagram the tags still come last.
+        let reels = platforms::get("instagram-reels").unwrap();
+        let mut reel = upload(&p, 1, &reels, &[], &files, false);
+        reel.corrections = &corrections[..1];
+        let caption = reel.description();
+        assert!(
+            caption.contains("Corrections:\n1:23 (2026-11-20)"),
+            "{caption}"
+        );
+        assert!(caption.ends_with("#videotools"), "{caption}");
     }
 
     #[test]
