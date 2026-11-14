@@ -490,6 +490,13 @@
           "description": "A stable ID: lowercase letters and digits in words joined by hyphens.",
           "type": "string"
         },
+        "only": {
+          "description": "The cuts the line is only for, such as a short's hook. A cut that\nuses every line leaves out the lines that are only for others.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "overlay": {
           "description": "A page scene drawn over the line's picture.",
           "type": [

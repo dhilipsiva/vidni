@@ -102,6 +102,9 @@ enum Command {
         /// A project folder, or its vidni.toml.
         #[arg(default_value = ".")]
         path: PathBuf,
+        /// The cut whose lines to list; repeat for more. Default: every line.
+        #[arg(long = "cut", value_name = "ID")]
+        cuts: Vec<String>,
         /// Instead, lay the current takes out in DIR as 000.wav, 001.wav … in
         /// script order, as symbolic links, for tools that read numbered files.
         #[arg(long, value_name = "DIR")]
@@ -331,7 +334,7 @@ fn main() -> ExitCode {
         ),
         Command::Validate { path } => validate(&path),
         Command::Fmt { path, check } => fmt(&path, check),
-        Command::Takes { path, link } => takes(&path, link.as_deref()),
+        Command::Takes { path, cuts, link } => takes(&path, &cuts, link.as_deref()),
         Command::Status { path } => status(&path),
         Command::Ratify { path, cuts } => ratify(&path, &cuts),
         Command::Unratify {
@@ -425,7 +428,7 @@ fn fmt(path: &Path, check: bool) -> ExitCode {
     }
 }
 
-fn takes(path: &Path, link: Option<&Path>) -> ExitCode {
+fn takes(path: &Path, cuts: &[String], link: Option<&Path>) -> ExitCode {
     let (file, text) = match read(path) {
         Ok(read) => read,
         Err(code) => return code,
@@ -438,7 +441,14 @@ fn takes(path: &Path, link: Option<&Path>) -> ExitCode {
         Ok(project) => project,
         Err(problems) => return report(&file, &problems),
     };
-    let lines = vidni_core::takes::status(&project, dir);
+    let mut lines = vidni_core::takes::status(&project, dir);
+    if !cuts.is_empty() {
+        let ids: Vec<String> = match build::chosen(&project, cuts) {
+            Ok(cuts) => cuts.iter().flat_map(|c| c.line_ids(&project)).collect(),
+            Err(code) => return code,
+        };
+        lines.retain(|l| ids.contains(&l.id));
+    }
     let shown = |p: &Path| p.strip_prefix(dir).unwrap_or(p).display().to_string();
     if let Some(link) = link {
         return link_takes(&lines, link);

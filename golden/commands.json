@@ -3,6 +3,6 @@
  "synthetic: cuts": "python3 -I compose.py",
  "synthetic: timeline, narration, captions": "python3 -I tts.py",
  "voice: cuts": "VARIANT=voice OWN_AUDIO_DIR=<takes> python3 -I compose.py",
- "voice: takes": "vidni takes examples/nibli-syllogism --link <takes>",
+ "voice: takes": "vidni takes examples/nibli-syllogism --cut long --link <takes>",
  "voice: timeline, narration, captions": "VARIANT=voice OWN_AUDIO_DIR=<takes> python3 -I tts.py"
 }

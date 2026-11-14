@@ -407,6 +407,28 @@ impl Rules {
             if line.show.trim().is_empty() {
                 self.add(at("show"), "the line shows nothing");
             }
+            for (j, cut) in line.only.iter().enumerate() {
+                let at = path!["lines", i, "only", j];
+                if line.only[..j].contains(cut) {
+                    self.add(at, format!("cut {cut:?} is listed twice"));
+                    continue;
+                }
+                match p.cuts.iter().find(|c| &c.id == cut) {
+                    None => {
+                        let names = one_of(p.cuts.iter().map(|c| c.id.as_str()));
+                        self.add(at, format!("unknown cut {cut:?}{names}"));
+                    }
+                    // A line that is only for a cut that leaves it out is
+                    // in no video: a hook that was written and then lost.
+                    Some(c) => {
+                        if let LineSelection::Ids(ids) = &c.lines
+                            && !ids.contains(&line.id)
+                        {
+                            self.add(at, format!("cut {cut:?} doesn't list this line"));
+                        }
+                    }
+                }
+            }
             if line.say.as_deref().is_some_and(|s| s.trim().is_empty()) {
                 self.add(
                     at("say"),
@@ -1054,6 +1076,20 @@ impl Rules {
                             self.add(path!["cuts", c, "lines", j], format!("unknown line {id:?}"))
                         }
                         Some(&pos) => {
+                            if !p.lines[pos].is_for(cut) {
+                                self.add(
+                                    path!["cuts", c, "lines", j],
+                                    format!(
+                                        "line {id:?} is only for {}",
+                                        p.lines[pos]
+                                            .only
+                                            .iter()
+                                            .map(|c| format!("{c:?}"))
+                                            .collect::<Vec<_>>()
+                                            .join(" and ")
+                                    ),
+                                );
+                            }
                             if previous.is_some_and(|prev| pos <= prev) {
                                 self.add(
                                     path!["cuts", c, "lines", j],

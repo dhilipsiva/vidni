@@ -154,6 +154,14 @@ seed = 797578498
 key = "0c117dcd7e8893f8"
 seed = 746911306
 
+[lines.short-end]
+key = "410d2ecdef4606bd"
+seed = 554345652
+
+[lines.short-hook]
+key = "0818bd01df3e971e"
+seed = 337205418
+
 [lines.syllogism-1]
 key = "aaf2277ff818b130"
 seed = 1419085920

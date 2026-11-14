@@ -54,7 +54,7 @@ golden-update:
 # no network and with no PipeWire or Pulse socket reachable, so no microphone (P1-VIDNI-05).
 test-reference:
     cargo build -q -p vidni-cli
-    ref="$(realpath {{reference}})"; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT; target/debug/vidni takes examples/nibli-syllogism --link "$tmp/takes" >/dev/null; env -u LD_LIBRARY_PATH RECORDINGS_DIR="$tmp/takes" nix develop "$ref" --command bash -c 'unset LD_LIBRARY_PATH; cd "$1"; run="$(mktemp -d)"; trap "rm -rf $run" EXIT; env -u PIPEWIRE_REMOTE -u PULSE_SERVER XDG_RUNTIME_DIR="$run" unshare -rn python3 -I -B -m unittest discover -s tests -v' _ "$ref"
+    ref="$(realpath {{reference}})"; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT; target/debug/vidni takes examples/nibli-syllogism --cut long --link "$tmp/takes" >/dev/null; env -u LD_LIBRARY_PATH RECORDINGS_DIR="$tmp/takes" nix develop "$ref" --command bash -c 'unset LD_LIBRARY_PATH; cd "$1"; run="$(mktemp -d)"; trap "rm -rf $run" EXIT; env -u PIPEWIRE_REMOTE -u PULSE_SERVER XDG_RUNTIME_DIR="$run" unshare -rn python3 -I -B -m unittest discover -s tests -v' _ "$ref"
 
 # Check every example's out-of-git assets (takes) against its assets.lock.
 assets-check:

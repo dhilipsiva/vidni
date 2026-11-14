@@ -93,6 +93,7 @@ pub(crate) const LINE: &[&str] = &[
     "camera",
     "camera_vertical",
     "overlay",
+    "only",
 ];
 pub(crate) const SCENE: &[&str] = &[
     "kind",

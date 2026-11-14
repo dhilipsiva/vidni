@@ -93,6 +93,7 @@ mod tests {
             camera: None,
             camera_vertical: None,
             overlay: None,
+            only: Vec::new(),
         }
     }
 

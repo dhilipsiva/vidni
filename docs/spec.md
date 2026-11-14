@@ -187,6 +187,7 @@ Sections come in the order of their first line, and a section's lines must be to
 | `camera` | string | the scene's `default_camera` | Web scenes: the framing for 16:9 cuts |
 | `camera_vertical` | string | see [Cameras](#cameras) | Web scenes: the framing for 9:16 cuts |
 | `overlay` | string | none | A transparent page scene drawn over the line's picture |
+| `only` | array of cut IDs | empty: every cut | The cuts the line is only for, such as a short's hook. See [Several cuts](#several-cuts). |
 
 `do`, `highlight`, `camera` and `camera_vertical` need a web scene. A line on a page scene shows that page full-frame.
 
@@ -212,7 +213,9 @@ takes/_room/                        room tone from the mic check
 - **stale:** there are takes only for other words. They stay on disk, in case the edit is undone.
 - **missing:** there are no takes at all.
 
-`vidni takes --link DIR` lays the current takes out as `000.wav`, `001.wav` … in script order, as symbolic links, for tools that read numbered files.
+`vidni takes --cut ID` lists only that cut's lines; repeat it for more cuts.
+
+`vidni takes --link DIR` lays the current takes out as `000.wav`, `001.wav` … in script order, as symbolic links, for tools that read numbered files. With `--cut`, it lays out that cut's takes.
 
 ### What is kept of a take
 
@@ -514,6 +517,31 @@ Highlight boxes are drawn with an ember outline, in every theme: they are part o
 | `captions` | `"burned"`, `"file"` or `"both"` | `both` for 16:9, `burned` for 9:16 | `burned` draws captions into the picture. `file` keeps the picture clean and writes SRT and VTT files. `both` makes a clean master with caption files, plus a burned-in variant (DECISIONS.md, D7). |
 | `platforms` | array of strings | the profiles on by default for the cut's aspect: `["youtube"]` for 16:9; `["youtube-shorts", "instagram-reels", "whatsapp-status"]` for 9:16 | The platform profiles the cut is made for: `youtube`, `youtube-shorts`, `instagram-reels`, `tiktok`, `whatsapp-status`, `linkedin` or `x`. `vidni platforms` lists each profile's limits, with the date they were checked and their sources. |
 | `size` | `[width, height]` | `[1920, 1080]` or `[1080, 1920]` | The frame size: even numbers in exactly the cut's aspect. For now, vidni draws only the two default sizes, and a build refuses another. |
+
+### Several cuts
+
+A project can make any number of videos from one script: a long cut, and shorts that tell a part of it.
+- **A cut picks its lines** with `lines`, in script order. Without it, a cut uses every line.
+- **A line can be only for some cuts.** A short's hook or sign-off sets `only = ["short"]`. A cut that uses every line leaves it out, and a cut it isn't for can't list it.
+- **A cut that lists its lines** must list its own lines too. A line that is only for a cut that leaves it out is in no video, so validation reports it.
+
+```toml
+[[cuts]]
+id = "short"
+aspect = "9:16"
+lines = ["hook", "syllogism-1", "syllogism-2"]
+
+[[lines]]
+id = "hook"
+section = "intro"
+show = "Here's a proof you can check, in under a minute."
+only = ["short"]
+```
+
+A line sits at its place in the script whichever cuts use it, so a short's lines go where they are said: the hook before the lines it leads into.
+- **What a web line shows** doesn't depend on the cut. Its still is the page after every action of the script up to it, including the actions of lines the cut leaves out. So a cut never needs captures of its own.
+- **Takes are shared.** A line has one take, and every cut that uses the line plays it.
+- **Each cut is ratified, built and approved by itself.** Adding a short, or a line that is only for it, leaves the other cuts ratified.
 
 ## `[music]`
 

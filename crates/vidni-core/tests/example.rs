@@ -32,15 +32,34 @@ fn the_example_validates() {
             p.scenes.len(),
             p.cuts.len()
         ),
-        (57, 10, 5, 2)
+        (59, 10, 5, 3)
     );
+}
+
+#[test]
+fn the_short_shares_lines_with_the_long_cut_and_adds_its_own() {
+    let p = example();
+    let cut = |id: &str| p.cuts.iter().find(|c| c.id == id).unwrap();
+    let (long, short) = (cut("long").line_ids(&p), cut("short").lines_in(&p));
+    assert_eq!(long.len(), 57);
+    assert_eq!(long, cut("vertical").line_ids(&p));
+    let own: Vec<&str> = short
+        .iter()
+        .filter(|l| !l.only.is_empty())
+        .map(|l| l.id.as_str())
+        .collect();
+    assert_eq!(own, ["short-hook", "short-end"]);
+    assert!(own.iter().all(|id| !long.iter().any(|l| l == id)));
+    let shared = short.iter().filter(|l| long.contains(&l.id)).count();
+    assert_eq!((short.len(), shared), (12, 10));
 }
 
 #[test]
 fn the_example_keeps_the_reference_script_line_for_line() {
     let p = example();
     let spec = reference();
-    let mut lines = p.lines.iter();
+    // The reference has no shorts: the lines every cut may use are its script.
+    let mut lines = p.lines.iter().filter(|l| l.only.is_empty());
     for segment in spec["segments"].as_array().unwrap() {
         let id = segment["id"].as_str().unwrap();
         assert_eq!(p.sections[id].label, segment["label"].as_str().unwrap());

@@ -5,16 +5,23 @@ The first video made with vidni. It's a five-minute walkthrough of the Syllogism
 vidni builds it from `vidni.toml` ([From draft to release](../../docs/spec.md#from-draft-to-release)):
 
 ```sh
-vidni draft examples/nibli-syllogism   # both cuts in the draft voice, in build/draft/
-vidni final examples/nibli-syllogism   # both cuts in the creator's voice, in out/
+vidni draft examples/nibli-syllogism                              # every cut in the draft voice, in build/draft/
+vidni final examples/nibli-syllogism --cut long --cut vertical    # the two full cuts in the creator's voice, in out/
 ```
 
-Both cuts are ratified and approved:
+The two full cuts are ratified and approved:
 - `ratified.lock` freezes what they show and say.
 - `release.json` records the releases `long-r1` and `vertical-r1`, each with the hashes of its build.
 - `vidni repro` built both cuts again, on other cores and at other paths, and every hash agreed (docs/determinism.md).
 
-The final cuts need the creator's takes and the captures the cuts froze, and both are kept out of git. Without them, `vidni status` reports the cuts as changed and `vidni final` refuses them. `vidni draft` still works: it captures the playground as it is now, and builds both cuts in the draft voice.
+The final cuts need the creator's takes and the captures the cuts froze, and both are kept out of git. Without them, `vidni status` reports the cuts as changed and `vidni final` refuses them. `vidni draft` still works: it captures the playground as it is now, and builds the cuts in the draft voice.
+
+## The short
+
+A third cut, `short`, is a 54-second 9:16 video for YouTube Shorts, Instagram Reels and WhatsApp Status ([Several cuts](../../docs/spec.md#several-cuts)).
+- **It lists 12 lines.** Ten are lines the full cuts say too: the syllogism, and the start and end of the backward search.
+- **Two are its own:** `short-hook` opens it and `short-end` closes it. Both set `only = ["short"]`, so the full cuts leave them out and stay ratified.
+- **It is a draft.** Its two own lines have no take yet, so `vidni draft --cut short` builds it in the draft voice and `vidni final` refuses it. `vidni plan --cut short` prints what is left to record.
 
 The reference pipeline in [`../../reference/`](../../reference/) made the first version of this video, from `reference/segments.json`. Its cuts are in `reference/out/`, and `just parity product` checks vidni's final build against them.
 

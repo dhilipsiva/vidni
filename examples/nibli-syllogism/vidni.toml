@@ -85,6 +85,25 @@ aspect = "9:16"
 captions = "burned"
 platforms = []
 
+# A short: its own opening and closing lines, around lines the long cut says too.
+[[cuts]]
+id = "short"
+aspect = "9:16"
+lines = [
+  "short-hook",
+  "nibli-1",
+  "nibli-5",
+  "syllogism-1",
+  "syllogism-2",
+  "syllogism-3",
+  "syllogism-4",
+  "syllogism-5",
+  "reasoning-1",
+  "reasoning-2",
+  "reasoning-7",
+  "short-end",
+]
+
 [music]
 track = "none"
 
@@ -117,6 +136,13 @@ label = "a real FALSE"
 
 [sections.end]
 label = ""
+
+[[lines]]
+id = "short-hook"
+section = "intro"
+show = "Can a program show its reasoning? Here's a proof you can check, in under a minute."
+scene = "intro"
+only = ["short"]
 
 [[lines]]
 id = "intro-1"
@@ -521,6 +547,13 @@ id = "end-3"
 section = "end"
 show = "I'm dhilipsiva."
 scene = "end"
+
+[[lines]]
+id = "short-end"
+section = "end"
+show = "That was the short version. The five-minute walkthrough goes through every step."
+scene = "end"
+only = ["short"]
 
 # The live playground, captured at 1280×720 CSS pixels and 3× density.
 [scenes.playground]

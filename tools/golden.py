@@ -190,10 +190,10 @@ def main():
     vidni = os.environ.get("VIDNI_BIN") or sys.exit("set VIDNI_BIN to the vidni binary; `just golden` does")
     with tempfile.TemporaryDirectory() as stage, tempfile.TemporaryDirectory() as links:
         takes = os.path.join(links, "takes")
-        subprocess.run([vidni, "takes", EXAMPLE, "--link", takes], check=True, stdout=subprocess.DEVNULL)
+        subprocess.run([vidni, "takes", EXAMPLE, "--cut", "long", "--link", takes], check=True, stdout=subprocess.DEVNULL)
         os.makedirs(os.path.join(stage, "framemd5"))
         manifest = derive(ref, stage, takes)
-        manifest["commands"]["voice: takes"] = "vidni takes examples/nibli-syllogism --link <takes>"
+        manifest["commands"]["voice: takes"] = "vidni takes examples/nibli-syllogism --cut long --link <takes>"
         manifest_text = canonical({k: manifest[k] for k in ("inputs", "outputs")})
         if mode == "update":
             if os.path.exists(GOLDEN):

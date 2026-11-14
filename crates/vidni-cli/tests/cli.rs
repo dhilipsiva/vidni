@@ -26,7 +26,7 @@ fn validate_accepts_the_nibli_example() {
     );
     assert_eq!(
         String::from_utf8_lossy(&out.stdout),
-        "examples/nibli-syllogism/vidni.toml: ok: 57 lines in 10 sections, 5 scenes, 2 cuts\n"
+        "examples/nibli-syllogism/vidni.toml: ok: 59 lines in 10 sections, 5 scenes, 3 cuts\n"
     );
 }
 
@@ -163,6 +163,75 @@ fn takes_lists_each_lines_take_and_links_the_current_ones() {
     ]);
     assert_eq!(out.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&out.stderr).contains("intro-2"));
+}
+
+#[test]
+fn takes_of_one_cut_leave_out_the_lines_only_for_others() {
+    let dir = tempfile::tempdir().unwrap();
+    let project = dir.path().to_str().unwrap();
+    // A hook that only the vertical cut says, ahead of the shared lines.
+    let with_a_hook = vidni_core::TEMPLATE.replace(
+        "[[lines]]\nid = \"intro-1\"",
+        "[[lines]]\nid = \"hook\"\nsection = \"intro\"\nshow = \"Watch this.\"\n\
+         only = [\"vertical\"]\n\n[[lines]]\nid = \"intro-1\"",
+    );
+    assert_ne!(with_a_hook, vidni_core::TEMPLATE);
+    fs::write(dir.path().join("vidni.toml"), with_a_hook).unwrap();
+    fs::write(dir.path().join("page.html"), "<!doctype html>").unwrap();
+    let ids = |args: &[&str]| -> Vec<String> {
+        let out = String::from_utf8(vidni(args).stdout).unwrap();
+        let mut lines: Vec<&str> = out.lines().collect();
+        lines.pop();
+        lines
+            .iter()
+            .map(|l| l.split_whitespace().next().unwrap().to_string())
+            .collect()
+    };
+    assert_eq!(ids(&["takes", project]), ["hook", "intro-1", "intro-2"]);
+    assert_eq!(
+        ids(&["takes", project, "--cut", "long"]),
+        ["intro-1", "intro-2"]
+    );
+    assert_eq!(
+        ids(&["takes", project, "--cut", "vertical"]),
+        ["hook", "intro-1", "intro-2"]
+    );
+    // The long cut's takes are laid out although the hook has none.
+    for id in ["intro-1", "intro-2"] {
+        let listing = String::from_utf8(vidni(&["takes", project]).stdout).unwrap();
+        let row = listing.lines().find(|l| l.starts_with(id)).unwrap();
+        let file = dir.path().join(row.split_whitespace().nth(2).unwrap());
+        fs::create_dir_all(file.parent().unwrap()).unwrap();
+        fs::write(&file, id.as_bytes()).unwrap();
+    }
+    let links = dir.path().join("links");
+    let link = |cut: &str, to: &Path| {
+        vidni(&[
+            "takes",
+            project,
+            "--cut",
+            cut,
+            "--link",
+            to.to_str().unwrap(),
+        ])
+    };
+    let out = link("long", &links);
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(fs::read_dir(&links).unwrap().count(), 2);
+    assert_eq!(fs::read(links.join("000.wav")).unwrap(), b"intro-1");
+    let out = link("vertical", &dir.path().join("links2"));
+    assert_eq!(out.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&out.stderr).ends_with("no current take: hook\n"));
+    let out = vidni(&["takes", project, "--cut", "wide"]);
+    assert_eq!(out.status.code(), Some(1));
+    assert_eq!(
+        String::from_utf8_lossy(&out.stderr),
+        "vidni: there is no cut \"wide\"\n"
+    );
 }
 
 #[test]

@@ -1,0 +1,42 @@
+# expect: 38:20: line "hook" is only for "short"
+schema = 1
+
+[meta]
+title = "A broken project"
+default_scene = "page"
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "Hello."
+
+[[lines]]
+id = "hook"
+section = "main"
+show = "Watch this."
+only = ["short"]
+
+[scenes.page]
+kind = "web"
+url = "https://example.com"
+
+[scenes.page.targets]
+title = { css = "h1" }
+
+[scenes.page.cameras]
+heading = { union = ["title"] }
+
+[scenes.card]
+kind = "page"
+url = "cards/card.html"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+lines = ["main-1", "hook"]
+
+[[cuts]]
+id = "short"
+aspect = "9:16"

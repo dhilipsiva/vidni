@@ -233,6 +233,10 @@ pub struct Line {
     /// A page scene drawn over the line's picture.
     #[serde(default)]
     pub overlay: Option<String>,
+    /// The cuts the line is only for, such as a short's hook. A cut that
+    /// uses every line leaves out the lines that are only for others.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub only: Vec<String>,
 }
 
 impl Project {
@@ -275,6 +279,11 @@ impl Scene {
 }
 
 impl Line {
+    /// Whether `cut` may use the line: it is for every cut, or for this one.
+    pub fn is_for(&self, cut: &Cut) -> bool {
+        self.only.is_empty() || self.only.contains(&cut.id)
+    }
+
     /// The scene the line shows: its own, or the project's default.
     pub fn scene_in<'a>(&'a self, project: &'a Project) -> Option<&'a str> {
         self.scene
@@ -771,7 +780,12 @@ impl Cut {
     /// The IDs of the lines the cut uses, in script order.
     pub fn line_ids(&self, project: &Project) -> Vec<String> {
         match &self.lines {
-            LineSelection::All => project.lines.iter().map(|l| l.id.clone()).collect(),
+            LineSelection::All => project
+                .lines
+                .iter()
+                .filter(|l| l.is_for(self))
+                .map(|l| l.id.clone())
+                .collect(),
             LineSelection::Ids(ids) => ids.clone(),
         }
     }
@@ -779,7 +793,7 @@ impl Cut {
     /// The cut's lines, in script order.
     pub fn lines_in<'p>(&self, project: &'p Project) -> Vec<&'p Line> {
         match &self.lines {
-            LineSelection::All => project.lines.iter().collect(),
+            LineSelection::All => project.lines.iter().filter(|l| l.is_for(self)).collect(),
             LineSelection::Ids(ids) => project
                 .lines
                 .iter()

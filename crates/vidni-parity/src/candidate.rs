@@ -9,7 +9,7 @@ use crate::VARIANTS;
 use std::fs;
 use std::path::{Path, PathBuf};
 use vidni_core::capture::{self, Source};
-use vidni_core::project::{Aspect, Project};
+use vidni_core::project::{Aspect, LineSelection, Project};
 use vidni_core::takes::{self, Status};
 use vidni_core::timeline::{self, Clip};
 
@@ -30,16 +30,22 @@ pub fn build(stage: &str, example: &Path, reference: &Path, dst: &Path) -> Resul
     }
 }
 
+/// The example as the reference has it: the whole script, in the cuts that
+/// say all of it. The reference has no shorts, so a cut that picks its
+/// lines is left out, and so are the lines that are only for such cuts.
 pub(crate) fn project(example: &Path) -> Result<Project, String> {
     let file = example.join("vidni.toml");
     let text = fs::read_to_string(&file).map_err(|e| format!("{}: {e}", file.display()))?;
-    vidni_core::validate::check(&text, Some(example)).map_err(|problems| {
+    let mut project = vidni_core::validate::check(&text, Some(example)).map_err(|problems| {
         let first = problems
             .first()
             .map(ToString::to_string)
             .unwrap_or_default();
         format!("{}: {first}", file.display())
-    })
+    })?;
+    project.cuts.retain(|c| c.lines == LineSelection::All);
+    project.lines.retain(|l| l.only.is_empty());
+    Ok(project)
 }
 
 /// A clip's length from its WAV header, named as the reference names it.
