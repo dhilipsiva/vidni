@@ -209,14 +209,27 @@ fn going_through_a_five_minute_cut_never_holds_the_window_up() {
         "{} pictures were shown during a drag of five seconds",
         pictures.len()
     );
-    // It ends on the last position asked for, having decoded far fewer
-    // frames than were asked for.
+    // It ends on the last position asked for. How many frames it decoded
+    // on the way is the machine's pace: never more than were asked for.
     settle(&mut harness);
     assert_eq!(harness.state().shown, Some(frames - 1));
     let decoded = harness.state().decodes - before;
     assert!(
-        (15..150).contains(&decoded),
+        (15..=300).contains(&decoded),
         "{decoded} frames were decoded for 300 requests"
+    );
+    // Asked faster than any decoder answers, requests take each other's
+    // place: 300 at once cost a few decodes, and end on the last.
+    let before_burst = harness.state().decodes;
+    for step in 0..300u64 {
+        harness.state_mut().seek(step * (frames - 1) / 299);
+    }
+    settle(&mut harness);
+    assert_eq!(harness.state().shown, Some(frames - 1));
+    let burst = harness.state().decodes - before_burst;
+    assert!(
+        burst <= 3,
+        "{burst} frames were decoded for 300 requests made at once"
     );
     println!(
         "{}: {} pictures during a five-second drag, {decoded} frames decoded",
