@@ -10,7 +10,7 @@ vidni was used here as anyone would use it: `vidni new`, edit the file, `vidni d
 4. **An overlay in a 9:16 cut for platforms** was wider than the part the apps leave free, and lay over the view. QA said so, which is how it was found. It is as wide as the free part now.
 5. **A terminal can't be read in a 9:16 cut:** a band of lines is as wide as the window, so no camera could frame less than all 100 columns. A target may now name `columns`.
 6. **`vidni repro` on a project with no takes** only said the takes were missing. It now adds that `--draft` checks the drafts.
-7. **`vidni new examples/vidni-demo`** only said that isn't a name. It now says to use `--parent`.
+7. **`vidni new examples/vidni-demo`** only said that isn't a name. It now says to use `--in`.
 
 ## Fixed next, when the owner asked for the open ones
 
@@ -26,7 +26,7 @@ vidni was used here as anyone would use it: `vidni new`, edit the file, `vidni d
 ## Still as it was
 
 - **The walkthrough runs 2:30,** not the three minutes planned. Nothing is wrong with vidni there: the script is that long. A section on themes or music would fill it.
-- **The code scene in the short** is still framed by `columns`, cut off at the right: code doesn't go on in the next row as a terminal's lines do, so a narrower window wouldn't show more.
+- **The code scene in the short** is still framed by `columns`, cut off at the right. A narrower code scene swapped in would carry its long lines on in the next row, as a terminal does; I left this one as it was.
 
 ## Not found wanting
 

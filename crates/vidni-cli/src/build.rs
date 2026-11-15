@@ -406,7 +406,7 @@ pub fn new(name: &str, from: Option<&Path>, parent: &Path) -> ExitCode {
         if let Some((folder, last)) = name.rsplit_once('/')
             && vidni_core::validate::valid_id(last)
         {
-            tell!("vidni: to make {last} in {folder}, run `vidni new {last} --parent {folder}`");
+            tell!("vidni: to make {last} in {folder}, run `vidni new {last} --in {folder}`");
         }
         return ExitCode::FAILURE;
     }

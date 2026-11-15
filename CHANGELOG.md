@@ -6,6 +6,7 @@ What changed in each release of vidni, for the people who use it. The format is 
 
 ### Fixed
 
+- **`vidni new some/path` named a flag that isn't there.** Its hint said `--parent`; it says `--in` now, which is the flag.
 - **`just app-shot` took the compositor's bar and clock with the app's window.** It takes the window alone.
 - **A cut that went from one picture to another of another size could stop the build** with a panic, as the first faded out under the second's framing. Each now fades under its own.
 - **An overlay on a 9:16 cut laid out clear of its apps** was drawn wider than the part they leave free, and over the top of the view. It is as wide as that part now, and the picture is framed below it.
@@ -26,7 +27,7 @@ What changed in each release of vidni, for the people who use it. The format is 
 - **`vidni plan` prints each cut's whole length,** pauses and all, once the draft voice has spoken its lines.
 - **`columns = [first, last]` on a target of a terminal or code scene** narrows it to those columns, so a 9:16 cut can frame a part that reads.
 - **`examples/vidni-demo`:** a walkthrough of vidni, and a short, made with vidni.
-- **Two hints:** `vidni repro` says that `--draft` checks the drafts when the final cuts can't be built yet, and `vidni new some/path` says to use `--parent`.
+- **Two hints:** `vidni repro` says that `--draft` checks the drafts when the final cuts can't be built yet, and `vidni new some/path` says to use `--in`.
 - **`tools/zones_measure.py`** reads what an app covers off a screenshot of the grid clip.
 
 ## [0.1.0] - 2026-11-14

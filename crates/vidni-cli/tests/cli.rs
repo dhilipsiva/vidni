@@ -573,9 +573,14 @@ fn new_starts_a_project_that_is_valid_and_in_the_canonical_layout() {
     let (code, _, stderr) = vidni_in(work.path(), &["new", "videos/tour"]);
     assert_eq!(code, Some(1));
     assert!(
-        stderr.ends_with("vidni: to make tour in videos, run `vidni new tour --parent videos`\n"),
+        stderr.ends_with("vidni: to make tour in videos, run `vidni new tour --in videos`\n"),
         "{stderr}"
     );
+    // And what it says to run does make it there.
+    fs::create_dir(work.path().join("videos")).unwrap();
+    let (code, _, stderr) = vidni_in(work.path(), &["new", "tour", "--in", "videos"]);
+    assert_eq!(code, Some(0), "{stderr}");
+    assert!(work.path().join("videos/tour/vidni.toml").is_file());
 }
 
 #[test]
