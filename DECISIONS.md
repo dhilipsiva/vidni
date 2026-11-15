@@ -540,3 +540,11 @@ Added as the items are built.
   - **WhatsApp Status has measured figures, having no published ones:** 3 % at the top and 7 % at the bottom, a little over the 42 and 124 px seen. They are what the one who posts sees; a viewer sees a reply bar in the button's place, which wasn't measured.
   - **The screenshots stay out of the repository.** They show the maintainer's accounts and other people's pictures. The figures and the tool are what is kept.
 
+### T40. A drawn picture is shown whole, with its own ground around it
+- **2026-11-15, found by making `examples/vidni-demo`.** A framing was always a part of its page, because a web page is captured at the cut's own shape. A picture, a terminal session or code isn't: a strip of a diagram, 784 by 136, showed its middle third in a 16:9 cut, and nothing an author wrote could show the rest.
+  - **A framing of such a scene is loose:** it keeps its target whole and reaches past the picture's edges where it must (`crop_rect`). The room is the colour of the picture's first pixel. A web scene's framing is what it was, so the nibli example and the parity checks are untouched.
+  - **Its first rows clear the section's label and its last the captions:** the label takes 84 px of a 16:9 frame, and a loose framing may show that much ground above the picture and the captions' share below it.
+  - **Two pictures of different sizes cross-fade each under its own framing.** The fade used the new line's framing on the old picture, which is right on one page and reads past the edge of another: `vidni draft` panicked. `a_cut_goes_from_one_picture_to_another_of_another_size` builds such a cut.
+  - **An overlay in a 9:16 cut for platforms is as wide as the free part,** and the picture under it is framed below it. P5-VIDNI-05 drew it 1000 px wide over a view of 822, which P6-VIDNI-02's QA reported and nothing had tried.
+  - **A target of lines may name columns.** A 9:16 view has room for some 50 columns at a size that reads, and a band of lines is as wide as the window. `columns = [first, last]` narrows it, for `camera_vertical` to frame.
+

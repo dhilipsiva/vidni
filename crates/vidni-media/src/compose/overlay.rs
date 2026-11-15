@@ -128,7 +128,12 @@ fn groups(parts: &[Part]) -> Vec<(Vec<&Part>, Option<&str>)> {
 /// The size of `scene`'s overlay on a cut of that shape.
 pub fn size(scene: &Scene, portrait: bool) -> (u32, u32) {
     let width = if portrait { NARROW } else { WIDE };
-    let height = match (scene.template, portrait) {
+    (width, tall(scene, portrait))
+}
+
+/// How tall `scene`'s overlay is on a cut of that shape.
+fn tall(scene: &Scene, portrait: bool) -> u32 {
+    match (scene.template, portrait) {
         (Some(Template::Chips), false) => 150,
         (Some(Template::Chips), true) => 165 * scene.parts.len().div_ceil(2).max(1) as u32,
         (Some(Template::Flow), false) => 190,
@@ -138,8 +143,7 @@ pub fn size(scene: &Scene, portrait: bool) -> (u32, u32) {
             (24 + groups.len() as u32 * 118 + walls * 44).max(330)
         }
         _ => 150,
-    };
-    (width, height)
+    }
 }
 
 /// Draws `scene`'s overlay for a cut of that shape. `signs` is a face
@@ -152,7 +156,22 @@ pub fn render(
     signs: &Font,
     look: &Look,
 ) -> Image {
-    let (width, height) = size(scene, portrait);
+    let (width, _) = size(scene, portrait);
+    render_across(scene, portrait, width, fonts, faces, signs, look)
+}
+
+/// Draws `scene`'s overlay `width` pixels wide: narrower than its shape's
+/// own width where a cut has less room, between what its apps cover.
+pub fn render_across(
+    scene: &Scene,
+    portrait: bool,
+    width: u32,
+    fonts: &mut Fonts,
+    faces: &Type,
+    signs: &Font,
+    look: &Look,
+) -> Image {
+    let height = tall(scene, portrait);
     let ground = mix(look.frame, look.ink, 0.08);
     let mut img = Image::new(width, height, &ground);
     let mut brush = Brush {

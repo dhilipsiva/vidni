@@ -1025,8 +1025,23 @@ impl Rules {
             }
             let only_lines = Target {
                 lines: t.lines,
+                columns: t.columns,
                 ..Target::default()
             };
+            let across = s.columns.unwrap_or(80);
+            if t.lines.is_some()
+                && t.columns
+                    .is_some_and(|[first, last]| first < 1 || first > last || last > across)
+            {
+                let mut at = here.clone();
+                at.push(Seg::from("columns"));
+                self.add(
+                    at,
+                    format!(
+                        "columns = [first, last] are columns of the window, from 1 to {across}"
+                    ),
+                );
+            }
             let inside = |lines: [u32; 2]| {
                 s.lines
                     .is_none_or(|shown| lines[0] >= shown[0] && lines[1] <= shown[1])
@@ -1448,6 +1463,12 @@ impl Rules {
             self.add(
                 with("lines"),
                 "lines names a part of a terminal or code scene's text",
+            );
+        }
+        if t.columns.is_some() {
+            self.add(
+                with("columns"),
+                "columns narrows a part of a terminal or code scene's text",
             );
         }
         match (&t.css, t.any.is_empty()) {

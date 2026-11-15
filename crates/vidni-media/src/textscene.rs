@@ -317,8 +317,11 @@ pub fn still(dir: &Path, scene: &Scene, highlight: &[String]) -> Result<Still, S
     let boxes = |names: &mut dyn Iterator<Item = &String>| -> BTreeMap<String, Vec<[f64; 4]>> {
         names
             .filter_map(|name| {
-                let lines = scene.targets.get(name)?.lines?;
-                Some((name.clone(), vec![panel.lines(lines)?]))
+                let target = scene.targets.get(name)?;
+                Some((
+                    name.clone(),
+                    vec![panel.lines(target.lines?, target.columns)?],
+                ))
             })
             .collect()
     };

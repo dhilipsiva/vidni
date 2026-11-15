@@ -1,0 +1,474 @@
+#:schema ../../docs/vidni.schema.json
+# vidni, shown by vidni: a walkthrough of about three minutes and a short
+# from the same script. Every picture is one of vidni's own scene kinds,
+# and every terminal session is what the command really printed
+# (README.md says how each was made).
+
+schema = 1
+
+[meta]
+title = "vidni"
+subtitle = "a video from a text file"
+language = "en"
+default_scene = "open"
+
+[voice]
+draft = "piper:en_US-joe-medium"
+respell = [{ text = "vidni", say = "vid nee" }]
+
+# The walkthrough, for YouTube: a clean master, a captioned variant and
+# chapters. It holds its last card for an end screen to go over.
+[[cuts]]
+id = "long"
+aspect = "16:9"
+end_hold = 6
+
+# The short, for Shorts, Reels and WhatsApp Status: its own opening and
+# closing lines, around lines the walkthrough says too.
+[[cuts]]
+id = "short"
+aspect = "9:16"
+lines = [
+  "short-hook",
+  "open-2",
+  "file-2",
+  "draft-2",
+  "draft-3",
+  "gates-3",
+  "record-2",
+  "same-3",
+  "short-end",
+]
+
+[publish]
+description = """
+vidni is an open, deterministic studio for narrated tutorial videos. The whole video is one text file: the script, the scenes, the cuts. This walkthrough was made with it.
+"""
+tags = ["vidni", "tutorial videos", "open source", "rust"]
+links = [{ label = "vidni", url = "https://github.com/dhilipsiva/vidni" }]
+thumbnails = [
+  { line = "open-1", title = "A video from a text file" },
+  { line = "same-3", title = "The same bytes, every time" },
+]
+
+[sections.open]
+label = "vidni"
+chapter = "What vidni is"
+
+[sections.file]
+label = "the file"
+chapter = "The video is a text file"
+
+[sections.draft]
+label = "a draft"
+chapter = "A draft before any recording"
+
+[sections.gates]
+label = "the gates"
+chapter = "Ratify, then build"
+
+[sections.record]
+label = "your voice"
+chapter = "Recording"
+
+[sections.checks]
+label = "the checks"
+chapter = "What the final build checks"
+
+[sections.app]
+label = "the app"
+chapter = "The desktop app"
+
+[sections.same]
+label = "the same every time"
+chapter = "Builds that repeat"
+
+[sections.end]
+label = ""
+chapter = "Start your own"
+
+# --- The script ---
+
+[[lines]]
+id = "short-hook"
+section = "open"
+show = "What if a tutorial video were a text file? This one is."
+scene = "hook"
+only = ["short"]
+
+[[lines]]
+id = "open-1"
+section = "open"
+show = "This is vidni: a studio for narrated tutorial videos, where the whole video is one text file."
+
+[[lines]]
+id = "open-2"
+section = "open"
+show = "This video was made with it. Nobody recorded a screen, and nobody edited a timeline."
+
+[[lines]]
+id = "file-1"
+section = "file"
+show = "Here is the file of a one-minute video, as it was released."
+scene = "script"
+
+[[lines]]
+id = "file-2"
+section = "file"
+show = "Each narrated line is a small table: an ID, a section, and the words to say."
+scene = "script"
+highlight = ["line"]
+camera = "line"
+camera_vertical = "line-narrow"
+
+[[lines]]
+id = "file-3"
+section = "file"
+show = "A line names the scene it shows. A scene can be a web page, a card, a picture, a terminal session, or code at a commit, like this one."
+scene = "scenes"
+highlight = ["card"]
+
+[[lines]]
+id = "draft-1"
+section = "draft"
+show = "To start, vidni new makes a project that already works."
+scene = "first"
+highlight = ["new"]
+camera = "new"
+
+[[lines]]
+id = "draft-2"
+section = "draft"
+show = "vidni draft speaks every line in a synthetic voice, captures the pages, and renders each cut."
+scene = "first"
+highlight = ["draft"]
+camera = "draft"
+camera_vertical = "draft-narrow"
+
+[[lines]]
+id = "draft-3"
+section = "draft"
+show = "So you watch the whole video before you record a word."
+scene = "first"
+camera = "draft"
+camera_vertical = "made-narrow"
+
+[[lines]]
+id = "draft-4"
+section = "draft"
+show = "Draft again, and only what changed is made again. Here, that is nothing."
+scene = "first"
+highlight = ["again"]
+camera = "again"
+
+[[lines]]
+id = "gates-1"
+section = "gates"
+show = "A video goes through gates."
+scene = "flow"
+
+[[lines]]
+id = "gates-2"
+section = "gates"
+show = "You draft, and change the file, until it is right. Then you ratify it, which freezes what the cut shows and says."
+scene = "flow"
+
+[[lines]]
+id = "gates-3"
+section = "gates"
+show = "The final build is refused until the cut is ratified, and every line has your own take."
+scene = "refused"
+highlight = ["unratified"]
+camera = "top"
+camera_vertical = "unratified-narrow"
+
+[[lines]]
+id = "gates-4"
+section = "gates"
+show = "And when a ratified line changes, vidni says which one, and refuses again."
+scene = "refused"
+highlight = ["changed"]
+camera = "bottom"
+
+[[lines]]
+id = "record-1"
+section = "record"
+show = "vidni plan prints the recording sheet: each line to read, and how long the draft voice took over it."
+scene = "sheet"
+
+[[lines]]
+id = "record-2"
+section = "record"
+show = "vidni record takes you through it in the terminal, one line at a time, in your own voice."
+scene = "sheet"
+overlay = "keys"
+camera_vertical = "lines-narrow"
+
+[[lines]]
+id = "record-3"
+section = "record"
+show = "Each take is trimmed to your words, and filed under its line."
+scene = "sheet"
+overlay = "keys"
+
+[[lines]]
+id = "checks-1"
+section = "checks"
+show = "The final build puts your takes in place of the draft voice, and checks what it made."
+scene = "checks"
+
+[[lines]]
+id = "checks-2"
+section = "checks"
+show = "The loudness, the captions, the chapters, and each platform's limits."
+scene = "checks"
+
+[[lines]]
+id = "checks-3"
+section = "checks"
+show = "A vertical cut is laid out clear of what the apps draw over it. The shaded part of this frame is what Instagram covers."
+scene = "zones"
+camera = "free"
+
+[[lines]]
+id = "app-1"
+section = "app"
+show = "There is a desktop app too, with the script, a preview, the gates, a recording studio and the exports."
+scene = "window"
+camera = "tabs"
+
+[[lines]]
+id = "app-2"
+section = "app"
+show = "Everything it does is one of the same commands."
+scene = "window"
+camera = "script"
+
+[[lines]]
+id = "same-1"
+section = "same"
+show = "vidni is built to repeat itself."
+scene = "repeat"
+
+[[lines]]
+id = "same-2"
+section = "same"
+show = "vidni repro builds a cut twice, in clean environments, and compares every hash."
+scene = "repro"
+highlight = ["hashes"]
+
+[[lines]]
+id = "same-3"
+section = "same"
+show = "The same script, the same takes and the same pictures give the same bytes."
+scene = "repro"
+highlight = ["equal"]
+camera_vertical = "equal-narrow"
+
+[[lines]]
+id = "same-4"
+section = "same"
+show = "So you can change one line next year, and nothing else moves."
+scene = "repeat"
+
+[[lines]]
+id = "end-1"
+section = "end"
+show = "vidni is open source, and it runs on Linux. It needs no account, and no A.I."
+scene = "end"
+
+[[lines]]
+id = "end-2"
+section = "end"
+show = "Run vidni new, and write your first line."
+scene = "end"
+
+[[lines]]
+id = "short-end"
+section = "end"
+show = "That was the short version. The walkthrough, and vidni itself, are on GitHub."
+scene = "end"
+only = ["short"]
+
+# --- The scenes ---
+
+[scenes.open]
+kind = "card"
+template = "title"
+title = "vidni"
+subtitle = "a video from a text file"
+
+[scenes.hook]
+kind = "card"
+template = "title"
+title = "A video from a text file"
+subtitle = "vidni, in under a minute"
+
+# The file of examples/hello, as vidni 0.1.0 released it: code at a commit.
+[scenes.script]
+kind = "code"
+url = "examples/hello/vidni.toml"
+repo = "../.."
+rev = "2c703750f877cd8f22f0051c560e618589f973e8"
+scale = 2
+lines = [51, 67]
+
+[scenes.script.targets]
+line = { lines = [51, 55] }
+# The same lines, as wide as their words: a 9:16 cut has room for no more.
+line-narrow = { lines = [51, 55], columns = [1, 68] }
+
+[scenes.script.cameras]
+line = { union = ["line"] }
+line-narrow = { union = ["line-narrow"] }
+
+[scenes.scenes]
+kind = "code"
+url = "examples/hello/vidni.toml"
+repo = "../.."
+rev = "2c703750f877cd8f22f0051c560e618589f973e8"
+scale = 2
+lines = [135, 147]
+
+[scenes.scenes.targets]
+card = { lines = [135, 139] }
+
+# What the commands printed, in a scratch folder (README.md).
+[scenes.first]
+kind = "terminal"
+url = "sessions/first.txt"
+title = "a first video"
+scale = 2
+prompt = "$ "
+columns = 100
+
+[scenes.first.targets]
+new = { lines = [1, 6] }
+draft = { lines = [7, 19] }
+again = { lines = [21, 27] }
+draft-narrow = { lines = [7, 13], columns = [1, 50] }
+made-narrow = { lines = [10, 19], columns = [1, 50] }
+
+[scenes.first.cameras]
+new = { union = ["new"] }
+draft = { union = ["draft"] }
+again = { union = ["again"] }
+draft-narrow = { union = ["draft-narrow"] }
+made-narrow = { union = ["made-narrow"] }
+
+[scenes.flow]
+kind = "image"
+url = "gates.mmd"
+scale = 2
+
+[scenes.refused]
+kind = "terminal"
+url = "sessions/gates.txt"
+title = "the gates"
+scale = 2
+prompt = "$ "
+columns = 84
+
+[scenes.refused.targets]
+unratified = { lines = [4, 8] }
+top = { lines = [1, 17] }
+changed = { lines = [29, 31] }
+bottom = { lines = [19, 31] }
+unratified-narrow = { lines = [1, 8], columns = [1, 56] }
+
+[scenes.refused.cameras]
+top = { union = ["top"] }
+bottom = { union = ["bottom"] }
+unratified-narrow = { union = ["unratified-narrow"] }
+
+[scenes.sheet]
+kind = "terminal"
+url = "sessions/plan.txt"
+title = "the recording sheet"
+scale = 2
+prompt = "$ "
+columns = 84
+
+[scenes.sheet.targets]
+lines-narrow = { lines = [5, 7], columns = [1, 56] }
+
+[scenes.sheet.cameras]
+lines-narrow = { union = ["lines-narrow"] }
+
+# The recorder's keys, drawn over the sheet.
+[scenes.keys]
+kind = "overlay"
+template = "chips"
+
+[[scenes.keys.parts]]
+label = "space"
+text = "start a take, and stop it"
+tone = "accent"
+
+[[scenes.keys.parts]]
+label = "p"
+text = "play it back"
+
+[scenes.checks]
+kind = "card"
+template = "bullets"
+title = "What a final build checks"
+items = [
+  "The picture's size and frame rate",
+  "The loudness",
+  "The captions and the chapters",
+  "Each platform's limits",
+  "That nothing sits under an app's buttons",
+]
+
+# A review frame of another example's short, as `vidni draft` writes it.
+[scenes.zones]
+kind = "image"
+url = "zones.png"
+
+[scenes.zones.targets]
+free = { rect = [0, 180, 1080, 1160] }
+
+[scenes.zones.cameras]
+free = { union = ["free"] }
+
+# The app's window on this project, from `just app-shot`.
+[scenes.window]
+kind = "image"
+url = "app.png"
+
+[scenes.window.targets]
+tabs = { rect = [0, 0, 960, 380] }
+script = { rect = [0, 140, 960, 400] }
+
+[scenes.window.cameras]
+tabs = { union = ["tabs"] }
+script = { union = ["script"] }
+
+[scenes.repeat]
+kind = "card"
+template = "section"
+title = "The same every time"
+subtitle = "same script, same takes, same bytes"
+
+[scenes.repro]
+kind = "terminal"
+url = "sessions/repro.txt"
+title = "vidni repro"
+scale = 2
+prompt = "$ "
+columns = 84
+
+[scenes.repro.targets]
+hashes = { lines = [5, 12] }
+equal = { lines = [14, 14] }
+equal-narrow = { lines = [9, 14], columns = [1, 54] }
+
+[scenes.repro.cameras]
+equal-narrow = { union = ["equal-narrow"] }
+
+[scenes.end]
+kind = "card"
+template = "end"
+title = "vidni new my-video"
+subtitle = "github.com/dhilipsiva/vidni"

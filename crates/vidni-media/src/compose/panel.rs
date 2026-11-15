@@ -124,16 +124,24 @@ impl Panel {
 
     /// The band across the window behind the file's lines `first` to
     /// `last`, as `[x, y, width, height]` in CSS pixels; none when none of
-    /// them is shown.
-    pub fn lines(&self, [first, last]: [u32; 2]) -> Option<[f64; 4]> {
+    /// them is shown. With `columns`, the band is those columns of the
+    /// text, counted from 1, and no wider.
+    pub fn lines(&self, [first, last]: [u32; 2], columns: Option<[u32; 2]>) -> Option<[f64; 4]> {
         let shown = |row: &&Row| (first..=last).contains(&row.line);
         let from = self.rows.iter().position(|row| shown(&row))?;
         let count = self.rows.iter().filter(shown).count();
         let [width, _] = self.size();
+        let (x, across) = match columns {
+            Some([a, b]) => (
+                PAD + self.gutter() + a.saturating_sub(1) as f32 * self.advance,
+                (b + 1).saturating_sub(a) as f32 * self.advance,
+            ),
+            None => (0.0, width as f32),
+        };
         Some([
-            0.0,
+            f64::from(x),
             f64::from(BAR + PAD + from as f32 * ROW),
-            f64::from(width),
+            f64::from(across),
             f64::from(count as f32 * ROW),
         ])
     }
@@ -288,9 +296,14 @@ mod tests {
         // Four lines of two rows each; numbers of two digits, and two spaces.
         assert_eq!(panel.size(), [48 + 4 * 12 + 240, 44 + 48 + 8 * 30]);
         assert_eq!(
-            panel.lines([11, 12]),
+            panel.lines([11, 12], None),
             Some([0.0, 44.0 + 24.0 + 60.0, 336.0, 120.0])
         );
-        assert_eq!(panel.lines([14, 20]), None);
+        assert_eq!(panel.lines([14, 20], None), None);
+        // Columns 3 to 10 of those lines: after the numbers, eight wide.
+        assert_eq!(
+            panel.lines([11, 12], Some([3, 10])),
+            Some([24.0 + 48.0 + 24.0, 44.0 + 24.0 + 60.0, 96.0, 120.0])
+        );
     }
 }

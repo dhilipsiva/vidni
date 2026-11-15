@@ -781,6 +781,10 @@ pub struct Target {
     /// that the target is, counted from 1.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lines: Option<[u32; 2]>,
+    /// With `lines`: the first and last column of the window that the
+    /// target is, counted from 1. Default: the window's whole width.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub columns: Option<[u32; 2]>,
 }
 
 /// Which of a target's matches to keep.

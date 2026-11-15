@@ -1,0 +1,14 @@
+$ vidni repro my-video --cut long --draft
+repro: building twice: on cores 0,1 and on cores 29,30,31
+the resolved project: the two builds agree
+  t1 resolved         0d449689e184fd24
+long: the two builds agree
+  t1 timeline         0999c304c3b2d769
+  t1 captions         698eca0d51eaacde (srt), efad691d0f41324d (vtt)
+  t1 pcm              8e1e55cfc7b75072
+  t1 pcm, normalized  d6f6603d48590bc4
+  t1 frames           eaaf743088512ffc  long.mp4, 218 frames
+  t2 packets          3584e37889e3eb33  long.mp4
+  t2 file             3620250e8fdd9203  long.mp4
+  and they agree with the build in build/draft
+repro: T1 and T2 are equal across two builds, on cores 0,1 and 29,30,31

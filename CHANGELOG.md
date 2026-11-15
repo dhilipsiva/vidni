@@ -4,12 +4,21 @@ What changed in each release of vidni, for the people who use it. The format is 
 
 ## [Unreleased]
 
+### Fixed
+
+- **A cut that went from one picture to another of another size could stop the build** with a panic, as the first faded out under the second's framing. Each now fades under its own.
+- **An overlay on a 9:16 cut laid out clear of its apps** was drawn wider than the part they leave free, and over the top of the view. It is as wide as that part now, and the picture is framed below it.
+
 ### Changed
 
+- **A picture, a terminal session and code are shown whole.** A line with no camera used to show the middle of a picture that wasn't the cut's shape, cut off at the sides or the bottom. It now shows all of it, with the picture's own ground around it, clear of the captions and of the section's label. A draft of such a scene is framed anew.
 - **What the apps cover is measured.** A grid clip was played in the Shorts, Reels and WhatsApp Status apps and read off ([docs/platforms.md](docs/platforms.md)). Reels' right edge is 11 % where it was 6 %, and WhatsApp Status has a zone: 3 % at the top and 7 % at the bottom. A cut for the default platforms is laid out as before; one for Reels or Status alone is laid out again.
 
 ### Added
 
+- **`columns = [first, last]` on a target of a terminal or code scene** narrows it to those columns, so a 9:16 cut can frame a part that reads.
+- **`examples/vidni-demo`:** a walkthrough of vidni, and a short, made with vidni.
+- **Two hints:** `vidni repro` says that `--draft` checks the drafts when the final cuts can't be built yet, and `vidni new some/path` says to use `--parent`.
 - **`tools/zones_measure.py`** reads what an app covers off a screenshot of the grid clip.
 
 ## [0.1.0] - 2026-11-14

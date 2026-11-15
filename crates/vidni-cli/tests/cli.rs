@@ -569,6 +569,13 @@ fn new_starts_a_project_that_is_valid_and_in_the_canonical_layout() {
     assert_eq!(code, Some(1));
     assert!(stderr.ends_with("\"My Demo\" isn't\n"), "{stderr}");
     assert!(!work.path().join("My Demo").exists());
+    // A path isn't a name; the answer says how to make it there.
+    let (code, _, stderr) = vidni_in(work.path(), &["new", "videos/tour"]);
+    assert_eq!(code, Some(1));
+    assert!(
+        stderr.ends_with("vidni: to make tour in videos, run `vidni new tour --parent videos`\n"),
+        "{stderr}"
+    );
 }
 
 #[test]

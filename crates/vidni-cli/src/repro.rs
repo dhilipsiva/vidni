@@ -415,6 +415,12 @@ fn run(
             .flat_map(|cut| release::refusals(project, dir, &lock, cut))
             .collect();
         if !refusals.is_empty() {
+            // The final cuts can't be built yet; their drafts can.
+            let mut refusals = refusals;
+            refusals.push(
+                "repro builds the final cuts; `vidni repro --draft` builds the drafts instead"
+                    .into(),
+            );
             return Err(stopped(Stop::Refused(refusals)));
         }
         for cut in &cuts {

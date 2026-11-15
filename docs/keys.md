@@ -337,6 +337,7 @@ A named part of a web page: the visible elements that match.
 |---|---|---|---|
 | `any` | array of [Target](#target) |  | The union of other matchers, instead of `css`. |
 | `attr` | [AttrMatch](#attrmatch) |  | Keep the elements whose attribute matches. |
+| `columns` | array of whole number |  | With `lines`: the first and last column of the window that the target is, counted from 1. Default: the window's whole width. |
 | `css` | string |  | A CSS selector. |
 | `exclude` | string or [TextRule](#textrule) |  | Drop the elements whose text matches. |
 | `grow` | [Grow](#grow) |  | Grow each match to its largest enclosing block that still ends with the same text. |

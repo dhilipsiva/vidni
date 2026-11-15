@@ -381,6 +381,10 @@ fn shots(project: &Project, dir: &Path, cut: &Cut, lines: &[&Line]) -> Result<Ve
                         camera,
                         viewport,
                         scale: f64::from(frames.scale),
+                        // A web page is captured at the cut's own shape.
+                        // A picture, a session or code is whatever size
+                        // it is, and is shown whole.
+                        loose: scene.kind != SceneKind::Web,
                     }
                 }
             };

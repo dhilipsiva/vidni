@@ -1,0 +1,31 @@
+$ vidni status my-video
+long      draft
+vertical  draft
+$ vidni final my-video
+vidni: cut long isn't ratified; `vidni ratify --cut long` freezes it
+vidni: cut long: 2 of its 2 lines have no take: intro-1, intro-2
+vidni: cut vertical isn't ratified; `vidni ratify --cut vertical` freezes it
+vidni: cut vertical: 2 of its 2 lines have no take: intro-1, intro-2
+$ vidni ratify my-video
+long: ratified (content 360995cbe0ce, 2 captures)
+vertical: ratified (content f9cb0bc01539, 2 captures)
+$ vidni status my-video
+long      ratified
+vertical  ratified
+$ vidni final my-video
+vidni: cut long: 2 of its 2 lines have no take: intro-1, intro-2
+vidni: cut vertical: 2 of its 2 lines have no take: intro-1, intro-2
+
+$ sed -i "s/welcome\./welcome back./" my-video/vidni.toml
+$ vidni status my-video
+long      changed: line intro-1 changed
+vertical  changed: line intro-1 changed
+$ vidni changes my-video
+since the last build:
+  line intro-1 changed: show
+since each cut was ratified:
+  long: line intro-1 changed
+  vertical: line intro-1 changed
+$ vidni final my-video --cut long
+vidni: cut long has changed since it was ratified: line intro-1 changed
+vidni: cut long: 2 of its 2 lines have no take: intro-1, intro-2

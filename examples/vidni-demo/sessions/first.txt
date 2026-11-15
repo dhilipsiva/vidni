@@ -1,0 +1,27 @@
+$ vidni new my-video
+my-video: a new project, "My video"
+  my-video/vidni.toml  2 lines in 1 section, 1 scene, 2 cuts
+  my-video/page.html   the page its scene shows
+  my-video/.gitignore  keeps build/, out/ and takes/ out of git
+next: `vidni draft my-video` renders it as it is
+$ vidni draft my-video
+my-video/vidni.toml: draft voice piper:en_US-joe-medium: 2 lines; 2 chosen afresh from 3 takes each, 0 spoken from voice.lock, 0 from the cache
+my-video/vidni.toml: 2 captures taken
+long: timeline and captions
+long: narration
+long: long.mp4
+long: review frames
+my-video/build/draft/long.mp4: 218 frames; 1920x1080 h264 30/1 fps; aac 48000 Hz 2 ch; 7.25 s; -14.3 LUFS; -2.2 dBTP
+vertical: timeline and captions
+vertical: narration
+vertical: vertical.mp4
+vertical: review frames
+my-video/build/draft/vertical.mp4: 218 frames; 1080x1920 h264 30/1 fps; aac 48000 Hz 2 ch; 7.25 s; -14.3 LUFS; -2.2 dBTP
+
+$ vidni draft my-video
+my-video/vidni.toml: draft voice piper:en_US-joe-medium: 2 lines; 0 chosen afresh from 3 takes each, 0 spoken from voice.lock, 2 from the cache
+my-video/vidni.toml: every capture is taken
+long: nothing has changed since it was built; nothing to render
+my-video/build/draft/long.mp4: 218 frames; 1920x1080 h264 30/1 fps; aac 48000 Hz 2 ch; 7.25 s; -14.3 LUFS; -2.2 dBTP
+vertical: nothing has changed since it was built; nothing to render
+my-video/build/draft/vertical.mp4: 218 frames; 1080x1920 h264 30/1 fps; aac 48000 Hz 2 ch; 7.25 s; -14.3 LUFS; -2.2 dBTP

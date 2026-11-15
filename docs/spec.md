@@ -476,6 +476,7 @@ draft = { union = ["draft"] }
 ```
 
 - **A line on an image scene** takes `camera` and `camera_vertical`. It takes no `do` and no `highlight`.
+- **A picture is shown whole.** A web page is captured at the cut's own shape; a picture, a terminal session or code is whatever size it is. So a line with no camera shows all of it, as large as fits above the captions and below the section's label, with the picture's own ground around it: the colour of its first pixel. A camera frames a part the same way, and may show ground past an edge. A picture that is tall or wide is small when shown whole, so frame its parts.
 - **An SVG's text** is set in the fonts vidni pins ([Fonts](#fonts)), by the family the SVG names, and in no font of the system's. So the picture is the same on every machine.
 - **The picture is a capture** like any other: one for all the lines that show it, taken by `vidni draft` or `vidni capture` with no browser, frozen when its cut is ratified, and taken again when its file changes ([When a capture is out of date](#when-a-capture-is-out-of-date)).
 
@@ -511,6 +512,7 @@ answer = { union = ["answer"] }
 - **Colours are kept.** The escape codes a program prints for the eight colours, their bright forms and bold are drawn as colours. Every other escape code is left out.
 - **`lines = [first, last]`** on the scene shows only that part of the file. A line longer than `columns` goes on in the next row.
 - **A part of the session** is a target with `lines`, in the file's own numbering. A line's `highlight` marks its targets with a band, and cameras frame them, as on a web scene. A line takes no `do`.
+- **`columns = [first, last]`** beside a target's `lines` narrows it to those columns of the window, counted from 1: `{ lines = [7, 9], columns = [1, 48] }`. A 9:16 cut has room for some 50 columns at a size that reads, so give a line a `camera_vertical` that frames such a part.
 - **The window is drawn by vidni,** in DejaVu Sans Mono, one of the fonts it pins ([Fonts](#fonts)), so it is the same picture on every machine. It has the arrows, boxes and signs of logic that a program may print.
 - **The picture is a capture** like any other: one for each set of marked lines, taken by `vidni draft` with no browser, frozen when its cut is ratified, and taken again when the transcript changes.
 

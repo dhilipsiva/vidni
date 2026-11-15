@@ -1,0 +1,119 @@
+# Written by `vidni speak` and `vidni draft`: the seed each line's draft take was kept at.
+# Commit it, so that a redraft gives the same audio. To hear another take of
+# a line, give it another seed (docs/spec.md, The draft voice).
+
+[lines.app-1]
+key = "212b3f5edfc6db14"
+seed = 1021435881
+
+[lines.app-2]
+key = "b542a892520f4a27"
+seed = 245385064
+
+[lines.checks-1]
+key = "0387a9205a3aa256"
+seed = 377972763
+
+[lines.checks-2]
+key = "093c9f196da064d1"
+seed = 1604651448
+
+[lines.checks-3]
+key = "731e0239f38f5b5b"
+seed = 664873214
+
+[lines.draft-1]
+key = "a96bb23c9755e81c"
+seed = 2128377996
+
+[lines.draft-2]
+key = "9fdd060b790abcb5"
+seed = 360801350
+
+[lines.draft-3]
+key = "1c9553c2b1609799"
+seed = 70413099
+
+[lines.draft-4]
+key = "dcaaf97cb3d1a6dc"
+seed = 804244287
+
+[lines.end-1]
+key = "a70386194f00fd71"
+seed = 1174676391
+
+[lines.end-2]
+key = "7953d3196b3dd054"
+seed = 1941040824
+
+[lines.file-1]
+key = "743312f34797ef0e"
+seed = 422682096
+
+[lines.file-2]
+key = "897f1320093175aa"
+seed = 514719071
+
+[lines.file-3]
+key = "eb55d163a8d50dd6"
+seed = 415059610
+
+[lines.gates-1]
+key = "48c55fd4815ccc2b"
+seed = 589697041
+
+[lines.gates-2]
+key = "36215fc37fb263c9"
+seed = 1269651820
+
+[lines.gates-3]
+key = "1c62a12843cd3e3c"
+seed = 606731964
+
+[lines.gates-4]
+key = "1986b7bdcff8a485"
+seed = 190462089
+
+[lines.open-1]
+key = "1022366efb139a2c"
+seed = 628648154
+
+[lines.open-2]
+key = "f312c6dc2432099e"
+seed = 62770921
+
+[lines.record-1]
+key = "70fc46d7fb0ee84f"
+seed = 878837418
+
+[lines.record-2]
+key = "6edc3e38cc54371f"
+seed = 795199383
+
+[lines.record-3]
+key = "60bf3861881923a3"
+seed = 606982481
+
+[lines.same-1]
+key = "63b3b548e70b08d5"
+seed = 1003758318
+
+[lines.same-2]
+key = "d0b3e124027d0a77"
+seed = 674746383
+
+[lines.same-3]
+key = "07deb49c4d25bf6b"
+seed = 1754296253
+
+[lines.same-4]
+key = "1baf271c01b88dbb"
+seed = 1370549722
+
+[lines.short-end]
+key = "23ac7be7e65da4e4"
+seed = 1657614305
+
+[lines.short-hook]
+key = "15d1f16579513de5"
+seed = 475180077

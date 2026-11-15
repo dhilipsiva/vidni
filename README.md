@@ -42,6 +42,7 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 - `vidni voices` lists the draft voices with their licences, and `vidni speak` speaks every line in the draft voice, seeded so that it repeats.
 - `vidni capture` captures web scenes and page scenes through Chromium, as the cuts need them.
 - Image scenes put a PNG or an SVG under the virtual camera, with no browser (`examples/images`).
+- `examples/vidni-demo` is vidni shown by vidni: a walkthrough and a short from one script, with what making it found.
 - Card scenes are drawn from five templates (title, section, bullets, quote, end) in the project's theme. The default theme is built in; `examples/themes/quine` is the nibli example's.
 - `vidni hear` listens to each line's audio with whisper and flags a line that doesn't sound like its script. It only advises.
 - `vidni draft` renders each cut in the draft voice, to watch before recording. Drafted again with nothing changed, it renders nothing.

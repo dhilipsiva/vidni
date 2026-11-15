@@ -1,0 +1,7 @@
+$ vidni plan my-video
+My video: the recording sheet
+2 lines in 1 section, 9 words; 0 recorded, 0 stale, 2 to record; about 0:04 in the draft voice, without the pauses
+
+Introduction
+  [ ] intro-1    1.7 s  Hello, and welcome.
+  [ ] intro-2    2.3 s  This video was made with vidni.

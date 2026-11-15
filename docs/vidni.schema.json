@@ -1219,6 +1219,20 @@
           ],
           "default": null
         },
+        "columns": {
+          "description": "With `lines`: the first and last column of the window that the\ntarget is, counted from 1. Default: the window's whole width.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "maxItems": 2,
+          "minItems": 2
+        },
         "css": {
           "description": "A CSS selector.",
           "type": [

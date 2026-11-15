@@ -23,6 +23,8 @@ const CAM_EASE: f64 = 0.7;
 const XFADE: f64 = 0.35;
 /// Where 16:9 overlays sit, below the section label.
 const OVERLAY_Y: i32 = 100;
+/// The room a 16:9 cut's section label takes at the top of the frame, in pixels.
+const LABEL: f64 = 84.0;
 
 /// A theme's colours and marks, as the compositor draws with them.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -187,6 +189,10 @@ pub enum Picture {
         camera: [f64; 4],
         viewport: [f64; 2],
         scale: f64,
+        /// Whether the framing may reach past the picture's edges, with
+        /// the picture's ground around it: so for a drawn picture, which
+        /// has no page of the cut's shape around it as a web page has.
+        loose: bool,
     },
     Card(PathBuf),
     /// A card drawn from one of the theme's templates, at the cut's size.
@@ -195,12 +201,17 @@ pub enum Picture {
 
 /// A crop (CSS pixels) of the cut's aspect that frames `target` between
 /// the top reserve (an overlay) and the bottom reserve (captions).
+///
+/// A crop stays on its page, and so shows less than `target` when the page
+/// is too small for it. A `loose` crop keeps all of `target` and reaches
+/// past the page instead, as far as it must.
 pub fn crop_rect(
     target: [f64; 4],
     aspect: f64,
     layout: &Layout,
     (vw, vh): (f64, f64),
     top_reserve: f64,
+    loose: bool,
 ) -> [f64; 4] {
     let pad = 16.0;
     let (x, y, w, h) = (
@@ -215,17 +226,60 @@ pub fn crop_rect(
     if width < layout.min_w {
         (width, height) = (layout.min_w, layout.min_w / aspect);
     }
-    if width > vw {
-        (width, height) = (vw, vw / aspect);
-    }
-    if height > vh {
-        (height, width) = (vh, vh * aspect);
+    if !loose {
+        if width > vw {
+            (width, height) = (vw, vw / aspect);
+        }
+        if height > vh {
+            (height, width) = (vh, vh * aspect);
+        }
     }
     let cx = x + w / 2.0;
     let top = y - top_reserve * height - (height * free - h).max(0.0) / 2.0;
-    let left = (cx - width / 2.0).max(0.0).min(vw - width);
-    let top = top.max(0.0).min(vh - height);
-    [left, top, width, height]
+    // On the page where the crop is smaller than it, and around the page
+    // where it is larger. A loose crop may also show `over` past an edge.
+    let within = |at: f64, size: f64, page: f64, over: [f64; 2]| {
+        let (low, high) = (-over[0], page - size + over[1]);
+        at.max(low.min(high)).min(low.max(high))
+    };
+    // What an overlay or a label covers at the top of a loose crop, and
+    // the captions at its bottom, needn't be the picture: so its first
+    // rows can sit under the one and its last above the other.
+    let over = match loose {
+        true => [top_reserve * height, layout.reserve * height],
+        false => [0.0, 0.0],
+    };
+    [
+        within(cx - width / 2.0, width, vw, [0.0, 0.0]),
+        within(top, height, vh, over),
+        width,
+        height,
+    ]
+}
+
+/// `source` with room around it for `bbox` (left, top, right, bottom, in
+/// its pixels), where `bbox` reaches past its edges, and `bbox` as the
+/// larger picture has it. The room is the colour of the picture's first
+/// pixel: its ground.
+fn around(source: Image, bbox: [f32; 4]) -> (Image, [f32; 4]) {
+    let past = |v: f32| v.max(0.0).ceil() as u32;
+    let (left, top) = (past(-bbox[0]), past(-bbox[1]));
+    let right = past(bbox[2] - source.width as f32);
+    let bottom = past(bbox[3] - source.height as f32);
+    if (left, top, right, bottom) == (0, 0, 0, 0) {
+        return (source, bbox);
+    }
+    let mut room = Image::new(
+        source.width + left + right,
+        source.height + top + bottom,
+        source.pixel(0, 0),
+    );
+    pillow::paste(&mut room, &source, left as i32, top as i32);
+    let (dx, dy) = (left as f32, top as f32);
+    (
+        room,
+        [bbox[0] + dx, bbox[1] + dy, bbox[2] + dx, bbox[3] + dy],
+    )
 }
 
 /// Smoothstep, clamped to 0..1.
@@ -317,8 +371,14 @@ impl Composer {
                     }
                     let face = signs.as_ref().expect("it was just loaded");
                     let portrait = layout.size.1 > layout.size.0;
-                    Some(super::overlay::render(
-                        strip, portrait, fonts, faces, face, look,
+                    // As wide as its shape has it, or as the part of the
+                    // frame that the cut's apps leave free.
+                    let (own, _) = super::overlay::size(strip, portrait);
+                    let width = layout.clear().map_or(own, |covered| {
+                        own.min(layout.size.0 - covered.left - covered.right)
+                    });
+                    Some(super::overlay::render_across(
+                        strip, portrait, width, fonts, faces, face, look,
                     ))
                 }
                 (None, overlay) => overlay,
@@ -349,12 +409,29 @@ impl Composer {
                     camera,
                     viewport,
                     scale,
+                    loose,
                 } => {
                     let top = match (&overlay, layout.name) {
                         (Some(o), "16x9") => f64::from(OVERLAY_Y + o.height as i32 + 20) / height,
+                        // A 9:16 overlay stands in the title band's place,
+                        // and one taller than the band reaches over the view.
+                        (Some(o), _) => {
+                            let from = layout.clear().map_or(0, |covered| covered.top);
+                            f64::from((from + o.height).saturating_sub(layout.view.1)) / vh
+                        }
+                        // A drawn picture is shown whole, so its top would
+                        // sit under the section's label.
+                        (None, "16x9") if loose && !shot.label.is_empty() => LABEL / height,
                         _ => 0.0,
                     };
-                    let rect = crop_rect(camera, aspect, &layout, (viewport[0], viewport[1]), top);
+                    let rect = crop_rect(
+                        camera,
+                        aspect,
+                        &layout,
+                        (viewport[0], viewport[1]),
+                        top,
+                        loose,
+                    );
                     Item {
                         label: shot.label,
                         card: None,
@@ -493,8 +570,12 @@ impl Composer {
         };
         let mut picture = self.visual(i, rect)?;
         if fade < 1.0 && i > 0 {
+            // The picture before fades out under this line's framing when
+            // both are of one page. A framing is measured on its own page,
+            // so a picture of another size keeps its own.
+            let same = self.items[i - 1].space == self.items[i].space;
             let prev_rect = match rect {
-                Some(r) if !self.items[i - 1].full() => Some(r),
+                Some(r) if same && !self.items[i - 1].full() => Some(r),
                 _ => self.items[i - 1].rect,
             };
             let old = self.visual(i - 1, prev_rect)?;
@@ -550,6 +631,7 @@ impl Composer {
             ((x + w) * d) as f32,
             ((y + h) * d) as f32,
         ];
+        let (source, bbox) = around(source, bbox);
         let view = pillow::resize_bicubic(&source, (vw, vh), bbox);
         if self.layout.name == "16x9" {
             return Ok(view);
@@ -962,6 +1044,7 @@ mod tests {
             &LANDSCAPE,
             (1280.0, 720.0),
             0.0,
+            false,
         );
         assert_eq!(
             r.map(|v| (v * 1000.0).round() / 1000.0),
@@ -973,10 +1056,49 @@ mod tests {
             &PORTRAIT,
             (1280.0, 720.0),
             0.0,
+            false,
         );
         assert_eq!(
             r.map(|v| (v * 1000.0).round() / 1000.0),
             [660.0, 0.0, 586.0, 634.833]
+        );
+    }
+
+    #[test]
+    fn a_loose_crop_keeps_its_target_whole_and_reaches_past_the_page() {
+        // A strip much wider than the cut: a crop that stays on it shows
+        // its middle only; a loose one shows all of it, clear of the captions.
+        let strip = [0.0, 0.0, 784.0, 136.0];
+        let page = (784.0, 136.0);
+        let on = crop_rect(strip, 16.0 / 9.0, &LANDSCAPE, page, 0.0, false);
+        assert!(on[2] < 784.0 && on[3] <= 136.0, "{on:?}");
+        let [x, y, w, h] = crop_rect(strip, 16.0 / 9.0, &LANDSCAPE, page, 0.0, true);
+        assert!(x <= 0.0 && x + w >= 784.0, "all of its width: {x} {w}");
+        assert!(
+            y <= 0.0 && y + h * 0.8 >= 136.0,
+            "above the captions: {y} {h}"
+        );
+        assert_eq!((w / h * 1000.0).round(), (16.0f64 / 9.0 * 1000.0).round());
+        // The page is in the middle of what is left over, across.
+        assert_eq!((-x).round(), (x + w - 784.0).round());
+        // The last rows of a tall page are framed above the captions, with
+        // the room below the page under them.
+        let tall = (800.0, 1000.0);
+        let [_, y, _, h] = crop_rect(
+            [0.0, 900.0, 800.0, 100.0],
+            16.0 / 9.0,
+            &LANDSCAPE,
+            tall,
+            0.0,
+            true,
+        );
+        assert!(y + h * 0.8 >= 1000.0 && y + h > 1000.0, "{y} {h}");
+        // A target well inside a large page is framed the same either way.
+        let part = [400.0, 300.0, 200.0, 100.0];
+        let big = (1280.0, 2000.0);
+        assert_eq!(
+            crop_rect(part, 16.0 / 9.0, &LANDSCAPE, big, 0.0, true),
+            crop_rect(part, 16.0 / 9.0, &LANDSCAPE, big, 0.0, false)
         );
     }
 

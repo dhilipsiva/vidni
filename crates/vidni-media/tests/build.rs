@@ -895,6 +895,92 @@ box = { union = ["box"] }
     assert_ne!(fs::read(capture::path(dir, key)).unwrap(), first);
 }
 
+#[test]
+fn a_cut_goes_from_one_picture_to_another_of_another_size() {
+    use vidni_media::capture::{Limits, capture_with};
+    let dir = tempfile::tempdir().unwrap();
+    let dir = dir.path();
+    let svg = |w: u32, h: u32, ink: &str| {
+        format!(
+            r##"<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}">
+  <rect width="{w}" height="{h}" fill="#101014"/>
+  <rect x="{}" y="{}" width="60" height="40" fill="{ink}"/>
+</svg>"##,
+            w - 100,
+            h - 60
+        )
+    };
+    // A tall picture, then a wide strip much smaller than it: a framing of
+    // the first's lower part is past the second's edge.
+    fs::write(dir.join("tall.svg"), svg(1200, 1000, "#f2542d")).unwrap();
+    fs::write(dir.join("strip.svg"), svg(780, 130, "#2f5fd0")).unwrap();
+    let text = r#"schema = 1
+
+[meta]
+title = "Two pictures"
+default_scene = "tall"
+
+[timing]
+lead_in = 0.1
+line_gap = 0.2
+section_gap = 0.2
+tail = 0.2
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[[cuts]]
+id = "vertical"
+aspect = "9:16"
+platforms = []
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "The lower part of a tall picture."
+camera = "low"
+
+[[lines]]
+id = "main-2"
+section = "main"
+show = "Then a strip."
+scene = "strip"
+
+[[lines]]
+id = "main-3"
+section = "main"
+show = "And the tall one again."
+camera = "low"
+
+[scenes.tall]
+kind = "image"
+url = "tall.svg"
+
+[scenes.tall.targets]
+low = { rect = [1100, 940, 60, 40] }
+
+[scenes.tall.cameras]
+low = { union = ["low"] }
+
+[scenes.strip]
+kind = "image"
+url = "strip.svg"
+"#;
+    let p = project(dir, text);
+    let cuts: Vec<&Cut> = p.cuts.iter().collect();
+    let plan = capture::plan(&p, dir, &cuts);
+    capture_with(&p, dir, &plan, Limits::default()).unwrap();
+    record_takes(dir, &p, None);
+    let lock = ratified(dir, &p);
+    for id in ["long", "vertical"] {
+        let built = build::final_build(&p, dir, &lock, cut(&p, id), &setup(), &mut quiet());
+        assert!(built.is_ok(), "{id}: {:?}", built.err());
+    }
+}
+
 /// A 16:9 cut for YouTube: `sections` sections of card lines, the last
 /// with `last` lines and the others with four. A line's take is 2.5 s
 /// and the gaps 0.2 s, so four lines last some 11 s.

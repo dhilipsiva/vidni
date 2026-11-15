@@ -201,6 +201,14 @@ pub fn a_project_goes_from_draft_to_approved_and_its_builds_repeat(run: Run) {
         "vidni: cut long: 3 of its 3 lines have no take: main-1, main-2, main-3\n\
          vidni: cut short: 2 of its 2 lines have no take: main-2, main-3\n"
     );
+    // A repro of the final cuts is refused the same way, and says how
+    // to check the drafts instead.
+    let unrecorded = refused(dir, &["repro"]);
+    assert!(
+        unrecorded.contains("3 of its 3 lines have no take")
+            && unrecorded.contains("`vidni repro --draft` builds the drafts instead"),
+        "{unrecorded}"
+    );
     assert!(
         !dir.join("build/final").exists(),
         "nothing is rendered for a refused build"

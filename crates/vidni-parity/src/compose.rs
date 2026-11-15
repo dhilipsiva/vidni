@@ -181,6 +181,7 @@ fn shots(
                         camera,
                         viewport,
                         scale,
+                        loose: false,
                     }
                 }
             };

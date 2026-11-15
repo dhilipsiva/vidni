@@ -402,6 +402,12 @@ pub fn new(name: &str, from: Option<&Path>, parent: &Path) -> ExitCode {
         tell!(
             "vidni: a project's name is lowercase letters and digits, in words joined by hyphens, such as my-first-video; {name:?} isn't"
         );
+        // A path was meant: the folder to make it in has its own flag.
+        if let Some((folder, last)) = name.rsplit_once('/')
+            && vidni_core::validate::valid_id(last)
+        {
+            tell!("vidni: to make {last} in {folder}, run `vidni new {last} --parent {folder}`");
+        }
         return ExitCode::FAILURE;
     }
     let outline = match from.map(std::fs::read_to_string) {
