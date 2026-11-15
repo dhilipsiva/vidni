@@ -23,6 +23,15 @@ use std::process::{Child, ChildStdin, Command, Stdio};
 /// cores, and took no longer.
 pub const X264_PARAMS: &str = "sync-lookahead=0";
 
+/// What ffmpeg's AAC encoder is told besides its bit rate: no perceptual
+/// noise substitution. With it, a sibilant of one narration came out of
+/// the encoder at +1.8 dBTP where it went in at -2.0, a spike a few
+/// samples long that QA then refused and no creator could have changed;
+/// without it the same narration comes out at -2.0 (TODO.md,
+/// P10-VIDNI-01). At 160 kb/s the encoder has the bits to code those
+/// bands as they are.
+pub const AAC_PARAMS: [&str; 2] = ["-aac_pns", "0"];
+
 /// What the encoder makes.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Settings {
@@ -109,6 +118,7 @@ impl Settings {
             "-b:a".into(),
             format!("{}k", self.audio_kbps),
         ]);
+        args.extend(AAC_PARAMS.map(String::from));
         // The chapters come from the third input, when there is one. Then
         // only the file's own metadata is dropped: dropping all of it
         // would take the chapters' titles too.

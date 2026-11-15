@@ -1119,6 +1119,7 @@ Every build, draft or final, puts the lines' clips through the same chain. It is
 | Limit | Holds the few peaks still above −2.5 dBFS under it, and gives back the loudness that took |
 | Room tone | Fills every pause with the room |
 
+- **The encoder adds no peak of its own.** The narration is encoded as AAC at 160 kb/s with the encoder's noise substitution off, so that what comes out is as high as what went in: QA holds a cut's true peak under −1 dBTP, and a peak the encoder made would be one no creator could take out.
 - **The first three are done to each clip,** the next three to the narration as a whole. So a line sounds the same in every cut that uses it, and no line is made louder than its neighbours.
 - **The pauses hold the room, not digital silence.** A final build fills them with `takes/_room/tone.wav`, which `vidni record --test` keeps, given the gain the takes were given. Without one, and in a draft, they hold a faint noise at −70 dBFS made from a fixed seed. Between lines recorded in a room, digital silence is heard as the sound dropping out.
 - **The same clips give the same narration,** to the byte, on any machine: the chain is arithmetic done in one order, and its measure of loudness is vidni's own, as ITU-R BS.1770 defines it.

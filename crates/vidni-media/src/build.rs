@@ -189,6 +189,7 @@ impl Setup {
                 "preset": settings.preset,
                 "threads": settings.threads,
                 "x264": encode::X264_PARAMS,
+                "aac": encode::AAC_PARAMS,
                 "audio_kbps": settings.audio_kbps,
                 "loudness": [loudness.integrated, loudness.true_peak, loudness.range],
             }),

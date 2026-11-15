@@ -278,6 +278,62 @@ fn a_frame_of_the_wrong_size_is_refused() {
     );
 }
 
+/// A narration whose sibilant ffmpeg's AAC encoder spikes on, when it is
+/// left to substitute noise: the first 18.5 s of a draft in the voice
+/// `piper:en_US-kristin-medium`, as `voice::narrate` wrote it (22.05 kHz,
+/// mono, its peaks held at -2.5 dBFS). The spike depends on everything
+/// the encoder has heard before it, so the fixture is the narration from
+/// its start.
+fn sibilant() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/encode/sibilant.flac")
+}
+
+#[test]
+fn the_encoder_adds_no_peak_to_a_narration() {
+    let dir = tempfile::tempdir().unwrap();
+    // The narration as a cut encodes it: 48 kHz, the same in both channels.
+    let narration = dir.path().join("narration.wav");
+    vidni_media::encode::stereo(&sibilant(), &narration).unwrap();
+    let before = qa::measure(&narration).unwrap().true_peak.unwrap();
+    assert!(
+        (-2.5..=-1.5).contains(&before),
+        "it goes in at {before} dBTP"
+    );
+
+    // P10-VIDNI-01: encoded as a cut is, it comes out as high as it went in.
+    let out = dir.path().join("cut.mp4");
+    let mut encoder = Encoder::start(&Settings::new(W, H), &narration, &out).unwrap();
+    let still = frame(0);
+    for _ in 0..30 * 19 {
+        encoder.push(&still).unwrap();
+    }
+    encoder.finish().unwrap();
+    let after = qa::measure(&out).unwrap().true_peak.unwrap();
+    assert!(
+        (after - before).abs() <= 0.5,
+        "{before} dBTP went in and {after} came out"
+    );
+
+    // And it is this narration that the setting is for: with ffmpeg's
+    // encoder as it comes, the same sound comes out over full scale. If
+    // this stops holding, ffmpeg's encoder has changed, and the fixture
+    // tells nothing any more.
+    let plain = dir.path().join("plain.m4a");
+    let made = Command::new("ffmpeg")
+        .args(["-nostdin", "-loglevel", "error", "-y", "-i"])
+        .arg(&narration)
+        .args(["-c:a", "aac", "-b:a", "160k"])
+        .arg(&plain)
+        .status()
+        .unwrap();
+    assert!(made.success());
+    let spiked = qa::measure(&plain).unwrap().true_peak.unwrap();
+    assert!(
+        spiked > before + 2.0,
+        "{before} dBTP went in and {spiked} came out"
+    );
+}
+
 #[test]
 fn qa_names_digital_silence_and_a_peak_that_is_too_high() {
     let dir = tempfile::tempdir().unwrap();

@@ -78,6 +78,7 @@ nibli-syllogism-voice-9x16  8,441 frames  97cc6585c827b80c014d03e7eb9f888cc56835
 **Encoding** (`vidni_media::encode`):
 - libx264 runs with a fixed thread count, preset and CRF. Its packets depend on the thread count, so the count never follows the host's cores.
 - libx264's lookahead runs in the encoder's own thread (`sync-lookahead=0`). In a thread of its own, which is x264's default with several threads, the packets depended on how the threads were scheduled (DECISIONS.md, T8).
+- ffmpeg's AAC encoder runs without perceptual noise substitution (`-aac_pns 0`). With it, one narration's sibilant came out 3.8 dB over what went in, as a spike a few samples long (DECISIONS.md, T42).
 - `+bitexact` applies to the container and both codecs, and `-map_metadata -1` drops metadata. No date or version number enters the file; the encoder tag names the codec without its version.
 - The conversion from RGB to YUV is BT.709, with bit-exact, accurate rounding, and the colour tags say so.
 - `-cpuflags 0` stops ffmpeg's filters from choosing SIMD paths by CPU.

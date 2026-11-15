@@ -13,6 +13,7 @@ What changed in each release of vidni, for the people who use it. The format is 
 
 ### Changed
 
+- **The AAC encoder no longer substitutes noise** (`-aac_pns 0`). On a sibilant of one narration it made a spike of up to +3.4 dBTP from sound that went in at -2.0, which QA refused and nothing in the project could change. **Every cut encodes to other bytes now:** a draft or a final build made before is built again the next time, and its T2 hashes differ. An approved release stays approved, with the files it delivered; building that cut again gives a new release.
 - **A picture, a terminal session and code are shown whole.** A line with no camera used to show the middle of a picture that wasn't the cut's shape, cut off at the sides or the bottom. It now shows all of it, with the picture's own ground around it, clear of the captions and of the section's label. A draft of such a scene is framed anew.
 - **What the apps cover is measured.** A grid clip was played in the Shorts, Reels and WhatsApp Status apps and read off ([docs/platforms.md](docs/platforms.md)). Reels' right edge is 11 % where it was 6 %, and WhatsApp Status has a zone: 3 % at the top and 7 % at the bottom. A cut for the default platforms is laid out as before; one for Reels or Status alone is laid out again.
 
