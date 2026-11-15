@@ -4,6 +4,14 @@ What changed in each release of vidni, for the people who use it. The format is 
 
 ## [Unreleased]
 
+### Changed
+
+- **What the apps cover is measured.** A grid clip was played in the Shorts, Reels and WhatsApp Status apps and read off ([docs/platforms.md](docs/platforms.md)). Reels' right edge is 11 % where it was 6 %, and WhatsApp Status has a zone: 3 % at the top and 7 % at the bottom. A cut for the default platforms is laid out as before; one for Reels or Status alone is laid out again.
+
+### Added
+
+- **`tools/zones_measure.py`** reads what an app covers off a screenshot of the grid clip.
+
 ## [0.1.0] - 2026-11-14
 
 The first release.

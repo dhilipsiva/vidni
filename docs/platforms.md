@@ -42,12 +42,27 @@ None of these platforms publishes a loudness target for uploads. YouTube's playb
 ## Shorts, Reels and WhatsApp Status
 
 - **The apps cover part of the picture:** buttons down the right, the account and the description along the bottom, tabs across the top. vidni lays a 9:16 cut out clear of what its platforms cover together, QA lists anything that would sit under an app, and the review frames in `build/draft/review/<cut>/<platform>/` show each app's share shaded ([What the apps cover](spec.md#what-the-apps-cover)).
-- **The figures are the platforms' own guidance for ads.** None publishes margins for ordinary posts, and WhatsApp publishes none at all. `vidni platforms --grid DIR` makes a grid clip to upload privately and measure an app with.
+- **The figures are the platforms' own guidance for ads, held to the apps.** None publishes margins for ordinary posts, and WhatsApp publishes none at all. So a grid clip was played in each app on an Android phone on 15 November 2026 and measured ([the table below](#what-the-apps-were-seen-to-cover)). Shorts drew inside its published zone. Reels' buttons took 11 % of the right edge where Meta says 6 %, so that edge is the measured one. WhatsApp Status's figures are measured: 3 % at the top and 7 % at the bottom.
+- **An app changes, and phones differ.** `vidni platforms --grid DIR` makes the grid clip; upload it privately, take a screenshot while it plays, and `python3 tools/zones_measure.py DIR/grid-1080x1920.png SCREENSHOT.png` prints what the app drew on and what the screen cut off.
 - **Captions are drawn in.** Shorts' caption-file upload isn't documented, Reels and Status take no caption file, and vidni's shorts are always captioned.
 - **Length:**
   - A Short may run 3 minutes. One over 1 minute with an active Content ID claim is blocked worldwide, so keep music out of longer Shorts.
   - Reels over 3 minutes aren't recommended to new audiences.
   - Of a Status video over 90 seconds, only the first 90 are shared.
+
+### What the apps were seen to cover
+
+The grid clip, 1080 by 1920, as each Android app showed it to the account that posted it, on a screen of 1080 by 2424 px. The figures are in the clip's own pixels.
+
+| App | Top | Bottom | Right | Left | The profile's zone |
+|---|---|---|---|---|---|
+| YouTube Shorts | 77 px | 399 px | 159 px, from 1055 px down | 42 px cut off | 288, 672, 192 and 48 px: Google's, wider at every edge |
+| Instagram Reels | 111 px | 245 px | 114 px, from 1134 px down | none | 269 and 672 px, 65 px left: Meta's. 119 px right: measured |
+| WhatsApp Status | 42 px | 124 px | none | none | 58 and 135 px: measured |
+
+- **Shorts fills the screen's height,** so a screen taller than 9:16 cuts the sides off: 42 px each on this one. Reels and Status showed the whole clip.
+- **The one who posts sees more than a viewer:** Shorts adds a button to share the video, and Status one for more statuses. A viewer of a Status sees a reply bar there instead.
+- **Words you type with a post are drawn over the bottom:** a Short's title, a reel's caption, a status's caption. The published zones allow for them; the measured figures for Status don't.
 
 ## TikTok, LinkedIn and X
 

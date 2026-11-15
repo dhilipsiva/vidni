@@ -532,3 +532,11 @@ Added as the items are built.
 - **What only Unix has is behind `cfg(unix)`:** Chromium's pipes by descriptor number, the network namespace of `--offline`, process groups, file modes, `vidni setup`. Windows refuses a web or page scene with a sentence that names what works.
 - **Unsigned,** and the README in each archive says what each system asks and how to answer it (A5).
 - **Not shown:** the desktop app, recording, and Chromium on macOS. The item's *Done when* is the hello example from the packaged build, which needs none of them.
+
+### T39. The safe zones, held to the apps
+- **2026-11-15, P6-VIDNI-02 (A2).** The maintainer uploaded the grid clip privately to YouTube Shorts, Instagram Reels and WhatsApp Status, and took screenshots of it playing in each Android app on a screen of 1080 by 2424 px. `tools/zones_measure.py` finds where the app drew the clip, and reads off what it drew on and what the screen cut off. docs/platforms.md has the table.
+  - **A published zone stays where the app drew inside it.** Shorts drew on 77 px at the top, 399 at the bottom and 159 at the right, against Google's 288, 672 and 192. The measurement is one phone, one account and one day, with no title or caption typed; the published zone allows for other phones and for those words. So it is kept, and the layout of a cut for the default platforms is what it was: no build's record changes.
+  - **A published zone grows where the app drew outside it.** Reels' buttons took 114 px of the right edge from 1134 px down, where Meta's 6 % is 65 px and its bottom zone starts at 1248. The profile's right edge is now 11 %. A cut for Reels alone is laid out again; one that includes Shorts was clear of it already, at 193 px.
+  - **WhatsApp Status has measured figures, having no published ones:** 3 % at the top and 7 % at the bottom, a little over the 42 and 124 px seen. They are what the one who posts sees; a viewer sees a reply bar in the button's place, which wasn't measured.
+  - **The screenshots stay out of the repository.** They show the maintainer's accounts and other people's pictures. The figures and the tool are what is kept.
+

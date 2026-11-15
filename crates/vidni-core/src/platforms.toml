@@ -47,8 +47,8 @@ max_upload = 180
 max_size_mb = 256000
 loudness = { integrated = -14.0, true_peak = -1.0, basis = "measured" }
 captions = "burned"
-safe_zone = { top = 0.15, bottom = 0.35, left = 0.0444, right = 0.1778, basis = "official ads guidance" }
-verified_on = "2026-11-13"
+safe_zone = { top = 0.15, bottom = 0.35, left = 0.0444, right = 0.1778, basis = "official ads guidance, held to a grid clip in the app" }
+verified_on = "2026-11-15"
 sources = [
   "https://support.google.com/youtube/answer/15424877",
   "https://support.google.com/youtube/answer/71673",
@@ -60,6 +60,7 @@ notes = [
   "A Short over 1 minute with an active Content ID claim is blocked worldwide.",
   "YouTube gives no pixel size for Shorts; 1080x1920 is the canvas of Google's safe-zone diagram.",
   "The safe zone is Google's for Shorts ads: 288 px top, 672 px bottom, 48 px left, 192 px right at 1080x1920.",
+  "A grid clip played in the Android app on a 1080x2424 screen (15 November 2026) was drawn on in 77 px at the top and 399 at the bottom, and from 159 px off the right edge; that screen cut 42 px off each side. All of it is inside the published zone.",
   "Captions are burned in: vidni's shorts are always captioned (DECISIONS.md, D7), and caption-file upload isn't documented for Shorts.",
 ]
 
@@ -73,8 +74,8 @@ max_upload = 1200
 max_recommended = 180
 loudness = { integrated = -14.0, true_peak = -1.0, basis = "default" }
 captions = "burned"
-safe_zone = { top = 0.14, bottom = 0.35, left = 0.06, right = 0.06, basis = "official ads guidance" }
-verified_on = "2026-11-13"
+safe_zone = { top = 0.14, bottom = 0.35, left = 0.06, right = 0.11, basis = "official ads guidance; the right edge measured from a grid clip in the app" }
+verified_on = "2026-11-15"
 sources = [
   "https://www.facebook.com/help/instagram/2720958398006062",
   "https://www.facebook.com/help/instagram/1038071743007909",
@@ -87,7 +88,8 @@ notes = [
   "Uploads through the Graph API are limited to 15 minutes and 300 MB; Instagram publishes no file-size limit for the app.",
   "Instagram's own guidance is an aspect from 1.91:1 to 9:16, at least 720 px and 30 fps; 1080x1920 is common practice, not an official size.",
   "Instagram takes no caption file; it creates captions by speech recognition, which viewers can turn off.",
-  "The safe zone is Meta's for Reels ads: 14% top, 35% bottom and 6% on each side.",
+  "The safe zone is Meta's for Reels ads: 14% top, 35% bottom and 6% on each side, with the right edge widened to what was measured.",
+  "A grid clip played in the Android app on a 1080x2424 screen (15 November 2026) was drawn on in 111 px at the top and 245 at the bottom, and its buttons took the last 114 px of the right edge (10.6%) from 1134 px down, which starts above the published bottom zone. So the right edge is 11% here, not Meta's 6%.",
 ]
 
 [[platform]]
@@ -127,8 +129,8 @@ resolution = [1080, 1920]
 max_upload = 90
 loudness = { integrated = -14.0, true_peak = -1.0, basis = "default" }
 captions = "burned"
-safe_zone = { top = 0.0, bottom = 0.0, left = 0.0, right = 0.0, basis = "none published; measured in P6-VIDNI-02" }
-verified_on = "2026-11-13"
+safe_zone = { top = 0.03, bottom = 0.07, left = 0.0, right = 0.0, basis = "measured from a grid clip in the app; WhatsApp publishes none" }
+verified_on = "2026-11-15"
 sources = [
   "https://faq.whatsapp.com/643144237275579",
   "https://faq.whatsapp.com/896930805262380",
@@ -138,6 +140,7 @@ notes = [
   "A Status video can be up to 90 seconds; of a longer one, only the first 90 seconds are shared.",
   "Status takes a 9:16 ratio; WhatsApp gives no pixel size and no file-size limit for Status.",
   "Status takes no caption file, so captions are burned in.",
+  "A grid clip played in the Android app on a 1080x2424 screen (15 November 2026), seen by the one who posted it, was drawn on in 42 px at the top (the name and the time) and 124 at the bottom (a button for more statuses). The zone is those with a little over: 3% and 7%. A caption typed with the status is drawn over the bottom too, and isn't counted.",
 ]
 
 [[platform]]

@@ -395,13 +395,22 @@ mod tests {
                 top: 269,
                 bottom: 672,
                 left: 65,
-                right: 65
+                right: 119
+            })
+        );
+        // WhatsApp's are measured: its name row and its button for more.
+        assert_eq!(
+            insets(&ids(&["whatsapp-status"]), [1080, 1920]),
+            Some(Insets {
+                top: 58,
+                bottom: 135,
+                left: 0,
+                right: 0
             })
         );
         // No platform, or one that covers nothing, leaves the frame free.
         assert_eq!(insets(&[], [1080, 1920]), None);
         assert_eq!(insets(&ids(&["youtube"]), [1920, 1080]), None);
-        assert_eq!(insets(&ids(&["whatsapp-status"]), [1080, 1920]), None);
     }
 
     #[test]
