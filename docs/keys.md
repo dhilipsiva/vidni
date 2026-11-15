@@ -74,6 +74,7 @@ The videos made from the script.
 | `lines` | any or array of string |  | `all`, or the IDs of the lines the cut uses, in script order. |
 | `platforms` | array of string |  | The platform profiles the cut is made for. Default: `youtube` for 16:9; `youtube-shorts`, `instagram-reels` and `whatsapp-status` for 9:16. |
 | `size` | array of whole number |  | The frame size in pixels. Default `[1920, 1080]` or `[1080, 1920]`. |
+| `swap` | table of string, by name |  | Scenes this cut shows in the place of others, as `shown = "instead"`: where a line shows the scene `shown`, or lays it over its picture, this cut has the scene `instead`. So a short can have a narrower terminal, or an overlay with fewer parts, under the same lines. |
 
 ## `[captions]`
 

@@ -18,7 +18,9 @@
 
 use crate::capture::Frames;
 use crate::compose::card::Card;
-use crate::compose::cut::{Composer, FPS, LANDSCAPE, Layout, Look, PORTRAIT, Picture, Shot, Type};
+use crate::compose::cut::{
+    Composer, FPS, Ground, LANDSCAPE, Layout, Look, PORTRAIT, Picture, Shot, Type,
+};
 use crate::compose::text::Fonts;
 use crate::encode::{self, Encoder, Settings, Target};
 use crate::{compose, qa, review, run, voice};
@@ -325,7 +327,7 @@ fn drafted(
 
 /// Each line's shot in `cut`, from the project's captures.
 fn shots(project: &Project, dir: &Path, cut: &Cut, lines: &[&Line]) -> Result<Vec<Shot>, String> {
-    let keys = capture::line_keys(project);
+    let keys = capture::keys_in(project, cut);
     let portrait = cut.aspect == Aspect::Portrait;
     let page =
         |id: &str| capture::page_capture(project, cut, id).map(|c| capture::path(dir, &c.key));
@@ -337,16 +339,16 @@ fn shots(project: &Project, dir: &Path, cut: &Cut, lines: &[&Line]) -> Result<Ve
                 .get(&line.section)
                 .map(|s| s.label.clone())
                 .unwrap_or_default();
-            let overlay = line.overlay.as_deref().and_then(page);
+            // The cut's own scenes, where it swaps one for the line's.
+            let overlay = cut.overlay_of(line).and_then(page);
             // An overlay scene is data: the compositor draws it.
-            let strip = line
-                .overlay
-                .as_deref()
+            let strip = cut
+                .overlay_of(line)
                 .and_then(|id| project.scenes.get(id))
                 .filter(|scene| scene.kind == SceneKind::Overlay)
                 .cloned();
-            let scene_id = line
-                .scene_in(project)
+            let scene_id = cut
+                .scene_of(project, line)
                 .ok_or_else(|| format!("line {} shows no scene", line.id))?;
             let drawn = project.scenes.get(scene_id).and_then(Card::of);
             let picture = match (drawn, page(scene_id)) {
@@ -385,6 +387,10 @@ fn shots(project: &Project, dir: &Path, cut: &Cut, lines: &[&Line]) -> Result<Ve
                         // A picture, a session or code is whatever size
                         // it is, and is shown whole.
                         loose: scene.kind != SceneKind::Web,
+                        ground: match scene.is_text() {
+                            true => Ground::Rows,
+                            false => Ground::Corner,
+                        },
                     }
                 }
             };
@@ -458,6 +464,16 @@ pub fn plan<'p>(
     // A cut that holds its last picture for an end screen ends later.
     if let Some(hold) = cut.end_hold {
         timeline.hold(hold);
+    }
+    // A line whose scene the cut swaps shows a card where the cut has one.
+    for (entry, line) in timeline.sentences.iter_mut().zip(&lines) {
+        if line.scene_in(project) != cut.scene_of(project, line) {
+            let card = cut.scene_of(project, line).filter(|id| {
+                let kind = project.scenes.get(*id).map(|scene| scene.kind);
+                matches!(kind, Some(SceneKind::Page | SceneKind::Card))
+            });
+            entry.card = card.map(str::to_string);
+        }
     }
     let timeline_json = serde_json::to_string_pretty(&timeline)
         .map(|json| json + "\n")
@@ -838,6 +854,7 @@ pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<
     review::write(
         &mut plan.composer(captioned)?,
         &plan.timeline,
+        &plan.cut.line_ids(plan.project),
         plan.cut,
         &plan.faces.mono,
         &review::folder(&folder, cut),
@@ -1452,6 +1469,7 @@ column = { union = ["side"] }
                     .map(|name| (name.clone(), boxes(name)))
                     .collect(),
                 browser: "a stand-in".into(),
+                rows: None,
             };
             let json = serde_json::to_string(&frames).unwrap();
             fs::write(capture::frames_path(dir, key), json).unwrap();

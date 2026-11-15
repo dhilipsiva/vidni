@@ -174,6 +174,7 @@ pub(crate) const CUT: &[&str] = &[
     "size",
     "end_hold",
     "language",
+    "swap",
 ];
 const PUBLISH: &[&str] = &["description", "tags", "links", "titles", "thumbnails"];
 const LINK: &[&str] = &["label", "url"];

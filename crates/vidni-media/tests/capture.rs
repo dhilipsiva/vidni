@@ -888,3 +888,56 @@ fn a_mermaid_diagram_is_drawn_the_same_each_time_at_its_scale() {
     assert!(why.contains("flow.mmd: Mermaid couldn't draw it"), "{why}");
     assert!(!keys::path(dir.path(), &wanted[0].key).exists());
 }
+
+#[test]
+fn a_cut_draws_the_scene_it_swaps_in_and_a_new_target_draws_nothing() {
+    let dir = tempfile::tempdir().unwrap();
+    let text = "schema = 1\n\n[meta]\ntitle = \"Two windows\"\ndefault_scene = \"wide\"\n\n\
+                [[cuts]]\nid = \"long\"\naspect = \"16:9\"\n\n\
+                [[cuts]]\nid = \"short\"\naspect = \"9:16\"\nswap = { wide = \"narrow\" }\n\n\
+                [sections.main]\n\n\
+                [[lines]]\nid = \"main-1\"\nsection = \"main\"\nshow = \"A session.\"\nhighlight = [\"first\"]\n\n\
+                [scenes.wide]\nkind = \"terminal\"\nurl = \"session.txt\"\ncolumns = 60\n\n\
+                [scenes.wide.targets]\nfirst = { lines = [1, 1] }\n\n\
+                [scenes.narrow]\nkind = \"terminal\"\nurl = \"session.txt\"\ncolumns = 30\n\n\
+                [scenes.narrow.targets]\nfirst = { lines = [1, 1] }\n";
+    std::fs::write(
+        dir.path().join("session.txt"),
+        "$ say a line that is longer than thirty columns\nsaid\n",
+    )
+    .unwrap();
+    let read = |text: &str| vidni_core::validate::check(text, Some(dir.path())).unwrap();
+    let project = read(text);
+    let cuts: Vec<_> = project.cuts.iter().collect();
+    let plan = capture::plan(&project, dir.path(), &cuts);
+    let scenes: Vec<&str> = plan.iter().map(|c| c.scene.as_str()).collect();
+    assert_eq!(scenes, ["wide", "narrow"], "one still of each window");
+    vidni_media::capture::capture(&project, dir.path(), &plan).unwrap();
+    let size = |n: usize| {
+        let image = Image::load_png(&capture::path(dir.path(), &plan[n].key)).unwrap();
+        (image.width, image.height)
+    };
+    let (wide, narrow) = (size(0), size(1));
+    // The narrow window is narrower, and a row taller: its command goes
+    // on in the next row.
+    assert!(narrow.0 < wide.0, "{narrow:?} {wide:?}");
+    assert_eq!(narrow.1, wide.1 + 30);
+    // Its marked line is the two rows of the command.
+    let frames: Frames = serde_json::from_str(
+        &std::fs::read_to_string(frames_path(dir.path(), &plan[1].key)).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(frames.highlights["first"][0][3], 60.0);
+    // A target that only frames the window, named afterwards: nothing is
+    // left to take, and the cut is framed by it all the same.
+    let more = text.replace(
+        "columns = 30\n\n[scenes.narrow.targets]\nfirst = { lines = [1, 1] }\n",
+        "columns = 30\n\n[scenes.narrow.targets]\nfirst = { lines = [1, 1] }\nlast = { lines = [2, 2] }\n\n\
+         [scenes.narrow.cameras]\nend = { union = [\"last\"] }\n",
+    );
+    let later = read(&more);
+    let cuts: Vec<_> = later.cuts.iter().collect();
+    assert!(capture::plan(&later, dir.path(), &cuts).is_empty());
+    let end = frames.camera("end", &later.scenes["narrow"]).unwrap();
+    assert_eq!((end[1], end[3]), (44.0 + 24.0 + 60.0, 30.0));
+}

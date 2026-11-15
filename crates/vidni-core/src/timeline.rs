@@ -102,6 +102,24 @@ pub fn build(project: &Project, clips: &[Clip]) -> Result<Timeline, String> {
     build_for(project, &lines, clips, Voice::Draft)
 }
 
+/// How long a cut of `lines` is when saying them takes `spoken` seconds
+/// in all: with the silence before the first line, the pause after each,
+/// and the tail after the last, or `hold` in the tail's place.
+pub fn length(project: &Project, lines: &[&Line], spoken: f64, hold: Option<f64>) -> f64 {
+    let timing = &project.timing;
+    let pauses: f64 = lines
+        .windows(2)
+        .map(|pair| match pair[0].section == pair[1].section {
+            true => timing.line_gap,
+            false => timing.section_gap,
+        })
+        .sum();
+    match lines.is_empty() {
+        true => 0.0,
+        false => timing.lead_in + spoken + pauses + hold.unwrap_or(timing.tail),
+    }
+}
+
 /// Builds the timeline of `lines`, the lines of one cut in script order,
 /// from their clips, spoken by `voice`. A line's position, and a section's
 /// start and end, are its place among these lines.

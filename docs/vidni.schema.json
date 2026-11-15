@@ -388,6 +388,13 @@
           },
           "maxItems": 2,
           "minItems": 2
+        },
+        "swap": {
+          "description": "Scenes this cut shows in the place of others, as `shown = \"instead\"`:\nwhere a line shows the scene `shown`, or lays it over its picture,\nthis cut has the scene `instead`. So a short can have a narrower\nterminal, or an overlay with fewer parts, under the same lines.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false,

@@ -12,16 +12,21 @@ vidni was used here as anyone would use it: `vidni new`, edit the file, `vidni d
 6. **`vidni repro` on a project with no takes** only said the takes were missing. It now adds that `--draft` checks the drafts.
 7. **`vidni new examples/vidni-demo`** only said that isn't a name. It now says to use `--parent`.
 
-## Open
+## Fixed next, when the owner asked for the open ones
 
-1. **A section's label sits on a terminal's title bar** when a camera frames the window's first lines in a 16:9 cut. The label is drawn over the picture, as on a web page. A label of `""` with a `chapter` avoids it, at the cost of the label.
-2. **A scene can't differ by cut.** The short shares lines with the walkthrough, so it shares their scenes: a session 100 columns wide, where a short wants one of 50. `camera_vertical` and `columns` make it readable, but the short's own session would be better.
-3. **An overlay is the same for every cut.** Two chips fit a 9:16 cut in one row; a third made a second row over half the view, so the walkthrough lost its third chip too.
-4. **The ground around a terminal is the colour of its bar,** its first pixel, not of its text's ground. It looks deliberate, and wasn't.
-5. **A changed target takes every capture of its scene again,** though the picture is the same: the scene's targets are part of a capture's key. It costs seconds here, and would cost more on a web scene.
-6. **The review frames are one per section.** To look at every line I cut frames out of the draft with ffmpeg. A sheet of one frame per line would be the thing to look at.
-7. **`just app-shot` includes the compositor's bar,** with a clock. The picture here was cut by hand.
-8. **The walkthrough runs 2:30,** short of the three minutes planned. `vidni plan` gives the length without the pauses, so the whole length is known only after a draft.
+8. **A section's label sat on a terminal's title bar** when a camera framed the window's first lines. Such a framing now starts at the window's top, below the label. Rows in the middle of a long session can still pass under the label, as a web page's do.
+9. **A scene couldn't differ by cut,** so the short had the walkthrough's sessions, 100 columns wide. A cut can now `swap` a scene: the short shows each session in a window 46 columns wide, where long lines go on in the next row.
+10. **An overlay was the same for every cut.** The same `swap` gives the short two chips and the walkthrough its third.
+11. **The ground around a terminal was the colour of its bar.** It is the window gone on now: the bar across the top, the text's ground at the sides.
+12. **A changed target took every capture of its scene again.** A target of a picture, a terminal or code only frames it, and is read when the cut is built. A web scene's targets are found on its page, so there it still takes the scene again.
+13. **The review frames were one per section.** Each build now writes sheets of every line, `review/<cut>/…/lines-01.png`. They are what this second pass was looked over with.
+14. **`just app-shot` included the compositor's bar.** It takes the window alone, and `app.png` here is as it came.
+15. **The whole length was known only after a draft.** `vidni plan` now prints it for each cut, pauses and all: `long about 2:30, short about 0:52`, which is what the drafts are.
+
+## Still as it was
+
+- **The walkthrough runs 2:30,** not the three minutes planned. Nothing is wrong with vidni there: the script is that long. A section on themes or music would fill it.
+- **The code scene in the short** is still framed by `columns`, cut off at the right: code doesn't go on in the next row as a terminal's lines do, so a narrower window wouldn't show more.
 
 ## Not found wanting
 

@@ -548,3 +548,14 @@ Added as the items are built.
   - **An overlay in a 9:16 cut for platforms is as wide as the free part,** and the picture under it is framed below it. P5-VIDNI-05 drew it 1000 px wide over a view of 822, which P6-VIDNI-02's QA reported and nothing had tried.
   - **A target of lines may name columns.** A 9:16 view has room for some 50 columns at a size that reads, and a band of lines is as wide as the window. `columns = [first, last]` narrows it, for `camera_vertical` to frame.
 
+
+### T41. A cut may swap a scene, and a drawn scene's targets only frame it
+- **2026-11-15, the open findings of `examples/vidni-demo/DOGFOOD.md`, fixed at the owner's word.**
+  - **`swap` on a cut, not a second scene on a line.** A scene that differs by cut and an overlay that differs by cut are one thing: under the same line, this cut has another scene. A map on the cut says so once for every line that shows the scene, where `scene_vertical` and `overlay_vertical` on each line would say it line by line and only by aspect. `Cut::scene_of` and `Cut::overlay_of` are what a build, the captures, the ratified content and the timeline's `card` read.
+  - **A web scene can't be swapped in.** Its stills are of one page, each after every earlier line's actions, so a line's still of it isn't the scene's alone. A web scene can be swapped out.
+  - **A capture names its scene** (`Capture::scene`), since a line can have two stills now: of its own scene, and of the one a cut swaps in. Drawn scenes are taken from the plan by capture, and web scenes by scene as before.
+  - **The key of a picture leaves its targets out, and the key of text holds only the targets a line marks.** Cameras were always framed at build time; targets are now too, for these kinds (`Frames::boxes`): a picture's from its `rect`, text's from the rows its frames keep (`rows`). `targets` in such a frames file is what they were when it was drawn, and nothing reads it. Every image, terminal and code capture has a new key once, so nothing built before is taken for current, and `COMPOSITOR` stays 2: a web-only project draws as it did.
+  - **Ground by rows for text** (`Ground::Rows`), from each row's last pixel, since its first may be the mark at the left of a highlighted line. A picture keeps its first pixel all around: a photograph's rows gone on would be streaks.
+  - **A loose framing within a label's height of the picture's top starts at the top** and grows to hold its target. Rows in the middle of a window can still pass under the label, as a web page's do.
+  - **Sheets of lines are review frames** and are written with them, at each line's last frame, when its camera is still and its last caption shows.
+  - **`just app-shot` runs weston's kiosk shell,** which has no panel and gives the window the whole output.

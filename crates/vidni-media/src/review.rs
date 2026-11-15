@@ -2,6 +2,10 @@
 //! section of a cut, as PNGs to look at. A cut made for platforms has a set
 //! for each one, with what that platform's app covers shaded, so that
 //! whatever sits under an app's buttons is plain to see.
+//!
+//! With them are sheets of every line (`lines-01.png` and so on): a small
+//! frame from the end of each line, with the line's ID under it, so the
+//! whole cut can be looked over at once.
 
 use crate::compose::cut::{Composer, FPS};
 use crate::compose::image::Image;
@@ -37,6 +41,64 @@ fn middles(timeline: &Timeline) -> Vec<(String, u64)> {
     sections
         .into_iter()
         .map(|(id, lines)| (id, (lines[lines.len() / 2] * FPS) as u64))
+        .collect()
+}
+
+/// The frame a line's small picture is of: the last before the line ends,
+/// when its camera has come to rest and its last caption still shows.
+fn ends(timeline: &Timeline) -> Vec<u64> {
+    let last = |entry: &vidni_core::timeline::Entry| ((entry.end * FPS) as u64).saturating_sub(1);
+    timeline.sentences.iter().map(last).collect()
+}
+
+/// The room under a small picture for its line's ID, and between two.
+const NAME: u32 = 34;
+const GAP: u32 = 8;
+const SHEET: [u8; 3] = [18, 20, 26];
+
+/// How a sheet of a cut `size` big is laid out: each small picture's
+/// size, how many go across, and how many rows a sheet has.
+fn tiles([width, height]: [u32; 2]) -> ((u32, u32), u32, u32) {
+    match width >= height {
+        true => ((480, 480 * height / width), 4, 7),
+        false => ((270, 270 * height / width), 6, 4),
+    }
+}
+
+/// Sheets of `frames`, each with its name under it, in script order.
+fn sheets(
+    frames: &[(String, Image)],
+    size: [u32; 2],
+    fonts: &mut Fonts,
+    mono: &Font,
+) -> Vec<Image> {
+    let ((w, h), across, rows) = tiles(size);
+    let per = (across * rows) as usize;
+    frames
+        .chunks(per)
+        .map(|page| {
+            let down = (page.len() as u32).div_ceil(across);
+            let mut sheet = Image::new(
+                GAP + across * (w + GAP),
+                GAP + down * (h + NAME + GAP),
+                &SHEET,
+            );
+            for (n, (name, frame)) in page.iter().enumerate() {
+                let (column, row) = (n as u32 % across, n as u32 / across);
+                let (x, y) = (GAP + column * (w + GAP), GAP + row * (h + NAME + GAP));
+                let all = [0.0, 0.0, frame.width as f32, frame.height as f32];
+                let small = pillow::resize_bicubic(frame, (w, h), all);
+                pillow::paste(&mut sheet, &small, x as i32, y as i32);
+                let pen = Pen {
+                    font: mono,
+                    size: 20.0,
+                    ink: [214, 220, 230],
+                };
+                let at = (x as f32, (y + h) as f32 + NAME as f32 / 2.0);
+                fonts.draw(&mut sheet, at, name, pen, "lm");
+            }
+            sheet
+        })
         .collect()
 }
 
@@ -93,10 +155,12 @@ fn shade(frame: &mut Image, covered: Insets, platform: &str, fonts: &mut Fonts, 
 /// Writes the review frames of `cut` into `dir`, which is emptied first:
 /// for each of its platforms a folder of frames, shaded where that
 /// platform's app covers the picture; or, for a cut made for no platform,
-/// the frames alone. Returns how many files it wrote.
+/// the frames alone. Each set has its sheets of every line too; `lines` is
+/// the ID of each of the timeline's lines. Returns how many files it wrote.
 pub fn write(
     composer: &mut Composer,
     timeline: &Timeline,
+    lines: &[String],
     cut: &Cut,
     mono: &Path,
     dir: &Path,
@@ -136,6 +200,24 @@ pub fn write(
                 shade(&mut frame, *covered, platform, &mut fonts, &mono);
             }
             frame.save_png(&folder.join(format!("{n:02}-{section}.png")))?;
+            written += 1;
+        }
+    }
+    // Every line, small: shaded for each set as its frames are.
+    let mut small = Vec::with_capacity(lines.len());
+    for (name, f) in lines.iter().zip(ends(timeline)) {
+        let frame = composer.frame(f.min(composer.frames().saturating_sub(1)))?;
+        small.push((name.clone(), frame));
+    }
+    for (folder, covered) in &sets {
+        let mut shaded = small.clone();
+        if let Some((platform, covered)) = covered {
+            for (_, frame) in &mut shaded {
+                shade(frame, *covered, platform, &mut fonts, &mono);
+            }
+        }
+        for (n, sheet) in sheets(&shaded, size, &mut fonts, &mono).iter().enumerate() {
+            sheet.save_png(&folder.join(format!("lines-{:02}.png", n + 1)))?;
             written += 1;
         }
     }
@@ -301,6 +383,40 @@ mod tests {
         // Of two lines the second is the middle one. A section that comes
         // back has a frame of its own.
         assert_eq!(named, [("a", 120), ("b", 330), ("a", 405)]);
+    }
+
+    #[test]
+    fn every_line_has_a_small_frame_on_a_sheet_with_its_id_under_it() {
+        let mut fonts = Fonts::new();
+        let mono = fonts.load(&plex()).unwrap();
+        // The frame before each line ends.
+        let timeline = Timeline {
+            total: 9.0,
+            rate: 22050,
+            sentences: vec![line("a", 1.0, 2.0), line("a", 3.0, 5.5)],
+        };
+        assert_eq!(ends(&timeline), [59, 164]);
+        // Thirty lines of a 16:9 cut: a sheet of 28, four across, and one of 2.
+        let frames: Vec<(String, Image)> = (0..30)
+            .map(|n| (format!("line-{n}"), Image::new(1920, 1080, &[200, 40, 10])))
+            .collect();
+        let made = sheets(&frames, [1920, 1080], &mut fonts, &mono);
+        let sizes: Vec<(u32, u32)> = made.iter().map(|s| (s.width, s.height)).collect();
+        assert_eq!(sizes, [(1960, 8 + 7 * 312), (1960, 8 + 312)]);
+        // The first picture, the ground between two, and a name under it.
+        assert_eq!(made[0].pixel(8 + 240, 8 + 135), [200, 40, 10]);
+        assert_eq!(made[0].pixel(8 + 483, 8 + 135), SHEET);
+        let named = (278..312).any(|y| (8..488).any(|x| made[0].pixel(x, y) == [214, 220, 230]));
+        assert!(named, "no ID under the first picture");
+        // The second sheet has two pictures and no third.
+        assert_eq!(made[1].pixel(8 + 488 + 240, 8 + 135), [200, 40, 10]);
+        assert_eq!(made[1].pixel(8 + 2 * 488 + 240, 8 + 135), SHEET);
+        // A 9:16 cut's pictures are six across.
+        let tall: Vec<(String, Image)> = (0..7)
+            .map(|n| (format!("line-{n}"), Image::new(1080, 1920, &[200, 40, 10])))
+            .collect();
+        let made = sheets(&tall, [1080, 1920], &mut fonts, &mono);
+        assert_eq!((made[0].width, made[0].height), (8 + 6 * 278, 8 + 2 * 522));
     }
 
     #[test]

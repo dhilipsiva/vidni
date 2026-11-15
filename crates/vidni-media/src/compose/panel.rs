@@ -59,6 +59,48 @@ pub struct Panel {
     pub advance: f32,
 }
 
+/// Where a window's rows of text are, in CSS pixels: what the box of any
+/// of its lines and columns is worked out from, without the text.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Rows {
+    /// The window's width.
+    pub width: f32,
+    /// Where the text's first column starts, and one character's width.
+    pub left: f32,
+    pub advance: f32,
+    /// Where the first row starts, and one row's height.
+    pub top: f32,
+    pub height: f32,
+    /// The file's line that each row is of, counted from 1.
+    pub lines: Vec<u32>,
+}
+
+impl Rows {
+    /// The band across the window behind the file's lines `first` to
+    /// `last`, as `[x, y, width, height]`; none when none of them is
+    /// shown. With `columns`, the band is those columns of the text,
+    /// counted from 1, and no wider.
+    pub fn band(&self, [first, last]: [u32; 2], columns: Option<[u32; 2]>) -> Option<[f64; 4]> {
+        let shown = |line: &&u32| (first..=last).contains(*line);
+        let from = self.lines.iter().position(|line| shown(&line))?;
+        let count = self.lines.iter().filter(shown).count();
+        let (x, across) = match columns {
+            Some([a, b]) => (
+                self.left + a.saturating_sub(1) as f32 * self.advance,
+                (b + 1).saturating_sub(a) as f32 * self.advance,
+            ),
+            None => (0.0, self.width),
+        };
+        Some([
+            f64::from(x),
+            f64::from(self.top + from as f32 * self.height),
+            f64::from(across),
+            f64::from(count as f32 * self.height),
+        ])
+    }
+}
+
 /// `line`, with each tab taken to the next multiple of four and whatever
 /// isn't printable left out, cut into rows of `columns` characters.
 pub fn wrap(spans: Vec<Span>, columns: u32, line: u32) -> Vec<Row> {
@@ -126,24 +168,20 @@ impl Panel {
     /// `last`, as `[x, y, width, height]` in CSS pixels; none when none of
     /// them is shown. With `columns`, the band is those columns of the
     /// text, counted from 1, and no wider.
-    pub fn lines(&self, [first, last]: [u32; 2], columns: Option<[u32; 2]>) -> Option<[f64; 4]> {
-        let shown = |row: &&Row| (first..=last).contains(&row.line);
-        let from = self.rows.iter().position(|row| shown(&row))?;
-        let count = self.rows.iter().filter(shown).count();
-        let [width, _] = self.size();
-        let (x, across) = match columns {
-            Some([a, b]) => (
-                PAD + self.gutter() + a.saturating_sub(1) as f32 * self.advance,
-                (b + 1).saturating_sub(a) as f32 * self.advance,
-            ),
-            None => (0.0, width as f32),
-        };
-        Some([
-            f64::from(x),
-            f64::from(BAR + PAD + from as f32 * ROW),
-            f64::from(across),
-            f64::from(count as f32 * ROW),
-        ])
+    pub fn lines(&self, lines: [u32; 2], columns: Option<[u32; 2]>) -> Option<[f64; 4]> {
+        self.layout().band(lines, columns)
+    }
+
+    /// Where the window's rows are.
+    pub fn layout(&self) -> Rows {
+        Rows {
+            width: self.size()[0] as f32,
+            left: PAD + self.gutter(),
+            advance: self.advance,
+            top: BAR + PAD,
+            height: ROW,
+            lines: self.rows.iter().map(|row| row.line).collect(),
+        }
     }
 
     /// Draws the window `scale` times its size, with a band behind each

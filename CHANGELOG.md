@@ -6,6 +6,7 @@ What changed in each release of vidni, for the people who use it. The format is 
 
 ### Fixed
 
+- **`just app-shot` took the compositor's bar and clock with the app's window.** It takes the window alone.
 - **A cut that went from one picture to another of another size could stop the build** with a panic, as the first faded out under the second's framing. Each now fades under its own.
 - **An overlay on a 9:16 cut laid out clear of its apps** was drawn wider than the part they leave free, and over the top of the view. It is as wide as that part now, and the picture is framed below it.
 
@@ -14,8 +15,15 @@ What changed in each release of vidni, for the people who use it. The format is 
 - **A picture, a terminal session and code are shown whole.** A line with no camera used to show the middle of a picture that wasn't the cut's shape, cut off at the sides or the bottom. It now shows all of it, with the picture's own ground around it, clear of the captions and of the section's label. A draft of such a scene is framed anew.
 - **What the apps cover is measured.** A grid clip was played in the Shorts, Reels and WhatsApp Status apps and read off ([docs/platforms.md](docs/platforms.md)). Reels' right edge is 11 % where it was 6 %, and WhatsApp Status has a zone: 3 % at the top and 7 % at the bottom. A cut for the default platforms is laid out as before; one for Reels or Status alone is laid out again.
 
+- **The ground around a terminal or code is its window gone on:** the bar runs across the top of the frame and the text's ground is at its sides, where the whole surround used to be the bar's colour.
+- **A section's label, or an overlay, no longer lies over a window's bar.** A framing that starts in a picture's first rows starts at its top, below the label.
+- **A target of a picture, a terminal or code takes no capture again** when it is added or moved: it only frames the picture. The captures of such scenes are taken once more after this change, and a ratified cut that shows one is ratified again.
+
 ### Added
 
+- **`swap` on a cut** shows another scene under the same line: a short can have a narrower terminal, or an overlay with fewer parts, where the long cut has its own.
+- **Sheets of every line** among a build's review frames: `lines-01.png` and on, a small frame from the end of each line with its ID.
+- **`vidni plan` prints each cut's whole length,** pauses and all, once the draft voice has spoken its lines.
 - **`columns = [first, last]` on a target of a terminal or code scene** narrows it to those columns, so a 9:16 cut can frame a part that reads.
 - **`examples/vidni-demo`:** a walkthrough of vidni, and a short, made with vidni.
 - **Two hints:** `vidni repro` says that `--draft` checks the drafts when the final cuts can't be built yet, and `vidni new some/path` says to use `--parent`.

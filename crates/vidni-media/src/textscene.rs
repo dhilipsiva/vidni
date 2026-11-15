@@ -338,6 +338,7 @@ pub fn still(dir: &Path, scene: &Scene, highlight: &[String]) -> Result<Still, S
             targets,
             highlights,
             browser: format!("vidni {}; {at}", vidni_core::VERSION),
+            rows: Some(panel.layout()),
         },
         files,
     })

@@ -301,6 +301,7 @@ files = [
 ```text
 My first video: the recording sheet
 2 lines in 1 section, 9 words; 0 recorded, 0 stale, 2 to record; about 0:04 in the draft voice, without the pauses
+with the pauses: long about 0:07, vertical about 0:07
 
 Introduction
   [ ] intro-1    1.7 s  Hello, and welcome.
@@ -310,6 +311,7 @@ Introduction
 - **The words** are the line's spoken form ([Takes and spoken words](#takes-and-spoken-words)): what you read aloud, not what the captions show.
 - **The mark** is `[x]` for a line with a current take, `[~]` for a line whose takes are all of other words, and `[ ]` for a line with none.
 - **The time** is how long the draft voice took over the line as it is now, as a pace to read at. A line the draft voice hasn't spoken yet has `-`.
+- **The whole length** of each cut, with its pauses and its tail or `end_hold`, is on the line that starts `with the pauses`, for each cut whose lines the draft voice has all spoken. It is the length a draft of the cut will have.
 - **`--cut ID`**, which can be repeated, lists those cuts' lines only.
 
 The sheet only reads the project. It speaks nothing and writes no file.
@@ -476,7 +478,10 @@ draft = { union = ["draft"] }
 ```
 
 - **A line on an image scene** takes `camera` and `camera_vertical`. It takes no `do` and no `highlight`.
-- **A picture is shown whole.** A web page is captured at the cut's own shape; a picture, a terminal session or code is whatever size it is. So a line with no camera shows all of it, as large as fits above the captions and below the section's label, with the picture's own ground around it: the colour of its first pixel. A camera frames a part the same way, and may show ground past an edge. A picture that is tall or wide is small when shown whole, so frame its parts.
+- **A picture is shown whole.** A web page is captured at the cut's own shape; a picture, a terminal session or code is whatever size it is. So a line with no camera shows all of it, as large as fits above the captions and below the section's label, with the picture's own ground around it. A camera frames a part the same way, and may show ground past an edge. A picture that is tall or wide is small when shown whole, so frame its parts.
+- **The ground around a picture** is the colour of its first pixel. Around a terminal or code it is the window gone on: each row reaches the frame's edges in the colour it ends in, so the bar runs across the top and a marked line is marked all the way across.
+- **A framing that starts in a picture's first rows starts at its top,** below the section's label or the line's overlay, so neither lies over a window's bar. It is a little larger for it, to hold what the camera names all the same.
+- **A target of a picture, a terminal or code only frames it.** Naming another, or moving one, takes no capture again: the cut is framed from the scene as it is when it is built. Only the lines a line highlights in a terminal or code are drawn, so changing those draws that line's picture again. A web scene's targets are found on its page, so there a changed target is a new capture of the scene.
 - **An SVG's text** is set in the fonts vidni pins ([Fonts](#fonts)), by the family the SVG names, and in no font of the system's. So the picture is the same on every machine.
 - **The picture is a capture** like any other: one for all the lines that show it, taken by `vidni draft` or `vidni capture` with no browser, frozen when its cut is ratified, and taken again when its file changes ([When a capture is out of date](#when-a-capture-is-out-of-date)).
 
@@ -648,6 +653,7 @@ Highlight boxes are drawn with an ember outline, in every theme: they are part o
 | `captions` | `"burned"`, `"file"` or `"both"` | `both` for 16:9, `burned` for 9:16 | `burned` draws captions into the picture. `file` keeps the picture clean and writes SRT and VTT files. `both` makes a clean master with caption files, plus a burned-in variant (DECISIONS.md, D7). |
 | `platforms` | array of strings | the profiles on by default for the cut's aspect: `["youtube"]` for 16:9; `["youtube-shorts", "instagram-reels", "whatsapp-status"]` for 9:16 | The platform profiles the cut is made for: `youtube`, `youtube-shorts`, `instagram-reels`, `tiktok`, `whatsapp-status`, `linkedin` or `x`. `vidni platforms` lists each profile's limits, with the date they were checked and their sources. |
 | `size` | `[width, height]` | `[1920, 1080]` or `[1080, 1920]` | The frame size: even numbers in exactly the cut's aspect. For now, vidni draws only the two default sizes, and a build refuses another. |
+| `swap` | table of scene IDs | none | Scenes this cut shows in the place of others: `swap = { first = "first-narrow" }` shows `first-narrow` wherever one of the cut's lines shows `first`, or lays it over its picture. See [Several cuts](#several-cuts). |
 | `end_hold` | number | none | 16:9 cuts: how long the cut holds its last picture after the narration ends, in seconds from 5 to 20, in the place of `timing.tail`. YouTube puts an end screen over the last 5 to 20 seconds of a video of 25 seconds or more. |
 
 ### Several cuts
@@ -655,6 +661,7 @@ Highlight boxes are drawn with an ember outline, in every theme: they are part o
 A project can make any number of videos from one script: a long cut, and shorts that tell a part of it.
 - **A cut picks its lines** with `lines`, in script order. Without it, a cut uses every line.
 - **A line can be only for some cuts.** A short's hook or sign-off sets `only = ["short"]`. A cut that uses every line leaves it out, and a cut it isn't for can't list it.
+- **A cut can show another scene under the same line** with `swap`. A short that shares a line with the long cut shares its scene, and a terminal 100 columns wide can't be read in a 9:16 frame. `swap = { first = "first-narrow", keys = "keys-two" }` gives the short a narrower window of the same session, and an overlay with fewer parts. The scene swapped in is a card, a page, a picture, a terminal or code, not a web scene, whose stills are of one page in script order. It must have the cameras and the highlighted targets that the cut's lines name, and an overlay is swapped for an overlay.
 - **A cut that lists its lines** must list its own lines too. A line that is only for a cut that leaves it out is in no video, so validation reports it.
 
 ```toml
@@ -741,6 +748,8 @@ line short-hook: its card reaches 288 px into the top edge that the cut's platfo
 A draft prints it as a warning, and a final build that has one isn't delivered.
 
 **Review frames show it.** Every build writes one frame for each section, halfway through its middle line, as `build/draft/review/<cut>/<platform>/<nn>-<section>.png` (or `build/final/…`). Each platform has its own set, with what its app covers shaded red and the pixels named. A cut made for no platform has one set, in `review/<cut>/`.
+
+**Every line is on a sheet.** Beside those frames are `lines-01.png`, `lines-02.png` and so on: a small frame from the end of each line, in script order, with the line's ID under it and shaded as the set is. A sheet holds 28 lines of a 16:9 cut, or 24 of a 9:16 one. It is the quickest way to look a whole draft over.
 
 **Measuring an app.** `vidni platforms --grid DIR` writes `grid-1080x1920.png` and a 15-second clip of it, `grid-1080x1920.mp4`. The picture is in squares of 120 px, each with the place of its top left corner written in it. Upload the clip privately, take a screenshot while it plays, and the squares the app's buttons and labels hide say what it covers.
 

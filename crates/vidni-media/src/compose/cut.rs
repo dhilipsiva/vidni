@@ -193,10 +193,23 @@ pub enum Picture {
         /// the picture's ground around it: so for a drawn picture, which
         /// has no page of the cut's shape around it as a web page has.
         loose: bool,
+        /// What is around a picture that the framing reaches past.
+        ground: Ground,
     },
     Card(PathBuf),
     /// A card drawn from one of the theme's templates, at the cut's size.
     Drawn(super::card::Card),
+}
+
+/// What is around a picture where its framing reaches past it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Ground {
+    /// The colour of the picture's first pixel, all around.
+    Corner,
+    /// Each row goes on to the frame's edges in the colour it ends in, and
+    /// the first and the last row go on above and below: so a window of
+    /// text is a window as wide as the frame, its bar across the top.
+    Rows,
 }
 
 /// A crop (CSS pixels) of the cut's aspect that frames `target` between
@@ -234,8 +247,17 @@ pub fn crop_rect(
             (height, width) = (vh, vh * aspect);
         }
     }
+    let mut top = y - top_reserve * height - (height * free - h).max(0.0) / 2.0;
+    // A loose crop that starts in the picture's first rows would leave
+    // them, a window's bar among them, under the label or the overlay. It
+    // starts at the picture's top instead, below what covers it, and is
+    // as large as it must be to hold the target still.
+    if loose && top_reserve > 0.0 && top < top_reserve * height {
+        height = height.max((y + h) / free);
+        width = height * aspect;
+        top = -top_reserve * height;
+    }
     let cx = x + w / 2.0;
-    let top = y - top_reserve * height - (height * free - h).max(0.0) / 2.0;
     // On the page where the crop is smaller than it, and around the page
     // where it is larger. A loose crop may also show `over` past an edge.
     let within = |at: f64, size: f64, page: f64, over: [f64; 2]| {
@@ -259,9 +281,8 @@ pub fn crop_rect(
 
 /// `source` with room around it for `bbox` (left, top, right, bottom, in
 /// its pixels), where `bbox` reaches past its edges, and `bbox` as the
-/// larger picture has it. The room is the colour of the picture's first
-/// pixel: its ground.
-fn around(source: Image, bbox: [f32; 4]) -> (Image, [f32; 4]) {
+/// larger picture has it. The room is the picture's `ground`.
+fn around(source: Image, bbox: [f32; 4], ground: Ground) -> (Image, [f32; 4]) {
     let past = |v: f32| v.max(0.0).ceil() as u32;
     let (left, top) = (past(-bbox[0]), past(-bbox[1]));
     let right = past(bbox[2] - source.width as f32);
@@ -274,6 +295,16 @@ fn around(source: Image, bbox: [f32; 4]) -> (Image, [f32; 4]) {
         source.height + top + bottom,
         source.pixel(0, 0),
     );
+    if ground == Ground::Rows {
+        let across = room.width as usize * 3;
+        for (y, row) in room.data.chunks_exact_mut(across).enumerate() {
+            let from = (y as u32).saturating_sub(top).min(source.height - 1);
+            let ink = source.pixel(source.width - 1, from);
+            for pixel in row.as_chunks_mut::<3>().0 {
+                pixel.copy_from_slice(ink);
+            }
+        }
+    }
     pillow::paste(&mut room, &source, left as i32, top as i32);
     let (dx, dy) = (left as f32, top as f32);
     (
@@ -296,7 +327,7 @@ struct Item {
     /// The size of the page or picture a still is of, in CSS pixels: what
     /// its framing is measured in.
     space: Option<[u64; 2]>,
-    still: Option<(PathBuf, f64)>,
+    still: Option<(PathBuf, f64, Ground)>,
     overlay: Option<Image>,
     rect: Option<[f64; 4]>,
     from_rect: Option<[f64; 4]>,
@@ -410,6 +441,7 @@ impl Composer {
                     viewport,
                     scale,
                     loose,
+                    ground,
                 } => {
                     let top = match (&overlay, layout.name) {
                         (Some(o), "16x9") => f64::from(OVERLAY_Y + o.height as i32 + 20) / height,
@@ -437,7 +469,7 @@ impl Composer {
                         card: None,
                         drawn: None,
                         space: Some(viewport.map(f64::to_bits)),
-                        still: Some((path, scale)),
+                        still: Some((path, scale, ground)),
                         overlay,
                         rect: Some(rect),
                         from_rect: None,
@@ -618,7 +650,7 @@ impl Composer {
             }
             return Ok(img);
         }
-        let (still, d) = self.items[i]
+        let (still, d, ground) = self.items[i]
             .still
             .clone()
             .ok_or("a page line without a capture")?;
@@ -631,7 +663,7 @@ impl Composer {
             ((x + w) * d) as f32,
             ((y + h) * d) as f32,
         ];
-        let (source, bbox) = around(source, bbox);
+        let (source, bbox) = around(source, bbox, ground);
         let view = pillow::resize_bicubic(&source, (vw, vh), bbox);
         if self.layout.name == "16x9" {
             return Ok(view);
@@ -1100,6 +1132,55 @@ mod tests {
             crop_rect(part, 16.0 / 9.0, &LANDSCAPE, big, 0.0, true),
             crop_rect(part, 16.0 / 9.0, &LANDSCAPE, big, 0.0, false)
         );
+    }
+
+    #[test]
+    fn a_loose_crop_at_a_pictures_top_starts_below_what_covers_it() {
+        // A window's first rows, in a 16:9 cut whose label takes 84 of
+        // its 1080 pixels: the window's top is just under the label, not
+        // behind it, and the rows are whole above the captions.
+        let page = (1200.0, 900.0);
+        let label = LABEL / 1080.0;
+        let rows = [0.0, 68.0, 1200.0, 180.0];
+        let [_, y, _, h] = crop_rect(rows, 16.0 / 9.0, &LANDSCAPE, page, label, true);
+        assert!(
+            (y + label * h).abs() < 1e-9,
+            "the top is at the label's foot: {y} {h}"
+        );
+        assert!(y + h * 0.8 >= 68.0 + 180.0, "above the captions: {y} {h}");
+        // Rows far from the top are framed as they were: in the middle of
+        // what the label and the captions leave.
+        let low = [0.0, 600.0, 1200.0, 180.0];
+        let [_, y, _, h] = crop_rect(low, 16.0 / 9.0, &LANDSCAPE, page, label, true);
+        assert!(y > 0.0 && y + label * h < 600.0, "{y} {h}");
+        // A page isn't moved: what is under a label there is the page.
+        let [_, y, _, _] = crop_rect(rows, 16.0 / 9.0, &LANDSCAPE, (1280.0, 2000.0), label, false);
+        assert_eq!(y, 0.0);
+    }
+
+    #[test]
+    fn the_room_around_a_window_is_its_rows_gone_on() {
+        // A bar of one colour over a body of another, and a framing that
+        // reaches past every edge.
+        let (bar, body) = ([32u8, 35, 44], [20u8, 22, 28]);
+        let mut window = Image::new(40, 30, &body);
+        pillow::rectangle(&mut window, (0, 0, 39, 9), &bar);
+        let past = [-10.0, -6.0, 55.0, 42.0];
+        let (room, bbox) = around(window.clone(), past, Ground::Rows);
+        assert_eq!((room.width, room.height), (65, 48));
+        assert_eq!(bbox, [0.0, 0.0, 65.0, 48.0]);
+        // The bar goes on across and above; the body across and below.
+        for (x, y) in [(0, 0), (64, 3), (2, 15), (62, 15)] {
+            assert_eq!(room.pixel(x, y), bar, "({x}, {y})");
+        }
+        for (x, y) in [(0, 16), (64, 30), (30, 47), (0, 47)] {
+            assert_eq!(room.pixel(x, y), body, "({x}, {y})");
+        }
+        // A picture's room is its first pixel's colour all around.
+        let (room, _) = around(window, past, Ground::Corner);
+        for (x, y) in [(0, 0), (64, 30), (30, 47)] {
+            assert_eq!(room.pixel(x, y), bar, "({x}, {y})");
+        }
     }
 
     #[test]

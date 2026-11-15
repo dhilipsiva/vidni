@@ -631,6 +631,97 @@ impl Rules {
         }
     }
 
+    /// The scenes cut `c` shows in the place of others: each is a scene
+    /// that vidni can show there, with what the cut's lines name in it.
+    fn swaps(&mut self, p: &Project, c: usize) {
+        let cut = &p.cuts[c];
+        let lines = cut.lines_in(p);
+        // Laid over a picture, rather than shown.
+        let over = |s: &Scene| s.kind == SceneKind::Overlay || s.transparent == Some(true);
+        for (shown, instead) in &cut.swap {
+            let at = path!["cuts", c, "swap", shown.as_str()];
+            let names = || one_of(p.scenes.keys().map(String::as_str));
+            let (Some(old), Some(new)) = (p.scenes.get(shown), p.scenes.get(instead)) else {
+                for id in [shown, instead] {
+                    if !p.scenes.contains_key(id) {
+                        self.add(at.clone(), format!("unknown scene {id:?}{}", names()));
+                    }
+                }
+                continue;
+            };
+            if shown == instead {
+                self.add(at, format!("{shown:?} is swapped for itself"));
+                continue;
+            }
+            if cut.swap.contains_key(instead) {
+                self.add(
+                    at,
+                    format!("{instead:?} is swapped for another scene itself; name the scene the cut shows"),
+                );
+                continue;
+            }
+            if new.kind == SceneKind::Web {
+                self.add(
+                    at,
+                    format!(
+                        "{instead:?} is a web scene, and a cut can't swap one in: a web scene's stills are of one page, in script order"
+                    ),
+                );
+                continue;
+            }
+            if over(old) != over(new) {
+                let (a, b) = match over(old) {
+                    true => ("is laid over a picture", "isn't an overlay"),
+                    false => ("is shown", "is an overlay"),
+                };
+                self.add(at, format!("{shown:?} {a}, and {instead:?} {b}"));
+                continue;
+            }
+            let users: Vec<_> = lines
+                .iter()
+                .filter(|l| {
+                    l.scene_in(p) == Some(shown.as_str()) || l.overlay.as_deref() == Some(shown)
+                })
+                .collect();
+            if users.is_empty() {
+                self.add(at, format!("no line of cut {:?} shows {shown:?}", cut.id));
+                continue;
+            }
+            // What the cut's lines name in the scene they were written
+            // for must be in the scene they show here.
+            let framed = new.kind == SceneKind::Image || new.is_text();
+            for line in users.iter().filter(|_| framed) {
+                let aspect = cut.aspect == crate::project::Aspect::Portrait;
+                let cameras = [(&line.camera, !aspect), (&line.camera_vertical, aspect)];
+                for camera in cameras
+                    .iter()
+                    .filter_map(|(c, used)| c.as_ref().filter(|_| *used))
+                {
+                    if !camera_exists(new, camera) {
+                        self.add(
+                            at.clone(),
+                            format!(
+                                "line {:?} is framed by camera {camera:?}, which {instead:?} hasn't",
+                                line.id
+                            ),
+                        );
+                    }
+                }
+                for target in line.highlight.iter().filter(|_| new.is_text()) {
+                    if !new.targets.contains_key(target) {
+                        self.add(
+                            at.clone(),
+                            format!(
+                                "line {:?} highlights target {target:?}, which {instead:?} hasn't",
+                                line.id
+                            ),
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     fn unknown_target(&mut self, at: Vec<Seg>, target: &str, scene_id: &str, scene: &Scene) {
         let names = one_of(scene.targets.keys().map(String::as_str));
         self.add(
@@ -1676,6 +1767,7 @@ impl Rules {
                     );
                 }
             }
+            self.swaps(p, c);
             if let Some([w, h]) = cut.size {
                 let landscape = cut.aspect == crate::project::Aspect::Landscape;
                 let ratio_ok = if landscape {

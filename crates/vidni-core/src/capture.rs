@@ -9,6 +9,13 @@
 //! by the scene, the size it is rendered at, and the cut's aspect, which
 //! `{aspect}` in its address becomes.
 //!
+//! A picture, and text that vidni draws, are keyed by what is drawn: the
+//! scene without its targets and its cameras, and for text the lines that
+//! are marked. Their targets only say where to look, and are worked out
+//! when a cut is built, so naming another target draws nothing again. A
+//! web scene's targets are found on the page while it is open, so there a
+//! changed target is a new capture.
+//!
 //! A key covers what the project file says, not what a page holds. So a
 //! capture of one of the project's own pages comes with a record of the
 //! files the page loaded, each with its SHA-256 (`<key>.files.json`), and
@@ -17,7 +24,7 @@
 //! changed can't be told without loading it, so its capture is kept until
 //! it is deleted.
 
-use crate::project::{Aspect, Cut, Project, Scene, SceneKind};
+use crate::project::{Aspect, Cut, Line, Project, Scene, SceneKind};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
@@ -33,6 +40,8 @@ pub struct Capture {
     /// What it shows, for people: `line <id>` or `page <scene> at <w>x<h>`.
     pub what: String,
     pub source: Source,
+    /// The scene it is of.
+    pub scene: String,
     /// The file in the project folder that its page is, with `{aspect}`
     /// filled in. None for a page on the web.
     pub file: Option<String>,
@@ -158,7 +167,57 @@ fn web_spec(scene: &Scene) -> Value {
     spec
 }
 
-/// The capture key of every line on a web scene, by line ID.
+/// What a picture, or a window of text, is drawn from: the scene without
+/// what only frames it.
+fn drawn_spec(scene: &Scene) -> Value {
+    let mut spec = web_spec(scene);
+    if let Some(map) = spec.as_object_mut() {
+        map.remove("targets");
+    }
+    spec
+}
+
+/// The capture key of `line`'s still of `scene`, when `scene` is a picture
+/// or text that vidni draws: such a still is the scene's alone, whatever
+/// came before the line.
+fn drawn_key(scene: &Scene, line: &Line) -> Option<String> {
+    // A picture is one capture, whichever of its lines shows it.
+    if scene.kind == SceneKind::Image {
+        return Some(hash(&json!({ "image": drawn_spec(scene) })));
+    }
+    // Text that vidni draws is a capture for each set of lines marked:
+    // the text itself, with the lines of those targets marked.
+    scene.is_text().then(|| {
+        let marked: Vec<Value> = line
+            .highlight
+            .iter()
+            .map(|name| scene.targets.get(name).map_or(Value::Null, value_of))
+            .collect();
+        hash(&json!({ "text": drawn_spec(scene), "marked": marked }))
+    })
+}
+
+/// The capture key of every line of `cut` that shows a still, by line ID:
+/// [`line_keys`], but of the scene the cut swaps in where it swaps one.
+pub fn keys_in(project: &Project, cut: &Cut) -> BTreeMap<String, String> {
+    let mut keys = line_keys(project);
+    for line in cut.lines_in(project) {
+        let (Some(own), Some(shown)) = (line.scene_in(project), cut.scene_of(project, line)) else {
+            continue;
+        };
+        if own == shown {
+            continue;
+        }
+        match project.scenes.get(shown).and_then(|s| drawn_key(s, line)) {
+            Some(key) => keys.insert(line.id.clone(), key),
+            None => keys.remove(&line.id),
+        };
+    }
+    keys
+}
+
+/// The capture key of every line that shows a still of its own scene, by
+/// line ID.
 pub fn line_keys(project: &Project) -> BTreeMap<String, String> {
     // What has happened on each scene's page so far: the actions run, and
     // the expectations waited for. A capture waits for an expectation
@@ -180,16 +239,7 @@ pub fn line_keys(project: &Project) -> BTreeMap<String, String> {
         let Some(scene) = project.scenes.get(id) else {
             continue;
         };
-        // A picture is one capture, whichever of its lines shows it: the
-        // picture itself, with the boxes of its targets.
-        if scene.kind == SceneKind::Image {
-            keys.insert(line.id.clone(), hash(&json!({ "image": web_spec(scene) })));
-            continue;
-        }
-        // Text that vidni draws is a capture for each set of highlights:
-        // the text itself, with those lines marked.
-        if scene.is_text() {
-            let key = hash(&json!({ "text": web_spec(scene), "highlight": line.highlight }));
+        if let Some(key) = drawn_key(scene, line) {
             keys.insert(line.id.clone(), key);
             continue;
         }
@@ -236,6 +286,7 @@ pub fn page_capture(project: &Project, cut: &Cut, id: &str) -> Option<Capture> {
     Some(Capture {
         key: hash(&json!({"scene": value_of(scene), "size": size, "aspect": aspect})),
         what: format!("page {id} at {}x{} for {aspect}", size[0], size[1]),
+        scene: id.to_string(),
         source: Source::Page {
             scene: id.to_string(),
             size,
@@ -247,7 +298,7 @@ pub fn page_capture(project: &Project, cut: &Cut, id: &str) -> Option<Capture> {
 
 /// Every capture `cut` needs, each once, in script order.
 pub fn for_cut(project: &Project, cut: &Cut) -> Vec<Capture> {
-    let keys = line_keys(project);
+    let keys = keys_in(project, cut);
     let ids: BTreeSet<String> = cut.line_ids(project).into_iter().collect();
     let mut seen = BTreeSet::new();
     let mut found = Vec::new();
@@ -257,20 +308,18 @@ pub fn for_cut(project: &Project, cut: &Cut) -> Vec<Capture> {
         }
     };
     for line in project.lines.iter().filter(|l| ids.contains(&l.id)) {
-        if let Some(key) = keys.get(&line.id) {
-            let scene = line.scene_in(project).and_then(|id| project.scenes.get(id));
+        let shown = cut.scene_of(project, line);
+        if let (Some(key), Some(id)) = (keys.get(&line.id), shown) {
+            let scene = project.scenes.get(id);
             add(Capture {
                 key: key.clone(),
                 what: format!("line {}", line.id),
                 source: Source::Line(line.id.clone()),
+                scene: id.to_string(),
                 file: scene.and_then(Scene::file).map(str::to_string),
             });
         }
-        for id in line
-            .scene_in(project)
-            .into_iter()
-            .chain(line.overlay.as_deref())
-        {
+        for id in shown.into_iter().chain(cut.overlay_of(line)) {
             if let Some(page) = page_capture(project, cut, id) {
                 add(page);
             }
@@ -521,5 +570,126 @@ url = "cards/card-{aspect}.html#top"
                 ),
             ]
         );
+    }
+
+    const DRAWN: &str = r#"schema = 1
+
+[meta]
+title = "Drawn scenes"
+default_scene = "wide"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+
+[[cuts]]
+id = "short"
+aspect = "9:16"
+swap = { wide = "narrow", keys = "two" }
+
+[sections.main]
+
+[[lines]]
+id = "main-1"
+section = "main"
+show = "A session."
+highlight = ["first"]
+overlay = "keys"
+
+[[lines]]
+id = "main-2"
+section = "main"
+show = "A picture."
+scene = "shot"
+
+[scenes.wide]
+kind = "terminal"
+url = "session.txt"
+columns = 100
+
+[scenes.wide.targets]
+first = { lines = [1, 2] }
+
+[scenes.narrow]
+kind = "terminal"
+url = "narrow.txt"
+columns = 50
+
+[scenes.narrow.targets]
+first = { lines = [1, 3] }
+
+[scenes.shot]
+kind = "image"
+url = "shot.png"
+
+[scenes.shot.targets]
+corner = { rect = [0, 0, 10, 10] }
+
+[scenes.keys]
+kind = "overlay"
+template = "chips"
+parts = [{ label = "a", text = "one" }, { label = "b", text = "two" }, { label = "c", text = "three" }]
+
+[scenes.two]
+kind = "overlay"
+template = "chips"
+parts = [{ label = "a", text = "one" }, { label = "b", text = "two" }]
+"#;
+
+    #[test]
+    fn a_target_that_only_frames_a_drawn_scene_draws_nothing_again() {
+        let keys = |text: &str| line_keys(&crate::validate::check(text, None).unwrap());
+        let before = keys(DRAWN);
+        // Another target, and another place for one no line marks.
+        let more = DRAWN
+            .replace(
+                "first = { lines = [1, 2] }",
+                "first = { lines = [1, 2] }\nlast = { lines = [3, 4], columns = [1, 40] }",
+            )
+            .replace("rect = [0, 0, 10, 10]", "rect = [5, 5, 20, 20]");
+        assert_eq!(keys(&more), before);
+        // The lines a line marks are drawn: other lines, another picture.
+        let marked = DRAWN.replace("first = { lines = [1, 2] }", "first = { lines = [1, 4] }");
+        assert_ne!(keys(&marked)["main-1"], before["main-1"]);
+        assert_eq!(keys(&marked)["main-2"], before["main-2"]);
+    }
+
+    #[test]
+    fn a_cut_captures_the_scene_it_swaps_in() {
+        let project = crate::validate::check(DRAWN, None).unwrap();
+        let of = |cut: usize| -> Vec<(String, String)> {
+            for_cut(&project, &project.cuts[cut])
+                .into_iter()
+                .map(|c| (c.what, c.scene))
+                .collect()
+        };
+        let named = |pairs: &[(&str, &str)]| -> Vec<(String, String)> {
+            pairs
+                .iter()
+                .map(|(what, scene)| (what.to_string(), scene.to_string()))
+                .collect()
+        };
+        assert_eq!(
+            of(0),
+            named(&[("line main-1", "wide"), ("line main-2", "shot")])
+        );
+        assert_eq!(
+            of(1),
+            named(&[("line main-1", "narrow"), ("line main-2", "shot")])
+        );
+        let (long, short) = (&project.cuts[0], &project.cuts[1]);
+        let (wide, narrow) = (keys_in(&project, long), keys_in(&project, short));
+        assert_eq!(wide, line_keys(&project));
+        assert_ne!(wide["main-1"], narrow["main-1"]);
+        assert_eq!(wide["main-2"], narrow["main-2"]);
+        // The overlay is the cut's own too, and each is part of what its
+        // cut shows.
+        let line = &project.lines[0];
+        assert_eq!(long.overlay_of(line), Some("keys"));
+        assert_eq!(short.overlay_of(line), Some("two"));
+        let frozen = |cut| crate::ratify::content(&project, cut).scenes;
+        let ids = |cut| frozen(cut).into_keys().collect::<Vec<_>>();
+        assert_eq!(ids(long), ["keys", "shot", "wide"]);
+        assert_eq!(ids(short), ["narrow", "shot", "two"]);
     }
 }

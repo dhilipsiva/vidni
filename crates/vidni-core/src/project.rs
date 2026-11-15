@@ -1020,6 +1020,12 @@ pub struct Cut {
     /// narration is the takes of those words.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
+    /// Scenes this cut shows in the place of others, as `shown = "instead"`:
+    /// where a line shows the scene `shown`, or lays it over its picture,
+    /// this cut has the scene `instead`. So a short can have a narrower
+    /// terminal, or an overlay with fewer parts, under the same lines.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub swap: BTreeMap<String, String>,
 }
 
 /// A cut's aspect ratio.
@@ -1200,6 +1206,22 @@ impl Cut {
                 .filter(|l| ids.contains(&l.id))
                 .collect(),
         }
+    }
+
+    /// The scene the cut has where a line names `id`: the one it swaps
+    /// in for it, or `id` itself.
+    pub fn scene<'a>(&'a self, id: &'a str) -> &'a str {
+        self.swap.get(id).map_or(id, String::as_str)
+    }
+
+    /// The scene `line` shows in this cut.
+    pub fn scene_of<'a>(&'a self, project: &'a Project, line: &'a Line) -> Option<&'a str> {
+        line.scene_in(project).map(|id| self.scene(id))
+    }
+
+    /// The scene laid over `line`'s picture in this cut, when it has one.
+    pub fn overlay_of<'a>(&'a self, line: &'a Line) -> Option<&'a str> {
+        line.overlay.as_deref().map(|id| self.scene(id))
     }
 
     /// How the cut carries its captions, with the default for its aspect.

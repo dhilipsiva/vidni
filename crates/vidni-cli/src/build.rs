@@ -477,10 +477,26 @@ pub fn plan(path: &Path, cuts: &[String]) -> ExitCode {
         // The draft voice's pack tells which clips are of the lines as
         // they are now; without it the sheet has no pace.
         let pack = voices::find(&project.voice.draft, voices::store().as_deref()).map_err(cant)?;
-        sheet::sheet(project, dir, &cuts, pack.as_ref()).map_err(cant)
+        let rows = sheet::sheet(project, dir, &cuts, pack.as_ref()).map_err(cant)?;
+        // How long each cut will be, pauses and all, once the draft voice
+        // has spoken every line of it.
+        let lengths: Vec<String> = cuts
+            .iter()
+            .filter_map(|cut| {
+                let lines = cut.lines_in(project);
+                let pace = |line: &&vidni_core::project::Line| {
+                    rows.iter().find(|row| row.id == line.id)?.pace
+                };
+                let spoken: Option<Vec<f64>> = lines.iter().map(pace).collect();
+                let spoken: f64 = spoken?.iter().sum();
+                let whole = vidni_core::timeline::length(project, &lines, spoken, cut.end_hold);
+                Some(format!("{} about {}", cut.id, clock(whole)))
+            })
+            .collect();
+        Ok((rows, lengths))
     });
-    let rows = match listed {
-        Ok(rows) => rows,
+    let (rows, lengths) = match listed {
+        Ok(listed) => listed,
         Err(code) => return code,
     };
     let n = |take: Take| rows.iter().filter(|r| r.take == take).count();
@@ -506,6 +522,9 @@ pub fn plan(path: &Path, cuts: &[String]) -> ExitCode {
         n(Take::Stale),
         n(Take::Missing)
     );
+    if !lengths.is_empty() {
+        say!("with the pauses: {}", lengths.join(", "));
+    }
     let width = rows.iter().map(|r| r.id.len()).max().unwrap_or(0);
     let mut section = None;
     for row in &rows {

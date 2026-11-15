@@ -173,6 +173,11 @@ pub fn switches() -> Vec<&'static str> {
 /// pixels. Cameras aren't in it. They are framed from the targets when a
 /// cut is built ([`Frames::camera`]), so a camera can change without a
 /// new capture.
+///
+/// A picture's targets, and those of a window of text, aren't found on a
+/// page: the scene says where they are. So a cut is framed from the scene
+/// as it is when the cut is built ([`Frames::boxes`]), and `targets` holds
+/// them only as they were when the picture was drawn.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Frames {
@@ -186,6 +191,10 @@ pub struct Frames {
     pub highlights: BTreeMap<String, Vec<[f64; 4]>>,
     /// The browser that took the still.
     pub browser: String,
+    /// A window of text's rows, which its targets' boxes are worked out
+    /// from; none for any other still.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rows: Option<crate::compose::panel::Rows>,
 }
 
 /// The box around `boxes`, as the page runtime joins them; none of none.
@@ -212,6 +221,24 @@ impl Frames {
     /// viewport, the line's highlights together, or the scene's own camera,
     /// which is the viewport or its targets together. None when the camera
     /// isn't the scene's, or when nothing it names shows in the still.
+    /// The boxes of target `name` of `scene` in this still: as the scene
+    /// has them now, for a picture or a window of text; as the page had
+    /// them when the still was taken, for a web scene.
+    pub fn boxes(&self, name: &str, scene: &Scene) -> Vec<[f64; 4]> {
+        let target = scene.targets.get(name);
+        let now = match (scene.kind, &self.rows) {
+            (SceneKind::Image, _) => Some(target.and_then(|t| t.rect)),
+            (SceneKind::Terminal | SceneKind::Code, Some(rows)) => {
+                Some(target.and_then(|t| rows.band(t.lines?, t.columns)))
+            }
+            _ => None,
+        };
+        match now {
+            Some(found) => found.into_iter().collect(),
+            None => self.targets.get(name).cloned().unwrap_or_default(),
+        }
+    }
+
     pub fn camera(&self, name: &str, scene: &Scene) -> Option<[f64; 4]> {
         let viewport = [
             0.0,
@@ -227,13 +254,12 @@ impl Frames {
                 if camera.viewport {
                     return Some(viewport);
                 }
-                union(
-                    camera
-                        .union
-                        .iter()
-                        .filter_map(|target| self.targets.get(target))
-                        .flatten(),
-                )
+                let boxes: Vec<[f64; 4]> = camera
+                    .union
+                    .iter()
+                    .flat_map(|target| self.boxes(target, scene))
+                    .collect();
+                union(boxes.iter())
             }
         }
     }
@@ -260,8 +286,12 @@ pub fn capture_with(
     plan: &[Capture],
     limits: Limits,
 ) -> Result<Vec<Capture>, String> {
+    let kind = |c: &Capture| project.scenes.get(&c.scene).map(|scene| scene.kind);
+    // The stills of web scenes, by line. A line may have another still
+    // too, of a scene a cut swaps in: that one is drawn, not browsed.
     let wanted: BTreeMap<&str, &Capture> = plan
         .iter()
+        .filter(|c| kind(c) == Some(SceneKind::Web))
         .filter_map(|c| match &c.source {
             Source::Line(id) => Some((id.as_str(), c)),
             Source::Page { .. } => None,
@@ -277,38 +307,35 @@ pub fn capture_with(
             let _ = fs::remove_dir_all(entry.path());
         }
     }
-    let mut taken = Vec::new();
+    let mut taken: Vec<Capture> = Vec::new();
     let mut readings = Readings::default();
-    for (id, scene) in &project.scenes {
-        let wants = project.lines.iter().any(|l| {
-            l.scene_in(project) == Some(id.as_str()) && wanted.contains_key(l.id.as_str())
-        });
-        if !wants {
+    // A picture is read, not browsed: one capture for all its lines.
+    // Text is drawn, not browsed: one for each set of lines marked.
+    for capture in plan {
+        let (Source::Line(line), Some(scene)) =
+            (&capture.source, project.scenes.get(&capture.scene))
+        else {
+            continue;
+        };
+        let drawn = scene.kind == SceneKind::Image || scene.is_text();
+        if !drawn || taken.iter().any(|c| c.key == capture.key) {
             continue;
         }
-        // A picture is read, not browsed: one capture for all its lines.
-        // Text is drawn, not browsed: one for each set of lines marked.
-        if scene.kind == SceneKind::Image || scene.is_text() {
-            let mut done: Vec<&str> = Vec::new();
-            for line in project
-                .lines
-                .iter()
-                .filter(|l| l.scene_in(project) == Some(id.as_str()))
-            {
-                let Some(capture) = wanted.get(line.id.as_str()) else {
-                    continue;
-                };
-                if done.contains(&capture.key.as_str()) {
-                    continue;
-                }
-                let taking = match scene.is_text() {
-                    true => text(dir, scene, &line.highlight, &capture.key),
-                    false => picture(dir, scene, &capture.key),
-                };
-                taking.map_err(|e| format!("scene {id}: {e}"))?;
-                done.push(&capture.key);
-                taken.push((*capture).clone());
-            }
+        let marked = project.lines.iter().find(|l| l.id == *line);
+        let marked = marked.map_or(&[][..], |l| &l.highlight[..]);
+        let taking = match scene.is_text() {
+            true => text(dir, scene, marked, &capture.key),
+            false => picture(dir, scene, &capture.key),
+        };
+        taking.map_err(|e| format!("scene {}: {e}", capture.scene))?;
+        taken.push(capture.clone());
+    }
+    for (id, scene) in &project.scenes {
+        let wants = scene.kind == SceneKind::Web
+            && project.lines.iter().any(|l| {
+                l.scene_in(project) == Some(id.as_str()) && wanted.contains_key(l.id.as_str())
+            });
+        if !wants {
             continue;
         }
         // The scene's stills wait here until it has passed.
@@ -438,6 +465,7 @@ fn picture(dir: &Path, scene: &Scene, key: &str) -> Result<(), String> {
             .collect(),
         highlights: BTreeMap::new(),
         browser: format!("vidni {}", vidni_core::VERSION),
+        rows: None,
     };
     let json = serde_json::to_string_pretty(&frames).map_err(|e| e.to_string())?;
     write(&frames_path(dir, key), (json + "\n").as_bytes())?;
@@ -1346,6 +1374,7 @@ impl Page {
             targets: serde_json::from_value(measured).map_err(|e| e.to_string())?,
             highlights: serde_json::from_value(drawn).map_err(|e| e.to_string())?,
             browser: browser.to_string(),
+            rows: None,
         })
     }
 
@@ -1455,6 +1484,7 @@ nothing = { union = ["gone"] }
             .into(),
             highlights: [("tab-b".to_string(), vec![[100.0, 40.5, 80.0, 30.0]])].into(),
             browser: "a stand-in".into(),
+            rows: None,
         };
         assert_eq!(
             frames.camera("tabs", &scene),

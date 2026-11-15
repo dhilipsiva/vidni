@@ -24,7 +24,9 @@ aspect = "16:9"
 end_hold = 6
 
 # The short, for Shorts, Reels and WhatsApp Status: its own opening and
-# closing lines, around lines the walkthrough says too.
+# closing lines, around lines the walkthrough says too. Where those lines
+# show a terminal, the short has the same session in a narrower window,
+# and its overlay has two chips for the walkthrough's three.
 [[cuts]]
 id = "short"
 aspect = "9:16"
@@ -39,6 +41,7 @@ lines = [
   "same-3",
   "short-end",
 ]
+swap = { first = "first-narrow", refused = "refused-narrow", sheet = "sheet-narrow", repro = "repro-narrow", keys = "keys-two" }
 
 [publish]
 description = """
@@ -88,7 +91,6 @@ label = ""
 chapter = "Start your own"
 
 # --- The script ---
-
 [[lines]]
 id = "short-hook"
 section = "open"
@@ -143,7 +145,6 @@ show = "vidni draft speaks every line in a synthetic voice, captures the pages, 
 scene = "first"
 highlight = ["draft"]
 camera = "draft"
-camera_vertical = "draft-narrow"
 
 [[lines]]
 id = "draft-3"
@@ -151,7 +152,7 @@ section = "draft"
 show = "So you watch the whole video before you record a word."
 scene = "first"
 camera = "draft"
-camera_vertical = "made-narrow"
+camera_vertical = "made"
 
 [[lines]]
 id = "draft-4"
@@ -180,7 +181,6 @@ show = "The final build is refused until the cut is ratified, and every line has
 scene = "refused"
 highlight = ["unratified"]
 camera = "top"
-camera_vertical = "unratified-narrow"
 
 [[lines]]
 id = "gates-4"
@@ -202,7 +202,6 @@ section = "record"
 show = "vidni record takes you through it in the terminal, one line at a time, in your own voice."
 scene = "sheet"
 overlay = "keys"
-camera_vertical = "lines-narrow"
 
 [[lines]]
 id = "record-3"
@@ -263,7 +262,7 @@ section = "same"
 show = "The same script, the same takes and the same pictures give the same bytes."
 scene = "repro"
 highlight = ["equal"]
-camera_vertical = "equal-narrow"
+camera_vertical = "end"
 
 [[lines]]
 id = "same-4"
@@ -291,7 +290,6 @@ scene = "end"
 only = ["short"]
 
 # --- The scenes ---
-
 [scenes.open]
 kind = "card"
 template = "title"
@@ -308,9 +306,9 @@ subtitle = "vidni, in under a minute"
 [scenes.script]
 kind = "code"
 url = "examples/hello/vidni.toml"
+scale = 2
 repo = "../.."
 rev = "2c703750f877cd8f22f0051c560e618589f973e8"
-scale = 2
 lines = [51, 67]
 
 [scenes.script.targets]
@@ -325,9 +323,9 @@ line-narrow = { union = ["line-narrow"] }
 [scenes.scenes]
 kind = "code"
 url = "examples/hello/vidni.toml"
+scale = 2
 repo = "../.."
 rev = "2c703750f877cd8f22f0051c560e618589f973e8"
-scale = 2
 lines = [135, 147]
 
 [scenes.scenes.targets]
@@ -346,15 +344,31 @@ columns = 100
 new = { lines = [1, 6] }
 draft = { lines = [7, 19] }
 again = { lines = [21, 27] }
-draft-narrow = { lines = [7, 13], columns = [1, 50] }
-made-narrow = { lines = [10, 19], columns = [1, 50] }
 
 [scenes.first.cameras]
 new = { union = ["new"] }
 draft = { union = ["draft"] }
 again = { union = ["again"] }
-draft-narrow = { union = ["draft-narrow"] }
-made-narrow = { union = ["made-narrow"] }
+made = { union = ["draft"] }
+
+# The same session for the short: the draft alone, in a window 46 columns
+# wide, where its long lines go on in the next row as a terminal's do.
+[scenes.first-narrow]
+kind = "terminal"
+url = "sessions/first.txt"
+title = "a first video"
+scale = 2
+prompt = "$ "
+lines = [7, 19]
+columns = 46
+
+[scenes.first-narrow.targets]
+draft = { lines = [7, 13] }
+made = { lines = [10, 19] }
+
+[scenes.first-narrow.cameras]
+draft = { union = ["draft"] }
+made = { union = ["made"] }
 
 [scenes.flow]
 kind = "image"
@@ -374,12 +388,26 @@ unratified = { lines = [4, 8] }
 top = { lines = [1, 17] }
 changed = { lines = [29, 31] }
 bottom = { lines = [19, 31] }
-unratified-narrow = { lines = [1, 8], columns = [1, 56] }
 
 [scenes.refused.cameras]
 top = { union = ["top"] }
 bottom = { union = ["bottom"] }
-unratified-narrow = { union = ["unratified-narrow"] }
+
+[scenes.refused-narrow]
+kind = "terminal"
+url = "sessions/gates.txt"
+title = "the gates"
+scale = 2
+prompt = "$ "
+lines = [1, 8]
+columns = 46
+
+[scenes.refused-narrow.targets]
+unratified = { lines = [4, 8] }
+top = { lines = [1, 8] }
+
+[scenes.refused-narrow.cameras]
+top = { union = ["top"] }
 
 [scenes.sheet]
 kind = "terminal"
@@ -389,11 +417,13 @@ scale = 2
 prompt = "$ "
 columns = 84
 
-[scenes.sheet.targets]
-lines-narrow = { lines = [5, 7], columns = [1, 56] }
-
-[scenes.sheet.cameras]
-lines-narrow = { union = ["lines-narrow"] }
+[scenes.sheet-narrow]
+kind = "terminal"
+url = "sessions/plan.txt"
+title = "the recording sheet"
+scale = 2
+prompt = "$ "
+columns = 46
 
 # The recorder's keys, drawn over the sheet.
 [scenes.keys]
@@ -406,6 +436,24 @@ text = "start a take, and stop it"
 tone = "accent"
 
 [[scenes.keys.parts]]
+label = "p"
+text = "play it back"
+
+[[scenes.keys.parts]]
+label = "enter"
+text = "keep it, and go on"
+
+# Two of them: a third would be a second row, over half the short's view.
+[scenes.keys-two]
+kind = "overlay"
+template = "chips"
+
+[[scenes.keys-two.parts]]
+label = "space"
+text = "start a take, and stop it"
+tone = "accent"
+
+[[scenes.keys-two.parts]]
 label = "p"
 text = "play it back"
 
@@ -438,8 +486,8 @@ kind = "image"
 url = "app.png"
 
 [scenes.window.targets]
-tabs = { rect = [0, 0, 960, 380] }
-script = { rect = [0, 140, 960, 400] }
+tabs = { rect = [0, 0, 1000, 400] }
+script = { rect = [0, 140, 1000, 420] }
 
 [scenes.window.cameras]
 tabs = { union = ["tabs"] }
@@ -462,10 +510,26 @@ columns = 84
 [scenes.repro.targets]
 hashes = { lines = [5, 12] }
 equal = { lines = [14, 14] }
-equal-narrow = { lines = [9, 14], columns = [1, 54] }
+end = { lines = [1, 14] }
 
 [scenes.repro.cameras]
-equal-narrow = { union = ["equal-narrow"] }
+end = { union = ["end"] }
+
+[scenes.repro-narrow]
+kind = "terminal"
+url = "sessions/repro.txt"
+title = "vidni repro"
+scale = 2
+prompt = "$ "
+lines = [3, 14]
+columns = 46
+
+[scenes.repro-narrow.targets]
+equal = { lines = [14, 14] }
+end = { lines = [5, 14] }
+
+[scenes.repro-narrow.cameras]
+end = { union = ["end"] }
 
 [scenes.end]
 kind = "card"

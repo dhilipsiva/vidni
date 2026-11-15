@@ -126,6 +126,7 @@ fn drafted(text: &str) -> (tempfile::TempDir, Project) {
                     targets: [("side".to_string(), vec![[40.0, 60.0, 500.0, 400.0]])].into(),
                     highlights: Default::default(),
                     browser: "a stand-in".into(),
+                    rows: None,
                 };
                 let json = serde_json::to_string(&frames).unwrap();
                 fs::write(capture::frames_path(dir.path(), &c.key), json).unwrap();
@@ -233,13 +234,15 @@ fn a_final_build_records_what_it_made_and_repeats() {
     };
     let record = build::final_build(&p, dir, &lock, long, &setup(), &mut watch).unwrap();
     assert_eq!(stages, LONG_STAGES);
-    // A frame to look at for its one section, for the platform it is made for.
+    // A frame to look at for its one section, and a sheet of its lines,
+    // for the platform it is made for.
     let review = dir.join("build/final/review/long/youtube");
-    let frames: Vec<String> = fs::read_dir(&review)
+    let mut frames: Vec<String> = fs::read_dir(&review)
         .unwrap()
         .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
         .collect();
-    assert_eq!(frames, ["00-main.png"]);
+    frames.sort();
+    assert_eq!(frames, ["00-main.png", "lines-01.png"]);
 
     // One picture, with its captions burned in, measured by QA.
     assert_eq!(record.outputs.keys().collect::<Vec<_>>(), ["long.mp4"]);

@@ -44,7 +44,7 @@ app-shot out="app.png" *args:
     run="$(mktemp -d /tmp/vidni-shot.XXXX)"; chmod 700 "$run"; trap 'rm -rf "$run"' EXIT
     export XDG_RUNTIME_DIR="$run"
     nix shell --inputs-from . nixpkgs#weston -c bash -c '
-      weston --backend=headless --renderer=pixman --debug --socket=wl-vidni --width=1000 --height=760 >"$XDG_RUNTIME_DIR/weston.log" 2>&1 &
+      weston --backend=headless --renderer=pixman --shell=kiosk --debug --socket=wl-vidni --width=1000 --height=760 >"$XDG_RUNTIME_DIR/weston.log" 2>&1 &
       compositor=$!; sleep 2
       (WAYLAND_DISPLAY=wl-vidni DISPLAY= VIDNI_CONFIG="${VIDNI_CONFIG:-$XDG_RUNTIME_DIR/settings}" LD_LIBRARY_PATH="$VIDNI_WINDOW_LIBS" timeout 12 target/debug/vidni-app {{args}} >"$XDG_RUNTIME_DIR/app.log" 2>&1 &)
       sleep 5; (cd "$XDG_RUNTIME_DIR" && WAYLAND_DISPLAY=wl-vidni weston-screenshooter); kill $compositor'

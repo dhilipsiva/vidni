@@ -182,6 +182,7 @@ fn shots(
                         viewport,
                         scale,
                         loose: false,
+                        ground: vidni_media::compose::cut::Ground::Corner,
                     }
                 }
             };

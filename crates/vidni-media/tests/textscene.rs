@@ -94,6 +94,33 @@ fn a_terminal_is_the_same_picture_each_time_with_its_marked_lines_where_it_says(
     assert!(has_ink(&plain.image, 24.0 + cell * 10.0, top + row, cell));
     assert!(!has_ink(&plain.image, 24.0, top + row * 2.0, cell * 40.0));
 
+    // A cut is framed from the scene as it is when it is built: a part
+    // named since, or moved, is where the scene says now, with no new
+    // picture.
+    let advance = f64::from(plain.frames.rows.as_ref().unwrap().advance);
+    let mut later = terminal.clone();
+    later.targets = scene(serde_json::json!({
+        "kind": "terminal",
+        "url": "session.txt",
+        "targets": { "first": { "lines": [2, 2] }, "word": { "lines": [5, 5], "columns": [1, 5] } },
+    }))
+    .targets;
+    assert_eq!(
+        plain.frames.boxes("first", &later),
+        [[0.0, top + row, f64::from(width), row]]
+    );
+    assert_eq!(
+        plain.frames.boxes("word", &later),
+        [[24.0, top + row * 4.0, advance * 5.0, row]]
+    );
+    assert!(plain.frames.boxes("second", &later).is_empty());
+    later.cameras =
+        serde_json::from_value(serde_json::json!({ "word": { "union": ["word"] } })).unwrap();
+    assert_eq!(
+        plain.frames.camera("word", &later),
+        Some([24.0, top + row * 4.0, advance * 5.0, row])
+    );
+
     // The transcript changes: the picture does, and so does its record.
     fs::write(
         dir.path().join("session.txt"),

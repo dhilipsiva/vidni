@@ -131,10 +131,12 @@ fn content_of(project: &Project, cut: &Cut) -> Content {
         // left to the release's hash, with the title of the video.
         let label = json!({ "label": r["sections"][&line.section]["label"] });
         sections.insert(line.section.clone(), label);
-        for id in line
-            .scene_in(project)
+        // The scenes the cut has for the line: what it swaps in, where it
+        // swaps a scene.
+        for id in cut
+            .scene_of(project, line)
             .into_iter()
-            .chain(line.overlay.as_deref())
+            .chain(cut.overlay_of(line))
         {
             if let Some(scene) = r["scenes"].get(id) {
                 scenes.insert(id.to_string(), hash(scene));
