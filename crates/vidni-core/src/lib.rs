@@ -10,6 +10,7 @@ pub mod captions;
 pub mod capture;
 pub mod changes;
 pub mod chapters;
+pub mod cues;
 pub mod edit;
 pub mod fmt;
 pub mod fonts;

@@ -21,6 +21,7 @@ TOP = [
     ("meta", "[meta]"),
     ("voice", "[voice]"),
     ("timing", "[timing]"),
+    ("emphasis", "[emphasis]"),
     ("lint", "[lint]"),
     ("style", "[style]"),
     ("cuts", "[[cuts]]"),

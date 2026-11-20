@@ -39,6 +39,8 @@ Two files, and no others:
 | `vidni new` | Starting a project, when asked to |
 | `vidni validate`, `vidni fmt` | After every change |
 | `vidni draft` | Speaking and rendering a draft for the person to watch |
+| `vidni cues propose`, `vidni cues preview`, `vidni cues status` | Preparing advisory highlight timings, individual or continuous diagnostic previews, and reporting current verification ([cue review](cues.md)) |
+| `vidni cues record-confirmation` | Relaying an owner's explicit confirmation of the exact continuous review videos they watched; requires the owner's statement and each reviewed video's SHA-256 ([confirmation](cues.md#confirming-a-continuous-review)) |
 | `vidni status`, `vidni changes`, `vidni frozen`, `vidni exports` | Seeing where things stand |
 | `vidni notes` | Reading the person's notes, and taking out the ones it applied |
 | `vidni plan`, `vidni takes` (listing), `vidni hear`, `vidni where`, `vidni published` (listing), `vidni platforms`, `vidni voices` | Reading |
@@ -53,6 +55,7 @@ These refuse when `VIDNI_ASSISTANT` is set. The assistant asks the person to run
 | `vidni ratify`, `vidni unratify` | Ratifying says "this is what I mean to say and show". |
 | `vidni record`, `vidni takes --pick`, `--trim` | The narration is the person's own voice. |
 | `vidni approve` | Approving says "this is what I release". |
+| `vidni cues review` | The person checks synchronized audio and picture and writes `cues.lock`; an assistant cannot verify its own suggestions. |
 | `vidni published` (recording an upload), `vidni upload` | Only the person uploads, and only they know what they uploaded. |
 | `vidni backup`, `vidni restore`, `vidni gc`, `vidni setup` | They move and delete what can't be made again. |
 
@@ -75,6 +78,15 @@ vidni: ratified.lock was changed: only `vidni ratify`, run by a person, writes i
 - **Held to the session's start:** every file in the project folder but `vidni.toml` and `notes.md`. One that is new, gone or different fails the check, and is named.
 - **Not held:** `build/`, `out/` and `takes/`, which commands fill and a person's recorder fills.
 - **A command's own file is noted again by that command.** `vidni draft` writes `voice.lock`; a person who ratifies or approves while the assistant works writes `ratified.lock` or `release.json`. Those don't fail the check: the command that wrote the file says so to the session.
+- **An owner's explicit review confirmation may be relayed.** When the owner
+  states that they watched the current review videos and their cues are correct,
+  `cues record-confirmation` may save that decision without repeating every GUI
+  click. Preserve their actual statement and bind it to each video's exact hash.
+  A generic request to render, silence, automated QA, or the assistant's own
+  assessment is not owner confirmation. The command checks every selected
+  receipt against the current cut before writing `cues.lock`, and records that
+  an assistant relayed the owner's decision. Never edit the lock or session
+  snapshot by hand, or unset `VIDNI_ASSISTANT` to impersonate the reviewer.
 - **It exits 1** when the protocol was broken, so a script or an agent's own loop stops there.
 
 The check can be got round by an assistant that sets out to: it is a guard against mistakes and a statement of the rules, not a sandbox. For a hard limit, run the assistant where it can write only those two files.

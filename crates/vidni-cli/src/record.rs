@@ -5,7 +5,7 @@
 //! ready      space record · p play the saved take · s play the section ·
 //!            ← → move between lines · q quit
 //! recording  space or enter stop · esc cancel
-//! review     enter keep and go on · p play · r record again ·
+//! review     enter keep and go on · p play · space record again ·
 //!            esc discard · q keep and quit
 //! ```
 //!
@@ -53,7 +53,7 @@ const RESET: &str = "\x1b[0m";
 const READY: &str =
     "space record · p play the saved take · s play the section · ← → lines · q quit";
 const REVIEW: &str =
-    "enter keep and go on · p play · r record again · esc discard · q keep and quit";
+    "enter keep and go on · p play · space record again · esc discard · q keep and quit";
 
 /// Whether a recording session has the terminal, and whether it was asked
 /// to stop.
@@ -587,7 +587,7 @@ impl Session<'_> {
                             "{DIM}Discarded; the line is as it was.{RESET}"
                         )));
                     }
-                    Some(Key::Again) => {
+                    Some(Key::Space | Key::Again) => {
                         candidate.discard()?;
                         break;
                     }
@@ -698,7 +698,7 @@ fn mic_check(session: &Session, studio: &mut Studio) -> Result<(), String> {
             }
         }
         report.push(format!(
-            "\n  {BOLD}p{RESET} play it back · {BOLD}r{RESET} run the check again · {BOLD}q{RESET} done\n"
+            "\n  {BOLD}p{RESET} play it back · {BOLD}space{RESET} run the check again · {BOLD}q{RESET} done\n"
         ));
         show(&report.join("\n"));
         settle()?;
@@ -709,7 +709,7 @@ fn mic_check(session: &Session, studio: &mut Studio) -> Result<(), String> {
                         show(&format!("  {note}\n"));
                     }
                 }
-                (Some(Key::Again), _) => break true,
+                (Some(Key::Space | Key::Again), _) => break true,
                 (Some(Key::Quit | Key::Esc | Key::Enter | Key::Interrupt), _) => break false,
                 _ => {}
             }

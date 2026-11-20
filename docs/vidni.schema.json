@@ -15,6 +15,13 @@
         "$ref": "#/$defs/Cut"
       }
     },
+    "emphasis": {
+      "description": "Readable display holds for measured narration highlights.",
+      "$ref": "#/$defs/EmphasisPolicy",
+      "default": {
+        "min_duration": 3.0
+      }
+    },
     "errata": {
       "description": "Corrections to what a published video says, by line.",
       "type": "array",
@@ -311,6 +318,23 @@
         }
       ]
     },
+    "CaptureTarget": {
+      "description": "A capture receipt binds DOM measurements to the exact image bytes.",
+      "type": "object",
+      "properties": {
+        "receipt": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "receipt",
+        "target"
+      ]
+    },
     "ColorScheme": {
       "description": "A colour scheme a web scene can ask for.",
       "type": "string",
@@ -402,6 +426,50 @@
         "id",
         "aspect"
       ]
+    },
+    "Emphasis": {
+      "description": "One independently reviewed moment of emphasis within a spoken line.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "occurrence": {
+          "description": "One-based occurrence; required when the phrase occurs more than once.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "phrase": {
+          "description": "Exact words in the spoken line, used only to propose a timing.",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "target",
+        "phrase"
+      ]
+    },
+    "EmphasisPolicy": {
+      "description": "Reading time for narration highlights, independent of speech duration.",
+      "type": "object",
+      "properties": {
+        "min_duration": {
+          "description": "Minimum visible seconds from appearance, unless the target leaves the\nscene or camera. Zero retains the spoken phrase's interval.",
+          "type": "number",
+          "format": "double",
+          "default": 3.0
+        }
+      },
+      "additionalProperties": false
     },
     "Erratum": {
       "description": "A correction to what a line says, made after the video was published\n(TODO.md, P6-VIDNI-07). It goes into the description of every cut that\nuses the line, and changes no picture.",
@@ -549,6 +617,13 @@
           "default": [],
           "items": {
             "$ref": "#/$defs/Action"
+          }
+        },
+        "emphasis": {
+          "description": "Narration-timed emphasis. Geometry comes from named measured targets;\nreviewed sample offsets live in cues.lock, never in the script.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Emphasis"
           }
         },
         "highlight": {
@@ -1226,6 +1301,17 @@
           ],
           "default": null
         },
+        "capture": {
+          "description": "A measured target in a screenshot embedded in this SVG element.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaptureTarget"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "columns": {
           "description": "With `lines`: the first and last column of the window that the\ntarget is, counted from 1. Default: the window's whole width.",
           "type": [
@@ -1240,6 +1326,13 @@
           "maxItems": 2,
           "minItems": 2
         },
+        "continuity": {
+          "description": "Explicit identity of the same meaningful target in consecutive scenes.\nAllows a readable highlight hold to follow its newly measured geometry.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "css": {
           "description": "A CSS selector.",
           "type": [
@@ -1247,6 +1340,20 @@
             "null"
           ],
           "default": null
+        },
+        "element": {
+          "description": "The unique ID of an SVG element. Uses measured browser layout.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "elements": {
+          "description": "Several explicitly named SVG elements, each boxed separately.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "exclude": {
           "description": "Drop the elements whose text matches.",
@@ -1325,6 +1432,17 @@
           },
           "maxItems": 4,
           "minItems": 4
+        },
+        "span": {
+          "description": "A substring of the selected element's exact text, including spaces.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextSpan"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "text": {
           "description": "Keep the elements whose text matches.",
@@ -1438,6 +1556,26 @@
         }
       },
       "additionalProperties": false
+    },
+    "TextSpan": {
+      "type": "object",
+      "properties": {
+        "occurrence": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "text"
+      ]
     },
     "Thumbnail": {
       "description": "A thumbnail: the picture of a line, with words over it.",

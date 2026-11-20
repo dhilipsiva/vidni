@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 
 pub const READY: &str = "space record · p play the saved take";
 pub const REVIEW: &str =
-    "enter keep and go on · p play · r record again · esc discard · q keep and quit";
+    "enter keep and go on · p play · space record again · esc discard · q keep and quit";
 
 /// Three lines in two sections. The long cut has them all, and the short
 /// the last two: `main-2` is in both.

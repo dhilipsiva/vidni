@@ -116,10 +116,11 @@ window.__vidni = (() => {
     return el;
   };
   // A target's matches, each with its element and its box before clipping.
-  const resolve = spec => picked(spec).map(el => {
-    if (spec.line != null) return {el, r: lineBox(el, spec.line)};
-    if (spec.grow != null) { const g = grown(el, spec.grow); return {el: g, r: box(g)}; }
-    return {el, r: box(el)};
+  const resolve = spec => picked(spec).flatMap(el => {
+    if (spec.span != null) return window.__vidniGeometry.span(el, spec.span).map(r => ({el, r}));
+    if (spec.line != null) return [{el, r: lineBox(el, spec.line)}];
+    if (spec.grow != null) { const g = grown(el, spec.grow); return [{el: g, r: box(g)}]; }
+    return [{el, r: box(el)}];
   }).filter(m => m.r);
   const first = (name, spec) => {
     const found = resolve(spec);
@@ -176,6 +177,31 @@ window.__vidni = (() => {
   };
 
   return {
+    // Timed emphasis may never silently accept a clipped or ambiguous match.
+    measured(spec) {
+      const els = picked(spec);
+      if (!els.length || (els.length !== 1 && spec.pick !== 'all' && !spec.any?.length))
+        throw Error('timed target is missing or ambiguous; select one match explicitly');
+      return resolve(spec).map(({el,r}) => {
+        for (let p=el;p;p=p.parentElement) {
+          const cs=getComputedStyle(p);
+          if (+cs.opacity === 0 || cs.display === 'none' || cs.visibility !== 'visible')
+            throw Error('timed target is hidden');
+          if (cs.clipPath !== 'none' || cs.maskImage !== 'none')
+            throw Error('clipped or masked timed targets need an unclipped measured source');
+        }
+        if (spec.span) {
+          const cs=getComputedStyle(el), b=el.getBoundingClientRect();
+          if ((/(auto|scroll|hidden|clip)/.test(cs.overflowX) && (r[0]<b.left || r[0]+r[2]>b.right)) ||
+              (/(auto|scroll|hidden|clip)/.test(cs.overflowY) && (r[1]<b.top || r[1]+r[3]>b.bottom)))
+            throw Error('timed text span is clipped by its own element');
+        }
+        const shown=clip(el,r);
+        if (!shown || shown.some((v,i)=>Math.abs(v-r[i])>0.01))
+          throw Error('timed target is clipped by its capture');
+        return r;
+      });
+    },
     // Puts vidni's style and highlight layer into the document, now or as
     // soon as it can hold them. Run at the document's start, they are there
     // from its first paint: added later, they changed how Chromium painted

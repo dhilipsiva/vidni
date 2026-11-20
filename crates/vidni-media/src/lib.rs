@@ -7,6 +7,7 @@ pub mod build;
 pub mod capture;
 pub mod cdp;
 pub mod compose;
+pub mod cues;
 pub mod encode;
 pub mod export;
 pub mod hear;

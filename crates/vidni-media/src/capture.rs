@@ -39,7 +39,10 @@ use vidni_core::capture::{self as keys, Capture, Files, Source};
 use vidni_core::onscreen::{self, Reading, Readings};
 use vidni_core::project::{Action, ColorScheme, Project, Scene, SceneKind};
 
+mod measured;
+
 const RUNTIME: &str = include_str!("capture/runtime.js");
+const GEOMETRY: &str = include_str!("capture/geometry.js");
 
 /// What a captured page shows on top of itself: the highlight boxes, in
 /// the reference's look until themes arrive (P5-VIDNI-01), and no caret.
@@ -55,7 +58,10 @@ const WORLD: &str = "vidni";
 /// What runs in vidni's world at the start of every document: the runtime,
 /// which then puts in the style and the highlight layer.
 fn boot() -> String {
-    format!("{RUNTIME}\nwindow.__vidni.mount({});", json!(STYLE))
+    format!(
+        "{GEOMETRY}\n{RUNTIME}\nwindow.__vidni.mount({});",
+        json!(STYLE)
+    )
 }
 
 /// Takes the focus off whatever has it, so that no still shows a focus ring.
@@ -227,7 +233,11 @@ impl Frames {
     pub fn boxes(&self, name: &str, scene: &Scene) -> Vec<[f64; 4]> {
         let target = scene.targets.get(name);
         let now = match (scene.kind, &self.rows) {
-            (SceneKind::Image, _) => Some(target.and_then(|t| t.rect)),
+            (SceneKind::Image, _)
+                if target.is_none_or(|t| t.element.is_none() && t.elements.is_empty()) =>
+            {
+                Some(target.and_then(|t| t.rect))
+            }
             (SceneKind::Terminal | SceneKind::Code, Some(rows)) => {
                 Some(target.and_then(|t| rows.band(t.lines?, t.columns)))
             }
@@ -412,6 +422,13 @@ pub fn capture_with(
 /// at the scene's scale, with the fonts vidni is given and no others), the
 /// boxes of its targets as its frames, and the record of its file.
 fn picture(dir: &Path, scene: &Scene, key: &str) -> Result<(), String> {
+    if scene
+        .targets
+        .values()
+        .any(|target| target.element.is_some() || !target.elements.is_empty())
+    {
+        return measured::picture(dir, scene, key);
+    }
     let name = scene.url.as_str();
     let file = dir.join(name);
     let bytes = fs::read(&file).map_err(|e| format!("{name}: {e}"))?;
@@ -1319,7 +1336,18 @@ impl Page {
                 let Some(capture) = wanted.get(line.id.as_str()) else {
                     return Ok(());
                 };
-                let frames = self.still(scene, &line.highlight, &browser)?;
+                let mut frames = self.still(scene, &line.highlight, &browser)?;
+                for cue in &line.emphasis {
+                    let spec = scene
+                        .targets
+                        .get(&cue.target)
+                        .ok_or("unknown emphasis target")?;
+                    let boxes = self.runtime(&format!("measured({})", json!(spec)))?;
+                    frames.targets.insert(
+                        cue.target.clone(),
+                        serde_json::from_value(boxes).map_err(|e| e.to_string())?,
+                    );
+                }
                 let png = self.settle()?;
                 self.faults()?;
                 let json = serde_json::to_string_pretty(&frames).map_err(|e| e.to_string())?;

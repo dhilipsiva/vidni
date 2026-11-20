@@ -150,6 +150,8 @@ compose-stream *args:
 # The capture runtime's tests on a local page; they need Chromium, as the dev shell has (P3-VIDNI-04).
 test-capture:
     cargo test -p vidni-media --test capture -- --ignored
+    cargo test -p vidni-media --test emphasis -- --ignored
+    cargo test -p vidni-media --test cues -- --ignored
 
 # The listening check's tests with whisper-cli and its model, as the dev shell has them
 # (P3-VIDNI-05): the library on its own, and `vidni hear` on a small project.

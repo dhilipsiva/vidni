@@ -269,8 +269,8 @@ pub fn camera_name(line: &Line, scene: &Scene, portrait: bool, highlights: Optio
 /// is rendered.
 pub struct Plan<'p> {
     project: &'p Project,
-    cut: &'p Cut,
-    voice: Voice,
+    pub(crate) cut: &'p Cut,
+    pub(crate) voice: Voice,
     layout: Layout,
     /// Each line's clip, in script order.
     clips: Vec<PathBuf>,
@@ -296,6 +296,8 @@ pub struct Plan<'p> {
     pub sources: Sources,
     /// Everything the build depends on, as one hash.
     pub inputs: String,
+    pub emphasis: Vec<crate::cues::Cue>,
+    diagnostic: bool,
 }
 
 /// The lines of `cut` that the draft voice has spoken, each with its clip;
@@ -415,6 +417,19 @@ pub fn plan<'p>(
     pack: Option<&Pack>,
     setup: &Setup,
 ) -> Result<Plan<'p>, Stop> {
+    plan_with_review(project, dir, cut, voice, pack, setup, false)
+}
+
+/// A diagnostic plan may show unverified proposals, but cannot be exported.
+pub fn plan_with_review<'p>(
+    project: &'p Project,
+    dir: &Path,
+    cut: &'p Cut,
+    voice: Voice,
+    pack: Option<&Pack>,
+    setup: &Setup,
+    diagnostic: bool,
+) -> Result<Plan<'p>, Stop> {
     // A cut is laid out clear of what its platforms' apps cover.
     let covered = cut.covered();
     let layout = match (cut.aspect, cut.size(), covered) {
@@ -462,9 +477,28 @@ pub fn plan<'p>(
         .collect::<Result<Vec<Clip>, String>>()
         .map_err(Stop::Failed)?;
     let mut timeline = timeline::build_for(project, &lines, &infos, voice).map_err(Stop::Failed)?;
-    // A cut that holds its last picture for an end screen ends later.
     if let Some(hold) = cut.end_hold {
         timeline.hold(hold);
+    }
+    let emphasis = crate::cues::collect(crate::cues::Inputs {
+        project,
+        dir,
+        cut,
+        voice,
+        audio: &clips,
+        timeline: &timeline,
+        theme: &setup.theme,
+    })
+    .map_err(Stop::Failed)?;
+    if !diagnostic {
+        let problems: Vec<String> = emphasis
+            .iter()
+            .filter(|cue| !cue.verified)
+            .filter_map(|cue| cue.problem.clone())
+            .collect();
+        if !problems.is_empty() {
+            return Err(Stop::Refused(problems));
+        }
     }
     // A line whose scene the cut swaps shows a card where the cut has one.
     for (entry, line) in timeline.sentences.iter_mut().zip(&lines) {
@@ -536,7 +570,7 @@ pub fn plan<'p>(
         &tools,
         &sha256_hex(timeline_json.as_bytes()),
     );
-    Ok(Plan {
+    let mut plan = Plan {
         project,
         cut,
         voice,
@@ -558,10 +592,38 @@ pub fn plan<'p>(
         tools,
         sources,
         inputs,
-    })
+        emphasis,
+        diagnostic,
+    };
+    if !plan.emphasis.is_empty() {
+        let composer = plan.plain_composer(true).map_err(Stop::Failed)?;
+        crate::cues::resolve_visibility(&mut plan.emphasis, &composer).map_err(Stop::Failed)?;
+    }
+    Ok(plan)
 }
 
 impl Plan<'_> {
+    /// Review content independent of whether a person has already verified
+    /// some of its cues. Approval bookkeeping must not change this identity.
+    pub(crate) fn review_identity(&self) -> String {
+        let sources = Sources {
+            look: vidni_core::cues::hash(&release::look(self.project, self.cut)),
+            ..self.sources.clone()
+        };
+        let inputs = release::inputs(
+            self.voice,
+            &sources,
+            &self.tools,
+            &sha256_hex(self.timeline_json.as_bytes()),
+        );
+        let cues: Vec<_> = self
+            .emphasis
+            .iter()
+            .map(|c| (&c.key, &c.binding, &c.interval, &c.display))
+            .collect();
+        vidni_core::cues::hash(&serde_json::json!(["review-content-1", inputs, cues]))
+    }
+
     /// The cut's timeline.
     pub fn timeline(&self) -> &Timeline {
         &self.timeline
@@ -572,9 +634,42 @@ impl Plan<'_> {
         self.clips.iter().map(PathBuf::as_path).collect()
     }
 
+    /// A diagnostic uses the identical processed audio and timing as the cut.
+    pub fn review_audio(&self, out: &Path) -> Result<(), String> {
+        voice::narrate(
+            &self.timeline,
+            &self.clips(),
+            self.room.as_deref(),
+            self.music.as_ref(),
+            self.loudness,
+            out,
+        )
+    }
+
+    /// Processed-audio identity, independent of visual cue verification.
+    pub fn review_audio_key(&self) -> String {
+        vidni_core::cues::hash(&serde_json::json!([
+            "review-audio-1",
+            self.sources.audio,
+            self.timeline,
+            self.room,
+            self.music.as_ref().map(|m| (&m.samples, m.under)),
+            self.loudness
+        ]))
+    }
+
     /// The compositor of the cut's picture, with its captions drawn in or
     /// left out.
     pub fn composer(&self, captions: bool) -> Result<Composer, String> {
+        self.plain_composer(captions)?.with_emphasis(
+            self.emphasis
+                .iter()
+                .flat_map(|c| c.events().iter().cloned())
+                .collect(),
+        )
+    }
+
+    fn plain_composer(&self, captions: bool) -> Result<Composer, String> {
         let mut fonts = Fonts::new();
         let faces = self.faces.load(&mut fonts)?;
         let subtitle = self.project.meta.subtitle.clone().unwrap_or_default();
@@ -728,6 +823,9 @@ fn make(
 /// `build/final`), and writes the build's record last, so that an
 /// interrupted build never looks finished.
 pub fn build(plan: &Plan, dir: &Path, progress: &mut dyn FnMut(Step)) -> Result<Record, String> {
+    if plan.diagnostic {
+        return Err("unverified cue previews cannot be exported as a draft or final build".into());
+    }
     let cut = &plan.cut.id;
     let folder = dir.join(plan.voice.dir());
     fs::create_dir_all(&folder).map_err(|e| format!("{}: {e}", folder.display()))?;

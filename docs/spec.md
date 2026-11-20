@@ -163,6 +163,16 @@ mark = "//"           # written before a label, in the accent colour; "" for non
 
 That file is [`examples/themes/quine`](../examples/themes/quine/theme.toml), the look of the nibli example.
 
+## `[emphasis]`
+
+`min_duration` is the minimum reading time for narration highlights, in seconds;
+it defaults to `3.0` and must be finite and nonnegative. `0` retains phrase-only
+timing. A target leaving the scene or camera can end the extra hold sooner.
+Speech, captions and the cut's timeline are not stretched. Overlapping highlights
+are allowed. See [narration highlights](cues.md) for measured `continuity` targets,
+cross-line holds and the review workflow. Legacy scenes without `emphasis`
+cues retain their behavior.
+
 ## `[sections.<id>]`
 
 | Key | Type | Default | Meaning |
@@ -185,6 +195,7 @@ Sections come in the order of their first line, and a section's lines must be to
 | `scene` | string | `meta.default_scene` | The scene the line shows |
 | `do` | array of actions | empty | Web scenes: actions before the line is captured |
 | `highlight` | array of strings | empty | Web scenes: targets boxed while the line plays |
+| `emphasis` | array of cue tables | empty | Measured SVG or web targets, shown during verified audio intervals; see [Narration highlights](cues.md) |
 | `camera` | string | the scene's `default_camera` | Web scenes: the framing for 16:9 cuts |
 | `camera_vertical` | string | see [Cameras](#cameras) | Web scenes: the framing for 9:16 cuts |
 | `overlay` | string | none | A transparent page scene drawn over the line's picture |
@@ -324,7 +335,7 @@ The sheet only reads the project. It speaks nothing and writes no file.
 |---|---|
 | Ready | `space` record · `p` play the saved take · `s` play the section's takes · `←` `→` move between lines · `q` quit |
 | Recording | `space` or `enter` stop · `esc` cancel |
-| Review | `enter` keep and go on · `p` play · `r` record again · `esc` discard · `q` keep and quit |
+| Review | `enter` keep and go on · `p` play · `space` record again · `esc` discard · `q` keep and quit |
 
 - **While a take is recorded**, a meter shows its level, and a timer runs beside the time the draft voice took over the line.
 - **A take with nothing in it** is discarded with a message, and the line stays: one shorter than 0.8 s, or with no speech ([what is kept of a take](#what-is-kept-of-a-take)).
@@ -481,7 +492,8 @@ draft = { union = ["draft"] }
 - **A picture is shown whole.** A web page is captured at the cut's own shape; a picture, a terminal session or code is whatever size it is. So a line with no camera shows all of it, as large as fits above the captions and below the section's label, with the picture's own ground around it. A camera frames a part the same way, and may show ground past an edge. A picture that is tall or wide is small when shown whole, so frame its parts.
 - **The ground around a picture** is the colour of its first pixel. Around a terminal or code it is the window gone on: each row reaches the frame's edges in the colour it ends in, so the bar runs across the top and a marked line is marked all the way across.
 - **A framing that starts in a picture's first rows starts at its top,** below the section's label or the line's overlay, so neither lies over a window's bar. It is a little larger for it, to hold what the camera names all the same.
-- **A target of a picture, a terminal or code only frames it.** Naming another, or moving one, takes no capture again: the cut is framed from the scene as it is when it is built. Only the lines a line highlights in a terminal or code are drawn, so changing those draws that line's picture again. A web scene's targets are found on its page, so there a changed target is a new capture of the scene.
+- **A rectangle target of a picture, or a target of a terminal or code, frames it.** Naming another, or moving one, takes no capture again: the cut is framed from the scene as it is when it is built. Only the lines a line highlights in a terminal or code are drawn, so changing those draws that line's picture again. A web scene's targets are found on its page, so there a changed target is a new capture of the scene.
+- **Measured SVG targets** use `element`, `elements`, optional `span`, or a screenshot `capture` receipt. Their geometry is captured with the pixels using pinned Chromium and fonts, and can drive timed `emphasis`. Changing such a target takes a new capture. See [Narration highlights](cues.md) for syntax, review and build gates.
 - **An SVG's text** is set in the fonts vidni pins ([Fonts](#fonts)), by the family the SVG names, and in no font of the system's. So the picture is the same on every machine.
 - **The picture is a capture** like any other: one for all the lines that show it, taken by `vidni draft` or `vidni capture` with no browser, frozen when its cut is ratified, and taken again when its file changes ([When a capture is out of date](#when-a-capture-is-out-of-date)).
 
@@ -563,6 +575,7 @@ A target names the visible elements of a web page that match it. Highlights, cam
 | `pick` | `"all"`, `"first"` or `"last"` | Which matches to keep. Default `all`. |
 | `merge` | boolean | Draw one box around all the matches. `pick` must be `all`. |
 | `line` | integer | One line of the element's text, counted from 0 |
+| `span` | `{ text, occurrence? }` | Exact visible substring, measured across wrapped lines. Repeated text requires a one-based occurrence. Used by [timed emphasis](cues.md). |
 | `grow` | `{ within, max_height, margin }` | Grow each match to its largest enclosing block inside `within` that is at most `max_height` CSS pixels tall, at least `margin` pixels narrower than `within`, and whose text still ends with the match's text |
 | `unique` | boolean | When reading texts, keep each text once |
 | `any` | array of targets | The union of other matchers, instead of `css`. Put the matching keys inside each matcher; `pick`, `merge` and `unique` apply to the union. |

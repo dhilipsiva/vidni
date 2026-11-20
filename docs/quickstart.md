@@ -98,7 +98,7 @@ A new line needs only the three keys above. `highlight`, which the first lines h
 |---|---|---|
 | Freeze the script | `vidni ratify my-video` | Records what each cut shows and says. After this, `vidni status` reports any change to a cut, and `vidni final` refuses a changed cut. |
 | See what to read | `vidni plan my-video` | Prints the recording sheet: each line, and how long the draft voice took over it. |
-| Record | `vidni record my-video` | Records your takes in the terminal, one line at a time. Space starts a take and stops it. `--test` checks the microphone first. |
+| Record | `vidni record my-video` | Records your takes in the terminal, one line at a time. Space starts, stops and retakes; Enter keeps. `--test` checks the microphone first. |
 | Build | `vidni final my-video` | Builds each cut from your takes into `my-video/out/`, and checks it. |
 | Release | `vidni approve my-video` | Records the build in `release.json`, with the hashes of its files. |
 

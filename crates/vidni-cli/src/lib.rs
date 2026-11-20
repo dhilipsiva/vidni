@@ -36,6 +36,7 @@ pub mod console;
 mod assistant;
 mod backup;
 mod build;
+pub mod cues;
 pub mod exports;
 mod offline;
 mod published;
@@ -59,6 +60,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Propose, review and inspect narration-timed emphasis.
+    Cues {
+        #[command(subcommand)]
+        command: cues::Command,
+    },
     /// Start a project: a folder with a vidni.toml and the page its scene
     /// shows, which `vidni draft` renders as it is.
     New {
@@ -84,7 +90,7 @@ enum Command {
         cuts: Vec<String>,
     },
     /// Record your own takes in the terminal, one line at a time, with
-    /// single keys: space starts a take and stops it.
+    /// single keys: space starts, stops and retakes; Enter keeps the take.
     Record {
         /// A project folder, or its vidni.toml.
         #[arg(default_value = ".")]
@@ -514,6 +520,9 @@ fn a_persons(command: &Command) -> Option<&'static str> {
         }
         Command::Approve { .. } => "approving a release is a person's decision: ask them to run it",
         Command::Record { .. } => "recording is the creator's own voice",
+        Command::Cues {
+            command: cues::Command::Review { .. },
+        } => "cue verification belongs to the person watching and hearing its preview",
         Command::Takes { pick: Some(_), .. } | Command::Takes { trim: Some(_), .. } => {
             "choosing and trimming takes is the creator's"
         }
@@ -543,6 +552,13 @@ fn writes(command: &Command) -> Option<(PathBuf, &'static [&'static str])> {
         Command::Draft { path, .. } | Command::Speak { path } | Command::Hear { path, .. } => {
             (path.clone(), &["voice.lock"])
         }
+        Command::Cues {
+            command: cues::Command::Propose { options, .. } | cues::Command::Preview { options },
+        } => (options.path.clone(), &["voice.lock"]),
+        Command::Cues {
+            command:
+                cues::Command::Review { options } | cues::Command::RecordConfirmation { options, .. },
+        } => (options.path.clone(), &["cues.lock"]),
         _ => return None,
     })
 }
@@ -574,6 +590,7 @@ fn dispatch_one(command: Command) -> ExitCode {
         return ExitCode::from(2);
     }
     match command {
+        Command::Cues { command } => cues::run(command),
         Command::New { name, from, parent } => build::new(&name, from.as_deref(), &parent),
         Command::Plan { path, cuts } => {
             by_language(&path, &cuts, true, |cuts| build::plan(&path, cuts))

@@ -299,6 +299,12 @@ impl Rules {
     }
 
     fn timing_and_voice(&mut self, p: &Project) {
+        if !p.emphasis.min_duration.is_finite() || p.emphasis.min_duration < 0.0 {
+            self.add(
+                path!["emphasis", "min_duration"],
+                "min_duration must be finite and zero or more seconds",
+            );
+        }
         let t = &p.timing;
         for (key, value) in [
             ("lead_in", t.lead_in),
@@ -531,6 +537,37 @@ impl Rules {
             }
             return;
         };
+        let mut cue_ids = BTreeSet::new();
+        for (j, cue) in line.emphasis.iter().enumerate() {
+            let here = path!["lines", i, "emphasis", j];
+            if !valid_id(&cue.id) || !cue_ids.insert(&cue.id) {
+                self.add(
+                    here.clone(),
+                    "emphasis IDs must be valid and unique within the line",
+                );
+            }
+            let spoken = crate::spoken::spoken(line, &p.voice);
+            if let Err(why) = crate::cues::occurrence(&spoken, &cue.phrase, cue.occurrence) {
+                self.add(here.clone(), why);
+            }
+            match scene.targets.get(&cue.target) {
+                None => self.unknown_target(here.clone(), &cue.target, id, scene),
+                Some(target) if target.rect.is_some() => self.add(
+                    here.clone(),
+                    "timed emphasis needs measured geometry, not a handwritten rect",
+                ),
+                _ => {}
+            }
+            if !matches!(scene.kind, SceneKind::Image | SceneKind::Web) {
+                self.add(here, "timed emphasis needs a measured SVG or web scene");
+            }
+        }
+        if !line.emphasis.is_empty() && !line.highlight.is_empty() {
+            self.add(
+                at("highlight"),
+                "timed emphasis cannot be mixed with baked line highlights",
+            );
+        }
         match scene.kind {
             SceneKind::Overlay => {
                 let key = if line.scene.is_some() { "scene" } else { "id" };
@@ -799,6 +836,26 @@ impl Rules {
     }
 
     fn scene(&mut self, id: &str, s: &Scene, dir: Option<&Path>) {
+        let mut identities = std::collections::BTreeSet::new();
+        for (name, target) in &s.targets {
+            if let Some(identity) = &target.continuity {
+                if !valid_id(identity) || !identities.insert(identity) {
+                    self.add(
+                        path!["scenes", id, "targets", name.as_str(), "continuity"],
+                        "continuity must be a valid ID, unique within the scene",
+                    );
+                }
+                if s.kind != SceneKind::Web
+                    && !(s.kind == SceneKind::Image
+                        && (target.element.is_some() || !target.elements.is_empty()))
+                {
+                    self.add(
+                        path!["scenes", id, "targets", name.as_str(), "continuity"],
+                        "continuity needs a measured web or SVG target",
+                    );
+                }
+            }
+        }
         let at = |key: &str| path!["scenes", id, key];
         if !valid_id(id) {
             self.add(path!["scenes", id], id_rule("scene", id));
@@ -1204,6 +1261,46 @@ impl Rules {
             if !valid_id(tid) {
                 self.add(here.clone(), id_rule("target", tid));
             }
+            if t.element.is_some() || !t.elements.is_empty() {
+                let measured = Target {
+                    continuity: t.continuity.clone(),
+                    element: t.element.clone(),
+                    elements: t.elements.clone(),
+                    span: t.span.clone(),
+                    capture: t.capture.clone(),
+                    ..Target::default()
+                };
+                if !lower.ends_with(".svg")
+                    || t.element.as_deref() == Some("")
+                    || t.elements.iter().any(String::is_empty)
+                    || t.elements
+                        .iter()
+                        .collect::<std::collections::BTreeSet<_>>()
+                        .len()
+                        != t.elements.len()
+                    || (t.element.is_some() && !t.elements.is_empty())
+                    || (t.capture.is_some() && t.element.is_none())
+                    || *t != measured
+                    || (t.span.is_some() && t.capture.is_some())
+                {
+                    self.add(here.clone(), "a measured SVG target needs an element ID and either span or capture, without rect or web matchers");
+                }
+                if let Some(span) = &t.span
+                    && (span.text.is_empty() || span.occurrence == Some(0))
+                {
+                    self.add(
+                        here.clone(),
+                        "a text span needs nonempty text and a one-based occurrence",
+                    );
+                }
+                if let Some(capture) = &t.capture {
+                    self.project_file(here.clone(), &capture.receipt, dir);
+                    if capture.target.is_empty() {
+                        self.add(here, "a capture reference needs a target name");
+                    }
+                }
+                continue;
+            }
             let only_rect = Target {
                 rect: t.rect,
                 ..Target::default()
@@ -1544,6 +1641,23 @@ impl Rules {
             p.push(Seg::from(key));
             p
         };
+        if t.element.is_some() || !t.elements.is_empty() || t.capture.is_some() {
+            self.add(
+                at.clone(),
+                "element and capture targets belong to measured SVG scenes",
+            );
+        }
+        if let Some(span) = &t.span
+            && (span.text.is_empty()
+                || span.occurrence == Some(0)
+                || t.line.is_some()
+                || t.grow.is_some())
+        {
+            self.add(
+                with("span"),
+                "span needs nonempty text and a one-based occurrence, without line or grow",
+            );
+        }
         if t.rect.is_some() {
             self.add(
                 with("rect"),

@@ -44,6 +44,14 @@ The pauses around the lines.
 | `section_gap` | number |  | The pause between sections. |
 | `tail` | number |  | Silence after the last line. |
 
+## `[emphasis]`
+
+Readable display holds for measured narration highlights.
+
+| Key | Value | Required | Meaning |
+|---|---|---|---|
+| `min_duration` | number |  | Minimum visible seconds from appearance, unless the target leaves the scene or camera. Zero retains the spoken phrase's interval. |
+
 ## `[lint]`
 
 Wording checks.
@@ -139,6 +147,7 @@ The script: every narrated line, in order.
 | `camera_vertical` | string |  | The camera for vertical cuts, when it differs. |
 | `claim` | boolean |  | Whether the line states a fact. In strict projects, every line that does needs a `source`; set `claim = false` on a line that states none, such as a greeting or a transition. |
 | `do` | array of [Action](#action) |  | Actions on a web scene before the line is captured. |
+| `emphasis` | array of [Emphasis](#emphasis) |  | Narration-timed emphasis. Geometry comes from named measured targets; reviewed sample offsets live in cues.lock, never in the script. |
 | `highlight` | array of string |  | Targets of a web scene to box while the line plays. |
 | `in` | table of [Words](#words), by name |  | The line's words in other languages, by language: `in.ta.show`. A cut with `language = "ta"` shows and says these. |
 | `only` | array of string |  | The cuts the line is only for, such as a short's hook. A cut that uses every line leaves out the lines that are only for others. |
@@ -290,6 +299,17 @@ One step on a web page. Exactly one verb is set: `click`, `select`, `expand`, `c
 | `wait` | string |  | Wait until the target is visible. |
 | `within` | string |  | For `scroll_to`: the scroll container, a target. |
 
+### Emphasis
+
+One independently reviewed moment of emphasis within a spoken line.
+
+| Key | Value | Required | Meaning |
+|---|---|---|---|
+| `id` | string | yes |  |
+| `phrase` | string | yes | Exact words in the spoken line, used only to propose a timing. |
+| `target` | string | yes |  |
+| `occurrence` | whole number |  | One-based occurrence; required when the phrase occurs more than once. |
+
 ### Words
 
 A line's words in another language.
@@ -338,8 +358,12 @@ A named part of a web page: the visible elements that match.
 |---|---|---|---|
 | `any` | array of [Target](#target) |  | The union of other matchers, instead of `css`. |
 | `attr` | [AttrMatch](#attrmatch) |  | Keep the elements whose attribute matches. |
+| `capture` | [CaptureTarget](#capturetarget) |  | A measured target in a screenshot embedded in this SVG element. |
 | `columns` | array of whole number |  | With `lines`: the first and last column of the window that the target is, counted from 1. Default: the window's whole width. |
+| `continuity` | string |  | Explicit identity of the same meaningful target in consecutive scenes. Allows a readable highlight hold to follow its newly measured geometry. |
 | `css` | string |  | A CSS selector. |
+| `element` | string |  | The unique ID of an SVG element. Uses measured browser layout. |
+| `elements` | array of string |  | Several explicitly named SVG elements, each boxed separately. |
 | `exclude` | string or [TextRule](#textrule) |  | Drop the elements whose text matches. |
 | `grow` | [Grow](#grow) |  | Grow each match to its largest enclosing block that still ends with the same text. |
 | `line` | whole number |  | One line of the element's text, counted from 0. |
@@ -347,6 +371,7 @@ A named part of a web page: the visible elements that match.
 | `merge` | boolean |  | Draw one box around all the matches. |
 | `pick` | `"all"` or `"first"` or `"last"` |  | Which matches to keep. Default `all`. |
 | `rect` | array of number |  | On an image scene: a part of the picture, as `[x, y, width, height]` in its own pixels (an SVG's, in its own units). |
+| `span` | [TextSpan](#textspan) |  | A substring of the selected element's exact text, including spaces. |
 | `text` | string or [TextRule](#textrule) |  | Keep the elements whose text matches. |
 | `text_of` | string |  | Match `text` against this child (a CSS selector) instead of the whole element. |
 | `unique` | boolean |  | When reading texts, keep each text once. |
@@ -359,6 +384,15 @@ An attribute test.
 |---|---|---|---|
 | `matches` | string | yes | A regular expression its value must match. |
 | `name` | string | yes | The attribute's name. |
+
+### CaptureTarget
+
+A capture receipt binds DOM measurements to the exact image bytes.
+
+| Key | Value | Required | Meaning |
+|---|---|---|---|
+| `receipt` | string | yes |  |
+| `target` | string | yes |  |
 
 ### TextRule
 
@@ -379,3 +413,12 @@ How a match grows to its enclosing block.
 | `max_height` | number | yes | The tallest block it may grow to, in CSS pixels. |
 | `within` | string | yes | The container the match grows within (a CSS selector). |
 | `margin` | number |  | The block must stay this many CSS pixels narrower than the container. |
+
+### TextSpan
+
+
+
+| Key | Value | Required | Meaning |
+|---|---|---|---|
+| `text` | string | yes |  |
+| `occurrence` | whole number |  |  |

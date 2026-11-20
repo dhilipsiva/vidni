@@ -31,10 +31,11 @@ It shows one line at a time, with the words to say, and takes single keys with n
 |---|---|
 | Ready | `space` record · `p` play the saved take · `s` play the section's takes · `←` `→` move between lines · `q` quit |
 | Recording | `space` or `enter` stop · `esc` cancel |
-| Review | `enter` keep and go on · `p` play · `r` record again · `esc` discard · `q` keep and quit |
+| Review | `enter` keep and go on · `p` play · `space` record again · `esc` discard · `q` keep and quit |
 
 - **Press space, wait a beat, speak, wait a beat, press space.** vidni cuts the keypresses off both ends and trims the silence, keeping 0.15 s before your words and 0.25 s after them. You don't need to time the keys.
 - **Listen to each take before you keep it** (`p`). The numbers say whether the level is right. Only you can say whether it sounds right.
+- **Space also starts a retake from Review, including the microphone check.** `r` remains an alias. Enter keeps the candidate; Space does not replace the saved take.
 - **Nothing replaces a line's take until you keep the new one.** Discard or cancel, and the line is as it was. Every take you stopped stays in `raw/`, so nothing you said is lost.
 - **You can stop at any time** (`q`). The next session starts at the first line that still has no take of its present words.
 - **A line that several cuts use is recorded once.** A short's own lines are recorded with the rest; `--cut short` goes through that cut's lines only.
@@ -69,8 +70,13 @@ A cut that is dubbed in another language ([the spec](spec.md#a-cut-in-another-la
 ```sh
 vidni takes            # every line: current, stale or missing
 vidni hear             # listens to each take, and lists the ones worth a second listen
+vidni cues review --voice takes  # review timed highlights, if the project declares any
 vidni final            # builds the cuts from your takes
 ```
+
+If you watched the continuous review videos and confirmed their highlights,
+the [explicit-confirmation workflow](cues.md#confirming-a-continuous-review)
+records that decision against the exact files without repeating every cue button.
 
 - **`vidni hear` only advises.** It flags a take that whisper heard differently from the script: often a dropped word, sometimes just a name it can't spell. It changes nothing, and a low score fails nothing. It knows English only.
 - **Back the takes up.** They are the one thing vidni can't make again:

@@ -29,6 +29,9 @@ pub struct Project {
     /// The pauses around the lines.
     #[serde(default)]
     pub timing: Timing,
+    /// Readable display holds for measured narration highlights.
+    #[serde(default)]
+    pub emphasis: EmphasisPolicy,
     /// Wording checks.
     #[serde(default)]
     pub lint: Lint,
@@ -290,6 +293,21 @@ pub struct HeardAs {
     pub means: String,
 }
 
+/// Reading time for narration highlights, independent of speech duration.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
+#[serde(default, deny_unknown_fields)]
+pub struct EmphasisPolicy {
+    /// Minimum visible seconds from appearance, unless the target leaves the
+    /// scene or camera. Zero retains the spoken phrase's interval.
+    pub min_duration: f64,
+}
+
+impl Default for EmphasisPolicy {
+    fn default() -> Self {
+        Self { min_duration: 3.0 }
+    }
+}
+
 /// The pauses around the lines, in seconds.
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
 #[serde(default, deny_unknown_fields)]
@@ -386,6 +404,10 @@ pub struct Line {
     /// Targets of a web scene to box while the line plays.
     #[serde(default)]
     pub highlight: Vec<String>,
+    /// Narration-timed emphasis. Geometry comes from named measured targets;
+    /// reviewed sample offsets live in cues.lock, never in the script.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub emphasis: Vec<Emphasis>,
     /// The web scene's camera for landscape cuts; the scene's
     /// `default_camera` when absent.
     #[serde(default)]
@@ -404,6 +426,19 @@ pub struct Line {
     /// A cut with `language = "ta"` shows and says these.
     #[serde(default, rename = "in", skip_serializing_if = "BTreeMap::is_empty")]
     pub translations: BTreeMap<String, Words>,
+}
+
+/// One independently reviewed moment of emphasis within a spoken line.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Emphasis {
+    pub id: String,
+    pub target: String,
+    /// Exact words in the spoken line, used only to propose a timing.
+    pub phrase: String,
+    /// One-based occurrence; required when the phrase occurs more than once.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub occurrence: Option<u32>,
 }
 
 impl Project {
@@ -740,6 +775,22 @@ pub struct PageSize {
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Target {
+    /// Explicit identity of the same meaningful target in consecutive scenes.
+    /// Allows a readable highlight hold to follow its newly measured geometry.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub continuity: Option<String>,
+    /// The unique ID of an SVG element. Uses measured browser layout.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub element: Option<String>,
+    /// Several explicitly named SVG elements, each boxed separately.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub elements: Vec<String>,
+    /// A substring of the selected element's exact text, including spaces.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub span: Option<TextSpan>,
+    /// A measured target in a screenshot embedded in this SVG element.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capture: Option<CaptureTarget>,
     /// A CSS selector.
     #[serde(default)]
     pub css: Option<String>,
@@ -785,6 +836,22 @@ pub struct Target {
     /// target is, counted from 1. Default: the window's whole width.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub columns: Option<[u32; 2]>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct TextSpan {
+    pub text: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub occurrence: Option<u32>,
+}
+
+/// A capture receipt binds DOM measurements to the exact image bytes.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct CaptureTarget {
+    pub receipt: String,
+    pub target: String,
 }
 
 /// Which of a target's matches to keep.

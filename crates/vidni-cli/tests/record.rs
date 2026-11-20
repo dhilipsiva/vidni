@@ -39,6 +39,51 @@ fn project() -> (tempfile::TempDir, PathBuf) {
 
 #[test]
 #[ignore = "needs a terminal and ALSA: just test-record"]
+fn space_retries_without_replacing_a_saved_take_until_enter() {
+    let (_keep, dir) = project();
+    let mut recorder = Recorder::start(&dir, &[], "tone:220:0.3");
+    recorder.wait_for(READY);
+    recorder.take(1.3);
+    recorder.review();
+    recorder.press("q");
+    assert_eq!(recorder.finish().0, 0);
+    let folder = dir.join("takes/main-1");
+    let file = wavs(&folder)
+        .into_iter()
+        .find(|n| n.ends_with(".wav"))
+        .unwrap();
+    let original = fs::read(folder.join(&file)).unwrap();
+    let mut recorder = Recorder::start(&dir, &["--only", "main-1"], "tone:330:0.3");
+    recorder.wait_for(READY);
+    recorder.take(1.3);
+    assert!(recorder.review().contains("space record again"));
+    // The stop key may repeat while review settles: it must not start a retake.
+    assert_eq!(fs::read(folder.join(&file)).unwrap(), original);
+    recorder.press("  ");
+    recorder.wait_for("● REC");
+    std::thread::sleep(Duration::from_millis(900));
+    assert_eq!(fs::read(folder.join(&file)).unwrap(), original);
+    recorder.press(" ");
+    recorder.review();
+    assert_eq!(fs::read(folder.join(&file)).unwrap(), original);
+    recorder.press("\x1b");
+    recorder.wait_for("Discarded; the line is as it was.");
+    assert_eq!(fs::read(folder.join(&file)).unwrap(), original);
+    recorder.take(1.3);
+    recorder.review();
+    recorder.press(" ");
+    recorder.wait_for("● REC");
+    std::thread::sleep(Duration::from_millis(1400));
+    recorder.press(" ");
+    recorder.review();
+    recorder.press("\r");
+    assert_eq!(recorder.finish().0, 0);
+    assert_ne!(fs::read(folder.join(&file)).unwrap(), original);
+    assert!(wavs(&folder).iter().all(|n| !n.ends_with(".new")));
+}
+
+#[test]
+#[ignore = "needs a terminal and ALSA: just test-record"]
 fn a_silent_take_is_discarded_and_the_line_stays() {
     let (_keep, dir) = project();
     let mut recorder = Recorder::start(&dir, &[], "silence");
@@ -330,7 +375,7 @@ fn the_mic_check_measures_the_room_and_a_line() {
     );
     std::thread::sleep(Duration::from_millis(600));
     recorder.take(1.3);
-    let report = recorder.wait_for("p play it back · r run the check again · q done");
+    let report = recorder.wait_for("p play it back · space run the check again · q done");
     assert!(report.contains("room noise -37 dB"), "{report}");
     assert!(report.contains("speech peak -3"), "{report}");
     assert!(report.contains("The room or the mic is noisy."), "{report}");
@@ -338,6 +383,23 @@ fn the_mic_check_measures_the_room_and_a_line() {
     std::thread::sleep(Duration::from_millis(600));
     recorder.press("p");
     std::thread::sleep(Duration::from_millis(300));
+    recorder.press(" ");
+    // The previous mic-check screen also contains both step labels. Wait for
+    // the retry to clear that screen before waiting for its new speech step.
+    let deadline = std::time::Instant::now() + Duration::from_secs(5);
+    while recorder.screen().contains("Speech is quiet.") {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "the mic check did not restart"
+        );
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    recorder.wait_for("Step 1 of 2: stay quiet for 3 seconds");
+    recorder.wait_for("Step 2 of 2: press space, read this line, press space.");
+    std::thread::sleep(Duration::from_millis(600));
+    recorder.take(1.3);
+    recorder.wait_for("p play it back · space run the check again · q done");
+    std::thread::sleep(Duration::from_millis(600));
     recorder.press("q");
     let (code, all) = recorder.finish();
     assert_eq!(code, 0, "{all}");

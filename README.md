@@ -23,6 +23,7 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 | [spec.md](docs/spec.md) | How a project file works, with every command |
 | [keys.md](docs/keys.md) | Every key of `vidni.toml`, generated from the schema |
 | [recording.md](docs/recording.md) | Recording your narration, and keeping takes consistent |
+| [cues.md](docs/cues.md) | Measured narration highlights, timing proposals and synchronized review |
 | [platforms.md](docs/platforms.md) | What each platform takes, and what to check before uploading |
 | [voices.md](docs/voices.md) | How draft voices were measured, and which were accepted |
 | [upload.md](docs/upload.md) | Having vidni upload a release to YouTube, if you want it to |
@@ -39,6 +40,7 @@ vidni has one Rust core and two front ends: the `vidni` command line and a nativ
 - `vidni validate` checks a project file against [schema 1](docs/spec.md), and `vidni fmt` puts it in the canonical layout.
 - `vidni takes` tracks the recorded takes, and `vidni plan` prints the recording sheet.
 - `vidni record` records your takes in the terminal, one line at a time, with single keys. It checks and trims each take, and picks up where the last session stopped.
+- `vidni cues propose`, `preview`, `review` and `status` prepare, watch and verify narration-timed highlights. Measured targets follow text layout; a changed take or layout invalidates its verification. Continuous diagnostic previews remain available before verification.
 - `vidni voices` lists the draft voices with their licences, and `vidni speak` speaks every line in the draft voice, seeded so that it repeats.
 - `vidni capture` captures web scenes and page scenes through Chromium, as the cuts need them.
 - Image scenes put a PNG or an SVG under the virtual camera, with no browser (`examples/images`).

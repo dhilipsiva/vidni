@@ -345,6 +345,37 @@ struct CueAt {
     end: f64,
 }
 
+/// A reviewed emphasis interval, resolved to half-open output frames.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct EmphasisEvent {
+    pub id: String,
+    pub line: usize,
+    pub start: u64,
+    pub end: u64,
+    /// Unpadded measured rectangles in the capture's own coordinate system.
+    pub boxes: Vec<[f64; 4]>,
+}
+
+#[derive(Debug)]
+pub(crate) enum EmphasisError {
+    OutsideCamera(String),
+    Invalid(String),
+}
+
+impl From<String> for EmphasisError {
+    fn from(value: String) -> Self {
+        Self::Invalid(value)
+    }
+}
+
+impl std::fmt::Display for EmphasisError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::OutsideCamera(s) | Self::Invalid(s) => f.write_str(s),
+        }
+    }
+}
+
 /// Renders a cut's frames.
 pub struct Composer {
     layout: Layout,
@@ -360,6 +391,7 @@ pub struct Composer {
     /// Whether captions are drawn into the picture.
     captions: bool,
     look: Look,
+    emphasis: Vec<EmphasisEvent>,
 }
 
 impl Composer {
@@ -528,7 +560,104 @@ impl Composer {
             images: Vec::new(),
             captions: true,
             look: look.clone(),
+            emphasis: Vec::new(),
         })
+    }
+
+    /// Attach only resolved events. Check every affected frame, including
+    /// intermediate camera positions; checking the final camera alone is unsafe.
+    pub fn with_emphasis(mut self, events: Vec<EmphasisEvent>) -> Result<Self, String> {
+        for event in &events {
+            if event.line >= self.items.len()
+                || event.start >= event.end
+                || event.end > self.frames()
+                || event.boxes.is_empty()
+            {
+                return Err(format!(
+                    "{}: emphasis has no valid visible interval",
+                    event.id
+                ));
+            }
+            for f in event.start..event.end {
+                self.emphasis_boxes(event, f)?;
+            }
+        }
+        self.emphasis = events;
+        Ok(self)
+    }
+
+    fn rect_at(&self, i: usize, t: f64) -> Option<[f64; 4]> {
+        let cam = if i > 0 {
+            ease((t - self.switch[i]) / CAM_EASE)
+        } else {
+            1.0
+        };
+        match (self.items[i].from_rect, self.items[i].rect) {
+            (Some(a), Some(b)) => Some([0, 1, 2, 3].map(|j| a[j] + (b[j] - a[j]) * cam)),
+            _ => None,
+        }
+    }
+
+    /// Exact same crop and view transform as `visual`, applied to geometry.
+    pub fn emphasis_boxes(&self, event: &EmphasisEvent, f: u64) -> Result<Vec<[f64; 4]>, String> {
+        self.emphasis_geometry(event, f).map_err(|e| e.to_string())
+    }
+
+    pub(crate) fn emphasis_geometry(
+        &self,
+        event: &EmphasisEvent,
+        f: u64,
+    ) -> Result<Vec<[f64; 4]>, EmphasisError> {
+        let t = f as f64 / FPS;
+        if self.index_at(t) != event.line {
+            return Err(format!("{}: its scene is not active at frame {f}", event.id).into());
+        }
+        let [cx, cy, cw, ch] = self
+            .rect_at(event.line, t)
+            .ok_or_else(|| format!("{}: emphasis needs a measured still", event.id))?;
+        let (vx, vy, vw, vh) = self.layout.view;
+        let sx = f64::from(vw) / cw;
+        let sy = f64::from(vh) / ch;
+        let item = &self.items[event.line];
+        let safe = self.layout.safe().unwrap_or([
+            0,
+            0,
+            self.layout.size.0 as i32,
+            self.layout.size.1 as i32,
+        ]);
+        let intersects = |b: [f64; 4], other: (i32, i32, u32, u32)| {
+            b[0] < f64::from(other.0) + f64::from(other.2)
+                && b[0] + b[2] > f64::from(other.0)
+                && b[1] < f64::from(other.1) + f64::from(other.3)
+                && b[1] + b[3] > f64::from(other.1)
+        };
+        event.boxes.iter().map(|b| {
+            if b.iter().any(|x| !x.is_finite()) || b[2] <= 0.0 || b[3] <= 0.0 {
+                return Err(format!("{}: invalid measured geometry", event.id).into());
+            }
+            let pad = 6.0;
+            let r = [f64::from(vx)+(b[0]-pad-cx)*sx, f64::from(vy)+(b[1]-pad-cy)*sy,
+                (b[2]+2.0*pad)*sx, (b[3]+2.0*pad)*sy];
+            let in_view = r[0] >= f64::from(vx).max(f64::from(safe[0]))
+                && r[1] >= f64::from(vy).max(f64::from(safe[1]))
+                && r[0]+r[2] <= f64::from(vx+vw).min(f64::from(safe[2]))
+                && r[1]+r[3] <= f64::from(vy+vh).min(f64::from(safe[3]));
+            let caption = self.cue_at(t).is_some_and(|c| {
+                let (img,(x,y)) = &self.cue_pieces[c]; intersects(r,(*x,*y,img.width,img.height))
+            });
+            let label = !item.label.is_empty() && self.label_pieces.iter().find(|(l,_,_)| *l == item.label)
+                .is_some_and(|(_,img,(x,y))| intersects(r,(*x,*y,img.width,img.height)));
+            let overlay = item.overlay.as_ref().is_some_and(|img| {
+                let (x,y) = self.overlay_at(img); intersects(r,(x,y,img.width,img.height))
+            });
+            if !in_view {
+                return Err(EmphasisError::OutsideCamera(format!("{}: highlight is clipped or covered at frame {f}; target is outside the camera",event.id)));
+            }
+            if caption || label || overlay {
+                return Err(format!("{}: highlight is clipped or covered at frame {f}; adjust its camera/layout", event.id).into());
+            }
+            Ok(r)
+        }).collect()
     }
 
     /// Leaves the captions out of the picture, for a cut whose captions
@@ -582,7 +711,18 @@ impl Composer {
         let fade = if i > 0 { ease(since / XFADE) } else { 1.0 };
         let cue = self.cue_at(t);
         if cam >= 1.0 && fade >= 1.0 {
-            FrameKey::Stable(i, cue)
+            if self.emphasis.iter().any(|e| e.start <= f && f < e.end) {
+                let boundary = self
+                    .emphasis
+                    .iter()
+                    .flat_map(|e| [e.start, e.end])
+                    .filter(|at| *at <= f)
+                    .max()
+                    .unwrap_or(0);
+                FrameKey::Emphasized(i, cue, boundary)
+            } else {
+                FrameKey::Stable(i, cue)
+            }
         } else {
             FrameKey::Moving(f)
         }
@@ -612,6 +752,28 @@ impl Composer {
             };
             let old = self.visual(i - 1, prev_rect)?;
             picture = pillow::blend(&old, &picture, fade as f32);
+        }
+        // Base scenes crossfade; emphasis follows only the active event. An
+        // expired highlight is never baked into the outgoing scene.
+        let mut drawn = std::collections::BTreeSet::new();
+        for event in &self.emphasis {
+            if event.start <= f && f < event.end {
+                for [x, y, w, h] in self.emphasis_boxes(event, f)? {
+                    let (l, t, r, b) = (
+                        x.floor() as i32,
+                        y.floor() as i32,
+                        (x + w).ceil() as i32,
+                        (y + h).ceil() as i32,
+                    );
+                    if !drawn.insert((l, t, r, b)) {
+                        continue;
+                    }
+                    pillow::line_h(&mut picture, l, r, t, &self.look.accent, 3);
+                    pillow::line_h(&mut picture, l, r, b, &self.look.accent, 3);
+                    pillow::rectangle(&mut picture, (l, t, l + 2, b), &self.look.accent);
+                    pillow::rectangle(&mut picture, (r - 2, t, r, b), &self.look.accent);
+                }
+            }
         }
         self.decorate(&mut picture, i, cue);
         Ok(picture)
@@ -819,6 +981,8 @@ pub struct Spill {
 pub enum FrameKey {
     /// Between moves: the line and the caption shown.
     Stable(usize, Option<usize>),
+    /// Stable geometry with the same active emphasis set since this boundary.
+    Emphasized(usize, Option<usize>, u64),
     /// During a camera move or crossfade: a frame of its own.
     Moving(u64),
 }
@@ -1407,6 +1571,109 @@ mod tests {
             assert_eq!(colour(&mut cut, f), want.data, "frame {f}");
         }
         assert_eq!(colour(&mut cut, 101), BLUE);
+    }
+
+    #[test]
+    fn expired_emphasis_is_absent_from_the_entire_outgoing_crossfade() {
+        let dir = tempfile::tempdir().unwrap();
+        let measured = |cut: &mut Composer| {
+            for item in &mut cut.items {
+                item.rect = Some([0.0, 0.0, 1920.0, 1080.0]);
+                item.from_rect = item.rect;
+            }
+        };
+        let mut base = two_cards(dir.path(), (1920, 1080)).without_captions();
+        measured(&mut base);
+        let mut highlighted = two_cards(dir.path(), (1920, 1080)).without_captions();
+        measured(&mut highlighted);
+        let mut highlighted = highlighted
+            .with_emphasis(vec![EmphasisEvent {
+                id: "last-word".into(),
+                line: 0,
+                start: 70,
+                end: 90,
+                boxes: vec![[600.0, 300.0, 200.0, 70.0]],
+            }])
+            .unwrap();
+        assert_ne!(
+            highlighted.frame(89).unwrap().data,
+            base.frame(89).unwrap().data
+        );
+        assert_eq!(highlighted.key(75), highlighted.key(85));
+        assert_ne!(highlighted.key(69), highlighted.key(70));
+        for f in 90..112 {
+            assert_eq!(
+                highlighted.frame(f).unwrap().data,
+                base.frame(f).unwrap().data,
+                "frame {f}"
+            );
+        }
+    }
+
+    #[test]
+    fn emphasis_uses_the_intermediate_camera_transform() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut cut = two_cards(dir.path(), (1920, 1080)).without_captions();
+        cut.items[1].from_rect = Some([0.0, 0.0, 1920.0, 1080.0]);
+        cut.items[1].rect = Some([200.0, 100.0, 1400.0, 800.0]);
+        let event = EmphasisEvent {
+            id: "moving".into(),
+            line: 1,
+            start: 90,
+            end: 115,
+            boxes: vec![[700.0, 350.0, 90.0, 45.0]],
+        };
+        let cut = cut.with_emphasis(vec![event.clone()]).unwrap();
+        let [x0, y0, w0, h0] = cut.emphasis_boxes(&event, 90).unwrap()[0];
+        let [x1, y1, w1, h1] = cut.emphasis_boxes(&event, 111).unwrap()[0];
+        let mid = cut.emphasis_boxes(&event, 100).unwrap()[0];
+        assert!(mid[0] > x0.min(x1) && mid[0] < x0.max(x1));
+        assert!(mid[1] > y0.min(y1) && mid[1] < y0.max(y1));
+        assert!(mid[2] > w0.min(w1) && mid[2] < w0.max(w1));
+        assert!(mid[3] > h0.min(h1) && mid[3] < h0.max(h1));
+    }
+
+    #[test]
+    fn overlapping_holds_remain_independent_and_identical_outlines_do_not_flash() {
+        let dir = tempfile::tempdir().unwrap();
+        let make = || {
+            let mut c = two_cards(dir.path(), (1920, 1080)).without_captions();
+            for item in &mut c.items {
+                item.rect = Some([0.0, 0.0, 1920.0, 1080.0]);
+                item.from_rect = item.rect;
+            }
+            c
+        };
+        let a = EmphasisEvent {
+            id: "name".into(),
+            line: 0,
+            start: 10,
+            end: 50,
+            boxes: vec![[600.0, 300.0, 200.0, 70.0]],
+        };
+        let b = EmphasisEvent {
+            id: "same-name".into(),
+            start: 30,
+            end: 80,
+            ..a.clone()
+        };
+        let mut together = make().with_emphasis(vec![a, b]).unwrap();
+        let mut one = make()
+            .with_emphasis(vec![EmphasisEvent {
+                id: "union".into(),
+                line: 0,
+                start: 10,
+                end: 80,
+                boxes: vec![[600.0, 300.0, 200.0, 70.0]],
+            }])
+            .unwrap();
+        for f in [9, 10, 29, 30, 49, 50, 79, 80] {
+            assert_eq!(
+                together.frame(f).unwrap().data,
+                one.frame(f).unwrap().data,
+                "frame {f}"
+            );
+        }
     }
 
     #[test]

@@ -319,6 +319,14 @@ pub fn look(project: &Project, cut: &Cut) -> Value {
             "size": cut.size(),
         },
     });
+    if cut
+        .lines_in(project)
+        .iter()
+        .any(|line| !line.emphasis.is_empty())
+    {
+        look["emphasis_policy"] =
+            json!({"renderer":2,"min_duration":project.emphasis.min_duration});
+    }
     // The edges the cut's apps cover move what it draws, and they are
     // vidni's data, not the project's. A cut whose apps cover nothing has
     // the look it had before vidni knew of them.
@@ -363,10 +371,28 @@ pub fn sources(
             Ok(json!([c.key, picture, frames]))
         })
         .collect::<Result<Vec<Value>, String>>()?;
+    let mut appearance = look(project, cut);
+    if cut
+        .lines_in(project)
+        .iter()
+        .any(|line| !line.emphasis.is_empty())
+    {
+        let records = crate::cues::Records::read(&project_dir.join(crate::cues::LOCK))?;
+        let prefix = format!("{}/", cut.id);
+        let clips: Vec<&str> = audio.iter().filter_map(|a| a[2].as_str()).collect();
+        let current: BTreeMap<_, _> = records
+            .entries
+            .iter()
+            .filter(|(key, record)| {
+                key.starts_with(&prefix) && clips.contains(&record.binding.audio.as_str())
+            })
+            .collect();
+        appearance["emphasis"] = json!(current);
+    }
     Ok(Sources {
         content: ratify::content(project, cut).content,
         audio: hash(&Value::Array(audio)),
-        look: hash(&look(project, cut)),
+        look: hash(&appearance),
         captures: hash(&Value::Array(captures)),
     })
 }

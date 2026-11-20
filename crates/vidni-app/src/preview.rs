@@ -209,6 +209,13 @@ impl Player {
         self.playing.is_some()
     }
 
+    /// A cue review cannot acknowledge timing from a muted picture alone.
+    pub fn has_audio(&self) -> bool {
+        self.playing
+            .as_ref()
+            .is_some_and(|playing| playing.sound.is_some())
+    }
+
     /// Plays from the player's position, with the cut's sound when
     /// `ffplay` is at hand and `VIDNI_PREVIEW_MUTE` isn't set.
     pub fn play(&mut self) {

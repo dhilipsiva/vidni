@@ -91,6 +91,7 @@ mod tests {
             scene: None,
             actions: Vec::new(),
             highlight: Vec::new(),
+            emphasis: Vec::new(),
             camera: None,
             camera_vertical: None,
             overlay: None,

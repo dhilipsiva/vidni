@@ -172,7 +172,19 @@ fn web_spec(scene: &Scene) -> Value {
 fn drawn_spec(scene: &Scene) -> Value {
     let mut spec = web_spec(scene);
     if let Some(map) = spec.as_object_mut() {
-        map.remove("targets");
+        if !scene
+            .targets
+            .values()
+            .any(|target| target.element.is_some() || !target.elements.is_empty())
+        {
+            map.remove("targets");
+        } else {
+            // Measured geometry and pixels are one capture, under one renderer.
+            map.insert(
+                "measured_svg".into(),
+                json!({"version":3,"fonts":sha256_hex(crate::fonts::DATA.as_bytes())}),
+            );
+        }
     }
     spec
 }
@@ -251,12 +263,16 @@ pub fn line_keys(project: &Project) -> BTreeMap<String, String> {
             .or_insert_with(|| (Vec::new(), expected(id, "setup")));
         steps.extend(line.actions.iter().map(value_of));
         waits.extend(expected(id, &line.id));
-        let key = hash(&json!({
+        let mut specification = json!({
             "scene": web_spec(scene),
             "steps": steps,
             "expects": waits,
             "highlight": line.highlight,
-        }));
+        });
+        if !line.emphasis.is_empty() {
+            specification["measured_emphasis"] = json!({"version":2,"targets":line.emphasis.iter().map(|e| &e.target).collect::<Vec<_>>()});
+        }
+        let key = hash(&specification);
         keys.insert(line.id.clone(), key);
     }
     keys
