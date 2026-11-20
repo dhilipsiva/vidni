@@ -1,0 +1,1089 @@
+#:schema https://raw.githubusercontent.com/dhilipsiva/vidni/main/docs/vidni.schema.json
+# Neuro-Symbolic Lesson 2. Synthetic review narration; stable V17a line IDs.
+schema = 1
+
+[meta]
+title = "Introducing Nibli KR"
+subtitle = "Reasoning from First Principles"
+language = "en"
+strict = true
+default_scene = "v17a-shop-01"
+
+[voice]
+draft = "piper:en_US-joe-medium"
+length_scale = 1.04
+read_as = [
+  { text = "ParcelA", say = "Parcel A" },
+  { text = "PackedParcels", say = "Packed Parcels" },
+]
+respell = [
+  { text = "Nibli KR", say = "Nibli K R" },
+  { text = "ParcelA", say = "Parcel A" },
+  { text = "PackedParcels", say = "Packed Parcels" },
+  { text = "Parcel A", say = "Parcel, A" },
+  { text = "Here it is in Nibli K R.", say = "Here it is in Nibbly K R." },
+]
+heard_as = [
+  { heard = "nibbly", means = "nibli" },
+  { heard = "nibley", means = "nibli" },
+  { heard = "nibali", means = "nibli" },
+  { heard = "2", means = "two" },
+  { heard = "3", means = "three" },
+  { heard = "7", means = "seven" },
+]
+
+# Normal speech/transition spacing only: no audience response holds.
+[timing]
+lead_in = 0.6
+line_gap = 0.44
+section_gap = 0.75
+tail = 1.2
+
+[lint]
+banned = [
+  'zero[- ]hallucination',
+  'no hallucination',
+  'cannot hallucinate',
+  'guarantee',
+  'UNDETERMINED',
+  '\bask(?:s|ed|ing)?\b',
+  '\bquestions?\b',
+  '\bpause and\b',
+  '\bpredict\b',
+]
+
+[style]
+theme = "../themes/quine"
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+captions = "both"
+platforms = ["youtube"]
+
+[[cuts]]
+id = "short"
+aspect = "9:16"
+captions = "burned"
+platforms = ["youtube-shorts"]
+
+[music]
+track = "none"
+
+[publish]
+description = "A parcel, the note about it and a formal statement are different things. Neuro-Symbolic Lesson 2 introduces knowledge representation through a small shop and its parcel records. Nibli KR is the language used to write the records; Nibli is the engine that evaluates claims against supplied records and rules. Writing a note formally does not establish that the note is correct. This course builds from everyday examples of symbolic reasoning toward combining it with neural AI. No formal logic or programming background is required. Narrated by the course creator. The shop is a fictional teaching example."
+tags = [
+  "neuro-symbolic reasoning",
+  "symbolic reasoning",
+  "knowledge representation",
+  "Nibli KR",
+  "logic",
+]
+links = [
+  { label = "Nibli engine and language", url = "https://github.com/dhilipsiva/nibli/blob/1eab5d1f1d52d1c106145aa0cbc18205ff9b0902/README.md" },
+]
+thumbnails = [{ line = "v17a-language-and-engine-04", title = "The language and the engine" }]
+
+[publish.titles]
+youtube = "Introducing Nibli KR: From Records to Reasoning | Neuro-Symbolic Lesson 2"
+youtube-shorts = "Nibli and Nibli KR: Two Different Jobs | Neuro-Symbolic Lesson 2"
+
+[sections.shop]
+label = ""
+chapter = "Clear records for the next shift"
+
+[sections.representation]
+label = ""
+chapter = "What knowledge representation means"
+
+[sections.parcel-and-note]
+label = ""
+chapter = "The parcel and its record"
+
+[sections.language-and-engine]
+label = ""
+chapter = "Nibli KR and the Nibli engine"
+
+[sections.one-statement]
+label = ""
+chapter = "Reading one current KR statement"
+
+[sections.checking-and-limits]
+label = ""
+chapter = "What formal structure can check"
+
+[sections.origins]
+label = ""
+chapter = "The Lojban connection"
+
+[sections.library]
+label = ""
+chapter = "A returned library copy"
+
+[sections.next]
+label = ""
+chapter = "Writing statements in Lesson 3"
+
+[sections.short-story]
+label = "Neuro-Symbolic Lesson 2"
+chapter = ""
+
+[[lines]]
+id = "v17a-shop-01"
+section = "shop"
+show = "Welcome to Neuro-Symbolic Lesson 2."
+source = "notes.md#v17a-shop"
+scene = "v17a-shop-01"
+only = ["long"]
+
+[[lines]]
+id = "v17a-shop-02"
+section = "shop"
+show = "We're continuing with the symbolic side of reasoning: writing down information so we can work out which claims it supports."
+source = "notes.md#v17a-shop"
+scene = "v17a-shop-02"
+only = ["long"]
+
+[[lines]]
+id = "v17a-shop-03"
+section = "shop"
+show = "It's the next day at our small shop."
+source = "notes.md#v17a-shop"
+scene = "v17a-shop-03"
+only = ["long"]
+
+[[lines]]
+id = "v17a-shop-04"
+section = "shop"
+show = "Two parcels, A and B, are on the packing table."
+source = "notes.md#v17a-shop"
+scene = "v17a-shop-04"
+only = ["long"]
+
+[[lines]]
+id = "v17a-shop-05"
+section = "shop"
+show = "Before either parcel goes to the collection area, it must be packed and have its own address label attached."
+source = "notes.md#v17a-shop"
+scene = "v17a-shop-05"
+only = ["long"]
+
+[[lines]]
+id = "v17a-shop-06"
+section = "shop"
+show = "That's the shop's meaning of ready for collection."
+source = "notes.md#v17a-shop"
+scene = "v17a-shop-06"
+only = ["long"]
+
+[[lines]]
+id = "v17a-shop-07"
+section = "shop"
+show = "Yesterday, a note about A's packing was combined with a note about B's label."
+source = "notes.md#v17a-shop"
+scene = "v17a-shop-07"
+only = ["long"]
+
+[[lines]]
+id = "v17a-shop-08"
+section = "shop"
+show = "The records described different parcels."
+source = "notes.md#v17a-shop"
+scene = "v17a-shop-08"
+only = ["long"]
+
+[[lines]]
+id = "v17a-shop-09"
+section = "shop"
+show = "Today, a colleague wants to make the records clearer for the next shift, and eventually use a program to check them."
+source = "notes.md#v17a-shop"
+scene = "v17a-shop-09"
+only = ["long"]
+
+[[lines]]
+id = "v17a-representation-01"
+section = "representation"
+show = "For that task, we give each parcel a name, record which checks concern it, and write down the requirement that both checks must concern the same parcel."
+source = "notes.md#v17a-representation"
+scene = "v17a-representation-01"
+only = ["long"]
+
+[[lines]]
+id = "v17a-representation-02"
+section = "representation"
+show = "We're choosing the things and relationships that matter to the shop's decision, along with the rule that connects them to readiness."
+source = "notes.md#v17a-representation"
+scene = "v17a-representation-02"
+only = ["long"]
+
+[[lines]]
+id = "v17a-representation-03"
+section = "representation"
+show = "That is knowledge representation: choosing how to describe information so it can be used for a purpose."
+source = "notes.md#v17a-representation"
+scene = "v17a-representation-03"
+only = ["long"]
+
+[[lines]]
+id = "v17a-representation-04"
+section = "representation"
+show = "Here, the purpose is to evaluate a claim about a particular parcel's readiness using the records available."
+source = "notes.md#v17a-representation"
+scene = "v17a-representation-04"
+only = ["long"]
+
+[[lines]]
+id = "v17a-parcel-and-note-01"
+section = "parcel-and-note"
+show = "Start with Parcel A itself."
+source = "notes.md#v17a-parcel-and-note"
+scene = "v17a-parcel-and-note-01"
+only = ["long"]
+
+[[lines]]
+id = "v17a-parcel-and-note-02"
+section = "parcel-and-note"
+show = "It's a physical object on the table."
+source = "notes.md#v17a-parcel-and-note"
+scene = "v17a-parcel-and-note-02"
+only = ["long"]
+
+[[lines]]
+id = "v17a-parcel-and-note-03"
+section = "parcel-and-note"
+show = "Beside it is a note saying, “Parcel A is packed.”"
+source = "notes.md#v17a-parcel-and-note"
+scene = "v17a-parcel-and-note-03"
+only = ["long"]
+
+[[lines]]
+id = "v17a-parcel-and-note-04"
+section = "parcel-and-note"
+show = "The note describes the parcel."
+source = "notes.md#v17a-parcel-and-note"
+scene = "v17a-parcel-and-note-04"
+only = ["long"]
+
+[[lines]]
+id = "v17a-parcel-and-note-05"
+section = "parcel-and-note"
+show = "It can be copied or passed to a colleague while the parcel stays where it is."
+source = "notes.md#v17a-parcel-and-note"
+scene = "v17a-parcel-and-note-05"
+only = ["long"]
+
+[[lines]]
+id = "v17a-parcel-and-note-06"
+section = "parcel-and-note"
+show = "That English note is already a representation."
+source = "notes.md#v17a-parcel-and-note"
+scene = "v17a-parcel-and-note-06"
+only = ["long"]
+
+[[lines]]
+id = "v17a-parcel-and-note-07"
+section = "parcel-and-note"
+show = "To give a reasoning program something it can process in a defined way, we'll write the same information in a formal language."
+source = "notes.md#v17a-parcel-and-note"
+scene = "v17a-parcel-and-note-07"
+only = ["long"]
+
+[[lines]]
+id = "v17a-language-and-engine-01"
+section = "language-and-engine"
+show = "The language we'll use is Nibli KR."
+source = "notes.md#v17a-language-and-engine"
+scene = "v17a-language-and-engine-01"
+only = ["long"]
+
+[[lines]]
+id = "v17a-language-and-engine-02"
+section = "language-and-engine"
+show = "The letters K R stand for knowledge representation."
+source = "notes.md#v17a-language-and-engine"
+scene = "v17a-language-and-engine-02"
+only = ["long"]
+
+[[lines]]
+id = "v17a-language-and-engine-03"
+section = "language-and-engine"
+show = "Nibli KR gives us a way to write statements and rules."
+source = "notes.md#v17a-language-and-engine"
+scene = "v17a-language-and-engine-03"
+only = ["long"]
+
+[[lines]]
+id = "v17a-language-and-engine-04"
+section = "language-and-engine"
+show = "Nibli is the engine that reads them and evaluates claims."
+source = "notes.md#v17a-language-and-engine"
+scene = "v17a-language-and-engine-04"
+only = ["long"]
+
+[[lines]]
+id = "v17a-language-and-engine-05"
+section = "language-and-engine"
+show = "For example, it can evaluate the claim that Parcel A meets the shop's checklist against the records and rule supplied to it."
+source = "notes.md#v17a-language-and-engine"
+scene = "v17a-language-and-engine-05"
+only = ["long"]
+
+[[lines]]
+id = "v17a-language-and-engine-06"
+section = "language-and-engine"
+show = "The language expresses the information."
+source = "notes.md#v17a-language-and-engine"
+scene = "v17a-language-and-engine-06"
+only = ["long"]
+
+[[lines]]
+id = "v17a-language-and-engine-07"
+section = "language-and-engine"
+show = "The engine does the reasoning with it."
+source = "notes.md#v17a-language-and-engine"
+scene = "v17a-language-and-engine-07"
+only = ["long"]
+
+[[lines]]
+id = "v17a-language-and-engine-08"
+section = "language-and-engine"
+show = "The parcel remains on the table throughout."
+source = "notes.md#v17a-language-and-engine"
+scene = "v17a-language-and-engine-08"
+only = ["long"]
+
+[[lines]]
+id = "v17a-language-and-engine-09"
+section = "language-and-engine"
+show = "Writing a statement and evaluating a claim don't pack it or attach its label."
+source = "notes.md#v17a-language-and-engine"
+scene = "v17a-language-and-engine-09"
+only = ["long"]
+
+[[lines]]
+id = "v17a-one-statement-01"
+section = "one-statement"
+show = "Let's put just the packing note into that language."
+source = "notes.md#v17a-one-statement"
+scene = "v17a-one-statement-01"
+only = ["long"]
+
+[[lines]]
+id = "v17a-one-statement-02"
+section = "one-statement"
+show = "For this example, we use a list for parcels with a packing confirmation."
+source = "notes.md#v17a-one-statement"
+scene = "v17a-one-statement-02"
+only = ["long"]
+
+[[lines]]
+id = "v17a-one-statement-03"
+section = "one-statement"
+show = "Saying “Parcel A is on the packed-parcels list” is how we represent the note “Parcel A is packed.”"
+source = "notes.md#v17a-one-statement"
+scene = "v17a-one-statement-03"
+only = ["long"]
+
+[[lines]]
+id = "v17a-one-statement-04"
+section = "one-statement"
+show = "Nibli's vocabulary includes a relation called member."
+source = "notes.md#v17a-one-statement"
+scene = "v17a-one-statement-04"
+only = ["long"]
+
+[[lines]]
+id = "v17a-one-statement-05"
+section = "one-statement"
+show = "It connects an item to a group it belongs to."
+source = "notes.md#v17a-one-statement"
+scene = "v17a-one-statement-05"
+only = ["long"]
+
+[[lines]]
+id = "v17a-one-statement-06"
+section = "one-statement"
+show = "Its two roles are the member and the set, or group."
+source = "notes.md#v17a-one-statement"
+scene = "v17a-one-statement-06"
+only = ["long"]
+
+[[lines]]
+id = "v17a-one-statement-07"
+section = "one-statement"
+show = "Here is our statement in Nibli KR."
+source = "notes.md#v17a-one-statement"
+scene = "v17a-one-statement-07"
+only = ["long"]
+
+[[lines]]
+id = "v17a-one-statement-08"
+section = "one-statement"
+show = "ParcelA names this parcel."
+source = "notes.md#v17a-one-statement"
+scene = "v17a-one-statement-08"
+only = ["long"]
+
+[[lines]]
+id = "v17a-one-statement-09"
+section = "one-statement"
+show = "PackedParcels names the group we're using for packing confirmations."
+source = "notes.md#v17a-one-statement"
+scene = "v17a-one-statement-09"
+only = ["long"]
+
+[[lines]]
+id = "v17a-one-statement-10"
+section = "one-statement"
+show = "Those are names we've chosen for our example."
+source = "notes.md#v17a-one-statement"
+scene = "v17a-one-statement-10"
+only = ["long"]
+
+[[lines]]
+id = "v17a-one-statement-11"
+section = "one-statement"
+show = "The word member and its two roles come from the vocabulary that ships with Nibli."
+source = "notes.md#v17a-one-statement"
+scene = "v17a-one-statement-11"
+only = ["long"]
+
+[[lines]]
+id = "v17a-one-statement-12"
+section = "one-statement"
+show = "We check that this vocabulary entry expresses the relationship we intend: membership in a group."
+source = "notes.md#v17a-one-statement"
+scene = "v17a-one-statement-12"
+only = ["long"]
+
+[[lines]]
+id = "v17a-one-statement-13"
+section = "one-statement"
+show = "The name PackedParcels gets its meaning in our model from our decision to use that group for packing confirmations."
+source = "notes.md#v17a-one-statement"
+scene = "v17a-one-statement-13"
+only = ["long"]
+
+[[lines]]
+id = "v17a-checking-and-limits-01"
+section = "checking-and-limits"
+show = "With the relation and its roles made explicit, a program can check the statement's structure and apply the same reasoning procedure to the same records."
+source = "notes.md#v17a-checking-and-limits"
+scene = "v17a-checking-and-limits-01"
+only = ["long"]
+
+[[lines]]
+id = "v17a-checking-and-limits-02"
+section = "checking-and-limits"
+show = "Someone inspecting the statement can also see exactly which parcel and group it names."
+source = "notes.md#v17a-checking-and-limits"
+scene = "v17a-checking-and-limits-02"
+only = ["long"]
+
+[[lines]]
+id = "v17a-checking-and-limits-03"
+section = "checking-and-limits"
+show = "Relation words must come from the supported vocabulary; an English word doesn't become a supported relation just because we type it."
+source = "notes.md#v17a-checking-and-limits"
+scene = "v17a-checking-and-limits-03"
+only = ["long"]
+
+[[lines]]
+id = "v17a-checking-and-limits-04"
+section = "checking-and-limits"
+show = "Asserting this statement supplies a premise: something we take as given for the reasoning."
+source = "notes.md#v17a-checking-and-limits"
+scene = "v17a-checking-and-limits-04"
+only = ["long"]
+
+[[lines]]
+id = "v17a-checking-and-limits-05"
+section = "checking-and-limits"
+show = "Evaluating a claim is a separate step."
+source = "notes.md#v17a-checking-and-limits"
+scene = "v17a-checking-and-limits-05"
+only = ["long"]
+
+[[lines]]
+id = "v17a-checking-and-limits-06"
+section = "checking-and-limits"
+show = "It checks the claim's support against the supplied premises and rules."
+source = "notes.md#v17a-checking-and-limits"
+scene = "v17a-checking-and-limits-06"
+only = ["long"]
+
+[[lines]]
+id = "v17a-checking-and-limits-07"
+section = "checking-and-limits"
+show = "There are still two places where our work can go wrong."
+source = "notes.md#v17a-checking-and-limits"
+scene = "v17a-checking-and-limits-07"
+only = ["long"]
+
+[[lines]]
+id = "v17a-checking-and-limits-08"
+section = "checking-and-limits"
+show = "We could copy A's note using B's name."
+source = "notes.md#v17a-checking-and-limits"
+scene = "v17a-checking-and-limits-08"
+only = ["long"]
+
+[[lines]]
+id = "v17a-checking-and-limits-09"
+section = "checking-and-limits"
+show = "The statement could be well formed while describing the wrong parcel."
+source = "notes.md#v17a-checking-and-limits"
+scene = "v17a-checking-and-limits-09"
+only = ["long"]
+
+[[lines]]
+id = "v17a-checking-and-limits-10"
+section = "checking-and-limits"
+show = "Or we could copy the note perfectly when the original packing confirmation was mistaken."
+source = "notes.md#v17a-checking-and-limits"
+scene = "v17a-checking-and-limits-10"
+only = ["long"]
+
+[[lines]]
+id = "v17a-checking-and-limits-11"
+section = "checking-and-limits"
+show = "A person checks that the encoding matches the note and the intended meaning of the vocabulary."
+source = "notes.md#v17a-checking-and-limits"
+scene = "v17a-checking-and-limits-11"
+only = ["long"]
+
+[[lines]]
+id = "v17a-checking-and-limits-12"
+section = "checking-and-limits"
+show = "The packing confirmation itself needs evidence from the shop."
+source = "notes.md#v17a-checking-and-limits"
+scene = "v17a-checking-and-limits-12"
+only = ["long"]
+
+[[lines]]
+id = "v17a-checking-and-limits-13"
+section = "checking-and-limits"
+show = "Formal structure helps us inspect and process the record; it doesn't establish that the parcel really is packed."
+source = "notes.md#v17a-checking-and-limits"
+scene = "v17a-checking-and-limits-13"
+only = ["long"]
+
+[[lines]]
+id = "v17a-origins-01"
+section = "origins"
+show = "Nibli originally accepted Lojban, a deliberately designed human language;"
+source = "notes.md#v17a-origins"
+scene = "v17a-origins-01"
+only = ["long"]
+
+[[lines]]
+id = "v17a-origins-02"
+section = "origins"
+show = "Later, I retired that input and kept the language we now call Nibli KR, whose vocabulary still records its Lojban origins."
+source = "notes.md#v17a-origins"
+scene = "v17a-origins-02"
+only = ["long"]
+
+[[lines]]
+id = "v17a-origins-03"
+section = "origins"
+show = "The statement we've just read uses the current language."
+source = "notes.md#v17a-origins"
+scene = "v17a-origins-03"
+only = ["long"]
+
+[[lines]]
+id = "v17a-library-01"
+section = "library"
+show = "The same distinction applies at a library."
+source = "notes.md#v17a-library"
+scene = "v17a-library-01"
+only = ["long"]
+
+[[lines]]
+id = "v17a-library-02"
+section = "library"
+show = "Someone places a particular copy of a book, Copy 7, on the returns desk."
+source = "notes.md#v17a-library"
+scene = "v17a-library-02"
+only = ["long"]
+
+[[lines]]
+id = "v17a-library-03"
+section = "library"
+show = "A staff member records, “Copy 7 was returned.”"
+source = "notes.md#v17a-library"
+scene = "v17a-library-03"
+only = ["long"]
+
+[[lines]]
+id = "v17a-library-04"
+section = "library"
+show = "That record can then be written in a formal language and used by an engine to evaluate claims against the library's records and rules."
+source = "notes.md#v17a-library"
+scene = "v17a-library-04"
+only = ["long"]
+
+[[lines]]
+id = "v17a-library-05"
+section = "library"
+show = "The returned copy, the note about it, the formal statement and the evaluation remain separate."
+source = "notes.md#v17a-library"
+scene = "v17a-library-05"
+only = ["long"]
+
+[[lines]]
+id = "v17a-library-06"
+section = "library"
+show = "An accurate-looking record still needs to match the actual return of that particular copy."
+source = "notes.md#v17a-library"
+scene = "v17a-library-06"
+only = ["long"]
+
+[[lines]]
+id = "v17a-next-01"
+section = "next"
+show = "Back at the shop, we have the same four parts: Parcel A, the note describing it, the statement written in Nibli KR, and Nibli evaluating claims from the information supplied."
+source = "notes.md#v17a-next"
+scene = "v17a-next-01"
+only = ["long"]
+
+[[lines]]
+id = "v17a-next-02"
+section = "next"
+show = "In Lesson 3, we'll write the parcel notes ourselves, read each part of a statement, and keep supplying a premise separate from evaluating a claim."
+source = "notes.md#v17a-next"
+scene = "v17a-next-02"
+only = ["long"]
+
+[[lines]]
+id = "v17a-next-03"
+section = "next"
+show = "That will give us the first pieces of a small knowledge base to reason with."
+source = "notes.md#v17a-next"
+scene = "v17a-next-03"
+only = ["long"]
+
+[[lines]]
+id = "v17a-short-shop-01"
+section = "short-story"
+show = "A small shop has a parcel on the packing table."
+source = "notes.md#v17a-short-shop"
+scene = "v17a-short-shop-01"
+only = ["short"]
+
+[[lines]]
+id = "v17a-short-shop-02"
+section = "short-story"
+show = "We'll call it Parcel A."
+source = "notes.md#v17a-short-shop"
+scene = "v17a-short-shop-02"
+only = ["short"]
+
+[[lines]]
+id = "v17a-short-shop-03"
+section = "short-story"
+show = "A note says, “Parcel A is packed.”"
+source = "notes.md#v17a-short-shop"
+scene = "v17a-short-shop-03"
+only = ["short"]
+
+[[lines]]
+id = "v17a-short-language-01"
+section = "short-story"
+show = "To use that record in a reasoning program, we can write it in Nibli KR."
+source = "notes.md#v17a-short-language"
+scene = "v17a-short-language-01"
+only = ["short"]
+
+[[lines]]
+id = "v17a-short-language-02"
+section = "short-story"
+show = "K R stands for knowledge representation."
+source = "notes.md#v17a-short-language"
+scene = "v17a-short-language-02"
+only = ["short"]
+
+[[lines]]
+id = "v17a-short-language-03"
+section = "short-story"
+show = "For this example, a packed-parcels list records the shop's packing confirmations."
+source = "notes.md#v17a-short-language"
+scene = "v17a-short-language-03"
+only = ["short"]
+
+[[lines]]
+id = "v17a-short-language-04"
+section = "short-story"
+show = "Our statement is “Parcel A is on the packed-parcels list.”"
+source = "notes.md#v17a-short-language"
+scene = "v17a-short-language-04"
+only = ["short"]
+
+[[lines]]
+id = "v17a-short-language-05"
+section = "short-story"
+show = "Here it is in Nibli KR."
+source = "notes.md#v17a-short-language"
+scene = "v17a-short-language-05"
+only = ["short"]
+
+[[lines]]
+id = "v17a-short-engine-01"
+section = "short-story"
+show = "Nibli KR is the language used to write the record."
+source = "notes.md#v17a-short-engine"
+scene = "v17a-short-engine-01"
+only = ["short"]
+
+[[lines]]
+id = "v17a-short-engine-02"
+section = "short-story"
+show = "Nibli is the engine that evaluates claims against the records and rules we supply."
+source = "notes.md#v17a-short-engine"
+scene = "v17a-short-engine-02"
+only = ["short"]
+
+[[lines]]
+id = "v17a-short-boundary-01"
+section = "short-story"
+show = "Neither checks the physical parcel for us."
+source = "notes.md#v17a-short-boundary"
+scene = "v17a-short-boundary-01"
+only = ["short"]
+
+[[lines]]
+id = "v17a-short-boundary-02"
+section = "short-story"
+show = "If the packing note is mistaken, writing it formally doesn't repair that mistake."
+source = "notes.md#v17a-short-boundary"
+scene = "v17a-short-boundary-02"
+only = ["short"]
+
+[[lines]]
+id = "v17a-short-boundary-03"
+section = "short-story"
+show = "We still need evidence that the parcel was packed."
+source = "notes.md#v17a-short-boundary"
+scene = "v17a-short-boundary-03"
+only = ["short"]
+
+[scenes.v17a-shop-01]
+kind = "image"
+url = "build/quine-assets/v17a-shop-01.svg"
+
+[scenes.v17a-shop-02]
+kind = "image"
+url = "build/quine-assets/v17a-shop-02.svg"
+
+[scenes.v17a-shop-03]
+kind = "image"
+url = "build/quine-assets/v17a-shop-03.svg"
+
+[scenes.v17a-shop-04]
+kind = "image"
+url = "build/quine-assets/v17a-shop-04.svg"
+
+[scenes.v17a-shop-05]
+kind = "image"
+url = "build/quine-assets/v17a-shop-05.svg"
+
+[scenes.v17a-shop-06]
+kind = "image"
+url = "build/quine-assets/v17a-shop-06.svg"
+
+[scenes.v17a-shop-07]
+kind = "image"
+url = "build/quine-assets/v17a-shop-07.svg"
+
+[scenes.v17a-shop-08]
+kind = "image"
+url = "build/quine-assets/v17a-shop-08.svg"
+
+[scenes.v17a-shop-09]
+kind = "image"
+url = "build/quine-assets/v17a-shop-09.svg"
+
+[scenes.v17a-representation-01]
+kind = "image"
+url = "build/quine-assets/v17a-representation-01.svg"
+
+[scenes.v17a-representation-02]
+kind = "image"
+url = "build/quine-assets/v17a-representation-02.svg"
+
+[scenes.v17a-representation-03]
+kind = "image"
+url = "build/quine-assets/v17a-representation-03.svg"
+
+[scenes.v17a-representation-04]
+kind = "image"
+url = "build/quine-assets/v17a-representation-04.svg"
+
+[scenes.v17a-parcel-and-note-01]
+kind = "image"
+url = "build/quine-assets/v17a-parcel-and-note-01.svg"
+
+[scenes.v17a-parcel-and-note-02]
+kind = "image"
+url = "build/quine-assets/v17a-parcel-and-note-02.svg"
+
+[scenes.v17a-parcel-and-note-03]
+kind = "image"
+url = "build/quine-assets/v17a-parcel-and-note-03.svg"
+
+[scenes.v17a-parcel-and-note-04]
+kind = "image"
+url = "build/quine-assets/v17a-parcel-and-note-04.svg"
+
+[scenes.v17a-parcel-and-note-05]
+kind = "image"
+url = "build/quine-assets/v17a-parcel-and-note-05.svg"
+
+[scenes.v17a-parcel-and-note-06]
+kind = "image"
+url = "build/quine-assets/v17a-parcel-and-note-06.svg"
+
+[scenes.v17a-parcel-and-note-07]
+kind = "image"
+url = "build/quine-assets/v17a-parcel-and-note-07.svg"
+
+[scenes.v17a-language-and-engine-01]
+kind = "image"
+url = "build/quine-assets/v17a-language-and-engine-01.svg"
+
+[scenes.v17a-language-and-engine-02]
+kind = "image"
+url = "build/quine-assets/v17a-language-and-engine-02.svg"
+
+[scenes.v17a-language-and-engine-03]
+kind = "image"
+url = "build/quine-assets/v17a-language-and-engine-03.svg"
+
+[scenes.v17a-language-and-engine-04]
+kind = "image"
+url = "build/quine-assets/v17a-language-and-engine-04.svg"
+
+[scenes.v17a-language-and-engine-05]
+kind = "image"
+url = "build/quine-assets/v17a-language-and-engine-05.svg"
+
+[scenes.v17a-language-and-engine-06]
+kind = "image"
+url = "build/quine-assets/v17a-language-and-engine-06.svg"
+
+[scenes.v17a-language-and-engine-07]
+kind = "image"
+url = "build/quine-assets/v17a-language-and-engine-07.svg"
+
+[scenes.v17a-language-and-engine-08]
+kind = "image"
+url = "build/quine-assets/v17a-language-and-engine-08.svg"
+
+[scenes.v17a-language-and-engine-09]
+kind = "image"
+url = "build/quine-assets/v17a-language-and-engine-09.svg"
+
+[scenes.v17a-one-statement-01]
+kind = "image"
+url = "build/quine-assets/v17a-one-statement-01.svg"
+
+[scenes.v17a-one-statement-02]
+kind = "image"
+url = "build/quine-assets/v17a-one-statement-02.svg"
+
+[scenes.v17a-one-statement-03]
+kind = "image"
+url = "build/quine-assets/v17a-one-statement-03.svg"
+
+[scenes.v17a-one-statement-04]
+kind = "image"
+url = "build/quine-assets/v17a-one-statement-04.svg"
+
+[scenes.v17a-one-statement-05]
+kind = "image"
+url = "build/quine-assets/v17a-one-statement-05.svg"
+
+[scenes.v17a-one-statement-06]
+kind = "image"
+url = "build/quine-assets/v17a-one-statement-06.svg"
+
+[scenes.v17a-one-statement-07]
+kind = "image"
+url = "build/quine-assets/v17a-one-statement-07.svg"
+
+[scenes.v17a-one-statement-08]
+kind = "image"
+url = "build/quine-assets/v17a-one-statement-08.svg"
+
+[scenes.v17a-one-statement-09]
+kind = "image"
+url = "build/quine-assets/v17a-one-statement-09.svg"
+
+[scenes.v17a-one-statement-10]
+kind = "image"
+url = "build/quine-assets/v17a-one-statement-10.svg"
+
+[scenes.v17a-one-statement-11]
+kind = "image"
+url = "build/quine-assets/v17a-one-statement-11.svg"
+
+[scenes.v17a-one-statement-12]
+kind = "image"
+url = "build/quine-assets/v17a-one-statement-12.svg"
+
+[scenes.v17a-one-statement-13]
+kind = "image"
+url = "build/quine-assets/v17a-one-statement-13.svg"
+
+[scenes.v17a-checking-and-limits-01]
+kind = "image"
+url = "build/quine-assets/v17a-checking-and-limits-01.svg"
+
+[scenes.v17a-checking-and-limits-02]
+kind = "image"
+url = "build/quine-assets/v17a-checking-and-limits-02.svg"
+
+[scenes.v17a-checking-and-limits-03]
+kind = "image"
+url = "build/quine-assets/v17a-checking-and-limits-03.svg"
+
+[scenes.v17a-checking-and-limits-04]
+kind = "image"
+url = "build/quine-assets/v17a-checking-and-limits-04.svg"
+
+[scenes.v17a-checking-and-limits-05]
+kind = "image"
+url = "build/quine-assets/v17a-checking-and-limits-05.svg"
+
+[scenes.v17a-checking-and-limits-06]
+kind = "image"
+url = "build/quine-assets/v17a-checking-and-limits-06.svg"
+
+[scenes.v17a-checking-and-limits-07]
+kind = "image"
+url = "build/quine-assets/v17a-checking-and-limits-07.svg"
+
+[scenes.v17a-checking-and-limits-08]
+kind = "image"
+url = "build/quine-assets/v17a-checking-and-limits-08.svg"
+
+[scenes.v17a-checking-and-limits-09]
+kind = "image"
+url = "build/quine-assets/v17a-checking-and-limits-09.svg"
+
+[scenes.v17a-checking-and-limits-10]
+kind = "image"
+url = "build/quine-assets/v17a-checking-and-limits-10.svg"
+
+[scenes.v17a-checking-and-limits-11]
+kind = "image"
+url = "build/quine-assets/v17a-checking-and-limits-11.svg"
+
+[scenes.v17a-checking-and-limits-12]
+kind = "image"
+url = "build/quine-assets/v17a-checking-and-limits-12.svg"
+
+[scenes.v17a-checking-and-limits-13]
+kind = "image"
+url = "build/quine-assets/v17a-checking-and-limits-13.svg"
+
+[scenes.v17a-origins-01]
+kind = "image"
+url = "build/quine-assets/v17a-origins-01.svg"
+
+[scenes.v17a-origins-02]
+kind = "image"
+url = "build/quine-assets/v17a-origins-02.svg"
+
+[scenes.v17a-origins-03]
+kind = "image"
+url = "build/quine-assets/v17a-origins-03.svg"
+
+[scenes.v17a-library-01]
+kind = "image"
+url = "build/quine-assets/v17a-library-01.svg"
+
+[scenes.v17a-library-02]
+kind = "image"
+url = "build/quine-assets/v17a-library-02.svg"
+
+[scenes.v17a-library-03]
+kind = "image"
+url = "build/quine-assets/v17a-library-03.svg"
+
+[scenes.v17a-library-04]
+kind = "image"
+url = "build/quine-assets/v17a-library-04.svg"
+
+[scenes.v17a-library-05]
+kind = "image"
+url = "build/quine-assets/v17a-library-05.svg"
+
+[scenes.v17a-library-06]
+kind = "image"
+url = "build/quine-assets/v17a-library-06.svg"
+
+[scenes.v17a-next-01]
+kind = "image"
+url = "build/quine-assets/v17a-next-01.svg"
+
+[scenes.v17a-next-02]
+kind = "image"
+url = "build/quine-assets/v17a-next-02.svg"
+
+[scenes.v17a-next-03]
+kind = "image"
+url = "build/quine-assets/v17a-next-03.svg"
+
+[scenes.v17a-short-shop-01]
+kind = "image"
+url = "build/quine-assets/v17a-short-shop-01.svg"
+
+[scenes.v17a-short-shop-02]
+kind = "image"
+url = "build/quine-assets/v17a-short-shop-02.svg"
+
+[scenes.v17a-short-shop-03]
+kind = "image"
+url = "build/quine-assets/v17a-short-shop-03.svg"
+
+[scenes.v17a-short-language-01]
+kind = "image"
+url = "build/quine-assets/v17a-short-language-01.svg"
+
+[scenes.v17a-short-language-02]
+kind = "image"
+url = "build/quine-assets/v17a-short-language-02.svg"
+
+[scenes.v17a-short-language-03]
+kind = "image"
+url = "build/quine-assets/v17a-short-language-03.svg"
+
+[scenes.v17a-short-language-04]
+kind = "image"
+url = "build/quine-assets/v17a-short-language-04.svg"
+
+[scenes.v17a-short-language-05]
+kind = "image"
+url = "build/quine-assets/v17a-short-language-05.svg"
+
+[scenes.v17a-short-engine-01]
+kind = "image"
+url = "build/quine-assets/v17a-short-engine-01.svg"
+
+[scenes.v17a-short-engine-02]
+kind = "image"
+url = "build/quine-assets/v17a-short-engine-02.svg"
+
+[scenes.v17a-short-boundary-01]
+kind = "image"
+url = "build/quine-assets/v17a-short-boundary-01.svg"
+
+[scenes.v17a-short-boundary-02]
+kind = "image"
+url = "build/quine-assets/v17a-short-boundary-02.svg"
+
+[scenes.v17a-short-boundary-03]
+kind = "image"
+url = "build/quine-assets/v17a-short-boundary-03.svg"

@@ -1,0 +1,797 @@
+#:schema https://raw.githubusercontent.com/dhilipsiva/vidni/main/docs/vidni.schema.json
+# A vidni project: one video, in one file. docs/spec.md in the vidni
+# repository describes every key, and `vidni validate` checks this file.
+
+schema = 1
+
+# What the video is.
+[meta]
+title = "A Confident Claim Still Needs Evidence"
+subtitle = "Reasoning from First Principles"
+language = "en"
+strict = true
+default_scene = "welcome"
+
+# A review voice until the creator records the approved narration.
+[voice]
+draft = "piper:en_US-joe-medium"
+length_scale = 1.04
+respell = [{ text = "Nibli KR", say = "Nibli K R" }]
+heard_as = [
+  { heard = "nibbly", means = "nibli" },
+  { heard = "nibley", means = "nibli" },
+  { heard = "nibali", means = "nibli" },
+  { heard = "1", means = "one" },
+  { heard = "2", means = "two" },
+]
+
+# Continuous narration: natural speech and scene transitions, no response holds.
+[timing]
+lead_in = 0.6
+# Extra 160 ms of natural spacing keeps the recorded ready-definition captions readable.
+line_gap = 0.44
+section_gap = 0.85
+tail = 1.2
+
+[lint]
+banned = [
+  'zero[- ]hallucination',
+  'no hallucination',
+  'cannot hallucinate',
+  'guarantee',
+  'machine[- ]checked',
+  'verified engine',
+  'high[- ]performance',
+  '\bpublished\b',
+  'UNDETERMINED',
+  'sub[- ]millisecond',
+  'LLM[^.]*\bcompil',
+  '\bcompil\w*[^.]*\bLLM',
+  '\bask(?:s|ed|ing)?\b',
+  '\bquestions?\b',
+]
+
+[style]
+theme = "../themes/quine"
+
+# Two continuous review cuts: full lesson and an independently staged Short.
+[[cuts]]
+id = "long"
+aspect = "16:9"
+captions = "both"
+platforms = ["youtube"]
+
+[[cuts]]
+id = "short"
+aspect = "9:16"
+lines = [
+  "v01-short-setup",
+  "v01-short-requirements",
+  "v01-short-claim",
+  "v01-short-records",
+  "v01-short-packed",
+  "v01-short-label",
+  "v01-short-mismatch",
+  "v01-short-uncertainty",
+  "v01-short-observation",
+  "v01-short-repair",
+  "v01-short-closing",
+]
+captions = "burned"
+platforms = ["youtube-shorts"]
+
+[music]
+track = "none"
+
+[publish]
+description = "Neuro-Symbolic Lesson 1: learn the foundations of symbolic reasoning through an everyday parcel example. This course teaches how to represent information, write rules, and evaluate the claims they support, then explores how symbolic reasoning can work alongside neural AI, including language models. A colleague says Parcel A is ready for collection. We have a packing confirmation for A and a label confirmation for B. Follow the records, identify what is missing, and see how a new observation changes the support for the claim. The same idea is then explained through a class drawing display. No formal logic or programming background is required. The shop, records and class display are fictional teaching examples. This lesson uses the creator's recorded narration."
+tags = [
+  "symbolic reasoning",
+  "neuro-symbolic reasoning",
+  "Nibli",
+  "reasoning",
+  "claims and evidence",
+  "logic",
+  "knowledge representation",
+]
+links = [
+  { label = "Nibli — engine and language", url = "https://github.com/dhilipsiva/nibli/blob/1eab5d1f1d52d1c106145aa0cbc18205ff9b0902/README.md" },
+  { label = "Nibli — stated limits", url = "https://github.com/dhilipsiva/nibli/blob/1eab5d1f1d52d1c106145aa0cbc18205ff9b0902/GUARANTEES.md#soundness" },
+]
+thumbnails = [{ line = "v01-parcel-records-05", title = "The paperwork looks complete." }]
+
+# Long sections become chapters. The Short carries the course label in its title band.
+[sections.welcome]
+label = ""
+chapter = "Learning symbolic and neuro-symbolic reasoning"
+
+[sections.shop]
+label = ""
+chapter = "Preparing the parcels"
+
+[sections.records]
+label = ""
+chapter = "Read the notes"
+
+[sections.missing-support]
+label = ""
+chapter = "What is still unsettled"
+
+[sections.repair]
+label = ""
+chapter = "A new observation"
+
+[sections.terms]
+label = ""
+chapter = "Names for the reasoning"
+
+[sections.variation]
+label = ""
+chapter = "A class display"
+
+[sections.bridge]
+label = ""
+chapter = "The next lesson"
+
+[sections.short-story]
+label = "Neuro-Symbolic Lesson 1"
+chapter = ""
+
+# New parcel lesson; the retired notes-app line IDs remain in the archived draft.
+[[lines]]
+id = "v01-parcel-welcome-01"
+section = "welcome"
+show = "Welcome to Neuro-Symbolic Reasoning from First Principles."
+source = "notes.md#v01-welcome"
+scene = "course-title"
+
+[[lines]]
+id = "v01-parcel-welcome-02"
+section = "welcome"
+show = "In this course, you'll learn how to represent information, write rules, and evaluate which claims follow from them. This is the foundation of symbolic reasoning."
+source = "notes.md#v01-welcome"
+scene = "focus-welcome-02"
+
+[[lines]]
+id = "v01-parcel-welcome-03"
+section = "welcome"
+show = "We'll also explore how that reasoning can work alongside neural AI, including language models that generate text. That combination is called neuro-symbolic reasoning."
+source = "notes.md#v01-welcome"
+scene = "focus-welcome-03"
+
+[[lines]]
+id = "v01-parcel-welcome-04"
+section = "welcome"
+show = "You don't need a background in formal logic. We'll build these ideas through everyday situations before introducing formal notation."
+source = "notes.md#v01-welcome"
+scene = "welcome"
+
+[[lines]]
+id = "v01-parcel-welcome-05"
+section = "welcome"
+show = "Today, we'll begin with the symbolic side: two parcels and a claim that one is ready for collection."
+source = "notes.md#v01-welcome"
+scene = "welcome"
+
+[[lines]]
+id = "v01-parcel-shop-01"
+section = "shop"
+show = "Imagine you're helping a small shop prepare today's orders for collection. There are two parcels on the packing table. We'll call them A and B so we can keep track of them."
+source = "notes.md#v01-shop"
+scene = "focus-shop-01"
+
+[[lines]]
+id = "v01-parcel-shop-02"
+section = "shop"
+show = "Before a parcel moves to the collection area, the shop checks two things: it has been packed, and its address label is attached."
+source = "notes.md#v01-shop"
+scene = "focus-shop-02"
+
+[[lines]]
+id = "v01-parcel-shop-03"
+section = "shop"
+show = "That's what “ready” means for this example. Both checks need to be complete for the parcel being moved."
+source = "notes.md#v01-shop"
+scene = "focus-shop-03"
+
+[[lines]]
+id = "v01-parcel-shop-04"
+section = "shop"
+show = "A colleague points to Parcel A and says, “This one's ready. The packing is done, and there's a label confirmation.”"
+source = "notes.md#v01-shop"
+scene = "focus-shop-04"
+
+[[lines]]
+id = "v01-parcel-shop-05"
+section = "shop"
+show = "You haven't inspected the parcel yourself. You're working from the packing team's notes, and your colleague hands you two of them."
+source = "notes.md#v01-shop"
+scene = "focus-shop-05"
+
+[[lines]]
+id = "v01-parcel-shop-06"
+section = "shop"
+show = "For this example, let's take those notes as accurate records of what the team checked."
+source = "notes.md#v01-shop"
+scene = "focus-shop-06"
+
+[[lines]]
+id = "v01-parcel-records-01"
+section = "records"
+show = "The first says, “Parcel A: packed.”"
+say = "The first says, “Parcel A is packed.”"
+source = "notes.md#v01-records"
+scene = "focus-records-01"
+
+[[lines]]
+id = "v01-parcel-records-02"
+section = "records"
+show = "The second says, “Parcel B: label attached.”"
+source = "notes.md#v01-records"
+scene = "focus-records-02"
+
+[[lines]]
+id = "v01-parcel-records-03"
+section = "records"
+show = "There is a packing confirmation and a label confirmation, just as your colleague said."
+source = "notes.md#v01-records"
+scene = "two-notes"
+
+[[lines]]
+id = "v01-parcel-records-05"
+section = "records"
+show = "The packing note concerns A. The label note concerns B."
+source = "notes.md#v01-records"
+scene = "focus-records-05"
+
+[[lines]]
+id = "v01-parcel-records-06"
+section = "records"
+show = "Each tells us something useful, but they describe different parcels. The shop needs both checks for the same parcel."
+source = "notes.md#v01-records"
+scene = "focus-records-06"
+
+[[lines]]
+id = "v01-parcel-records-07"
+section = "records"
+show = "You can see how the mix-up happened. At a glance, there seems to be one note for each check."
+source = "notes.md#v01-records"
+scene = "mismatch"
+
+[[lines]]
+id = "v01-parcel-records-08"
+section = "records"
+show = "Reading the parcel letters changes the picture. We know that A is packed and that B has a label."
+source = "notes.md#v01-records"
+scene = "focus-records-08"
+
+[[lines]]
+id = "v01-parcel-records-09"
+section = "records"
+show = "The label confirmation for B doesn't tell us whether A has its own label."
+source = "notes.md#v01-records"
+scene = "focus-records-09"
+
+[[lines]]
+id = "v01-parcel-records-10"
+section = "records"
+show = "So the colleague's explanation has a gap. The claim about A goes further than these two notes support."
+source = "notes.md#v01-records"
+scene = "focus-records-10"
+
+[[lines]]
+id = "v01-parcel-missing-support-01"
+section = "missing-support"
+show = "There's a distinction here that will matter throughout the course. We haven't shown that A has no label."
+source = "notes.md#v01-missing-support"
+scene = "focus-missing-support-01"
+
+[[lines]]
+id = "v01-parcel-missing-support-02"
+section = "missing-support"
+show = "It might already have one, with its confirmation still waiting to be written."
+source = "notes.md#v01-missing-support"
+scene = "focus-missing-support-02"
+
+[[lines]]
+id = "v01-parcel-missing-support-03"
+section = "missing-support"
+show = "Or the label might not have been attached yet."
+source = "notes.md#v01-missing-support"
+scene = "focus-missing-support-03"
+
+[[lines]]
+id = "v01-parcel-missing-support-04"
+section = "missing-support"
+show = "Either situation would fit the notes in front of us."
+source = "notes.md#v01-missing-support"
+scene = "possibilities"
+
+[[lines]]
+id = "v01-parcel-missing-support-05"
+section = "missing-support"
+show = "For now, the careful conclusion is simply that these records don't establish A's readiness. That leaves room to find out more. It doesn't turn a missing confirmation into proof that the parcel is unlabeled."
+source = "notes.md#v01-missing-support"
+scene = "focus-missing-support-05"
+
+[[lines]]
+id = "v01-parcel-missing-support-06"
+section = "missing-support"
+show = "A's label status needs its own evidence. Reading A's packing note again won't settle the label check. Neither will another look at B's label confirmation."
+source = "notes.md#v01-missing-support"
+scene = "focus-missing-support-06"
+
+[[lines]]
+id = "v01-parcel-missing-support-07"
+section = "missing-support"
+show = "We need evidence about A's own label."
+source = "notes.md#v01-missing-support"
+scene = "focus-missing-support-07"
+
+[[lines]]
+id = "v01-parcel-repair-01"
+section = "repair"
+show = "Now imagine someone checks Parcel A and confirms that its address label is attached."
+source = "notes.md#v01-repair"
+scene = "focus-repair-01"
+
+[[lines]]
+id = "v01-parcel-repair-02"
+section = "repair"
+show = "They write a new note: “Parcel A: label attached.” Put that beside the original packing confirmation."
+source = "notes.md#v01-repair"
+scene = "focus-repair-02"
+
+[[lines]]
+id = "v01-parcel-repair-03"
+section = "repair"
+show = "Both notes now concern A. One confirms the packing; the other confirms the label. Together, they meet the shop's two-check requirement."
+source = "notes.md#v01-repair"
+scene = "focus-repair-03"
+
+[[lines]]
+id = "v01-parcel-repair-06"
+section = "repair"
+show = "That's why we can now say that A meets this checklist. The new observation supplied the part that was missing."
+source = "notes.md#v01-repair"
+scene = "focus-repair-06"
+
+[[lines]]
+id = "v01-parcel-terms-01"
+section = "terms"
+show = "You've just followed a small piece of reasoning. We can give its parts names now that we've used them."
+source = "notes.md#v01-terms"
+scene = "supported"
+
+[[lines]]
+id = "v01-parcel-terms-02"
+section = "terms"
+show = "The statements we start from are called premises. Here, we're starting from the statements that A is packed and that its label is attached."
+source = "notes.md#v01-terms"
+scene = "focus-terms-02"
+
+[[lines]]
+id = "v01-parcel-terms-03"
+section = "terms"
+show = "The shop's requirement supplies a rule: a parcel that meets both conditions meets this checklist. Applying that rule to these premises supports our claim about A."
+source = "notes.md#v01-terms"
+scene = "focus-terms-03"
+
+[[lines]]
+id = "v01-parcel-terms-04"
+section = "terms"
+show = "As our examples grow, these names will help us separate the information we start with from the conclusions we reach. Here, two notes about the same parcel are connected by the shop's requirement."
+source = "notes.md#v01-terms"
+scene = "focus-terms-04"
+
+[[lines]]
+id = "v01-parcel-variation-01"
+section = "variation"
+show = "The same idea appears in a classroom display. Each drawing needs its title and the artist's name beside it."
+source = "notes.md#v01-variation"
+scene = "focus-variation-01"
+
+[[lines]]
+id = "v01-parcel-variation-02"
+section = "variation"
+show = "You're helping organize the display from notes sent by the classroom helpers."
+source = "notes.md#v01-variation"
+scene = "display"
+
+[[lines]]
+id = "v01-parcel-variation-03"
+section = "variation"
+show = "One note confirms that Drawing 1 has its title."
+source = "notes.md#v01-variation"
+scene = "focus-variation-03"
+
+[[lines]]
+id = "v01-parcel-variation-04"
+section = "variation"
+show = "Another confirms that Drawing 2 has its artist's name."
+source = "notes.md#v01-variation"
+scene = "focus-variation-04"
+
+[[lines]]
+id = "v01-parcel-variation-05"
+section = "variation"
+show = "Someone says, “Drawing 1 is ready to go on the wall.”"
+source = "notes.md#v01-variation"
+scene = "focus-variation-05"
+
+[[lines]]
+id = "v01-parcel-variation-07"
+section = "variation"
+show = "We still need confirmation that Drawing 1 has its own artist's name. The note about Drawing 2 can't complete that check."
+source = "notes.md#v01-variation"
+scene = "focus-variation-07"
+
+[[lines]]
+id = "v01-parcel-variation-08"
+section = "variation"
+show = "Once we have the artist-name confirmation for Drawing 1, its two requirements are supported."
+source = "notes.md#v01-variation"
+scene = "focus-variation-08"
+
+[[lines]]
+id = "v01-parcel-variation-09"
+section = "variation"
+show = "Until then, the notes leave its readiness unsettled, just as they did for the parcel."
+source = "notes.md#v01-variation"
+scene = "focus-variation-09"
+
+[[lines]]
+id = "v01-parcel-bridge-01"
+section = "bridge"
+show = "This is the habit we'll build on: follow each piece of evidence back to what it actually describes, then see whether it supports the claim we're making. An explanation can sound convincing while quietly joining information that belongs to different things."
+source = "notes.md#v01-bridge"
+scene = "focus-bridge-01"
+
+[[lines]]
+id = "v01-parcel-bridge-05"
+section = "bridge"
+show = "That is our starting point for symbolic reasoning: explicit statements, rules, and the claims they support. We'll build this foundation before exploring how neural models can work alongside it."
+source = "notes.md#v01-bridge"
+scene = "focus-bridge-05"
+
+[[lines]]
+id = "v01-parcel-bridge-02"
+section = "bridge"
+show = "In the next lesson, we'll meet Nibli, the reasoning engine we'll use in this course, and Nibli KR, the language for writing its premises and rules."
+source = "notes.md#v01-bridge"
+scene = "focus-bridge-02"
+
+[[lines]]
+id = "v01-parcel-bridge-03"
+section = "bridge"
+show = "We'll carry these same parcels with us, so the new part will be how we express reasoning we've already worked through together."
+source = "notes.md#v01-bridge"
+scene = "next"
+
+[[lines]]
+id = "v01-parcel-bridge-04"
+section = "bridge"
+show = "We'll still need to review the records and whether our written rule means what we intend. Nibli will help us evaluate what follows from the statements and rules we give it."
+source = "notes.md#v01-bridge"
+scene = "focus-bridge-04"
+
+[[lines]]
+id = "v01-short-setup"
+section = "short-story"
+show = "You're helping a shop prepare parcels for collection."
+source = "notes.md#v01-short-case"
+scene = "short-setup"
+only = ["short"]
+
+[[lines]]
+id = "v01-short-requirements"
+section = "short-story"
+show = "Here, each parcel must be packed and have its own address label attached."
+source = "notes.md#v01-short-case"
+scene = "short-checks"
+only = ["short"]
+
+[[lines]]
+id = "v01-short-claim"
+section = "short-story"
+show = "A colleague claims Parcel A is ready."
+source = "notes.md#v01-short-case"
+scene = "short-claim"
+only = ["short"]
+
+[[lines]]
+id = "v01-short-records"
+section = "short-story"
+show = "In this example, the team's notes are accurate."
+source = "notes.md#v01-short-case"
+scene = "short-accurate"
+only = ["short"]
+
+[[lines]]
+id = "v01-short-packed"
+section = "short-story"
+show = "One confirms that Parcel A is packed."
+source = "notes.md#v01-short-case"
+scene = "short-packed"
+only = ["short"]
+
+[[lines]]
+id = "v01-short-label"
+section = "short-story"
+show = "Another confirms that Parcel B has its label attached."
+source = "notes.md#v01-short-case"
+scene = "short-label"
+only = ["short"]
+
+[[lines]]
+id = "v01-short-mismatch"
+section = "short-story"
+show = "Those notes describe different parcels. B's label confirmation doesn't establish that A has its label."
+source = "notes.md#v01-short-case"
+scene = "short-mismatch"
+only = ["short"]
+
+[[lines]]
+id = "v01-short-uncertainty"
+section = "short-story"
+show = "That doesn't mean A is unlabeled. We need evidence about A."
+source = "notes.md#v01-short-case"
+scene = "short-uncertainty"
+only = ["short"]
+
+[[lines]]
+id = "v01-short-observation"
+section = "short-story"
+show = "Now someone checks A and confirms its label is attached."
+source = "notes.md#v01-short-case"
+scene = "short-observation"
+only = ["short"]
+
+[[lines]]
+id = "v01-short-repair"
+section = "short-story"
+show = "Together with A's packing note, that supports the claim that A meets this checklist."
+source = "notes.md#v01-short-case"
+scene = "short-repair"
+only = ["short"]
+
+[[lines]]
+id = "v01-short-closing"
+section = "short-story"
+show = "That is a first step in symbolic reasoning: connecting the evidence to the claim."
+source = "notes.md#v01-short-case"
+scene = "short-closing"
+only = ["short"]
+
+# Generated QUINE illustrations; the reproducible source is in notes.md.
+[scenes.course-title]
+kind = "image"
+url = "build/highlight-assets/course-title.svg"
+
+[scenes.display]
+kind = "image"
+url = "build/highlight-assets/display.svg"
+
+[scenes.focus-bridge-01]
+kind = "image"
+url = "build/highlight-assets/focus-bridge-01.svg"
+
+[scenes.focus-bridge-02]
+kind = "image"
+url = "build/highlight-assets/focus-bridge-02.svg"
+
+[scenes.focus-bridge-04]
+kind = "image"
+url = "build/highlight-assets/focus-bridge-04.svg"
+
+[scenes.focus-bridge-05]
+kind = "image"
+url = "build/highlight-assets/focus-bridge-05.svg"
+
+[scenes.focus-missing-support-01]
+kind = "image"
+url = "build/highlight-assets/focus-missing-support-01.svg"
+
+[scenes.focus-missing-support-02]
+kind = "image"
+url = "build/highlight-assets/focus-missing-support-02.svg"
+
+[scenes.focus-missing-support-03]
+kind = "image"
+url = "build/highlight-assets/focus-missing-support-03.svg"
+
+[scenes.focus-missing-support-05]
+kind = "image"
+url = "build/highlight-assets/focus-missing-support-05.svg"
+
+[scenes.focus-missing-support-06]
+kind = "image"
+url = "build/highlight-assets/focus-missing-support-06.svg"
+
+[scenes.focus-missing-support-07]
+kind = "image"
+url = "build/highlight-assets/focus-missing-support-07.svg"
+
+[scenes.focus-records-01]
+kind = "image"
+url = "build/highlight-assets/focus-records-01.svg"
+
+[scenes.focus-records-02]
+kind = "image"
+url = "build/highlight-assets/focus-records-02.svg"
+
+[scenes.focus-records-05]
+kind = "image"
+url = "build/highlight-assets/focus-records-05.svg"
+
+[scenes.focus-records-06]
+kind = "image"
+url = "build/highlight-assets/focus-records-06.svg"
+
+[scenes.focus-records-08]
+kind = "image"
+url = "build/highlight-assets/focus-records-08.svg"
+
+[scenes.focus-records-09]
+kind = "image"
+url = "build/highlight-assets/focus-records-09.svg"
+
+[scenes.focus-records-10]
+kind = "image"
+url = "build/highlight-assets/focus-records-10.svg"
+
+[scenes.focus-repair-01]
+kind = "image"
+url = "build/highlight-assets/focus-repair-01.svg"
+
+[scenes.focus-repair-02]
+kind = "image"
+url = "build/highlight-assets/focus-repair-02.svg"
+
+[scenes.focus-repair-03]
+kind = "image"
+url = "build/highlight-assets/focus-repair-03.svg"
+
+[scenes.focus-repair-06]
+kind = "image"
+url = "build/highlight-assets/focus-repair-06.svg"
+
+[scenes.focus-shop-01]
+kind = "image"
+url = "build/highlight-assets/focus-shop-01.svg"
+
+[scenes.focus-shop-02]
+kind = "image"
+url = "build/highlight-assets/focus-shop-02.svg"
+
+[scenes.focus-shop-03]
+kind = "image"
+url = "build/highlight-assets/focus-shop-03.svg"
+
+[scenes.focus-shop-04]
+kind = "image"
+url = "build/highlight-assets/focus-shop-04.svg"
+
+[scenes.focus-shop-05]
+kind = "image"
+url = "build/highlight-assets/focus-shop-05.svg"
+
+[scenes.focus-shop-06]
+kind = "image"
+url = "build/highlight-assets/focus-shop-06.svg"
+
+[scenes.focus-terms-02]
+kind = "image"
+url = "build/highlight-assets/focus-terms-02.svg"
+
+[scenes.focus-terms-03]
+kind = "image"
+url = "build/highlight-assets/focus-terms-03.svg"
+
+[scenes.focus-terms-04]
+kind = "image"
+url = "build/highlight-assets/focus-terms-04.svg"
+
+[scenes.focus-variation-01]
+kind = "image"
+url = "build/highlight-assets/focus-variation-01.svg"
+
+[scenes.focus-variation-03]
+kind = "image"
+url = "build/highlight-assets/focus-variation-03.svg"
+
+[scenes.focus-variation-04]
+kind = "image"
+url = "build/highlight-assets/focus-variation-04.svg"
+
+[scenes.focus-variation-05]
+kind = "image"
+url = "build/highlight-assets/focus-variation-05.svg"
+
+[scenes.focus-variation-07]
+kind = "image"
+url = "build/highlight-assets/focus-variation-07.svg"
+
+[scenes.focus-variation-08]
+kind = "image"
+url = "build/highlight-assets/focus-variation-08.svg"
+
+[scenes.focus-variation-09]
+kind = "image"
+url = "build/highlight-assets/focus-variation-09.svg"
+
+[scenes.focus-welcome-02]
+kind = "image"
+url = "build/highlight-assets/focus-welcome-02.svg"
+
+[scenes.focus-welcome-03]
+kind = "image"
+url = "build/highlight-assets/focus-welcome-03.svg"
+
+[scenes.mismatch]
+kind = "image"
+url = "build/highlight-assets/mismatch.svg"
+
+[scenes.next]
+kind = "image"
+url = "build/highlight-assets/next.svg"
+
+[scenes.possibilities]
+kind = "image"
+url = "build/highlight-assets/possibilities.svg"
+
+[scenes.short-accurate]
+kind = "image"
+url = "build/highlight-assets/short-accurate.svg"
+
+[scenes.short-checks]
+kind = "image"
+url = "build/highlight-assets/short-checks.svg"
+
+[scenes.short-claim]
+kind = "image"
+url = "build/highlight-assets/short-claim.svg"
+
+[scenes.short-closing]
+kind = "image"
+url = "build/highlight-assets/short-closing.svg"
+
+[scenes.short-label]
+kind = "image"
+url = "build/highlight-assets/short-label.svg"
+
+[scenes.short-mismatch]
+kind = "image"
+url = "build/highlight-assets/short-mismatch.svg"
+
+[scenes.short-observation]
+kind = "image"
+url = "build/highlight-assets/short-observation.svg"
+
+[scenes.short-packed]
+kind = "image"
+url = "build/highlight-assets/short-packed.svg"
+
+[scenes.short-repair]
+kind = "image"
+url = "build/highlight-assets/short-repair.svg"
+
+[scenes.short-setup]
+kind = "image"
+url = "build/highlight-assets/short-setup.svg"
+
+[scenes.short-uncertainty]
+kind = "image"
+url = "build/highlight-assets/short-uncertainty.svg"
+
+[scenes.supported]
+kind = "image"
+url = "build/highlight-assets/supported.svg"
+
+[scenes.two-notes]
+kind = "image"
+url = "build/highlight-assets/two-notes.svg"
+
+[scenes.welcome]
+kind = "image"
+url = "build/highlight-assets/welcome.svg"

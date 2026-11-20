@@ -1,0 +1,3549 @@
+schema = 1
+[meta]
+title = "Writing Your First Nibli KR Statements"
+subtitle = "Reasoning from First Principles"
+language = "en"
+strict = true
+default_scene = "v03a-shop-01"
+
+[voice]
+draft = "piper:en_US-joe-medium"
+length_scale = 1.04
+respell = [{ text = "Nibli KR", say = "Nibbly K R" }, { text = "Nibli", say = "Nibbly" }, { text = "Parcel A", say = "Parcel, A" }]
+heard_as = [{ heard = "nibbly", means = "nibli" }, { heard = "nibley", means = "nibli" }]
+
+[emphasis]
+min_duration = 3.0
+
+[timing]
+lead_in = 0.6
+line_gap = 0.32
+section_gap = 0.65
+tail = 1.2
+
+[style]
+theme = "../themes/quine"
+
+[lint]
+banned = ['\bask(?:s|ed|ing)?\b', '\bquestions?\b', '\bpause and\b', '\bpredict\b', 'UNDETERMINED']
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+captions = "both"
+platforms = ["youtube"]
+
+[[cuts]]
+id = "short"
+aspect = "9:16"
+captions = "burned"
+platforms = ["youtube-shorts"]
+
+[music]
+track = "none"
+
+[publish]
+description = "Neuro-Symbolic Lesson 3 introduces writing Nibli KR statements through parcel records, named and positional arguments, reviewed premises and actual claim evaluation. The shop is a fictional teaching example. Lesson 4 continues with the same parcels and adds a rule."
+tags = ["neuro-symbolic reasoning", "Nibli KR", "symbolic reasoning", "knowledge representation"]
+
+[publish.titles]
+youtube = "Writing Your First Nibli KR Statements | Neuro-Symbolic Lesson 3"
+youtube-shorts = "Same Statement, Different Job: Premise or Claim | Neuro-Symbolic Lesson 3"
+
+[sections.shop]
+label = ""
+chapter = "Two parcels and their records"
+
+[sections.build-statement]
+label = ""
+chapter = "Writing the first statement"
+
+[sections.named-places]
+label = ""
+chapter = "Positions and named arguments"
+
+[sections.supply-premises]
+label = ""
+chapter = "Supplying and reviewing premises"
+
+[sections.evaluate-claims]
+label = ""
+chapter = "Evaluating claims and their support"
+
+[sections.supplied-conclusion]
+label = ""
+chapter = "Supplying a desired conclusion"
+
+[sections.refusals]
+label = ""
+chapter = "Refusals and repairs"
+
+[sections.host-and-next]
+label = ""
+chapter = "Interfaces and the next lesson"
+
+[sections.short-story]
+label = ""
+chapter = ""
+
+[[lines]]
+id = "v03a-shop-01"
+section = "shop"
+show = "At our small shop, two parcels are waiting on the packing table."
+source = "notes.md#v03a-shop"
+scene = "v03a-shop-01"
+only = ["long"]
+
+[[lines]]
+id = "v03a-shop-02"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "Parcel A" }]
+section = "shop"
+show = "One note says Parcel A is packed."
+source = "notes.md#v03a-shop"
+scene = "v03a-shop-02"
+only = ["long"]
+
+[[lines]]
+id = "v03a-shop-03"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "Parcel B" }]
+section = "shop"
+show = "Another says Parcel B has a label."
+source = "notes.md#v03a-shop"
+scene = "v03a-shop-03"
+only = ["long"]
+
+[[lines]]
+id = "v03a-shop-04"
+section = "shop"
+show = "The next person needs to use those records without confusing one parcel with the other."
+source = "notes.md#v03a-shop"
+scene = "v03a-shop-04"
+only = ["long"]
+
+[[lines]]
+id = "v03a-shop-05"
+section = "shop"
+show = "Welcome to Neuro-Symbolic Lesson 3."
+source = "notes.md#v03a-shop"
+scene = "v03a-shop-05"
+only = ["long"]
+
+[[lines]]
+id = "v03a-shop-06"
+section = "shop"
+show = "We're learning symbolic reasoning by making the information we rely on explicit."
+source = "notes.md#v03a-shop"
+scene = "v03a-shop-06"
+only = ["long"]
+
+[[lines]]
+id = "v03a-shop-07"
+section = "shop"
+show = "Last time, we separated the parcel, its record, Nibli KR as the language, and Nibli as the engine."
+source = "notes.md#v03a-shop"
+scene = "v03a-shop-07"
+only = ["long"]
+
+[[lines]]
+id = "v03a-shop-08"
+section = "shop"
+show = "Now we'll write the records ourselves and evaluate claims against them."
+source = "notes.md#v03a-shop"
+scene = "v03a-shop-08"
+only = ["long"]
+
+[[lines]]
+id = "v03a-shop-09"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "packed-parcels list" }]
+section = "shop"
+show = "For this example, a parcel with a packing note goes on our packed-parcels list."
+source = "notes.md#v03a-shop"
+scene = "v03a-shop-09"
+only = ["long"]
+
+[[lines]]
+id = "v03a-shop-10"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "Parcel A" }]
+section = "shop"
+show = "So the first note becomes: Parcel A is on the packed-parcels list."
+source = "notes.md#v03a-shop"
+scene = "v03a-shop-10"
+only = ["long"]
+
+[[lines]]
+id = "v03a-shop-11"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "two things" }]
+section = "shop"
+show = "That gives us two things to name and a relationship between them."
+source = "notes.md#v03a-shop"
+scene = "v03a-shop-11"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-01"
+emphasis = [{ id = "name", target = "parcel-name", phrase = "Parcel A" }, { id = "focus-1", target = "focus-008", phrase = "capital P" }]
+section = "build-statement"
+show = "We name the parcel Parcel A, written as one word with a capital P."
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-01"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-02"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "Packed Parcels" }]
+section = "build-statement"
+show = "We name the list Packed Parcels, also written as one word."
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-02"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-03"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "names" }]
+section = "build-statement"
+show = "These are names we've chosen."
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-03"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-04"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "The list's name" }]
+section = "build-statement"
+show = "The list's name doesn't tell the engine that anything has been packed; we still need to state which parcel belongs to it."
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-04"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-05"
+emphasis = [{ id = "focus-1", target = "focus-004", phrase = "member", occurrence = 1 }]
+section = "build-statement"
+show = "The predicate member expresses membership."
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-05"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-06"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "two places" }]
+section = "build-statement"
+show = "Its vocabulary entry gives it two places: the member, then the set it belongs to."
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-06"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-07"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "set" }]
+section = "build-statement"
+show = "A set is the collection we're calling a list here."
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-07"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-08"
+emphasis = [{ id = "focus-1", target = "focus-004", phrase = "dictionary word" }]
+section = "build-statement"
+show = "The dictionary word is fixed, while the names of our parcel and list are ours to choose."
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-08"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-09"
+section = "build-statement"
+show = "Here is the whole statement."
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-09"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-10"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "member" }]
+section = "build-statement"
+show = "The lowercase word member is the predicate name."
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-10"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-11"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "parentheses" }]
+section = "build-statement"
+show = "The parentheses hold its arguments:"
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-11"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-12"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "things" }]
+section = "build-statement"
+show = "the things taking part in that relation."
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-12"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-13"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "Parcel A" }]
+section = "build-statement"
+show = "Parcel A occupies the first place; Packed Parcels occupies the second."
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-13"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-14"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "comma" }]
+section = "build-statement"
+show = "The comma separates them,"
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-14"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-15"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "period" }]
+section = "build-statement"
+show = "and the period finishes the statement."
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-15"
+only = ["long"]
+
+[[lines]]
+id = "v03a-build-statement-16"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "Parcel A" }]
+section = "build-statement"
+show = "Read together, it says that Parcel A is a member of our packed-parcels list."
+source = "notes.md#v03a-build-statement"
+scene = "v03a-build-statement-16"
+only = ["long"]
+
+[[lines]]
+id = "v03a-named-places-01"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "positions" }]
+section = "named-places"
+show = "Those positions matter."
+source = "notes.md#v03a-named-places"
+scene = "v03a-named-places-01"
+only = ["long"]
+
+[[lines]]
+id = "v03a-named-places-02"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "list first" }]
+section = "named-places"
+show = "If we put the list first and the parcel second, we have written a different statement: that the list belongs to the parcel."
+source = "notes.md#v03a-named-places"
+scene = "v03a-named-places-02"
+only = ["long"]
+
+[[lines]]
+id = "v03a-named-places-03"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "spelling" }]
+section = "named-places"
+show = "The spelling can be accepted even though it doesn't express our note."
+source = "notes.md#v03a-named-places"
+scene = "v03a-named-places-03"
+only = ["long"]
+
+[[lines]]
+id = "v03a-named-places-04"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "Labels" }]
+section = "named-places"
+show = "Labels make the intended roles visible."
+source = "notes.md#v03a-named-places"
+scene = "v03a-named-places-04"
+only = ["long"]
+
+[[lines]]
+id = "v03a-named-places-05"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "each place named" }]
+section = "named-places"
+show = "Here is our original statement with each place named."
+source = "notes.md#v03a-named-places"
+scene = "v03a-named-places-05"
+only = ["long"]
+
+[[lines]]
+id = "v03a-named-places-06"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "member" }]
+section = "named-places"
+show = "The word member appears twice."
+source = "notes.md#v03a-named-places"
+scene = "v03a-named-places-06"
+only = ["long"]
+
+[[lines]]
+id = "v03a-named-places-07"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "predicate name" }]
+section = "named-places"
+show = "Before the parentheses, member is the predicate name."
+source = "notes.md#v03a-named-places"
+scene = "v03a-named-places-07"
+only = ["long"]
+
+[[lines]]
+id = "v03a-named-places-08"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "member" }]
+section = "named-places"
+show = "Inside them, member followed by a colon labels the first place."
+source = "notes.md#v03a-named-places"
+scene = "v03a-named-places-08"
+only = ["long"]
+
+[[lines]]
+id = "v03a-named-places-09"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "set" }]
+section = "named-places"
+show = "The label set identifies the other place."
+source = "notes.md#v03a-named-places"
+scene = "v03a-named-places-09"
+only = ["long"]
+
+[[lines]]
+id = "v03a-named-places-10"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "named arguments" }]
+section = "named-places"
+show = "These are called named arguments."
+source = "notes.md#v03a-named-places"
+scene = "v03a-named-places-10"
+only = ["long"]
+
+[[lines]]
+id = "v03a-named-places-11"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "labelled pair" }]
+section = "named-places"
+show = "Now we can write the labelled pair in the other order without changing the claim."
+source = "notes.md#v03a-named-places"
+scene = "v03a-named-places-11"
+only = ["long"]
+
+[[lines]]
+id = "v03a-named-places-12"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "own label" }]
+section = "named-places"
+show = "Each name still has its own label."
+source = "notes.md#v03a-named-places"
+scene = "v03a-named-places-12"
+only = ["long"]
+
+[[lines]]
+id = "v03a-named-places-13"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "labelled pair" }]
+section = "named-places"
+show = "The distinction is between moving a labelled pair and moving an unlabelled name."
+source = "notes.md#v03a-named-places"
+scene = "v03a-named-places-13"
+only = ["long"]
+
+[[lines]]
+id = "v03a-named-places-14"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "Labels carry" }]
+section = "named-places"
+show = "Labels carry the roles with them; without labels, the positions assign the roles."
+source = "notes.md#v03a-named-places"
+scene = "v03a-named-places-14"
+only = ["long"]
+
+[[lines]]
+id = "v03a-named-places-15"
+section = "named-places"
+show = "We'll keep the shorter positional form for our two shop records."
+source = "notes.md#v03a-named-places"
+scene = "v03a-named-places-15"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supply-premises-01"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "Parcel B" }]
+section = "supply-premises"
+show = "The second note follows the same pattern: Parcel B is on our labelled-parcels list."
+source = "notes.md#v03a-supply-premises"
+scene = "v03a-supply-premises-01"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supply-premises-02"
+section = "supply-premises"
+show = "Here are both records together."
+source = "notes.md#v03a-supply-premises"
+scene = "v03a-supply-premises-02"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supply-premises-03"
+camera = "shot"
+camera_vertical = "portrait"
+section = "supply-premises"
+show = "In the playground, we choose Custom and enter these lines in the Nibli KR pane."
+source = "notes.md#v03a-supply-premises"
+scene = "v03a-supply-premises-03"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supply-premises-04"
+camera = "shot"
+camera_vertical = "portrait"
+section = "supply-premises"
+show = "This pane holds the knowledge base: the information we're supplying for reasoning."
+source = "notes.md#v03a-supply-premises"
+scene = "v03a-supply-premises-04"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supply-premises-05"
+camera = "shot"
+camera_vertical = "portrait"
+section = "supply-premises"
+show = "We are asserting these statements as premises, meaning the starting information the engine may rely on."
+source = "notes.md#v03a-supply-premises"
+scene = "v03a-supply-premises-05"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supply-premises-06"
+camera = "shot"
+camera_vertical = "portrait"
+section = "supply-premises"
+show = "Before using them, we open the back-translation and compare its reading with our notes."
+source = "notes.md#v03a-supply-premises"
+scene = "v03a-supply-premises-06"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supply-premises-07"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "A must" }, { id = "focus-2", target = "cue-focus-2", phrase = "B must" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "supply-premises"
+show = "A must be on the packed list; B must be on the labelled list."
+source = "notes.md#v03a-supply-premises"
+scene = "v03a-supply-premises-07"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supply-premises-08"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "Use reviewed encoding" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "supply-premises"
+show = "Then we select Use reviewed encoding."
+source = "notes.md#v03a-supply-premises"
+scene = "v03a-supply-premises-08"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supply-premises-09"
+camera = "shot"
+camera_vertical = "portrait"
+section = "supply-premises"
+show = "An edit requires another review, because approval of one version doesn't establish the meaning of a changed version."
+source = "notes.md#v03a-supply-premises"
+scene = "v03a-supply-premises-09"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supply-premises-10"
+camera = "shot"
+camera_vertical = "portrait"
+section = "supply-premises"
+show = "We're using the playground's default reasoning settings."
+source = "notes.md#v03a-supply-premises"
+scene = "v03a-supply-premises-10"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supply-premises-11"
+camera = "shot"
+camera_vertical = "portrait"
+section = "supply-premises"
+show = "This review checks how we've written the records."
+source = "notes.md#v03a-supply-premises"
+scene = "v03a-supply-premises-11"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supply-premises-12"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "observations" }]
+section = "supply-premises"
+show = "The packing and labelling observations still need their own evidence from the shop."
+source = "notes.md#v03a-supply-premises"
+scene = "v03a-supply-premises-12"
+only = ["long"]
+
+[[lines]]
+id = "v03a-evaluate-claims-01"
+camera = "shot"
+camera_vertical = "portrait"
+section = "evaluate-claims"
+show = "Now we use the separate claim field."
+source = "notes.md#v03a-evaluate-claims"
+scene = "v03a-evaluate-claims-01"
+only = ["long"]
+
+[[lines]]
+id = "v03a-evaluate-claims-02"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "Parcel A" }, { id = "focus-2", target = "cue-focus-2", phrase = "Parcel A" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "evaluate-claims"
+show = "We enter the statement that Parcel A belongs to the packed-parcels list and run the evaluation."
+source = "notes.md#v03a-evaluate-claims"
+scene = "v03a-evaluate-claims-02"
+only = ["long"]
+
+[[lines]]
+id = "v03a-evaluate-claims-03"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "TRUE" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "evaluate-claims"
+show = "The verdict is TRUE."
+source = "notes.md#v03a-evaluate-claims"
+scene = "v03a-evaluate-claims-03"
+only = ["long"]
+
+[[lines]]
+id = "v03a-evaluate-claims-04"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "packing premise" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "evaluate-claims"
+show = "Its support is the packing premise we supplied."
+source = "notes.md#v03a-evaluate-claims"
+scene = "v03a-evaluate-claims-04"
+only = ["long"]
+
+[[lines]]
+id = "v03a-evaluate-claims-05"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "already among our records" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "evaluate-claims"
+show = "No rule is needed for this result: that statement is already among our records."
+source = "notes.md#v03a-evaluate-claims"
+scene = "v03a-evaluate-claims-05"
+only = ["long"]
+
+[[lines]]
+id = "v03a-evaluate-claims-06"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "same support" }, { id = "focus-2", target = "cue-focus-2", phrase = "same support" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "evaluate-claims"
+show = "Running the same evaluation again gives the same support."
+source = "notes.md#v03a-evaluate-claims"
+scene = "v03a-evaluate-claims-06"
+only = ["long"]
+
+[[lines]]
+id = "v03a-evaluate-claims-07"
+camera = "shot"
+camera_vertical = "portrait"
+section = "evaluate-claims"
+show = "The two lines in the knowledge-base pane stay exactly as they were."
+source = "notes.md#v03a-evaluate-claims"
+scene = "v03a-evaluate-claims-07"
+only = ["long"]
+
+[[lines]]
+id = "v03a-evaluate-claims-08"
+camera = "shot"
+camera_vertical = "portrait"
+section = "evaluate-claims"
+show = "Evaluating a claim does not add it to the premises."
+source = "notes.md#v03a-evaluate-claims"
+scene = "v03a-evaluate-claims-08"
+only = ["long"]
+
+[[lines]]
+id = "v03a-evaluate-claims-09"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "list name" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "evaluate-claims"
+show = "We change just the list name in the claim field, so the claim now concerns Parcel A's label record."
+source = "notes.md#v03a-evaluate-claims"
+scene = "v03a-evaluate-claims-09"
+only = ["long"]
+
+[[lines]]
+id = "v03a-evaluate-claims-10"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "FALSE" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "evaluate-claims"
+show = "The verdict is FALSE."
+source = "notes.md#v03a-evaluate-claims"
+scene = "v03a-evaluate-claims-10"
+only = ["long"]
+
+[[lines]]
+id = "v03a-evaluate-claims-11"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "cannot be derived" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "evaluate-claims"
+show = "Here that means the claim cannot be derived from the records we've supplied."
+source = "notes.md#v03a-evaluate-claims"
+scene = "v03a-evaluate-claims-11"
+only = ["long"]
+
+[[lines]]
+id = "v03a-evaluate-claims-12"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "B, not A" }, { id = "focus-2", target = "cue-focus-2", phrase = "B, not A" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "evaluate-claims"
+show = "Our label note concerns B, not A."
+source = "notes.md#v03a-evaluate-claims"
+scene = "v03a-evaluate-claims-12"
+only = ["long"]
+
+[[lines]]
+id = "v03a-evaluate-claims-13"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "physical parcel" }]
+section = "evaluate-claims"
+show = "This result does not establish that the physical parcel has no label."
+source = "notes.md#v03a-evaluate-claims"
+scene = "v03a-evaluate-claims-13"
+only = ["long"]
+
+[[lines]]
+id = "v03a-evaluate-claims-14"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "lowercase" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "evaluate-claims"
+show = "An answer may print a name in lowercase; it still refers to the same named thing."
+source = "notes.md#v03a-evaluate-claims"
+scene = "v03a-evaluate-claims-14"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supplied-conclusion-01"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "desired claim" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "supplied-conclusion"
+show = "There is an easy way to get a misleading success: put the desired claim into the premises."
+source = "notes.md#v03a-supplied-conclusion"
+scene = "v03a-supplied-conclusion-01"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supplied-conclusion-02"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "labelled-parcels list" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "supplied-conclusion"
+show = "In a separate copy of our example, we add a line saying that Parcel A belongs to the labelled-parcels list, review that change, and evaluate it again."
+source = "notes.md#v03a-supplied-conclusion"
+scene = "v03a-supplied-conclusion-02"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supplied-conclusion-03"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "TRUE" }, { id = "focus-2", target = "cue-focus-2", phrase = "supplied that very statement" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "supplied-conclusion"
+show = "Now it is TRUE because we supplied that very statement."
+source = "notes.md#v03a-supplied-conclusion"
+scene = "v03a-supplied-conclusion-03"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supplied-conclusion-04"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "observation" }]
+section = "supplied-conclusion"
+show = "That hasn't produced a missing observation."
+source = "notes.md#v03a-supplied-conclusion"
+scene = "v03a-supplied-conclusion-04"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supplied-conclusion-05"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "starting information" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "supplied-conclusion"
+show = "It has changed the starting information."
+source = "notes.md#v03a-supplied-conclusion"
+scene = "v03a-supplied-conclusion-05"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supplied-conclusion-06"
+camera = "shot"
+camera_vertical = "portrait"
+section = "supplied-conclusion"
+show = "We return to the original two records."
+source = "notes.md#v03a-supplied-conclusion"
+scene = "v03a-supplied-conclusion-06"
+only = ["long"]
+
+[[lines]]
+id = "v03a-supplied-conclusion-07"
+camera = "shot"
+camera_vertical = "portrait"
+section = "supplied-conclusion"
+show = "The premise pane and claim field have different jobs even when we put identical words in them."
+source = "notes.md#v03a-supplied-conclusion"
+scene = "v03a-supplied-conclusion-07"
+only = ["long"]
+
+[[lines]]
+id = "v03a-refusals-01"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "stop the input" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "refusals"
+show = "Some mistakes stop the input from being used at all."
+source = "notes.md#v03a-refusals"
+scene = "v03a-refusals-01"
+only = ["long"]
+
+[[lines]]
+id = "v03a-refusals-02"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "final period" }]
+section = "refusals"
+show = "Leaving off the final period leaves the statement unfinished."
+source = "notes.md#v03a-refusals"
+scene = "v03a-refusals-02"
+only = ["long"]
+
+[[lines]]
+id = "v03a-refusals-03"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "Restoring it" }]
+section = "refusals"
+show = "Restoring it repairs the syntax; it doesn't change the packing note's meaning."
+source = "notes.md#v03a-refusals"
+scene = "v03a-refusals-03"
+only = ["long"]
+
+[[lines]]
+id = "v03a-refusals-04"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "packed" }]
+section = "refusals"
+show = "Another tempting spelling is packed followed by Parcel A."
+source = "notes.md#v03a-refusals"
+scene = "v03a-refusals-04"
+only = ["long"]
+
+[[lines]]
+id = "v03a-refusals-05"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "isn't a predicate" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "refusals"
+show = "Packed is ordinary English, but it isn't a predicate in the supported vocabulary for this build."
+source = "notes.md#v03a-refusals"
+scene = "v03a-refusals-05"
+only = ["long"]
+
+[[lines]]
+id = "v03a-refusals-06"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "refuses that word" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "refusals"
+show = "The engine refuses that word."
+source = "notes.md#v03a-refusals"
+scene = "v03a-refusals-06"
+only = ["long"]
+
+[[lines]]
+id = "v03a-refusals-07"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "member" }]
+section = "refusals"
+show = "We use the supported member predicate to express our chosen list representation instead."
+source = "notes.md#v03a-refusals"
+scene = "v03a-refusals-07"
+only = ["long"]
+
+[[lines]]
+id = "v03a-refusals-08"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "two places" }]
+section = "refusals"
+show = "And member has two places."
+source = "notes.md#v03a-refusals"
+scene = "v03a-refusals-08"
+only = ["long"]
+
+[[lines]]
+id = "v03a-refusals-09"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "third argument" }]
+section = "refusals"
+show = "Adding a third argument is refused too."
+source = "notes.md#v03a-refusals"
+scene = "v03a-refusals-09"
+only = ["long"]
+
+[[lines]]
+id = "v03a-refusals-10"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "two-place limit" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "refusals"
+show = "The message identifies the predicate and its two-place limit."
+source = "notes.md#v03a-refusals"
+scene = "v03a-refusals-10"
+only = ["long"]
+
+[[lines]]
+id = "v03a-refusals-11"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "original statement" }]
+section = "refusals"
+show = "We remove the extra argument to recover our original statement."
+source = "notes.md#v03a-refusals"
+scene = "v03a-refusals-11"
+only = ["long"]
+
+[[lines]]
+id = "v03a-refusals-12"
+camera = "shot"
+camera_vertical = "portrait"
+section = "refusals"
+show = "These are input refusals, not FALSE verdicts."
+source = "notes.md#v03a-refusals"
+scene = "v03a-refusals-12"
+only = ["long"]
+
+[[lines]]
+id = "v03a-refusals-13"
+camera = "shot"
+camera_vertical = "portrait"
+section = "refusals"
+show = "In the playground, a bad line prevents the whole candidate knowledge base from being used."
+source = "notes.md#v03a-refusals"
+scene = "v03a-refusals-13"
+only = ["long"]
+
+[[lines]]
+id = "v03a-refusals-14"
+camera = "shot"
+camera_vertical = "portrait"
+section = "refusals"
+show = "We keep each mistake in a separate demonstration and restore the valid records afterward."
+source = "notes.md#v03a-refusals"
+scene = "v03a-refusals-14"
+only = ["long"]
+
+[[lines]]
+id = "v03a-host-and-next-01"
+section = "host-and-next"
+show = "There is one useful interface distinction on this reference card."
+source = "notes.md#v03a-host-and-next"
+scene = "v03a-host-and-next-01"
+only = ["long"]
+
+[[lines]]
+id = "v03a-host-and-next-02"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "leading evaluation marker" }]
+section = "host-and-next"
+show = "In the host program, the leading evaluation marker shown here sends a statement for evaluation."
+source = "notes.md#v03a-host-and-next"
+scene = "v03a-host-and-next-02"
+only = ["long"]
+
+[[lines]]
+id = "v03a-host-and-next-03"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "supplies a premise" }]
+section = "host-and-next"
+show = "Without that prefix, the line supplies a premise."
+source = "notes.md#v03a-host-and-next"
+scene = "v03a-host-and-next-03"
+only = ["long"]
+
+[[lines]]
+id = "v03a-host-and-next-04"
+camera = "shot"
+camera_vertical = "portrait"
+section = "host-and-next"
+show = "In the playground, the separate input areas make that choice; we don't type the host prefix into the claim field."
+source = "notes.md#v03a-host-and-next"
+scene = "v03a-host-and-next-04"
+only = ["long"]
+
+[[lines]]
+id = "v03a-host-and-next-05"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "period" }]
+section = "host-and-next"
+show = "The period remains in both forms."
+source = "notes.md#v03a-host-and-next"
+scene = "v03a-host-and-next-05"
+only = ["long"]
+
+[[lines]]
+id = "v03a-host-and-next-06"
+section = "host-and-next"
+show = "An evaluation can also stop without deciding; we'll explain those outcomes later."
+source = "notes.md#v03a-host-and-next"
+scene = "v03a-host-and-next-06"
+only = ["long"]
+
+[[lines]]
+id = "v03a-host-and-next-07"
+section = "host-and-next"
+show = "Today, we've written records with clear names and roles, supplied premises, and evaluated claims against them."
+source = "notes.md#v03a-host-and-next"
+scene = "v03a-host-and-next-07"
+only = ["long"]
+
+[[lines]]
+id = "v03a-host-and-next-08"
+emphasis = [{ id = "same-parcel", target = "same-parcel", phrase = "same parcel" }, { id = "packing", target = "packing", phrase = "packing" }, { id = "label", target = "label", phrase = "one for its label" }]
+section = "host-and-next"
+show = "The shop's dispatch checklist needs two confirmations for the same parcel: one for packing and one for its label."
+source = "notes.md#v03a-host-and-next"
+scene = "v03a-host-and-next-08"
+only = ["long"]
+
+[[lines]]
+id = "v03a-host-and-next-09"
+emphasis = [{ id = "rule", target = "rule", phrase = "rule" }, { id = "claim", target = "claim", phrase = "claim" }]
+section = "host-and-next"
+show = "In Neuro-Symbolic Lesson 4, we'll write that requirement as a rule and evaluate the claim that Parcel A meets the checklist."
+source = "notes.md#v03a-host-and-next"
+scene = "v03a-host-and-next-09"
+only = ["long"]
+
+[[lines]]
+id = "v03a-host-and-next-10"
+emphasis = [{ id = "records", target = "records", phrase = "supporting records" }, { id = "derived", target = "derived", phrase = "derived" }]
+section = "host-and-next"
+show = "Then we'll follow the rule and its supporting records to see how that conclusion is derived, without supplying the conclusion as a premise."
+source = "notes.md#v03a-host-and-next"
+scene = "v03a-host-and-next-10"
+only = ["long"]
+
+[[lines]]
+id = "v03a-short-note-01"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "Parcel A" }]
+section = "short-story"
+show = "A note at our shop says Parcel A is packed."
+source = "notes.md#v03a-short-note"
+scene = "v03a-short-note-01"
+only = ["short"]
+
+[[lines]]
+id = "v03a-short-note-02"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "packed-parcels list" }]
+section = "short-story"
+show = "We represent that by putting Parcel A on a packed-parcels list."
+source = "notes.md#v03a-short-note"
+scene = "v03a-short-note-02"
+only = ["short"]
+
+[[lines]]
+id = "v03a-short-premise-01"
+section = "short-story"
+show = "Here is the statement in Nibli KR."
+source = "notes.md#v03a-short-premise"
+scene = "v03a-short-premise-01"
+only = ["short"]
+
+[[lines]]
+id = "v03a-short-premise-02"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "Member" }]
+section = "short-story"
+show = "Member connects the parcel to the list."
+source = "notes.md#v03a-short-premise"
+scene = "v03a-short-premise-02"
+only = ["short"]
+
+[[lines]]
+id = "v03a-short-premise-03"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "Parcel A" }]
+section = "short-story"
+show = "Parcel A fills the first place, and the packed-parcels list fills the second."
+source = "notes.md#v03a-short-premise"
+scene = "v03a-short-premise-03"
+only = ["short"]
+
+[[lines]]
+id = "v03a-short-premise-04"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "premise" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "short-story"
+show = "Placed in the knowledge-base pane and reviewed, it becomes a premise: a record we're supplying."
+source = "notes.md#v03a-short-premise"
+scene = "v03a-short-premise-04"
+only = ["short"]
+
+[[lines]]
+id = "v03a-short-claim-01"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "claim field" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "short-story"
+show = "The same statement in the claim field is evaluated against our records."
+source = "notes.md#v03a-short-claim"
+scene = "v03a-short-claim-01"
+only = ["short"]
+
+[[lines]]
+id = "v03a-short-claim-02"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "TRUE" }, { id = "focus-2", target = "cue-focus-2", phrase = "supplied that premise" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "short-story"
+show = "Nibli returns TRUE because we supplied that premise."
+source = "notes.md#v03a-short-claim"
+scene = "v03a-short-claim-02"
+only = ["short"]
+
+[[lines]]
+id = "v03a-short-claim-03"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "adds nothing" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "short-story"
+show = "Evaluating it adds nothing to the record."
+source = "notes.md#v03a-short-claim"
+scene = "v03a-short-claim-03"
+only = ["short"]
+
+[[lines]]
+id = "v03a-short-boundary-01"
+emphasis = [{ id = "focus-1", target = "cue-focus-1", phrase = "input area" }, { id = "focus-2", target = "cue-focus-2", phrase = "input area" }]
+camera = "shot"
+camera_vertical = "portrait"
+section = "short-story"
+show = "The words are identical; the input area determines their job."
+source = "notes.md#v03a-short-boundary"
+scene = "v03a-short-boundary-01"
+only = ["short"]
+
+[[lines]]
+id = "v03a-short-boundary-02"
+emphasis = [{ id = "focus-1", target = "focus", phrase = "physical parcel" }]
+section = "short-story"
+show = "And neither input checks the physical parcel."
+source = "notes.md#v03a-short-boundary"
+scene = "v03a-short-boundary-02"
+only = ["short"]
+
+[[lines]]
+id = "v03a-short-boundary-03"
+section = "short-story"
+show = "This is Neuro-Symbolic Lesson 3: writing statements and evaluating claims."
+source = "notes.md#v03a-short-boundary"
+scene = "v03a-short-boundary-03"
+only = ["short"]
+
+[scenes.v03a-shop-01]
+kind = "image"
+url = "build/quine-measured-assets/v03a-shop-01.svg"
+
+[scenes.v03a-shop-02]
+kind = "image"
+url = "build/quine-measured-assets/v03a-shop-02.svg"
+
+[scenes.v03a-shop-03]
+kind = "image"
+url = "build/quine-measured-assets/v03a-shop-03.svg"
+
+[scenes.v03a-shop-04]
+kind = "image"
+url = "build/quine-measured-assets/v03a-shop-04.svg"
+
+[scenes.v03a-shop-05]
+kind = "image"
+url = "build/quine-measured-assets/v03a-shop-05.svg"
+
+[scenes.v03a-shop-06]
+kind = "image"
+url = "build/quine-measured-assets/v03a-shop-06.svg"
+
+[scenes.v03a-shop-07]
+kind = "image"
+url = "build/quine-measured-assets/v03a-shop-07.svg"
+
+[scenes.v03a-shop-08]
+kind = "image"
+url = "build/quine-measured-assets/v03a-shop-08.svg"
+
+[scenes.v03a-shop-09]
+kind = "image"
+url = "build/quine-measured-assets/v03a-shop-09.svg"
+
+[scenes.v03a-shop-10]
+kind = "image"
+url = "build/quine-measured-assets/v03a-shop-10.svg"
+
+[scenes.v03a-shop-11]
+kind = "image"
+url = "build/quine-measured-assets/v03a-shop-11.svg"
+
+[scenes.v03a-build-statement-01]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-01.svg"
+
+[scenes.v03a-build-statement-02]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-02.svg"
+
+[scenes.v03a-build-statement-03]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-03.svg"
+
+[scenes.v03a-build-statement-04]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-04.svg"
+
+[scenes.v03a-build-statement-05]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-05.svg"
+
+[scenes.v03a-build-statement-06]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-06.svg"
+
+[scenes.v03a-build-statement-07]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-07.svg"
+
+[scenes.v03a-build-statement-08]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-08.svg"
+
+[scenes.v03a-build-statement-09]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-09.svg"
+
+[scenes.v03a-build-statement-10]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-10.svg"
+
+[scenes.v03a-build-statement-11]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-11.svg"
+
+[scenes.v03a-build-statement-12]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-12.svg"
+
+[scenes.v03a-build-statement-13]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-13.svg"
+
+[scenes.v03a-build-statement-14]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-14.svg"
+
+[scenes.v03a-build-statement-15]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-15.svg"
+
+[scenes.v03a-build-statement-16]
+kind = "image"
+url = "build/quine-measured-assets/v03a-build-statement-16.svg"
+
+[scenes.v03a-named-places-01]
+kind = "image"
+url = "build/quine-measured-assets/v03a-named-places-01.svg"
+
+[scenes.v03a-named-places-02]
+kind = "image"
+url = "build/quine-measured-assets/v03a-named-places-02.svg"
+
+[scenes.v03a-named-places-03]
+kind = "image"
+url = "build/quine-measured-assets/v03a-named-places-03.svg"
+
+[scenes.v03a-named-places-04]
+kind = "image"
+url = "build/quine-measured-assets/v03a-named-places-04.svg"
+
+[scenes.v03a-named-places-05]
+kind = "image"
+url = "build/quine-measured-assets/v03a-named-places-05.svg"
+
+[scenes.v03a-named-places-06]
+kind = "image"
+url = "build/quine-measured-assets/v03a-named-places-06.svg"
+
+[scenes.v03a-named-places-07]
+kind = "image"
+url = "build/quine-measured-assets/v03a-named-places-07.svg"
+
+[scenes.v03a-named-places-08]
+kind = "image"
+url = "build/quine-measured-assets/v03a-named-places-08.svg"
+
+[scenes.v03a-named-places-09]
+kind = "image"
+url = "build/quine-measured-assets/v03a-named-places-09.svg"
+
+[scenes.v03a-named-places-10]
+kind = "image"
+url = "build/quine-measured-assets/v03a-named-places-10.svg"
+
+[scenes.v03a-named-places-11]
+kind = "image"
+url = "build/quine-measured-assets/v03a-named-places-11.svg"
+
+[scenes.v03a-named-places-12]
+kind = "image"
+url = "build/quine-measured-assets/v03a-named-places-12.svg"
+
+[scenes.v03a-named-places-13]
+kind = "image"
+url = "build/quine-measured-assets/v03a-named-places-13.svg"
+
+[scenes.v03a-named-places-14]
+kind = "image"
+url = "build/quine-measured-assets/v03a-named-places-14.svg"
+
+[scenes.v03a-named-places-15]
+kind = "image"
+url = "build/quine-measured-assets/v03a-named-places-15.svg"
+
+[scenes.v03a-supply-premises-01]
+kind = "image"
+url = "build/quine-measured-assets/v03a-supply-premises-01.svg"
+
+[scenes.v03a-supply-premises-02]
+kind = "image"
+url = "build/quine-measured-assets/v03a-supply-premises-02.svg"
+
+[scenes.v03a-supply-premises-12]
+kind = "image"
+url = "build/quine-measured-assets/v03a-supply-premises-12.svg"
+
+[scenes.v03a-evaluate-claims-13]
+kind = "image"
+url = "build/quine-measured-assets/v03a-evaluate-claims-13.svg"
+
+[scenes.v03a-supplied-conclusion-04]
+kind = "image"
+url = "build/quine-measured-assets/v03a-supplied-conclusion-04.svg"
+
+[scenes.v03a-refusals-02]
+kind = "image"
+url = "build/quine-measured-assets/v03a-refusals-02.svg"
+
+[scenes.v03a-refusals-03]
+kind = "image"
+url = "build/quine-measured-assets/v03a-refusals-03.svg"
+
+[scenes.v03a-refusals-04]
+kind = "image"
+url = "build/quine-measured-assets/v03a-refusals-04.svg"
+
+[scenes.v03a-refusals-07]
+kind = "image"
+url = "build/quine-measured-assets/v03a-refusals-07.svg"
+
+[scenes.v03a-refusals-08]
+kind = "image"
+url = "build/quine-measured-assets/v03a-refusals-08.svg"
+
+[scenes.v03a-refusals-09]
+kind = "image"
+url = "build/quine-measured-assets/v03a-refusals-09.svg"
+
+[scenes.v03a-refusals-11]
+kind = "image"
+url = "build/quine-measured-assets/v03a-refusals-11.svg"
+
+[scenes.v03a-host-and-next-01]
+kind = "image"
+url = "build/quine-measured-assets/v03a-host-and-next-01.svg"
+
+[scenes.v03a-host-and-next-02]
+kind = "image"
+url = "build/quine-measured-assets/v03a-host-and-next-02.svg"
+
+[scenes.v03a-host-and-next-03]
+kind = "image"
+url = "build/quine-measured-assets/v03a-host-and-next-03.svg"
+
+[scenes.v03a-host-and-next-05]
+kind = "image"
+url = "build/quine-measured-assets/v03a-host-and-next-05.svg"
+
+[scenes.v03a-host-and-next-06]
+kind = "image"
+url = "build/quine-measured-assets/v03a-host-and-next-06.svg"
+
+[scenes.v03a-host-and-next-07]
+kind = "image"
+url = "build/quine-measured-assets/v03a-host-and-next-07.svg"
+
+[scenes.v03a-short-note-01]
+kind = "image"
+url = "build/quine-measured-assets/v03a-short-note-01.svg"
+
+[scenes.v03a-short-note-02]
+kind = "image"
+url = "build/quine-measured-assets/v03a-short-note-02.svg"
+
+[scenes.v03a-short-premise-01]
+kind = "image"
+url = "build/quine-measured-assets/v03a-short-premise-01.svg"
+
+[scenes.v03a-short-premise-02]
+kind = "image"
+url = "build/quine-measured-assets/v03a-short-premise-02.svg"
+
+[scenes.v03a-short-premise-03]
+kind = "image"
+url = "build/quine-measured-assets/v03a-short-premise-03.svg"
+
+[scenes.v03a-short-boundary-02]
+kind = "image"
+url = "build/quine-measured-assets/v03a-short-boundary-02.svg"
+
+[scenes.v03a-short-boundary-03]
+kind = "image"
+url = "build/quine-measured-assets/v03a-short-boundary-03.svg"
+
+[scenes.v03a-shop-01.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-shop-02.targets.focus]
+continuity = "hold-2147ace07f905586"
+elements = ["text-006"]
+
+[scenes.v03a-shop-02.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-shop-03.targets.focus]
+continuity = "hold-8d7ce2bf0051d3dc"
+elements = ["text-008"]
+
+[scenes.v03a-shop-03.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-shop-04.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-shop-05.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-shop-06.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-shop-07.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-shop-08.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-shop-09.targets.focus]
+continuity = "hold-f7c9015112eb43bd"
+elements = ["text-004"]
+
+[scenes.v03a-shop-09.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-shop-10.targets.focus]
+continuity = "hold-7cf0774b23800422"
+elements = ["text-003"]
+
+[scenes.v03a-shop-10.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-shop-11.targets.focus]
+continuity = "hold-cec26b26122c7821"
+elements = ["text-003", "text-004"]
+
+[scenes.v03a-shop-11.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-01.targets.focus-008]
+continuity = "hold-447ce1a54eb9b8d6"
+element = "text-007"
+span = { text = "P", occurrence = 1 }
+
+[scenes.v03a-build-statement-01.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-02.targets.focus]
+continuity = "hold-7c24572ac3da609b"
+elements = ["text-008"]
+
+[scenes.v03a-build-statement-02.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-03.targets.focus]
+continuity = "hold-0a21dcd135d92ab5"
+elements = ["text-007", "text-008"]
+
+[scenes.v03a-build-statement-03.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-04.targets.focus]
+continuity = "hold-7c24572ac3da609b"
+elements = ["text-008"]
+
+[scenes.v03a-build-statement-04.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-05.targets.focus-004]
+continuity = "hold-373f4ba412b8db68"
+element = "text-003"
+span = { text = "member", occurrence = 1 }
+
+[scenes.v03a-build-statement-05.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-06.targets.focus]
+continuity = "hold-99f9830ec392f92b"
+elements = ["text-004", "text-006"]
+
+[scenes.v03a-build-statement-06.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-07.targets.focus]
+continuity = "hold-6ed8b866e0286361"
+elements = ["text-006"]
+
+[scenes.v03a-build-statement-07.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-08.targets.focus-004]
+continuity = "hold-373f4ba412b8db68"
+element = "text-003"
+span = { text = "member", occurrence = 1 }
+
+[scenes.v03a-build-statement-08.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-09.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-10.targets.focus]
+continuity = "hold-2f4f4bf2787717af"
+elements = ["token-003"]
+
+[scenes.v03a-build-statement-10.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-11.targets.focus]
+continuity = "hold-63f15d07c28bad76"
+elements = ["token-004", "token-008"]
+
+[scenes.v03a-build-statement-11.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-12.targets.focus]
+continuity = "hold-cf0a77c4dbe31f21"
+elements = ["token-005", "token-007"]
+
+[scenes.v03a-build-statement-12.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-13.targets.focus]
+continuity = "hold-cf0a77c4dbe31f21"
+elements = ["token-005", "token-007"]
+
+[scenes.v03a-build-statement-13.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-14.targets.focus]
+continuity = "hold-05857447335c5db2"
+elements = ["token-006"]
+
+[scenes.v03a-build-statement-14.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-15.targets.focus]
+continuity = "hold-9c500bfa5af13b93"
+elements = ["token-009"]
+
+[scenes.v03a-build-statement-15.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-build-statement-16.targets.focus]
+continuity = "hold-cf0a77c4dbe31f21"
+elements = ["token-005", "token-007"]
+
+[scenes.v03a-build-statement-16.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-named-places-01.targets.focus]
+continuity = "hold-cf0a77c4dbe31f21"
+elements = ["token-005", "token-007"]
+
+[scenes.v03a-named-places-01.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-named-places-02.targets.focus]
+continuity = "hold-a46e2946e5ebf0ca"
+elements = ["token-005", "token-007"]
+
+[scenes.v03a-named-places-02.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-named-places-03.targets.focus]
+continuity = "hold-a46e2946e5ebf0ca"
+elements = ["token-005", "token-007"]
+
+[scenes.v03a-named-places-03.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-named-places-04.targets.focus]
+continuity = "hold-006af09cb8b54347"
+elements = ["token-005", "token-008"]
+
+[scenes.v03a-named-places-04.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-named-places-05.targets.focus]
+continuity = "hold-006af09cb8b54347"
+elements = ["token-005", "token-008"]
+
+[scenes.v03a-named-places-05.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-named-places-06.targets.focus]
+continuity = "hold-d082c61d30a8f9b9"
+elements = ["token-003", "token-005"]
+
+[scenes.v03a-named-places-06.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-named-places-07.targets.focus]
+continuity = "hold-90317feef4670e91"
+elements = ["token-003"]
+
+[scenes.v03a-named-places-07.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-named-places-08.targets.focus]
+continuity = "hold-110ab1e14c5b4c5b"
+elements = ["token-005"]
+
+[scenes.v03a-named-places-08.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-named-places-09.targets.focus]
+continuity = "hold-e251f82b81f414e5"
+elements = ["token-008"]
+
+[scenes.v03a-named-places-09.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-named-places-10.targets.focus]
+continuity = "hold-006af09cb8b54347"
+elements = ["token-005", "token-008"]
+
+[scenes.v03a-named-places-10.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-named-places-11.targets.focus]
+continuity = "hold-fb3596fafc0b4438"
+elements = ["token-005", "token-008"]
+
+[scenes.v03a-named-places-11.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-named-places-12.targets.focus]
+continuity = "hold-fb3596fafc0b4438"
+elements = ["token-005", "token-008"]
+
+[scenes.v03a-named-places-12.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-named-places-13.targets.focus]
+continuity = "hold-6948aaac9148aeeb"
+elements = ["token-006", "token-009"]
+
+[scenes.v03a-named-places-13.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-named-places-14.targets.focus]
+continuity = "hold-fb3596fafc0b4438"
+elements = ["token-005", "token-008"]
+
+[scenes.v03a-named-places-14.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-named-places-15.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-supply-premises-01.targets.focus]
+continuity = "hold-4931118faf237caf"
+elements = ["token-012", "token-014"]
+
+[scenes.v03a-supply-premises-01.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-supply-premises-02.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-supply-premises-12.targets.focus]
+continuity = "hold-97c4f9b73d63d94a"
+elements = ["text-003"]
+
+[scenes.v03a-supply-premises-12.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-evaluate-claims-13.targets.focus]
+continuity = "hold-97c4f9b73d63d94a"
+elements = ["text-003"]
+
+[scenes.v03a-evaluate-claims-13.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-supplied-conclusion-04.targets.focus]
+continuity = "hold-97c4f9b73d63d94a"
+elements = ["text-003"]
+
+[scenes.v03a-supplied-conclusion-04.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-refusals-02.targets.focus]
+continuity = "hold-28397823e4627bdc"
+elements = ["text-009"]
+
+[scenes.v03a-refusals-02.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-refusals-03.targets.focus]
+continuity = "hold-9c500bfa5af13b93"
+elements = ["token-009"]
+
+[scenes.v03a-refusals-03.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-refusals-04.targets.focus]
+continuity = "hold-1ad60b6b531ba7e4"
+elements = ["token-003"]
+
+[scenes.v03a-refusals-04.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-refusals-07.targets.focus]
+continuity = "hold-2f4f4bf2787717af"
+elements = ["token-003"]
+
+[scenes.v03a-refusals-07.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-refusals-08.targets.focus]
+continuity = "hold-99f9830ec392f92b"
+elements = ["text-004", "text-006"]
+
+[scenes.v03a-refusals-08.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-refusals-09.targets.focus]
+continuity = "hold-0bba13636987699c"
+elements = ["token-009"]
+
+[scenes.v03a-refusals-09.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-refusals-11.targets.focus]
+continuity = "hold-cf0a77c4dbe31f21"
+elements = ["token-005", "token-007"]
+
+[scenes.v03a-refusals-11.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-host-and-next-01.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-host-and-next-02.targets.focus]
+continuity = "hold-62ab503efb567374"
+elements = ["token-012"]
+
+[scenes.v03a-host-and-next-02.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-host-and-next-03.targets.focus]
+continuity = "hold-d1fc2f151e98bad8"
+elements = ["token-004", "token-006", "token-008"]
+
+[scenes.v03a-host-and-next-03.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-host-and-next-05.targets.focus]
+continuity = "hold-7edc235fe86256e6"
+elements = ["token-010", "token-019"]
+
+[scenes.v03a-host-and-next-05.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-host-and-next-06.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-host-and-next-07.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-short-note-01.targets.focus]
+continuity = "hold-529cc74db8c6e30f"
+elements = ["text-003", "text-004"]
+
+[scenes.v03a-short-note-01.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-short-note-02.targets.focus]
+continuity = "hold-138431200ed88ab5"
+elements = ["text-004"]
+
+[scenes.v03a-short-note-02.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-short-premise-01.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-short-premise-02.targets.focus]
+continuity = "hold-e7afaa19b53bf3ae"
+elements = ["token-004"]
+
+[scenes.v03a-short-premise-02.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-short-premise-03.targets.focus]
+continuity = "hold-8afabbfc1cc12a4c"
+elements = ["token-006", "token-008"]
+
+[scenes.v03a-short-premise-03.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-short-boundary-02.targets.focus]
+continuity = "hold-f5ce822a587f1fe5"
+elements = ["text-003"]
+
+[scenes.v03a-short-boundary-02.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-short-boundary-03.targets.canvas]
+element = "scene-canvas"
+
+
+[scenes.v03a-build-statement-01.targets.parcel-name]
+continuity = "hold-c711e931b653a764"
+element = "text-007"
+
+
+[scenes.v03a-host-and-next-08]
+kind = "image"
+url = "build/quine-measured-assets/v03a-host-and-next-08.svg"
+
+[scenes.v03a-host-and-next-09]
+kind = "image"
+url = "build/quine-measured-assets/v03a-host-and-next-09.svg"
+
+[scenes.v03a-host-and-next-10]
+kind = "image"
+url = "build/quine-measured-assets/v03a-host-and-next-10.svg"
+
+[scenes.v03a-supply-premises-03]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-supply-premises-03.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-supply-premises-03.targets.region-workspace]
+element = "screen"
+capture = { receipt = "build/playground-zoom/01-premises.targets.json", target = "workspace" }
+
+[scenes.v03a-supply-premises-03.cameras.shot]
+union = ["region-workspace"]
+
+[scenes.v03a-supply-premises-03.cameras.portrait]
+union = ["region-workspace"]
+
+[scenes.v03a-supply-premises-04]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-supply-premises-04.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-supply-premises-04.targets.region-kb-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/01-premises.targets.json", target = "kb-tabs" }
+
+[scenes.v03a-supply-premises-04.targets.region-kb-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/01-premises.targets.json", target = "kb-text-ink" }
+
+[scenes.v03a-supply-premises-04.cameras.shot]
+union = ["region-kb-tabs", "region-kb-text-ink"]
+
+[scenes.v03a-supply-premises-04.cameras.portrait]
+union = ["region-kb-tabs", "region-kb-text-ink"]
+
+[scenes.v03a-supply-premises-05]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-supply-premises-05.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-supply-premises-05.targets.region-kb-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/01-premises.targets.json", target = "kb-tabs" }
+
+[scenes.v03a-supply-premises-05.targets.region-kb-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/01-premises.targets.json", target = "kb-text-ink" }
+
+[scenes.v03a-supply-premises-05.cameras.shot]
+union = ["region-kb-tabs", "region-kb-text-ink"]
+
+[scenes.v03a-supply-premises-05.cameras.portrait]
+union = ["region-kb-tabs", "region-kb-text-ink"]
+
+[scenes.v03a-supply-premises-06]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-supply-premises-06.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-supply-premises-06.targets.region-kb-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/02-review.targets.json", target = "kb-tabs" }
+
+[scenes.v03a-supply-premises-06.targets.region-review-action]
+element = "screen"
+capture = { receipt = "build/playground-zoom/02-review.targets.json", target = "review-action" }
+
+[scenes.v03a-supply-premises-06.targets.region-review-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/02-review.targets.json", target = "review-text-ink" }
+
+[scenes.v03a-supply-premises-06.cameras.shot]
+union = ["region-kb-tabs", "region-review-action", "region-review-text-ink"]
+
+[scenes.v03a-supply-premises-06.cameras.portrait]
+union = ["region-kb-tabs", "region-review-action", "region-review-text-ink"]
+
+[scenes.v03a-supply-premises-07]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-supply-premises-07.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-supply-premises-07.targets.region-kb-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/02-review.targets.json", target = "kb-tabs" }
+
+[scenes.v03a-supply-premises-07.targets.region-review-action]
+element = "screen"
+capture = { receipt = "build/playground-zoom/02-review.targets.json", target = "review-action" }
+
+[scenes.v03a-supply-premises-07.targets.region-review-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/02-review.targets.json", target = "review-text-ink" }
+
+[scenes.v03a-supply-premises-07.targets.cue-focus-1]
+continuity = "hold-fafd8bda994a292f"
+element = "screen"
+capture = { receipt = "build/playground-zoom/02-review.targets.json", target = "review-text/ParcelA/1" }
+
+[scenes.v03a-supply-premises-07.targets.cue-focus-2]
+continuity = "hold-b3e5a61c992d466d"
+element = "screen"
+capture = { receipt = "build/playground-zoom/02-review.targets.json", target = "review-text/ParcelB/1" }
+
+[scenes.v03a-supply-premises-07.cameras.shot]
+union = ["region-kb-tabs", "region-review-action", "region-review-text-ink"]
+
+[scenes.v03a-supply-premises-07.cameras.portrait]
+union = ["region-kb-tabs", "region-review-action", "region-review-text-ink"]
+
+[scenes.v03a-supply-premises-08]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-supply-premises-08.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-supply-premises-08.targets.region-review-action]
+element = "screen"
+capture = { receipt = "build/playground-zoom/02-review.targets.json", target = "review-action" }
+
+[scenes.v03a-supply-premises-08.targets.region-review-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/02-review.targets.json", target = "review-text-ink" }
+
+[scenes.v03a-supply-premises-08.targets.cue-focus-1]
+continuity = "hold-885f6659c4a159be"
+element = "screen"
+capture = { receipt = "build/playground-zoom/02-review.targets.json", target = "review-action" }
+
+[scenes.v03a-supply-premises-08.cameras.shot]
+union = ["region-review-action", "region-review-text-ink"]
+
+[scenes.v03a-supply-premises-08.cameras.portrait]
+union = ["region-review-action", "region-review-text-ink"]
+
+[scenes.v03a-supply-premises-09]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-supply-premises-09.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-supply-premises-09.targets.region-error]
+element = "screen"
+capture = { receipt = "build/playground-zoom/07-edit-review.targets.json", target = "error" }
+
+[scenes.v03a-supply-premises-09.targets.region-claim-field]
+element = "screen"
+capture = { receipt = "build/playground-zoom/07-edit-review.targets.json", target = "claim-field" }
+
+[scenes.v03a-supply-premises-09.cameras.shot]
+union = ["region-error", "region-claim-field"]
+
+[scenes.v03a-supply-premises-09.cameras.portrait]
+union = ["region-error", "region-claim-field"]
+
+[scenes.v03a-supply-premises-10]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-supply-premises-10.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-supply-premises-10.targets.region-profile]
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "profile" }
+
+[scenes.v03a-supply-premises-10.cameras.shot]
+union = ["region-profile"]
+
+[scenes.v03a-supply-premises-10.cameras.portrait]
+union = ["region-profile"]
+
+[scenes.v03a-supply-premises-11]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-supply-premises-11.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-supply-premises-11.targets.region-kb-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/03-reviewed.targets.json", target = "kb-tabs" }
+
+[scenes.v03a-supply-premises-11.targets.region-review-action]
+element = "screen"
+capture = { receipt = "build/playground-zoom/03-reviewed.targets.json", target = "review-action" }
+
+[scenes.v03a-supply-premises-11.targets.region-status]
+element = "screen"
+capture = { receipt = "build/playground-zoom/03-reviewed.targets.json", target = "status" }
+
+[scenes.v03a-supply-premises-11.targets.region-review-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/03-reviewed.targets.json", target = "review-text-ink" }
+
+[scenes.v03a-supply-premises-11.cameras.shot]
+union = ["region-kb-tabs", "region-review-action", "region-status", "region-review-text-ink"]
+
+[scenes.v03a-supply-premises-11.cameras.portrait]
+union = ["region-kb-tabs", "region-review-action", "region-status", "region-review-text-ink"]
+
+[scenes.v03a-evaluate-claims-01]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-evaluate-claims-01.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-evaluate-claims-01.targets.region-workspace]
+element = "screen"
+capture = { receipt = "build/playground-zoom/03-ready.targets.json", target = "workspace" }
+
+[scenes.v03a-evaluate-claims-01.cameras.shot]
+union = ["region-workspace"]
+
+[scenes.v03a-evaluate-claims-01.cameras.portrait]
+union = ["region-workspace"]
+
+[scenes.v03a-evaluate-claims-02]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-evaluate-claims-02.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-evaluate-claims-02.targets.region-claim-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/03-ready.targets.json", target = "claim-tabs" }
+
+[scenes.v03a-evaluate-claims-02.targets.region-claim-field]
+element = "screen"
+capture = { receipt = "build/playground-zoom/03-ready.targets.json", target = "claim-field" }
+
+[scenes.v03a-evaluate-claims-02.targets.cue-focus-1]
+continuity = "hold-4ff438b441806d13"
+element = "screen"
+capture = { receipt = "build/playground-zoom/03-ready.targets.json", target = "claim-text/ParcelA/1" }
+
+[scenes.v03a-evaluate-claims-02.targets.cue-focus-2]
+continuity = "hold-ff595878548f3e97"
+element = "screen"
+capture = { receipt = "build/playground-zoom/03-ready.targets.json", target = "claim-text/PackedParcels/1" }
+
+[scenes.v03a-evaluate-claims-02.cameras.shot]
+union = ["region-claim-tabs", "region-claim-field"]
+
+[scenes.v03a-evaluate-claims-02.cameras.portrait]
+union = ["region-claim-tabs", "region-claim-field"]
+
+[scenes.v03a-evaluate-claims-03]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-evaluate-claims-03.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-evaluate-claims-03.targets.region-result]
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "result" }
+
+[scenes.v03a-evaluate-claims-03.targets.cue-focus-1]
+continuity = "hold-9d82088d75e16547"
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "result/TRUE/1" }
+
+[scenes.v03a-evaluate-claims-03.cameras.shot]
+union = ["region-result"]
+
+[scenes.v03a-evaluate-claims-03.cameras.portrait]
+union = ["region-result"]
+
+[scenes.v03a-evaluate-claims-04]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-evaluate-claims-04.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-evaluate-claims-04.targets.region-proof-content]
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "proof-content" }
+
+[scenes.v03a-evaluate-claims-04.targets.cue-focus-1]
+continuity = "hold-d827291119f50fc2"
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "proof-line/[given]/1" }
+
+[scenes.v03a-evaluate-claims-04.cameras.shot]
+union = ["region-proof-content"]
+
+[scenes.v03a-evaluate-claims-04.cameras.portrait]
+union = ["region-proof-content"]
+
+[scenes.v03a-evaluate-claims-05]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-evaluate-claims-05.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-evaluate-claims-05.targets.region-proof-content]
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "proof-content" }
+
+[scenes.v03a-evaluate-claims-05.targets.cue-focus-1]
+continuity = "hold-d827291119f50fc2"
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "proof-line/[given]/1" }
+
+[scenes.v03a-evaluate-claims-05.cameras.shot]
+union = ["region-proof-content"]
+
+[scenes.v03a-evaluate-claims-05.cameras.portrait]
+union = ["region-proof-content"]
+
+[scenes.v03a-evaluate-claims-06]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-evaluate-claims-06.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-evaluate-claims-06.targets.region-history-true-1]
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "history/TRUE/1" }
+
+[scenes.v03a-evaluate-claims-06.targets.region-history-true-2]
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "history/TRUE/2" }
+
+[scenes.v03a-evaluate-claims-06.targets.region-result]
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "result" }
+
+[scenes.v03a-evaluate-claims-06.targets.cue-focus-1]
+continuity = "hold-a80d356571b79486"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "history/TRUE/1" }
+
+[scenes.v03a-evaluate-claims-06.targets.cue-focus-2]
+continuity = "hold-390f11ee0fa45afa"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "history/TRUE/2" }
+
+[scenes.v03a-evaluate-claims-06.cameras.shot]
+union = ["region-history-true-1", "region-history-true-2", "region-result"]
+
+[scenes.v03a-evaluate-claims-06.cameras.portrait]
+union = ["region-history-true-1", "region-history-true-2", "region-result"]
+
+[scenes.v03a-evaluate-claims-07]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-evaluate-claims-07.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-evaluate-claims-07.targets.region-kb-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "kb-tabs" }
+
+[scenes.v03a-evaluate-claims-07.targets.region-kb-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "kb-text-ink" }
+
+[scenes.v03a-evaluate-claims-07.cameras.shot]
+union = ["region-kb-tabs", "region-kb-text-ink"]
+
+[scenes.v03a-evaluate-claims-07.cameras.portrait]
+union = ["region-kb-tabs", "region-kb-text-ink"]
+
+[scenes.v03a-evaluate-claims-08]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-evaluate-claims-08.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-evaluate-claims-08.targets.region-kb-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "kb-tabs" }
+
+[scenes.v03a-evaluate-claims-08.targets.region-kb-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "kb-text-ink" }
+
+[scenes.v03a-evaluate-claims-08.cameras.shot]
+union = ["region-kb-tabs", "region-kb-text-ink"]
+
+[scenes.v03a-evaluate-claims-08.cameras.portrait]
+union = ["region-kb-tabs", "region-kb-text-ink"]
+
+[scenes.v03a-evaluate-claims-09]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-evaluate-claims-09.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-evaluate-claims-09.targets.region-claim-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "claim-tabs" }
+
+[scenes.v03a-evaluate-claims-09.targets.region-claim-field]
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "claim-field" }
+
+[scenes.v03a-evaluate-claims-09.targets.cue-focus-1]
+continuity = "hold-1e63eeb658ca13cf"
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "claim-text/LabeledParcels/1" }
+
+[scenes.v03a-evaluate-claims-09.cameras.shot]
+union = ["region-claim-tabs", "region-claim-field"]
+
+[scenes.v03a-evaluate-claims-09.cameras.portrait]
+union = ["region-claim-tabs", "region-claim-field"]
+
+[scenes.v03a-evaluate-claims-10]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-evaluate-claims-10.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-evaluate-claims-10.targets.region-result]
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "result" }
+
+[scenes.v03a-evaluate-claims-10.targets.cue-focus-1]
+continuity = "hold-5f51e275b1f62b47"
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "result/FALSE/1" }
+
+[scenes.v03a-evaluate-claims-10.cameras.shot]
+union = ["region-result"]
+
+[scenes.v03a-evaluate-claims-10.cameras.portrait]
+union = ["region-result"]
+
+[scenes.v03a-evaluate-claims-11]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-evaluate-claims-11.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-evaluate-claims-11.targets.region-result]
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "result" }
+
+[scenes.v03a-evaluate-claims-11.targets.cue-focus-1]
+continuity = "hold-5f51e275b1f62b47"
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "result/FALSE/1" }
+
+[scenes.v03a-evaluate-claims-11.cameras.shot]
+union = ["region-result"]
+
+[scenes.v03a-evaluate-claims-11.cameras.portrait]
+union = ["region-result"]
+
+[scenes.v03a-evaluate-claims-12]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-evaluate-claims-12.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-evaluate-claims-12.targets.region-kb-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "kb-tabs" }
+
+[scenes.v03a-evaluate-claims-12.targets.region-kb-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "kb-text-ink" }
+
+[scenes.v03a-evaluate-claims-12.targets.region-claim-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "claim-tabs" }
+
+[scenes.v03a-evaluate-claims-12.targets.region-claim-field]
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "claim-field" }
+
+[scenes.v03a-evaluate-claims-12.targets.cue-focus-1]
+continuity = "hold-fe315bf37fa4bbb9"
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "kb-text/ParcelB/1" }
+
+[scenes.v03a-evaluate-claims-12.targets.cue-focus-2]
+continuity = "hold-48460005425192dc"
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "claim-text/ParcelA/1" }
+
+[scenes.v03a-evaluate-claims-12.cameras.shot]
+union = ["region-kb-tabs", "region-kb-text-ink", "region-claim-tabs", "region-claim-field"]
+
+[scenes.v03a-evaluate-claims-12.cameras.portrait]
+union = ["region-kb-tabs", "region-kb-text-ink", "region-claim-tabs", "region-claim-field"]
+
+[scenes.v03a-evaluate-claims-14]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-evaluate-claims-14.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-evaluate-claims-14.targets.region-proof-content]
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "proof-content" }
+
+[scenes.v03a-evaluate-claims-14.targets.cue-focus-1]
+continuity = "hold-2f9ed67d82b041bc"
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "proof-line/ParcelA/1" }
+
+[scenes.v03a-evaluate-claims-14.cameras.shot]
+union = ["region-proof-content"]
+
+[scenes.v03a-evaluate-claims-14.cameras.portrait]
+union = ["region-proof-content"]
+
+[scenes.v03a-supplied-conclusion-01]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-supplied-conclusion-01.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-supplied-conclusion-01.targets.region-claim-field]
+element = "screen"
+capture = { receipt = "build/playground-zoom/10-before-supply.targets.json", target = "claim-field" }
+
+[scenes.v03a-supplied-conclusion-01.targets.region-result]
+element = "screen"
+capture = { receipt = "build/playground-zoom/10-before-supply.targets.json", target = "result" }
+
+[scenes.v03a-supplied-conclusion-01.targets.cue-focus-1]
+continuity = "hold-5f51e275b1f62b47"
+element = "screen"
+capture = { receipt = "build/playground-zoom/10-before-supply.targets.json", target = "result/FALSE/1" }
+
+[scenes.v03a-supplied-conclusion-01.cameras.shot]
+union = ["region-claim-field", "region-result"]
+
+[scenes.v03a-supplied-conclusion-01.cameras.portrait]
+union = ["region-claim-field", "region-result"]
+
+[scenes.v03a-supplied-conclusion-02]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-supplied-conclusion-02.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-supplied-conclusion-02.targets.region-kb-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/11-supplied.targets.json", target = "kb-tabs" }
+
+[scenes.v03a-supplied-conclusion-02.targets.region-kb-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/11-supplied.targets.json", target = "kb-text-ink" }
+
+[scenes.v03a-supplied-conclusion-02.targets.cue-focus-1]
+continuity = "hold-f452b82d73f14450"
+element = "screen"
+capture = { receipt = "build/playground-zoom/11-supplied.targets.json", target = "kb-text/LabeledParcels/2" }
+
+[scenes.v03a-supplied-conclusion-02.cameras.shot]
+union = ["region-kb-tabs", "region-kb-text-ink"]
+
+[scenes.v03a-supplied-conclusion-02.cameras.portrait]
+union = ["region-kb-tabs", "region-kb-text-ink"]
+
+[scenes.v03a-supplied-conclusion-03]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-supplied-conclusion-03.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-supplied-conclusion-03.targets.region-proof-content]
+element = "screen"
+capture = { receipt = "build/playground-zoom/11-supplied.targets.json", target = "proof-content" }
+
+[scenes.v03a-supplied-conclusion-03.targets.cue-focus-1]
+continuity = "hold-b5ec882d505fc284"
+element = "screen"
+capture = { receipt = "build/playground-zoom/11-supplied.targets.json", target = "proof-verdict/TRUE/1" }
+
+[scenes.v03a-supplied-conclusion-03.targets.cue-focus-2]
+continuity = "hold-929421b8a1993411"
+element = "screen"
+capture = { receipt = "build/playground-zoom/11-supplied.targets.json", target = "proof-line/[given]/1" }
+
+[scenes.v03a-supplied-conclusion-03.cameras.shot]
+union = ["region-proof-content"]
+
+[scenes.v03a-supplied-conclusion-03.cameras.portrait]
+union = ["region-proof-content"]
+
+[scenes.v03a-supplied-conclusion-05]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-supplied-conclusion-05.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-supplied-conclusion-05.targets.region-kb-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/11-supplied.targets.json", target = "kb-tabs" }
+
+[scenes.v03a-supplied-conclusion-05.targets.region-kb-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/11-supplied.targets.json", target = "kb-text-ink" }
+
+[scenes.v03a-supplied-conclusion-05.targets.cue-focus-1]
+continuity = "hold-f452b82d73f14450"
+element = "screen"
+capture = { receipt = "build/playground-zoom/11-supplied.targets.json", target = "kb-text/LabeledParcels/2" }
+
+[scenes.v03a-supplied-conclusion-05.cameras.shot]
+union = ["region-kb-tabs", "region-kb-text-ink"]
+
+[scenes.v03a-supplied-conclusion-05.cameras.portrait]
+union = ["region-kb-tabs", "region-kb-text-ink"]
+
+[scenes.v03a-supplied-conclusion-06]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-supplied-conclusion-06.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-supplied-conclusion-06.targets.region-workspace]
+element = "screen"
+capture = { receipt = "build/playground-zoom/08-restored.targets.json", target = "workspace" }
+
+[scenes.v03a-supplied-conclusion-06.cameras.shot]
+union = ["region-workspace"]
+
+[scenes.v03a-supplied-conclusion-06.cameras.portrait]
+union = ["region-workspace"]
+
+[scenes.v03a-supplied-conclusion-07]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-supplied-conclusion-07.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-supplied-conclusion-07.targets.region-kb-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/08-restored.targets.json", target = "kb-tabs" }
+
+[scenes.v03a-supplied-conclusion-07.targets.region-kb-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/08-restored.targets.json", target = "kb-text-ink" }
+
+[scenes.v03a-supplied-conclusion-07.targets.region-claim-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/08-restored.targets.json", target = "claim-tabs" }
+
+[scenes.v03a-supplied-conclusion-07.targets.region-claim-field]
+element = "screen"
+capture = { receipt = "build/playground-zoom/08-restored.targets.json", target = "claim-field" }
+
+[scenes.v03a-supplied-conclusion-07.cameras.shot]
+union = ["region-kb-tabs", "region-kb-text-ink", "region-claim-tabs", "region-claim-field"]
+
+[scenes.v03a-supplied-conclusion-07.cameras.portrait]
+union = ["region-kb-tabs", "region-kb-text-ink", "region-claim-tabs", "region-claim-field"]
+
+[scenes.v03a-refusals-01]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-refusals-01.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-refusals-01.targets.region-error]
+element = "screen"
+capture = { receipt = "build/playground-zoom/12-period.targets.json", target = "error" }
+
+[scenes.v03a-refusals-01.targets.region-status]
+element = "screen"
+capture = { receipt = "build/playground-zoom/12-period.targets.json", target = "status" }
+
+[scenes.v03a-refusals-01.targets.cue-focus-1]
+continuity = "hold-8cc5a6457cb963e1"
+element = "screen"
+capture = { receipt = "build/playground-zoom/12-period.targets.json", target = "error/expected/1" }
+
+[scenes.v03a-refusals-01.cameras.shot]
+union = ["region-error", "region-status"]
+
+[scenes.v03a-refusals-01.cameras.portrait]
+union = ["region-error", "region-status"]
+
+[scenes.v03a-refusals-05]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-refusals-05.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-refusals-05.targets.region-error]
+element = "screen"
+capture = { receipt = "build/playground-zoom/13-word.targets.json", target = "error" }
+
+[scenes.v03a-refusals-05.targets.region-status]
+element = "screen"
+capture = { receipt = "build/playground-zoom/13-word.targets.json", target = "status" }
+
+[scenes.v03a-refusals-05.targets.cue-focus-1]
+continuity = "hold-111d23f25e529265"
+element = "screen"
+capture = { receipt = "build/playground-zoom/13-word.targets.json", target = "error/unknown predicate/1" }
+
+[scenes.v03a-refusals-05.cameras.shot]
+union = ["region-error", "region-status"]
+
+[scenes.v03a-refusals-05.cameras.portrait]
+union = ["region-error", "region-status"]
+
+[scenes.v03a-refusals-06]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-refusals-06.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-refusals-06.targets.region-error]
+element = "screen"
+capture = { receipt = "build/playground-zoom/13-word.targets.json", target = "error" }
+
+[scenes.v03a-refusals-06.targets.region-status]
+element = "screen"
+capture = { receipt = "build/playground-zoom/13-word.targets.json", target = "status" }
+
+[scenes.v03a-refusals-06.targets.cue-focus-1]
+continuity = "hold-111d23f25e529265"
+element = "screen"
+capture = { receipt = "build/playground-zoom/13-word.targets.json", target = "error/unknown predicate/1" }
+
+[scenes.v03a-refusals-06.cameras.shot]
+union = ["region-error", "region-status"]
+
+[scenes.v03a-refusals-06.cameras.portrait]
+union = ["region-error", "region-status"]
+
+[scenes.v03a-refusals-10]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-refusals-10.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-refusals-10.targets.region-error]
+element = "screen"
+capture = { receipt = "build/playground-zoom/14-arity.targets.json", target = "error" }
+
+[scenes.v03a-refusals-10.targets.region-status]
+element = "screen"
+capture = { receipt = "build/playground-zoom/14-arity.targets.json", target = "status" }
+
+[scenes.v03a-refusals-10.targets.cue-focus-1]
+continuity = "hold-05c165f0b037f99e"
+element = "screen"
+capture = { receipt = "build/playground-zoom/14-arity.targets.json", target = "error/arity 2/1" }
+
+[scenes.v03a-refusals-10.cameras.shot]
+union = ["region-error", "region-status"]
+
+[scenes.v03a-refusals-10.cameras.portrait]
+union = ["region-error", "region-status"]
+
+[scenes.v03a-refusals-12]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-refusals-12.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-refusals-12.targets.region-error]
+element = "screen"
+capture = { receipt = "build/playground-zoom/14-arity.targets.json", target = "error" }
+
+[scenes.v03a-refusals-12.targets.region-status]
+element = "screen"
+capture = { receipt = "build/playground-zoom/14-arity.targets.json", target = "status" }
+
+[scenes.v03a-refusals-12.cameras.shot]
+union = ["region-error", "region-status"]
+
+[scenes.v03a-refusals-12.cameras.portrait]
+union = ["region-error", "region-status"]
+
+[scenes.v03a-refusals-13]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-refusals-13.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-refusals-13.targets.region-error]
+element = "screen"
+capture = { receipt = "build/playground-zoom/15-whole-candidate.targets.json", target = "error" }
+
+[scenes.v03a-refusals-13.targets.region-status]
+element = "screen"
+capture = { receipt = "build/playground-zoom/15-whole-candidate.targets.json", target = "status" }
+
+[scenes.v03a-refusals-13.cameras.shot]
+union = ["region-error", "region-status"]
+
+[scenes.v03a-refusals-13.cameras.portrait]
+union = ["region-error", "region-status"]
+
+[scenes.v03a-refusals-14]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-refusals-14.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-refusals-14.targets.region-workspace]
+element = "screen"
+capture = { receipt = "build/playground-zoom/17-final-starter.targets.json", target = "workspace" }
+
+[scenes.v03a-refusals-14.cameras.shot]
+union = ["region-workspace"]
+
+[scenes.v03a-refusals-14.cameras.portrait]
+union = ["region-workspace"]
+
+[scenes.v03a-host-and-next-04]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-host-and-next-04.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-host-and-next-04.targets.region-kb-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/17-final-starter.targets.json", target = "kb-tabs" }
+
+[scenes.v03a-host-and-next-04.targets.region-kb-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/17-final-starter.targets.json", target = "kb-text-ink" }
+
+[scenes.v03a-host-and-next-04.targets.region-claim-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/17-final-starter.targets.json", target = "claim-tabs" }
+
+[scenes.v03a-host-and-next-04.targets.region-claim-field]
+element = "screen"
+capture = { receipt = "build/playground-zoom/17-final-starter.targets.json", target = "claim-field" }
+
+[scenes.v03a-host-and-next-04.cameras.shot]
+union = ["region-kb-tabs", "region-kb-text-ink", "region-claim-tabs", "region-claim-field"]
+
+[scenes.v03a-host-and-next-04.cameras.portrait]
+union = ["region-kb-tabs", "region-kb-text-ink", "region-claim-tabs", "region-claim-field"]
+
+[scenes.v03a-short-premise-04]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-short-premise-04.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-short-premise-04.targets.region-kb-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short-ready.targets.json", target = "kb-tabs" }
+
+[scenes.v03a-short-premise-04.targets.region-kb-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short-ready.targets.json", target = "kb-text-ink" }
+
+[scenes.v03a-short-premise-04.targets.region-claim-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short-ready.targets.json", target = "claim-tabs" }
+
+[scenes.v03a-short-premise-04.targets.region-claim-field]
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short-ready.targets.json", target = "claim-field" }
+
+[scenes.v03a-short-premise-04.targets.cue-focus-1]
+continuity = "hold-373b4da6ed29b84c"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short-ready.lines.targets.json", target = "kb-text-lines" }
+
+[scenes.v03a-short-premise-04.cameras.shot]
+union = ["region-kb-tabs", "region-kb-text-ink", "region-claim-tabs", "region-claim-field"]
+
+[scenes.v03a-short-premise-04.cameras.portrait]
+union = ["region-kb-tabs", "region-kb-text-ink", "region-claim-tabs", "region-claim-field"]
+
+[scenes.v03a-short-claim-01]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-short-claim-01.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-short-claim-01.targets.region-claim-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short-ready.targets.json", target = "claim-tabs" }
+
+[scenes.v03a-short-claim-01.targets.region-claim-field]
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short-ready.targets.json", target = "claim-field" }
+
+[scenes.v03a-short-claim-01.targets.region-claim-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short-ready.targets.json", target = "claim-text-ink" }
+
+[scenes.v03a-short-claim-01.targets.cue-focus-1]
+continuity = "hold-5cb6f6454af505b0"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short-ready.lines.targets.json", target = "claim-text-lines" }
+
+[scenes.v03a-short-claim-01.cameras.shot]
+union = ["region-claim-tabs", "region-claim-field"]
+
+[scenes.v03a-short-claim-01.cameras.portrait]
+union = ["region-claim-text-ink"]
+
+[scenes.v03a-short-claim-02]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-short-claim-02.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-short-claim-02.targets.region-proof-content]
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.targets.json", target = "proof-content" }
+
+[scenes.v03a-short-claim-02.targets.region-proof-verdict-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.targets.json", target = "proof-verdict-ink" }
+
+[scenes.v03a-short-claim-02.targets.cue-focus-1]
+continuity = "hold-fc0b6af5e224fe9d"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.targets.json", target = "proof-verdict/TRUE/1" }
+
+[scenes.v03a-short-claim-02.targets.cue-focus-2]
+continuity = "hold-d827291119f50fc2"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.targets.json", target = "proof-line/[given]/1" }
+
+[scenes.v03a-short-claim-02.cameras.shot]
+union = ["region-proof-content"]
+
+[scenes.v03a-short-claim-02.cameras.portrait]
+union = ["region-proof-verdict-ink"]
+
+[scenes.v03a-short-claim-03]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-short-claim-03.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-short-claim-03.targets.region-kb-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.targets.json", target = "kb-tabs" }
+
+[scenes.v03a-short-claim-03.targets.region-kb-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.targets.json", target = "kb-text-ink" }
+
+[scenes.v03a-short-claim-03.targets.cue-focus-1]
+continuity = "hold-373b4da6ed29b84c"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.lines.targets.json", target = "kb-text-lines" }
+
+[scenes.v03a-short-claim-03.cameras.shot]
+union = ["region-kb-tabs", "region-kb-text-ink"]
+
+[scenes.v03a-short-claim-03.cameras.portrait]
+union = ["region-kb-text-ink"]
+
+[scenes.v03a-short-boundary-01]
+kind = "image"
+url = "build/playground-zoom-scenes/v03a-short-boundary-01.svg"
+scale = 3
+default_camera = "shot"
+
+[scenes.v03a-short-boundary-01.targets.region-kb-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.targets.json", target = "kb-tabs" }
+
+[scenes.v03a-short-boundary-01.targets.region-kb-text-ink]
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.targets.json", target = "kb-text-ink" }
+
+[scenes.v03a-short-boundary-01.targets.region-claim-tabs]
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.targets.json", target = "claim-tabs" }
+
+[scenes.v03a-short-boundary-01.targets.region-claim-field]
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.targets.json", target = "claim-field" }
+
+[scenes.v03a-short-boundary-01.targets.cue-focus-1]
+continuity = "hold-373b4da6ed29b84c"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.lines.targets.json", target = "kb-text-lines" }
+
+[scenes.v03a-short-boundary-01.targets.cue-focus-2]
+continuity = "hold-f70610d36694d14a"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.targets.json", target = "claim-field" }
+
+[scenes.v03a-short-boundary-01.cameras.shot]
+union = ["region-kb-tabs", "region-kb-text-ink", "region-claim-tabs", "region-claim-field"]
+
+[scenes.v03a-short-boundary-01.cameras.portrait]
+union = ["region-kb-tabs", "region-kb-text-ink", "region-claim-tabs", "region-claim-field"]
+
+
+
+[scenes.v03a-host-and-next-08.targets.records]
+element = "text-003"
+
+[scenes.v03a-host-and-next-08.targets.same-parcel]
+continuity = "hold-30c6db3d1e256269"
+element = "text-004"
+span = { text = "same parcel", occurrence = 1 }
+
+[scenes.v03a-host-and-next-08.targets.packing]
+continuity = "hold-00fa122fa2a311c3"
+element = "text-005"
+
+[scenes.v03a-host-and-next-08.targets.label]
+continuity = "hold-f928cdbc2156573b"
+element = "text-006"
+
+[scenes.v03a-host-and-next-08.targets.rule]
+element = "text-007"
+
+[scenes.v03a-host-and-next-08.targets.claim]
+element = "text-010"
+
+[scenes.v03a-host-and-next-08.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-host-and-next-09.targets.records]
+element = "text-003"
+
+[scenes.v03a-host-and-next-09.targets.same-parcel]
+continuity = "hold-30c6db3d1e256269"
+element = "text-004"
+span = { text = "same parcel", occurrence = 1 }
+
+[scenes.v03a-host-and-next-09.targets.packing]
+continuity = "hold-00fa122fa2a311c3"
+element = "text-005"
+
+[scenes.v03a-host-and-next-09.targets.label]
+continuity = "hold-f928cdbc2156573b"
+element = "text-006"
+
+[scenes.v03a-host-and-next-09.targets.rule]
+continuity = "hold-e04c78d274a6a952"
+element = "text-007"
+
+[scenes.v03a-host-and-next-09.targets.claim]
+continuity = "hold-d5fd53f676475fbb"
+element = "text-010"
+
+[scenes.v03a-host-and-next-09.targets.canvas]
+element = "scene-canvas"
+
+[scenes.v03a-host-and-next-10.targets.records]
+continuity = "hold-da8a072cc58ff137"
+element = "text-003"
+
+[scenes.v03a-host-and-next-10.targets.same-parcel]
+continuity = "hold-30c6db3d1e256269"
+element = "text-004"
+span = { text = "same parcel", occurrence = 1 }
+
+[scenes.v03a-host-and-next-10.targets.packing]
+continuity = "hold-00fa122fa2a311c3"
+element = "text-005"
+
+[scenes.v03a-host-and-next-10.targets.label]
+continuity = "hold-f928cdbc2156573b"
+element = "text-006"
+
+[scenes.v03a-host-and-next-10.targets.rule]
+continuity = "hold-e04c78d274a6a952"
+element = "text-007"
+
+[scenes.v03a-host-and-next-10.targets.claim]
+continuity = "hold-d5fd53f676475fbb"
+element = "text-010"
+
+[scenes.v03a-host-and-next-10.targets.derived]
+continuity = "hold-2936e7dca445b84f"
+element = "text-013"
+
+[scenes.v03a-host-and-next-10.targets.canvas]
+element = "scene-canvas"
+
+# Readable highlight continuation targets.
+
+[scenes.v03a-shop-03.targets.hold-2147ace07f905586]
+continuity = "hold-2147ace07f905586"
+element = "text-006"
+
+[scenes.v03a-shop-04.targets.hold-2147ace07f905586]
+continuity = "hold-2147ace07f905586"
+element = "text-006"
+
+[scenes.v03a-shop-05.targets.hold-2147ace07f905586]
+continuity = "hold-2147ace07f905586"
+element = "text-006"
+
+[scenes.v03a-shop-06.targets.hold-2147ace07f905586]
+continuity = "hold-2147ace07f905586"
+element = "text-006"
+
+[scenes.v03a-shop-04.targets.hold-8d7ce2bf0051d3dc]
+continuity = "hold-8d7ce2bf0051d3dc"
+element = "text-008"
+
+[scenes.v03a-shop-05.targets.hold-8d7ce2bf0051d3dc]
+continuity = "hold-8d7ce2bf0051d3dc"
+element = "text-008"
+
+[scenes.v03a-shop-06.targets.hold-8d7ce2bf0051d3dc]
+continuity = "hold-8d7ce2bf0051d3dc"
+element = "text-008"
+
+[scenes.v03a-shop-10.targets.hold-f7c9015112eb43bd]
+continuity = "hold-f7c9015112eb43bd"
+element = "text-004"
+
+[scenes.v03a-shop-11.targets.hold-f7c9015112eb43bd]
+continuity = "hold-f7c9015112eb43bd"
+element = "text-004"
+
+[scenes.v03a-build-statement-01.targets.hold-f7c9015112eb43bd]
+continuity = "hold-f7c9015112eb43bd"
+element = "text-004"
+
+[scenes.v03a-build-statement-02.targets.hold-f7c9015112eb43bd]
+continuity = "hold-f7c9015112eb43bd"
+element = "text-004"
+
+[scenes.v03a-build-statement-03.targets.hold-f7c9015112eb43bd]
+continuity = "hold-f7c9015112eb43bd"
+element = "text-004"
+
+[scenes.v03a-build-statement-04.targets.hold-f7c9015112eb43bd]
+continuity = "hold-f7c9015112eb43bd"
+element = "text-004"
+
+[scenes.v03a-shop-11.targets.hold-7cf0774b23800422]
+continuity = "hold-7cf0774b23800422"
+element = "text-003"
+
+[scenes.v03a-build-statement-01.targets.hold-7cf0774b23800422]
+continuity = "hold-7cf0774b23800422"
+element = "text-003"
+
+[scenes.v03a-build-statement-02.targets.hold-7cf0774b23800422]
+continuity = "hold-7cf0774b23800422"
+element = "text-003"
+
+[scenes.v03a-build-statement-03.targets.hold-7cf0774b23800422]
+continuity = "hold-7cf0774b23800422"
+element = "text-003"
+
+[scenes.v03a-build-statement-04.targets.hold-7cf0774b23800422]
+continuity = "hold-7cf0774b23800422"
+element = "text-003"
+
+[scenes.v03a-build-statement-01.targets.hold-cec26b26122c7821]
+continuity = "hold-cec26b26122c7821"
+elements = ["text-003", "text-004"]
+
+[scenes.v03a-build-statement-02.targets.hold-cec26b26122c7821]
+continuity = "hold-cec26b26122c7821"
+elements = ["text-003", "text-004"]
+
+[scenes.v03a-build-statement-03.targets.hold-cec26b26122c7821]
+continuity = "hold-cec26b26122c7821"
+elements = ["text-003", "text-004"]
+
+[scenes.v03a-build-statement-04.targets.hold-cec26b26122c7821]
+continuity = "hold-cec26b26122c7821"
+elements = ["text-003", "text-004"]
+
+[scenes.v03a-build-statement-02.targets.hold-c711e931b653a764]
+continuity = "hold-c711e931b653a764"
+element = "text-007"
+
+[scenes.v03a-build-statement-03.targets.hold-c711e931b653a764]
+continuity = "hold-c711e931b653a764"
+element = "text-007"
+
+[scenes.v03a-build-statement-04.targets.hold-c711e931b653a764]
+continuity = "hold-c711e931b653a764"
+element = "text-007"
+
+[scenes.v03a-build-statement-02.targets.hold-447ce1a54eb9b8d6]
+continuity = "hold-447ce1a54eb9b8d6"
+element = "text-007"
+span = { text = "P", occurrence = 1 }
+
+[scenes.v03a-build-statement-03.targets.hold-447ce1a54eb9b8d6]
+continuity = "hold-447ce1a54eb9b8d6"
+element = "text-007"
+span = { text = "P", occurrence = 1 }
+
+[scenes.v03a-build-statement-04.targets.hold-447ce1a54eb9b8d6]
+continuity = "hold-447ce1a54eb9b8d6"
+element = "text-007"
+span = { text = "P", occurrence = 1 }
+
+[scenes.v03a-build-statement-03.targets.hold-7c24572ac3da609b]
+continuity = "hold-7c24572ac3da609b"
+element = "text-008"
+
+[scenes.v03a-build-statement-04.targets.hold-0a21dcd135d92ab5]
+continuity = "hold-0a21dcd135d92ab5"
+elements = ["text-007", "text-008"]
+
+[scenes.v03a-build-statement-06.targets.hold-373f4ba412b8db68]
+continuity = "hold-373f4ba412b8db68"
+element = "text-003"
+span = { text = "member", occurrence = 1 }
+
+[scenes.v03a-build-statement-07.targets.hold-373f4ba412b8db68]
+continuity = "hold-373f4ba412b8db68"
+element = "text-003"
+span = { text = "member", occurrence = 1 }
+
+[scenes.v03a-build-statement-07.targets.hold-99f9830ec392f92b]
+continuity = "hold-99f9830ec392f92b"
+elements = ["text-004", "text-006"]
+
+[scenes.v03a-build-statement-08.targets.hold-99f9830ec392f92b]
+continuity = "hold-99f9830ec392f92b"
+elements = ["text-005", "text-007"]
+
+[scenes.v03a-build-statement-08.targets.hold-6ed8b866e0286361]
+continuity = "hold-6ed8b866e0286361"
+element = "text-007"
+
+[scenes.v03a-build-statement-11.targets.hold-2f4f4bf2787717af]
+continuity = "hold-2f4f4bf2787717af"
+element = "token-003"
+
+[scenes.v03a-build-statement-12.targets.hold-2f4f4bf2787717af]
+continuity = "hold-2f4f4bf2787717af"
+element = "token-003"
+
+[scenes.v03a-build-statement-13.targets.hold-2f4f4bf2787717af]
+continuity = "hold-2f4f4bf2787717af"
+element = "token-003"
+
+[scenes.v03a-build-statement-14.targets.hold-2f4f4bf2787717af]
+continuity = "hold-2f4f4bf2787717af"
+element = "token-003"
+
+[scenes.v03a-build-statement-15.targets.hold-2f4f4bf2787717af]
+continuity = "hold-2f4f4bf2787717af"
+element = "token-003"
+
+[scenes.v03a-build-statement-16.targets.hold-2f4f4bf2787717af]
+continuity = "hold-2f4f4bf2787717af"
+element = "token-003"
+
+[scenes.v03a-named-places-01.targets.hold-2f4f4bf2787717af]
+continuity = "hold-2f4f4bf2787717af"
+element = "token-003"
+
+[scenes.v03a-named-places-02.targets.hold-2f4f4bf2787717af]
+continuity = "hold-2f4f4bf2787717af"
+element = "token-003"
+
+[scenes.v03a-named-places-03.targets.hold-2f4f4bf2787717af]
+continuity = "hold-2f4f4bf2787717af"
+element = "token-003"
+
+[scenes.v03a-build-statement-12.targets.hold-63f15d07c28bad76]
+continuity = "hold-63f15d07c28bad76"
+elements = ["token-004", "token-008"]
+
+[scenes.v03a-build-statement-13.targets.hold-63f15d07c28bad76]
+continuity = "hold-63f15d07c28bad76"
+elements = ["token-004", "token-008"]
+
+[scenes.v03a-build-statement-14.targets.hold-63f15d07c28bad76]
+continuity = "hold-63f15d07c28bad76"
+elements = ["token-004", "token-008"]
+
+[scenes.v03a-build-statement-15.targets.hold-63f15d07c28bad76]
+continuity = "hold-63f15d07c28bad76"
+elements = ["token-004", "token-008"]
+
+[scenes.v03a-build-statement-16.targets.hold-63f15d07c28bad76]
+continuity = "hold-63f15d07c28bad76"
+elements = ["token-004", "token-008"]
+
+[scenes.v03a-named-places-01.targets.hold-63f15d07c28bad76]
+continuity = "hold-63f15d07c28bad76"
+elements = ["token-004", "token-008"]
+
+[scenes.v03a-named-places-02.targets.hold-63f15d07c28bad76]
+continuity = "hold-63f15d07c28bad76"
+elements = ["token-004", "token-008"]
+
+[scenes.v03a-named-places-03.targets.hold-63f15d07c28bad76]
+continuity = "hold-63f15d07c28bad76"
+elements = ["token-004", "token-008"]
+
+[scenes.v03a-build-statement-14.targets.hold-cf0a77c4dbe31f21]
+continuity = "hold-cf0a77c4dbe31f21"
+elements = ["token-005", "token-007"]
+
+[scenes.v03a-build-statement-15.targets.hold-cf0a77c4dbe31f21]
+continuity = "hold-cf0a77c4dbe31f21"
+elements = ["token-005", "token-007"]
+
+[scenes.v03a-named-places-02.targets.hold-cf0a77c4dbe31f21]
+continuity = "hold-cf0a77c4dbe31f21"
+elements = ["token-007", "token-005"]
+
+[scenes.v03a-named-places-03.targets.hold-cf0a77c4dbe31f21]
+continuity = "hold-cf0a77c4dbe31f21"
+elements = ["token-007", "token-005"]
+
+[scenes.v03a-build-statement-15.targets.hold-05857447335c5db2]
+continuity = "hold-05857447335c5db2"
+element = "token-006"
+
+[scenes.v03a-build-statement-16.targets.hold-05857447335c5db2]
+continuity = "hold-05857447335c5db2"
+element = "token-006"
+
+[scenes.v03a-named-places-01.targets.hold-05857447335c5db2]
+continuity = "hold-05857447335c5db2"
+element = "token-006"
+
+[scenes.v03a-named-places-02.targets.hold-05857447335c5db2]
+continuity = "hold-05857447335c5db2"
+element = "token-006"
+
+[scenes.v03a-named-places-03.targets.hold-05857447335c5db2]
+continuity = "hold-05857447335c5db2"
+element = "token-006"
+
+[scenes.v03a-build-statement-16.targets.hold-9c500bfa5af13b93]
+continuity = "hold-9c500bfa5af13b93"
+element = "token-009"
+
+[scenes.v03a-named-places-01.targets.hold-9c500bfa5af13b93]
+continuity = "hold-9c500bfa5af13b93"
+element = "token-009"
+
+[scenes.v03a-named-places-02.targets.hold-9c500bfa5af13b93]
+continuity = "hold-9c500bfa5af13b93"
+element = "token-009"
+
+[scenes.v03a-named-places-03.targets.hold-9c500bfa5af13b93]
+continuity = "hold-9c500bfa5af13b93"
+element = "token-009"
+
+[scenes.v03a-named-places-06.targets.hold-006af09cb8b54347]
+continuity = "hold-006af09cb8b54347"
+elements = ["token-005", "token-008"]
+
+[scenes.v03a-named-places-07.targets.hold-006af09cb8b54347]
+continuity = "hold-006af09cb8b54347"
+elements = ["token-005", "token-008"]
+
+[scenes.v03a-named-places-08.targets.hold-006af09cb8b54347]
+continuity = "hold-006af09cb8b54347"
+elements = ["token-005", "token-008"]
+
+[scenes.v03a-named-places-09.targets.hold-006af09cb8b54347]
+continuity = "hold-006af09cb8b54347"
+elements = ["token-005", "token-008"]
+
+[scenes.v03a-named-places-11.targets.hold-006af09cb8b54347]
+continuity = "hold-006af09cb8b54347"
+elements = ["token-008", "token-005"]
+
+[scenes.v03a-named-places-12.targets.hold-006af09cb8b54347]
+continuity = "hold-006af09cb8b54347"
+elements = ["token-008", "token-005"]
+
+[scenes.v03a-named-places-13.targets.hold-006af09cb8b54347]
+continuity = "hold-006af09cb8b54347"
+elements = ["token-008", "token-005"]
+
+[scenes.v03a-named-places-14.targets.hold-006af09cb8b54347]
+continuity = "hold-006af09cb8b54347"
+elements = ["token-008", "token-005"]
+
+[scenes.v03a-named-places-07.targets.hold-d082c61d30a8f9b9]
+continuity = "hold-d082c61d30a8f9b9"
+elements = ["token-003", "token-005"]
+
+[scenes.v03a-named-places-08.targets.hold-d082c61d30a8f9b9]
+continuity = "hold-d082c61d30a8f9b9"
+elements = ["token-003", "token-005"]
+
+[scenes.v03a-named-places-09.targets.hold-d082c61d30a8f9b9]
+continuity = "hold-d082c61d30a8f9b9"
+elements = ["token-003", "token-005"]
+
+[scenes.v03a-named-places-10.targets.hold-d082c61d30a8f9b9]
+continuity = "hold-d082c61d30a8f9b9"
+elements = ["token-003", "token-005"]
+
+[scenes.v03a-named-places-11.targets.hold-d082c61d30a8f9b9]
+continuity = "hold-d082c61d30a8f9b9"
+elements = ["token-003", "token-008"]
+
+[scenes.v03a-named-places-12.targets.hold-d082c61d30a8f9b9]
+continuity = "hold-d082c61d30a8f9b9"
+elements = ["token-003", "token-008"]
+
+[scenes.v03a-named-places-13.targets.hold-d082c61d30a8f9b9]
+continuity = "hold-d082c61d30a8f9b9"
+elements = ["token-003", "token-008"]
+
+[scenes.v03a-named-places-14.targets.hold-d082c61d30a8f9b9]
+continuity = "hold-d082c61d30a8f9b9"
+elements = ["token-003", "token-008"]
+
+[scenes.v03a-named-places-08.targets.hold-90317feef4670e91]
+continuity = "hold-90317feef4670e91"
+element = "token-003"
+
+[scenes.v03a-named-places-09.targets.hold-90317feef4670e91]
+continuity = "hold-90317feef4670e91"
+element = "token-003"
+
+[scenes.v03a-named-places-10.targets.hold-90317feef4670e91]
+continuity = "hold-90317feef4670e91"
+element = "token-003"
+
+[scenes.v03a-named-places-11.targets.hold-90317feef4670e91]
+continuity = "hold-90317feef4670e91"
+element = "token-003"
+
+[scenes.v03a-named-places-12.targets.hold-90317feef4670e91]
+continuity = "hold-90317feef4670e91"
+element = "token-003"
+
+[scenes.v03a-named-places-13.targets.hold-90317feef4670e91]
+continuity = "hold-90317feef4670e91"
+element = "token-003"
+
+[scenes.v03a-named-places-14.targets.hold-90317feef4670e91]
+continuity = "hold-90317feef4670e91"
+element = "token-003"
+
+[scenes.v03a-named-places-09.targets.hold-110ab1e14c5b4c5b]
+continuity = "hold-110ab1e14c5b4c5b"
+element = "token-005"
+
+[scenes.v03a-named-places-10.targets.hold-110ab1e14c5b4c5b]
+continuity = "hold-110ab1e14c5b4c5b"
+element = "token-005"
+
+[scenes.v03a-named-places-11.targets.hold-110ab1e14c5b4c5b]
+continuity = "hold-110ab1e14c5b4c5b"
+element = "token-008"
+
+[scenes.v03a-named-places-12.targets.hold-110ab1e14c5b4c5b]
+continuity = "hold-110ab1e14c5b4c5b"
+element = "token-008"
+
+[scenes.v03a-named-places-13.targets.hold-110ab1e14c5b4c5b]
+continuity = "hold-110ab1e14c5b4c5b"
+element = "token-008"
+
+[scenes.v03a-named-places-14.targets.hold-110ab1e14c5b4c5b]
+continuity = "hold-110ab1e14c5b4c5b"
+element = "token-008"
+
+[scenes.v03a-named-places-10.targets.hold-e251f82b81f414e5]
+continuity = "hold-e251f82b81f414e5"
+element = "token-008"
+
+[scenes.v03a-named-places-11.targets.hold-e251f82b81f414e5]
+continuity = "hold-e251f82b81f414e5"
+element = "token-005"
+
+[scenes.v03a-named-places-12.targets.hold-e251f82b81f414e5]
+continuity = "hold-e251f82b81f414e5"
+element = "token-005"
+
+[scenes.v03a-named-places-13.targets.hold-e251f82b81f414e5]
+continuity = "hold-e251f82b81f414e5"
+element = "token-005"
+
+[scenes.v03a-named-places-14.targets.hold-e251f82b81f414e5]
+continuity = "hold-e251f82b81f414e5"
+element = "token-005"
+
+[scenes.v03a-named-places-13.targets.hold-fb3596fafc0b4438]
+continuity = "hold-fb3596fafc0b4438"
+elements = ["token-005", "token-008"]
+
+[scenes.v03a-named-places-14.targets.hold-6948aaac9148aeeb]
+continuity = "hold-6948aaac9148aeeb"
+elements = ["token-006", "token-009"]
+
+[scenes.v03a-supply-premises-02.targets.hold-4931118faf237caf]
+continuity = "hold-4931118faf237caf"
+elements = ["token-012", "token-014"]
+
+[scenes.v03a-supply-premises-08.targets.hold-fafd8bda994a292f]
+continuity = "hold-fafd8bda994a292f"
+element = "screen"
+capture = { receipt = "build/playground-zoom/02-review.targets.json", target = "review-text/ParcelA/1" }
+
+[scenes.v03a-supply-premises-08.targets.hold-b3e5a61c992d466d]
+continuity = "hold-b3e5a61c992d466d"
+element = "screen"
+capture = { receipt = "build/playground-zoom/02-review.targets.json", target = "review-text/ParcelB/1" }
+
+[scenes.v03a-evaluate-claims-03.targets.hold-4ff438b441806d13]
+continuity = "hold-4ff438b441806d13"
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "claim-text/ParcelA/1" }
+
+[scenes.v03a-evaluate-claims-04.targets.hold-4ff438b441806d13]
+continuity = "hold-4ff438b441806d13"
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "claim-text/ParcelA/1" }
+
+[scenes.v03a-evaluate-claims-05.targets.hold-4ff438b441806d13]
+continuity = "hold-4ff438b441806d13"
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "claim-text/ParcelA/1" }
+
+[scenes.v03a-evaluate-claims-06.targets.hold-4ff438b441806d13]
+continuity = "hold-4ff438b441806d13"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "claim-text/ParcelA/1" }
+
+[scenes.v03a-evaluate-claims-07.targets.hold-4ff438b441806d13]
+continuity = "hold-4ff438b441806d13"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "claim-text/ParcelA/1" }
+
+[scenes.v03a-evaluate-claims-08.targets.hold-4ff438b441806d13]
+continuity = "hold-4ff438b441806d13"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "claim-text/ParcelA/1" }
+
+[scenes.v03a-evaluate-claims-03.targets.hold-ff595878548f3e97]
+continuity = "hold-ff595878548f3e97"
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "claim-text/PackedParcels/1" }
+
+[scenes.v03a-evaluate-claims-04.targets.hold-ff595878548f3e97]
+continuity = "hold-ff595878548f3e97"
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "claim-text/PackedParcels/1" }
+
+[scenes.v03a-evaluate-claims-05.targets.hold-ff595878548f3e97]
+continuity = "hold-ff595878548f3e97"
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "claim-text/PackedParcels/1" }
+
+[scenes.v03a-evaluate-claims-06.targets.hold-ff595878548f3e97]
+continuity = "hold-ff595878548f3e97"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "claim-text/PackedParcels/1" }
+
+[scenes.v03a-evaluate-claims-07.targets.hold-ff595878548f3e97]
+continuity = "hold-ff595878548f3e97"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "claim-text/PackedParcels/1" }
+
+[scenes.v03a-evaluate-claims-08.targets.hold-ff595878548f3e97]
+continuity = "hold-ff595878548f3e97"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "claim-text/PackedParcels/1" }
+
+[scenes.v03a-evaluate-claims-04.targets.hold-9d82088d75e16547]
+continuity = "hold-9d82088d75e16547"
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "result/TRUE/1" }
+
+[scenes.v03a-evaluate-claims-05.targets.hold-9d82088d75e16547]
+continuity = "hold-9d82088d75e16547"
+element = "screen"
+capture = { receipt = "build/playground-zoom/04-true.targets.json", target = "result/TRUE/1" }
+
+[scenes.v03a-evaluate-claims-06.targets.hold-9d82088d75e16547]
+continuity = "hold-9d82088d75e16547"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "result/TRUE/1" }
+
+[scenes.v03a-evaluate-claims-07.targets.hold-9d82088d75e16547]
+continuity = "hold-9d82088d75e16547"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "result/TRUE/1" }
+
+[scenes.v03a-evaluate-claims-08.targets.hold-9d82088d75e16547]
+continuity = "hold-9d82088d75e16547"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "result/TRUE/1" }
+
+[scenes.v03a-evaluate-claims-06.targets.hold-d827291119f50fc2]
+continuity = "hold-d827291119f50fc2"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "proof-line/[given]/1" }
+
+[scenes.v03a-evaluate-claims-07.targets.hold-d827291119f50fc2]
+continuity = "hold-d827291119f50fc2"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "proof-line/[given]/1" }
+
+[scenes.v03a-evaluate-claims-08.targets.hold-d827291119f50fc2]
+continuity = "hold-d827291119f50fc2"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "proof-line/[given]/1" }
+
+[scenes.v03a-evaluate-claims-07.targets.hold-a80d356571b79486]
+continuity = "hold-a80d356571b79486"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "history/TRUE/1" }
+
+[scenes.v03a-evaluate-claims-08.targets.hold-a80d356571b79486]
+continuity = "hold-a80d356571b79486"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "history/TRUE/1" }
+
+[scenes.v03a-evaluate-claims-07.targets.hold-390f11ee0fa45afa]
+continuity = "hold-390f11ee0fa45afa"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "history/TRUE/2" }
+
+[scenes.v03a-evaluate-claims-08.targets.hold-390f11ee0fa45afa]
+continuity = "hold-390f11ee0fa45afa"
+element = "screen"
+capture = { receipt = "build/playground-zoom/05-repeat.targets.json", target = "history/TRUE/2" }
+
+[scenes.v03a-evaluate-claims-10.targets.hold-1e63eeb658ca13cf]
+continuity = "hold-1e63eeb658ca13cf"
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "claim-text/LabeledParcels/1" }
+
+[scenes.v03a-evaluate-claims-11.targets.hold-1e63eeb658ca13cf]
+continuity = "hold-1e63eeb658ca13cf"
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "claim-text/LabeledParcels/1" }
+
+[scenes.v03a-evaluate-claims-12.targets.hold-1e63eeb658ca13cf]
+continuity = "hold-1e63eeb658ca13cf"
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "claim-text/LabeledParcels/1" }
+
+[scenes.v03a-evaluate-claims-12.targets.hold-5f51e275b1f62b47]
+continuity = "hold-5f51e275b1f62b47"
+element = "screen"
+capture = { receipt = "build/playground-zoom/06-false.targets.json", target = "result/FALSE/1" }
+
+[scenes.v03a-supplied-conclusion-03.targets.hold-f452b82d73f14450]
+continuity = "hold-f452b82d73f14450"
+element = "screen"
+capture = { receipt = "build/playground-zoom/11-supplied.targets.json", target = "kb-text/LabeledParcels/2" }
+
+[scenes.v03a-refusals-04.targets.hold-9c500bfa5af13b93]
+continuity = "hold-9c500bfa5af13b93"
+element = "token-007"
+
+[scenes.v03a-host-and-next-03.targets.hold-62ab503efb567374]
+continuity = "hold-62ab503efb567374"
+element = "token-012"
+
+[scenes.v03a-short-premise-03.targets.hold-e7afaa19b53bf3ae]
+continuity = "hold-e7afaa19b53bf3ae"
+element = "token-004"
+
+[scenes.v03a-short-claim-01.targets.hold-373b4da6ed29b84c]
+continuity = "hold-373b4da6ed29b84c"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short-ready.lines.targets.json", target = "kb-text-lines" }
+
+[scenes.v03a-short-claim-02.targets.hold-373b4da6ed29b84c]
+continuity = "hold-373b4da6ed29b84c"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.lines.targets.json", target = "kb-text-lines" }
+
+[scenes.v03a-short-claim-02.targets.hold-5cb6f6454af505b0]
+continuity = "hold-5cb6f6454af505b0"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.lines.targets.json", target = "claim-text-lines" }
+
+[scenes.v03a-short-claim-03.targets.hold-5cb6f6454af505b0]
+continuity = "hold-5cb6f6454af505b0"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.lines.targets.json", target = "claim-text-lines" }
+
+[scenes.v03a-short-boundary-01.targets.hold-5cb6f6454af505b0]
+continuity = "hold-5cb6f6454af505b0"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.lines.targets.json", target = "claim-text-lines" }
+
+[scenes.v03a-short-claim-03.targets.hold-fc0b6af5e224fe9d]
+continuity = "hold-fc0b6af5e224fe9d"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.targets.json", target = "proof-verdict/TRUE/1" }
+
+[scenes.v03a-short-boundary-01.targets.hold-fc0b6af5e224fe9d]
+continuity = "hold-fc0b6af5e224fe9d"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.targets.json", target = "proof-verdict/TRUE/1" }
+
+[scenes.v03a-short-claim-03.targets.hold-d827291119f50fc2]
+continuity = "hold-d827291119f50fc2"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.targets.json", target = "proof-line/[given]/1" }
+
+[scenes.v03a-short-boundary-01.targets.hold-d827291119f50fc2]
+continuity = "hold-d827291119f50fc2"
+element = "screen"
+capture = { receipt = "build/playground-zoom/18-short.targets.json", target = "proof-line/[given]/1" }

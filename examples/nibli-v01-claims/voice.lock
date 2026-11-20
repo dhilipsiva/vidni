@@ -1,0 +1,239 @@
+# Written by `vidni speak` and `vidni draft`: the seed each line's draft take was kept at.
+# Commit it, so that a redraft gives the same audio. To hear another take of
+# a line, give it another seed (docs/spec.md, The draft voice).
+
+[lines.v01-parcel-bridge-01]
+key = "b2da3d2d3fb09e45"
+seed = 657642298
+
+[lines.v01-parcel-bridge-02]
+key = "71a43bac1a02acbd"
+seed = 145553469
+
+[lines.v01-parcel-bridge-03]
+key = "a8d8b2134cf4d95f"
+seed = 2067345292
+
+[lines.v01-parcel-bridge-04]
+key = "69631eeca9fa7dcd"
+seed = 456982812
+
+[lines.v01-parcel-bridge-05]
+key = "f1e24c327d716fa5"
+seed = 834982114
+
+[lines.v01-parcel-missing-support-01]
+key = "aac4a1dcd2ac9656"
+seed = 201682883
+
+[lines.v01-parcel-missing-support-02]
+key = "c8cb1154413ec6fc"
+seed = 1279669736
+
+[lines.v01-parcel-missing-support-03]
+key = "4e8dc15ec5a9ed73"
+seed = 711457353
+
+[lines.v01-parcel-missing-support-04]
+key = "8a300e53a16299f7"
+seed = 417007823
+
+[lines.v01-parcel-missing-support-05]
+key = "a15f91ef5e610dfc"
+seed = 169726295
+
+[lines.v01-parcel-missing-support-06]
+key = "f6e6a6d08614725f"
+seed = 1054209158
+
+[lines.v01-parcel-missing-support-07]
+key = "9ff2124bc00f2c94"
+seed = 2029472978
+
+[lines.v01-parcel-records-01]
+key = "fe9a9ac6504cc82c"
+seed = 223761472
+
+[lines.v01-parcel-records-02]
+key = "603ef743caeec2f5"
+seed = 2119450618
+
+[lines.v01-parcel-records-03]
+key = "45a4f370f913a47b"
+seed = 1238387715
+
+[lines.v01-parcel-records-05]
+key = "50502c1bc7e81207"
+seed = 1931355235
+
+[lines.v01-parcel-records-06]
+key = "06a0867768b4653b"
+seed = 290969297
+
+[lines.v01-parcel-records-07]
+key = "804575044982c0d4"
+seed = 1873401733
+
+[lines.v01-parcel-records-08]
+key = "aee3b36c857f66aa"
+seed = 82721838
+
+[lines.v01-parcel-records-09]
+key = "42cda1b17b0f1959"
+seed = 200382402
+
+[lines.v01-parcel-records-10]
+key = "db020d9845c34e9a"
+seed = 1183883893
+
+[lines.v01-parcel-repair-01]
+key = "93ebe65007715a5e"
+seed = 1478349242
+
+[lines.v01-parcel-repair-02]
+key = "b5c57104e4278cd1"
+seed = 28802937
+
+[lines.v01-parcel-repair-03]
+key = "fd487502d73d1878"
+seed = 960362310
+
+[lines.v01-parcel-repair-06]
+key = "743b9c584d240dc5"
+seed = 268754786
+
+[lines.v01-parcel-shop-01]
+key = "c31c60e1c0730031"
+seed = 1283586006
+
+[lines.v01-parcel-shop-02]
+key = "516302e86e1b0ebf"
+seed = 1333081554
+
+[lines.v01-parcel-shop-03]
+key = "d96149a319affbaa"
+seed = 691876331
+
+[lines.v01-parcel-shop-04]
+key = "bf820e89ad52a9b7"
+seed = 530789460
+
+[lines.v01-parcel-shop-05]
+key = "3519673ca6048179"
+seed = 1252260270
+
+[lines.v01-parcel-shop-06]
+key = "3e8460d957319c47"
+seed = 1312305977
+
+[lines.v01-parcel-terms-01]
+key = "8d4399bbd34eafec"
+seed = 151604584
+
+[lines.v01-parcel-terms-02]
+key = "2ed23b8a4bb9526e"
+seed = 42017716
+
+[lines.v01-parcel-terms-03]
+key = "8f8db37b6b9c11ab"
+seed = 334972309
+
+[lines.v01-parcel-terms-04]
+key = "5554f929951047d3"
+seed = 1257921139
+
+[lines.v01-parcel-variation-01]
+key = "b763850525751c54"
+seed = 88833386
+
+[lines.v01-parcel-variation-02]
+key = "7596fb32494a2f2a"
+seed = 1181301481
+
+[lines.v01-parcel-variation-03]
+key = "0482859a269dc7c6"
+seed = 276708426
+
+[lines.v01-parcel-variation-04]
+key = "4f19621782dcac04"
+seed = 2020120632
+
+[lines.v01-parcel-variation-05]
+key = "f4b6465cdb14bbe7"
+seed = 1828868106
+
+[lines.v01-parcel-variation-07]
+key = "99205f7b3f605f69"
+seed = 1129042966
+
+[lines.v01-parcel-variation-08]
+key = "85806ddd292a6671"
+seed = 165180071
+
+[lines.v01-parcel-variation-09]
+key = "4036bb7e31d959cd"
+seed = 1328196575
+
+[lines.v01-parcel-welcome-01]
+key = "9a8184c6fd05e0bf"
+seed = 1754392196
+
+[lines.v01-parcel-welcome-02]
+key = "e6341388e612076c"
+seed = 317431426
+
+[lines.v01-parcel-welcome-03]
+key = "1a7f4d58f463907f"
+seed = 1523633289
+
+[lines.v01-parcel-welcome-04]
+key = "e8d7d5a163d319e9"
+seed = 1442898644
+
+[lines.v01-parcel-welcome-05]
+key = "eff35153ef0395d5"
+seed = 602620134
+
+[lines.v01-short-claim]
+key = "3f76248e98242cbd"
+seed = 1073527412
+
+[lines.v01-short-closing]
+key = "ebc1e58215b1aa0e"
+seed = 2015256329
+
+[lines.v01-short-label]
+key = "2d13de725fb4a042"
+seed = 207174004
+
+[lines.v01-short-mismatch]
+key = "673e4edad68c71cf"
+seed = 471533393
+
+[lines.v01-short-observation]
+key = "b14d5e1f6f148b1f"
+seed = 1959650992
+
+[lines.v01-short-packed]
+key = "d24f1e2cc058a31e"
+seed = 1012574206
+
+[lines.v01-short-records]
+key = "37e87dfd269a2fc4"
+seed = 2005958419
+
+[lines.v01-short-repair]
+key = "24fc5b80945b812b"
+seed = 1278982401
+
+[lines.v01-short-requirements]
+key = "fbf7339efdd0c601"
+seed = 143617121
+
+[lines.v01-short-setup]
+key = "6664ff16ae343774"
+seed = 7992007
+
+[lines.v01-short-uncertainty]
+key = "035c4c735166f303"
+seed = 1559800757

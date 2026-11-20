@@ -1,0 +1,311 @@
+# Written by `vidni speak` and `vidni draft`: the seed each line's draft take was kept at.
+# Commit it, so that a redraft gives the same audio. To hear another take of
+# a line, give it another seed (docs/spec.md, The draft voice).
+
+[lines.v02-closing-01]
+key = "a7d012ad55408cac"
+seed = 670817725
+
+[lines.v02-closing-02]
+key = "16be148f0fc38755"
+seed = 74433101
+
+[lines.v02-closing-03]
+key = "2e0fba51669a7a88"
+seed = 1244471455
+
+[lines.v02-closing-04]
+key = "42ba4d2a5edf342c"
+seed = 1976531331
+
+[lines.v02-closing-05]
+key = "ddbf9e9ba1870a99"
+seed = 195672846
+
+[lines.v02-controls-01]
+key = "f162bafb484e056d"
+seed = 36631474
+
+[lines.v02-controls-02]
+key = "7634aec62588ff64"
+seed = 673248399
+
+[lines.v02-controls-03]
+key = "50b147cc85f55bfe"
+seed = 661235598
+
+[lines.v02-controls-04]
+key = "a21777496e594979"
+seed = 1219152876
+
+[lines.v02-controls-05]
+key = "9e8100d74a4783bd"
+seed = 1965996195
+
+[lines.v02-controls-06]
+key = "7d252c5249cde3dc"
+seed = 1948106490
+
+[lines.v02-controls-07]
+key = "3d0621f7853d8bf6"
+seed = 2026612890
+
+[lines.v02-derivation-01]
+key = "72e7a7a2db92d56e"
+seed = 1237274890
+
+[lines.v02-derivation-02]
+key = "0c66aeebea441429"
+seed = 1155035716
+
+[lines.v02-derivation-03]
+key = "732a7c74f21b86f5"
+seed = 985974475
+
+[lines.v02-derivation-04]
+key = "590a7b9b75b34b96"
+seed = 1381180909
+
+[lines.v02-derivation-05]
+key = "8c795ec56d93a6fc"
+seed = 227131037
+
+[lines.v02-derivation-06]
+key = "8dd9455644aa3000"
+seed = 777011057
+
+[lines.v02-derivation-07]
+key = "49f98d41c90c1dd4"
+seed = 1016475086
+
+[lines.v02-derivation-08]
+key = "4256cd7441810dce"
+seed = 432008860
+
+[lines.v02-derivation-09]
+key = "6deba7d71c88f903"
+seed = 922490384
+
+[lines.v02-derivation-10]
+key = "f286570f312a644f"
+seed = 735231474
+
+[lines.v02-first-evaluation-01]
+key = "5eba87624b86b3ab"
+seed = 1957586007
+
+[lines.v02-first-evaluation-02]
+key = "35141b0b1d558f32"
+seed = 881922348
+
+[lines.v02-first-evaluation-03]
+key = "b909c8b49c19efe8"
+seed = 82350986
+
+[lines.v02-first-evaluation-04]
+key = "341f63d07cd22beb"
+seed = 1259932417
+
+[lines.v02-first-evaluation-05]
+key = "4c1213892bedf2ae"
+seed = 1884248456
+
+[lines.v02-first-evaluation-06]
+key = "b86eca4741888c68"
+seed = 882691167
+
+[lines.v02-first-evaluation-07]
+key = "b377ba5ad04eea2f"
+seed = 2007137845
+
+[lines.v02-first-evaluation-08]
+key = "78b89ece74052e85"
+seed = 1624824323
+
+[lines.v02-first-evaluation-09]
+key = "ba8ac1091a3d8002"
+seed = 1364016931
+
+[lines.v02-parcel-b-01]
+key = "b94e16188577dca0"
+seed = 1389795712
+
+[lines.v02-parcel-b-02]
+key = "310fe5566724f8a9"
+seed = 1675258852
+
+[lines.v02-parcel-b-03]
+key = "f9939bbdc63393ef"
+seed = 1379208382
+
+[lines.v02-parcel-b-04]
+key = "4c482b49673c31ce"
+seed = 2009159532
+
+[lines.v02-parcel-b-05]
+key = "f0b199d3dd48368b"
+seed = 2124024362
+
+[lines.v02-plain-rule-01]
+key = "1fc0be5386645e38"
+seed = 1139934459
+
+[lines.v02-plain-rule-02]
+key = "5a47d1b56d5e03e5"
+seed = 1141401182
+
+[lines.v02-plain-rule-03]
+key = "99120280ab0a798f"
+seed = 1568765320
+
+[lines.v02-plain-rule-04]
+key = "f1483842373bcfa7"
+seed = 1588401644
+
+[lines.v02-plain-rule-05]
+key = "842da45ec5b37348"
+seed = 674531022
+
+[lines.v02-plain-rule-06]
+key = "83757fe29ba07cfe"
+seed = 103897338
+
+[lines.v02-shop-01]
+key = "9471978950d21747"
+seed = 457787647
+
+[lines.v02-shop-02]
+key = "fde6596548805766"
+seed = 1731813642
+
+[lines.v02-shop-03]
+key = "f673f7d0f79e86f5"
+seed = 1502602335
+
+[lines.v02-shop-04]
+key = "d7545cf869ab7c5c"
+seed = 910169941
+
+[lines.v02-shop-05]
+key = "c0a6e764f141d7a8"
+seed = 180994462
+
+[lines.v02-shop-06]
+key = "00a5894380847d28"
+seed = 1561773131
+
+[lines.v02-shop-07]
+key = "9a96601022cb4d10"
+seed = 1938020387
+
+[lines.v02-short-story-01]
+key = "d75dbf113af2853d"
+seed = 93766563
+
+[lines.v02-short-story-02]
+key = "7af40fb2f378fdbc"
+seed = 1611614707
+
+[lines.v02-short-story-03]
+key = "5c66986e53a505e0"
+seed = 1776747718
+
+[lines.v02-short-story-04]
+key = "388b54993b34aa48"
+seed = 630947447
+
+[lines.v02-short-story-05]
+key = "871e0ce78a70f946"
+seed = 630450131
+
+[lines.v02-short-story-06]
+key = "21e194ba14fc9737"
+seed = 1405208813
+
+[lines.v02-short-story-07]
+key = "6b0148c4a46a4db1"
+seed = 922623291
+
+[lines.v02-short-story-08]
+key = "480f574153009a3b"
+seed = 56753220
+
+[lines.v02-some-01]
+key = "7d8b547b773429ba"
+seed = 1588233300
+
+[lines.v02-some-02]
+key = "916dd1b64cb5a38c"
+seed = 1587493011
+
+[lines.v02-some-03]
+key = "9e6296b65d7639e0"
+seed = 1262913904
+
+[lines.v02-some-04]
+key = "86c7173fae0935fd"
+seed = 1765550266
+
+[lines.v02-some-05]
+key = "91b756dc7408d0a0"
+seed = 1994277226
+
+[lines.v02-some-06]
+key = "607b4f355e37d56e"
+seed = 2008859552
+
+[lines.v02-some-07]
+key = "ae7f3dfbdfbcb370"
+seed = 251086435
+
+[lines.v02-some-08]
+key = "06e9d6a7450d7b07"
+seed = 492456232
+
+[lines.v02-write-rule-01]
+key = "ae25a57fc2ad09a9"
+seed = 1598028034
+
+[lines.v02-write-rule-02]
+key = "824374ee0c47dd21"
+seed = 426207817
+
+[lines.v02-write-rule-03]
+key = "50eece72612cb7ff"
+seed = 674299297
+
+[lines.v02-write-rule-04]
+key = "c6e38e7c4d85ba70"
+seed = 1266934730
+
+[lines.v02-write-rule-05]
+key = "ad3457d998166bec"
+seed = 1003702657
+
+[lines.v02-write-rule-06]
+key = "6b57d535f25fe1c5"
+seed = 1334946950
+
+[lines.v02-write-rule-07]
+key = "affa315f72d1dae2"
+seed = 223658213
+
+[lines.v02-write-rule-08]
+key = "a7edb6ae3fbb9733"
+seed = 846388834
+
+[lines.v02-write-rule-09]
+key = "d67cd337f5ac71cf"
+seed = 897602243
+
+[lines.v02-write-rule-10]
+key = "8619e0dfa9782245"
+seed = 1802835048
+
+[lines.v02-write-rule-11]
+key = "5c7c8aa59d0683d4"
+seed = 93903633
+
+[lines.v02-write-rule-12]
+key = "bc6ada131779692d"
+seed = 229446159

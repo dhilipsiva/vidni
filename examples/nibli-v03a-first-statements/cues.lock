@@ -1,0 +1,1424 @@
+{
+  "schema": 1,
+  "entries": {
+    "long/takes/v03a-build-statement-01/focus-1": {
+      "binding": {
+        "audio": "60a1813f06d2d41ed215a8e7f5262a059c16ef5e942c4eeec8fd03b842f7f0d1",
+        "rate": 48000,
+        "samples": 224405,
+        "words": "8e0a6a054875e9b0c55eaac0ee9c182db73a056f011b3ae60b69512633e12394",
+        "definition": "b00d67413e90b1d3e177e965f1b1288171d2628b132a7f6813c1ff19176511d8",
+        "visual": "4f9f9d38ee6ecd208943055280989c880ab6190129a3b2667567aad0d65c4329"
+      },
+      "interval": {
+        "start": 185760,
+        "end": 218880
+      }
+    },
+    "long/takes/v03a-build-statement-01/name": {
+      "binding": {
+        "audio": "60a1813f06d2d41ed215a8e7f5262a059c16ef5e942c4eeec8fd03b842f7f0d1",
+        "rate": 48000,
+        "samples": 224405,
+        "words": "8e0a6a054875e9b0c55eaac0ee9c182db73a056f011b3ae60b69512633e12394",
+        "definition": "5b70833c0c93164fa17ecf6e3fe1f674a85123ef8b2cf0c2c986eaa10df0292c",
+        "visual": "cf392750f3e3569f7b236528c623c39298e9856fffa1f778304e66d4a4289311"
+      },
+      "interval": {
+        "start": 66240,
+        "end": 113280
+      }
+    },
+    "long/takes/v03a-build-statement-02/focus-1": {
+      "binding": {
+        "audio": "c4150b6464d277fb4b3b56c2e96b006f541338c5c08e7b3dabb5dcca432102c0",
+        "rate": 48000,
+        "samples": 185140,
+        "words": "ae6f048d949ae2e25a0f6a9903cb3ed120d60a51ce522598329ab742076e0c0c",
+        "definition": "3f21d782f363e4ac8a54885b05a1a6c8fe89b775bca620522c336769a2d2dd9d",
+        "visual": "d26d74fde0546987224e3be396b8343a7af086cc6fcea4046c7bdebd50acc556"
+      },
+      "interval": {
+        "start": 60000,
+        "end": 112320
+      }
+    },
+    "long/takes/v03a-build-statement-03/focus-1": {
+      "binding": {
+        "audio": "48d4e6de44d6ff71b095b16c02137b8307026ee597b7182ace275c8a66168918",
+        "rate": 48000,
+        "samples": 84337,
+        "words": "dd1456de932316c4d8a42159a4dbccde6150d067f14bf5ad7a48619566f22b86",
+        "definition": "9ab67db10f0fe003a28898086c54070c5ee782491317772d291484f5fac3b61b",
+        "visual": "a689bf52c24885012bdc79c4e52b79d0ec41dc1d7c49a05551388d4658129931"
+      },
+      "interval": {
+        "start": 23520,
+        "end": 41280
+      }
+    },
+    "long/takes/v03a-build-statement-04/focus-1": {
+      "binding": {
+        "audio": "86aec52817d0687ea12f724ce655f8196180fba4d4bd37ee7d1597520f85b87b",
+        "rate": 48000,
+        "samples": 311842,
+        "words": "87eab4d853b58e32beacdfb17cb9bb5ddc036a5b495efc9aad0caf4441a9f4ab",
+        "definition": "e4cc1027762087b09abc1feb1e2dc4d498558154ec8790c63b66352c8c1e30df",
+        "visual": "53e9eb5f47b6635c55b9b7e5fdd5ee0746ead761a715019f87a62570a4da0d5b"
+      },
+      "interval": {
+        "start": 6720,
+        "end": 37440
+      }
+    },
+    "long/takes/v03a-build-statement-05/focus-1": {
+      "binding": {
+        "audio": "0a664182248cba927684371374ee2f514365c2d0d82212e518d29bcccc07b7e7",
+        "rate": 48000,
+        "samples": 127685,
+        "words": "27479f7ddab90a02f1ee8b7f3f69f334ff4e15ebfb7bb6c3eff6fa23e8333508",
+        "definition": "d76b9607e48256c3b0805e403c856fb41d788decb51980de024d1a2fbd11dbac",
+        "visual": "e98fad6b9213c77dc5ee7b83099806daa3240e3d7b5986286a60142015e121c6"
+      },
+      "interval": {
+        "start": 38880,
+        "end": 70080
+      }
+    },
+    "long/takes/v03a-build-statement-06/focus-1": {
+      "binding": {
+        "audio": "1dd3109519a3a2fe3b72454f78e68c36f263eb7fe87fcc0afc932a69965d1da5",
+        "rate": 48000,
+        "samples": 276436,
+        "words": "f6935440281013f1fc5e53d8406a4c8d27fbe2091da32f27dff421200b13ef87",
+        "definition": "1daba33f21fb6d8d07074024a4afbf6ba4dcd6d1c771cf6dc362efc6641555da",
+        "visual": "74630094ce427a731c4f5ad25966adc64c4a4b38f5df4d673f6150b0c449af98"
+      },
+      "interval": {
+        "start": 107040,
+        "end": 156960
+      }
+    },
+    "long/takes/v03a-build-statement-07/focus-1": {
+      "binding": {
+        "audio": "6cab639771c18102fe26c6d7ad6614be57f54d96e0facb9e953acb9ff1bfc122",
+        "rate": 48000,
+        "samples": 122822,
+        "words": "54329d9cfdba8add3ade341b268c41cc59f2cb81cab441fa62b3f50900d8ad70",
+        "definition": "3507566b44539815b4c82de3b646a5362b774130441d5dae260dd6b9b0f5a0de",
+        "visual": "d19af65141a7f0d208184d5e72e24ee7a3445189ec95d93d9254e7c1da261ccd"
+      },
+      "interval": {
+        "start": 6720,
+        "end": 15840
+      }
+    },
+    "long/takes/v03a-build-statement-08/focus-1": {
+      "binding": {
+        "audio": "934c4589870c6e602b112a204495df76cac1bfb4d501244e41c9fa12ce60a270",
+        "rate": 48000,
+        "samples": 267400,
+        "words": "a13f1841214608cf49b3bc08742517d56d958bdaa09e7ee19a4c48926ffbe7fa",
+        "definition": "fa8c73c1c64850cb18b10b9fd31ad7a11f2e2476e07bb7db5fa40fd82e69ec98",
+        "visual": "9a4d67fc08a447841da9506b46a9c976fd8ec2aa550bd547829af5baecace219"
+      },
+      "interval": {
+        "start": 9600,
+        "end": 53280
+      }
+    },
+    "long/takes/v03a-build-statement-10/focus-1": {
+      "binding": {
+        "audio": "745263d1765cb021195335734b2a273c36084c3407a2878e1c1f62339ddcc917",
+        "rate": 48000,
+        "samples": 129064,
+        "words": "d82da1f20d893f44b7dbf7853d276b0619260b911be771aa619bdcca7ea4e2f2",
+        "definition": "75cebeb63d937a0ee8bb9542f454b19256e07fb5307fb206f4dd43817c9b8d73",
+        "visual": "d461d6268f64bafed06c43ea193222906eb940af161373219073c53c74b5d6e3"
+      },
+      "interval": {
+        "start": 55200,
+        "end": 78240
+      }
+    },
+    "long/takes/v03a-build-statement-11/focus-1": {
+      "binding": {
+        "audio": "c55f71e211fc92ab1a04dac3b90ee1254e0c1ca8255b1f4b05ba8972f3548585",
+        "rate": 48000,
+        "samples": 137486,
+        "words": "811a11ecfc845e8545964158a17ebc38bbb01e9879e52937a17a671366210554",
+        "definition": "ffb8d7ba118b9ef33d6f82c07b17517c4410852f0f00375d7b8a62046dc46fef",
+        "visual": "6068bc19ba02eef81d4c528aedc52d814cf90b84456466c32683a2981228067a"
+      },
+      "interval": {
+        "start": 13920,
+        "end": 66720
+      }
+    },
+    "long/takes/v03a-build-statement-12/focus-1": {
+      "binding": {
+        "audio": "ef0e797bbb07298e2e148f4c15a4a137c54bf528786fb09737207bf921888fcd",
+        "rate": 48000,
+        "samples": 131242,
+        "words": "893c3f7d45c5148deab8e60fee8056f71234079fa92b3eb4875f71d5471dc46b",
+        "definition": "5d32ef081afe9eb92ec5084ece36060c1c6db8bed2f1f565055647aa63810ac3",
+        "visual": "072ea8dc40371c460194ef4c70f983c10bac2d828b84471b336063b1d7d7206b"
+      },
+      "interval": {
+        "start": 11040,
+        "end": 45120
+      }
+    },
+    "long/takes/v03a-build-statement-13/focus-1": {
+      "binding": {
+        "audio": "3f3a6b73bb68ff6cfbf7988464e68d85787867ccd9bc026661f797077cb35189",
+        "rate": 48000,
+        "samples": 236418,
+        "words": "3938bb056779fc257e344d1e8d96343bcdfe5af6978f959d2430cfabf7cd8532",
+        "definition": "7e54e3bfbd840845aa3f66dce76a54d741e3d72463df83104924780660106537",
+        "visual": "0c5d5a37140a918d1afd3a5f67773b2aeb97095a34ccf33b93c42723e77a5c1a"
+      },
+      "interval": {
+        "start": 7200,
+        "end": 30240
+      }
+    },
+    "long/takes/v03a-build-statement-14/focus-1": {
+      "binding": {
+        "audio": "ee94692ae2287cf0545cf3f975119e3fb0a345fa280dc334d44d2df01530b492",
+        "rate": 48000,
+        "samples": 63493,
+        "words": "1145a58aa9dafa18c42a0695c67238176b59358a679f853e4881ab2ea5ed40a7",
+        "definition": "2b01726cbdd65995e5efb64fe026169a2378a01fba8e19e55b4f4adc97e59ae1",
+        "visual": "f5b2dfef5cc4e6a1e2612ed7ce09b4dc4775690f2af8612d902117b63b936b45"
+      },
+      "interval": {
+        "start": 13920,
+        "end": 34560
+      }
+    },
+    "long/takes/v03a-build-statement-15/focus-1": {
+      "binding": {
+        "audio": "71b2f9539edc23092a71f6ed44c28d5605218d1e6d713b43f5c115a0836cbda8",
+        "rate": 48000,
+        "samples": 95209,
+        "words": "255ba99694117b4ff860378bcc6eb96d6387319a4a5ba0d3e823bc0a1964b6ac",
+        "definition": "7ed24b263e22758a2cf9f3387d4b025d0d011c671418b40d4218fe8f2273b450",
+        "visual": "e9231faf1211c8221b7fc270043a53a75ef71a97e1d2c9327bea75c207251d3b"
+      },
+      "interval": {
+        "start": 21120,
+        "end": 43200
+      }
+    },
+    "long/takes/v03a-build-statement-16/focus-1": {
+      "binding": {
+        "audio": "5c4bfa2fa6c24b4c1079d4683338baf5ee7b6188f95881595e3b33ce84a90504",
+        "rate": 48000,
+        "samples": 284969,
+        "words": "0a15c3035b2620c64fde284ec64faedd1656a3484bdf7f288dc0e72bb8ea905c",
+        "definition": "7e54e3bfbd840845aa3f66dce76a54d741e3d72463df83104924780660106537",
+        "visual": "6bd44f2857e7c695684e9e116bafc1592ead336f1d593b2419b776b118ee4e9c"
+      },
+      "interval": {
+        "start": 115200,
+        "end": 152160
+      }
+    },
+    "long/takes/v03a-evaluate-claims-02/focus-1": {
+      "binding": {
+        "audio": "923daff05e0c902f1252531236f18af0a9268c7113a1995ee1b8f47a787f3966",
+        "rate": 48000,
+        "samples": 274553,
+        "words": "d930011b915ca2cdaca26e274c1d6374bc3da94d372a80bbe54dad1437542142",
+        "definition": "5e5a4b04774abd9bd77f53f5c542f0acb5f1980e0093f25c139dfa67e40b91d9",
+        "visual": "b4cfd7f7affa025eafe15583d94c9ee99b60b3dfd31212aebf78e92daa3d9e28"
+      },
+      "interval": {
+        "start": 83520,
+        "end": 113760
+      }
+    },
+    "long/takes/v03a-evaluate-claims-02/focus-2": {
+      "binding": {
+        "audio": "923daff05e0c902f1252531236f18af0a9268c7113a1995ee1b8f47a787f3966",
+        "rate": 48000,
+        "samples": 274553,
+        "words": "d930011b915ca2cdaca26e274c1d6374bc3da94d372a80bbe54dad1437542142",
+        "definition": "58b8fcce4963ec597dedc0e146eeb91a3962cadfbd540b6d85efd0811ac77831",
+        "visual": "a305a77caaa18247f0e4e602f3edcb86606052b285c146b7a71394f811cf841a"
+      },
+      "interval": {
+        "start": 83520,
+        "end": 113760
+      }
+    },
+    "long/takes/v03a-evaluate-claims-03/focus-1": {
+      "binding": {
+        "audio": "4298f5a054e924f6dc59d98947a954f2e099c073a805ab37e7045e97fb1497c4",
+        "rate": 48000,
+        "samples": 70966,
+        "words": "101d4bd16f7f883babdd9909b9d72ea7b044f4d4d1aa7faa6f88c3e33707b372",
+        "definition": "c07e958104752dd06784a04a11f780ba59f21d8157119427c51d19f9691fa85c",
+        "visual": "8d7b91fdd81fdb8288b972aeffb7ccdf9c5bf4ea4c1310b95c1748f2ccb33593"
+      },
+      "interval": {
+        "start": 51360,
+        "end": 65280
+      }
+    },
+    "long/takes/v03a-evaluate-claims-04/focus-1": {
+      "binding": {
+        "audio": "9ba6d86368c9ccaf1c1b3d68458a4b3717b31b4bd0767337746d4ba11009c747",
+        "rate": 48000,
+        "samples": 138312,
+        "words": "68fdff4fadf8b6f5f765c463ec31f9eecbe62da850f4c8a3c0c75f33e5579589",
+        "definition": "dab2bb6110c3024a05d30102f6da826bef00763f0398eb6f9a447d453ea9f848",
+        "visual": "29195a4ffbfc77627bb899ac9bdd72a6f5d6d1f6c1d9f575f14642f253339fb6"
+      },
+      "interval": {
+        "start": 53760,
+        "end": 98880
+      }
+    },
+    "long/takes/v03a-evaluate-claims-05/focus-1": {
+      "binding": {
+        "audio": "9f8e80fd4c3e08095e4c990eb0e10a87481d9b714d2cc55a61650e328e47694c",
+        "rate": 48000,
+        "samples": 231380,
+        "words": "b0b5495792cabc3def2c1d458310a7f79d6e7a9367a90fb4af7763beff2d05dd",
+        "definition": "2630f8d4e75ef9a8519fc81d0f454e5fb5f035b1eededc6e5739ed8876d1c4fc",
+        "visual": "887aafd14392be20b1012966d9624a4e2f0efc9cf214129a5edc8e468864d3da"
+      },
+      "interval": {
+        "start": 147840,
+        "end": 226560
+      }
+    },
+    "long/takes/v03a-evaluate-claims-06/focus-1": {
+      "binding": {
+        "audio": "18e9876a1f89d9b4cb36f0fca298b6bf47b43f95078872a7edd4717ac23417eb",
+        "rate": 48000,
+        "samples": 155173,
+        "words": "54d3823deb055f49fe9b26f8becb559c22268378d0e6db9e2b273ab99c2f8186",
+        "definition": "b92cdab6339d1a4259154b9f13caf8a841318282694b3075b526d9b510801cc6",
+        "visual": "d7a785bbe5da7bdf86ed376c049a11cdb6ab4408d998501de3b5f4bc43ece06f"
+      },
+      "interval": {
+        "start": 112800,
+        "end": 153600
+      }
+    },
+    "long/takes/v03a-evaluate-claims-06/focus-2": {
+      "binding": {
+        "audio": "18e9876a1f89d9b4cb36f0fca298b6bf47b43f95078872a7edd4717ac23417eb",
+        "rate": 48000,
+        "samples": 155173,
+        "words": "54d3823deb055f49fe9b26f8becb559c22268378d0e6db9e2b273ab99c2f8186",
+        "definition": "f4af4bb8820eb74b72f8de4f227a33cc507695ac05962591cb4126eef76b69f0",
+        "visual": "007e06509ebba90b8bec77a796c98edc8e6f96ff153a194ef38819d3d4ea48e2"
+      },
+      "interval": {
+        "start": 112800,
+        "end": 153600
+      }
+    },
+    "long/takes/v03a-evaluate-claims-09/focus-1": {
+      "binding": {
+        "audio": "4f2fc843320377dbf62f79b682c983d36d63867e3f9f8efdf8a425d8287a191d",
+        "rate": 48000,
+        "samples": 321634,
+        "words": "e9c4fa794ecb42a674b12a3bf7e2db6e2da40a9981058e037cfbb8d9a85fb0ea",
+        "definition": "15d5cd54e8d52349bd935b1f27f388c2b6da173733e54bb5a0a1bacf3d921a5c",
+        "visual": "6b789dc2f110c67d9cc73b08ac00471e774ba8345abda97ce9835aa09316cf84"
+      },
+      "interval": {
+        "start": 59520,
+        "end": 96960
+      }
+    },
+    "long/takes/v03a-evaluate-claims-10/focus-1": {
+      "binding": {
+        "audio": "977499f08f7d08cb8a5fcc849882655b3211c336f5175c6807b15e21d60c1a2e",
+        "rate": 48000,
+        "samples": 67420,
+        "words": "7dd0e14b501c9e5d9a08a85e6deae9f0c677eb88ca1111792250b9db362d0df7",
+        "definition": "63947f6721899d18075ff346079d7ec096b20974567e4d228219e95cee2020fd",
+        "visual": "1929609028cdcb01b6221a914083957c323b29e4aa1118d31db2a71a8411c728"
+      },
+      "interval": {
+        "start": 34080,
+        "end": 57600
+      }
+    },
+    "long/takes/v03a-evaluate-claims-11/focus-1": {
+      "binding": {
+        "audio": "3e3896bd6faa7edd58e4d863a5b921266f03a9377f527bc0f818df308e161a1b",
+        "rate": 48000,
+        "samples": 181214,
+        "words": "45e6d7e77441866a26bd408bf3e7fa78a34ddd741775e32e9a407e9e4a3bac0d",
+        "definition": "1258c527e112cb52e6053662453c7b091a22889d42ab44db78a11f27101118ae",
+        "visual": "7b8bdc1836d4027c244e225f1a3edbc8d73c5becbb9f230cae8826c49c68b61b"
+      },
+      "interval": {
+        "start": 65760,
+        "end": 112800
+      }
+    },
+    "long/takes/v03a-evaluate-claims-12/focus-1": {
+      "binding": {
+        "audio": "26923bdeeb058ef0b382d4bc1fa3b334fc6ba42283f883374aa1662c83d88775",
+        "rate": 48000,
+        "samples": 165824,
+        "words": "45d1d4227f59ee499ea72a347a194b7256967a9816c064bd54c61dfe84086021",
+        "definition": "9a3bc997ad2990b83fcc504ad418281f22a4e10542a5eda3e3a6d18809c908f4",
+        "visual": "a516429399d241c24772e2ab464c7f901649be093e03ae2ed0c83df2c6a8bdc1"
+      },
+      "interval": {
+        "start": 99840,
+        "end": 161280
+      }
+    },
+    "long/takes/v03a-evaluate-claims-12/focus-2": {
+      "binding": {
+        "audio": "26923bdeeb058ef0b382d4bc1fa3b334fc6ba42283f883374aa1662c83d88775",
+        "rate": 48000,
+        "samples": 165824,
+        "words": "45d1d4227f59ee499ea72a347a194b7256967a9816c064bd54c61dfe84086021",
+        "definition": "0b9c25bc68eb9e25575e74b41cea79a39a028ff43b62237791668069dfb0e308",
+        "visual": "46a92ea81014058d3350066162f507dc4e80de4bfccfbb079ad95046d20c0634"
+      },
+      "interval": {
+        "start": 99840,
+        "end": 161280
+      }
+    },
+    "long/takes/v03a-evaluate-claims-13/focus-1": {
+      "binding": {
+        "audio": "a6a8b0c659245a7c2170f767ef67f6ad1d27571bd93d4c63cf56c0f9f5c2ec26",
+        "rate": 48000,
+        "samples": 203941,
+        "words": "f5e2706f4e4a1d3fab8d1f1b1fa151ce4a8fa9580de02489880fdf994583b878",
+        "definition": "d64bfd4b6556f793c25185d61b17292d97e403ab771861a1b3474c8c59bfa557",
+        "visual": "c9616162b6b53c356d884280d360249735a073f5a8b10f86d8a41b7aa26bdd55"
+      },
+      "interval": {
+        "start": 115680,
+        "end": 158880
+      }
+    },
+    "long/takes/v03a-evaluate-claims-14/focus-1": {
+      "binding": {
+        "audio": "af16e46729a427ea7b803accc3419f55b862325d87ae509cf05838afa5e0e563",
+        "rate": 48000,
+        "samples": 263786,
+        "words": "e9e3b71ab61d946a2c93d7aa758d1d1af7dfcba07ecb720d294d57a0bbac884f",
+        "definition": "08990d37c50cf2de4af92b8d99f9765181b3de1065bdd50294e014d288417bc3",
+        "visual": "5cc7f98234e962e1a1918bbb2efe11907cacab6d52f2031d4d9fd5ad92ee002c"
+      },
+      "interval": {
+        "start": 106080,
+        "end": 158880
+      }
+    },
+    "long/takes/v03a-host-and-next-02/focus-1": {
+      "binding": {
+        "audio": "245d32d275534aed13deb69d58045f9335d3b5a88aa1e0965d44a98be81f86a4",
+        "rate": 48000,
+        "samples": 275093,
+        "words": "27167dbfc98795a20f351d69697525425dcd8887124ab5a4ebabaeea0a0e1edf",
+        "definition": "a905f2cd1b8bc6d6c18e77ddef2492d330cd7d83999f2260b3c86a9f5af8d101",
+        "visual": "0fae1032d79b6d2e910fe61c27cd911d09921936291f05042e636507e4618dc2"
+      },
+      "interval": {
+        "start": 70080,
+        "end": 140640
+      }
+    },
+    "long/takes/v03a-host-and-next-03/focus-1": {
+      "binding": {
+        "audio": "37f7e238bd01c4714796ae62d1eb7aa9099ceaaf75fbbc4834ba93fe2e5bcc0a",
+        "rate": 48000,
+        "samples": 134992,
+        "words": "24d84554ddfdb544bd042ed39e1bd6a92adec842cc344a6c77335623d0539d95",
+        "definition": "64a05d7d07d41d4fbd09cd5c61b026a92fbea1b29cef7183304a33d33e271771",
+        "visual": "a3cd4b1d3a4495048003ac2be4587c4e319f2ae7535e7b4ffd096d1861ec7e8a"
+      },
+      "interval": {
+        "start": 72960,
+        "end": 132480
+      }
+    },
+    "long/takes/v03a-host-and-next-05/focus-1": {
+      "binding": {
+        "audio": "c8fd08d3c2d88362dbf9b569fe5c2d37cebcdd610e0a65465455d1a38364f057",
+        "rate": 48000,
+        "samples": 93723,
+        "words": "63044eed8b92f275501ad73ec36674d98f55e17b7a74abdd243611d6e79bd521",
+        "definition": "7ed24b263e22758a2cf9f3387d4b025d0d011c671418b40d4218fe8f2273b450",
+        "visual": "ffaa675cf9f0cdb2cf54d459b920f06832b10f7f32d7448b87c9f86e7014cb1c"
+      },
+      "interval": {
+        "start": 10560,
+        "end": 31680
+      }
+    },
+    "long/takes/v03a-host-and-next-08/label": {
+      "binding": {
+        "audio": "bdc8b6087c614001b7d19e08a5b1d126b7248d8604d561de574b6928fb226695",
+        "rate": 48000,
+        "samples": 400276,
+        "words": "d4d1e14688e0e0246da2a6c60e11af20c2774a4a1e9687e404da95ef5e85877b",
+        "definition": "184c47e103ce0637ce345a95fdc282fd3d344255c158633bccb41bb28391adbd",
+        "visual": "af5c52d97d7a84c4d7f860cb31d4c870b359659cc72c1383cf958c362975b974"
+      },
+      "interval": {
+        "start": 344640,
+        "end": 394560
+      }
+    },
+    "long/takes/v03a-host-and-next-08/packing": {
+      "binding": {
+        "audio": "bdc8b6087c614001b7d19e08a5b1d126b7248d8604d561de574b6928fb226695",
+        "rate": 48000,
+        "samples": 400276,
+        "words": "d4d1e14688e0e0246da2a6c60e11af20c2774a4a1e9687e404da95ef5e85877b",
+        "definition": "f18630f378994309e0be4c00bde89e637187c39cd756407c5cee7573e441db99",
+        "visual": "c3840f06cc7f9dc0ad49f66a0abf10b227f998c74fac044cd527125386c7e916"
+      },
+      "interval": {
+        "start": 286080,
+        "end": 337920
+      }
+    },
+    "long/takes/v03a-host-and-next-08/same-parcel": {
+      "binding": {
+        "audio": "bdc8b6087c614001b7d19e08a5b1d126b7248d8604d561de574b6928fb226695",
+        "rate": 48000,
+        "samples": 400276,
+        "words": "d4d1e14688e0e0246da2a6c60e11af20c2774a4a1e9687e404da95ef5e85877b",
+        "definition": "66c7f9dd09019917e057e9c23d4a01ea67e8dff221cd9ed350d1515d49722743",
+        "visual": "bae17810a45d820b524a14dcafa879f5bf51945b85945e4d5da17f589b64d1a4"
+      },
+      "interval": {
+        "start": 194880,
+        "end": 255840
+      }
+    },
+    "long/takes/v03a-host-and-next-09/claim": {
+      "binding": {
+        "audio": "33a8c743b6355e57c42ca75ac6315d007670afd3c79b340840e8d2b1cbcf7b80",
+        "rate": 48000,
+        "samples": 343719,
+        "words": "c2d73bd5692b0e790d86df68619b6d00da33cf1c9888177783854477809cd637",
+        "definition": "c498f602faad31617767272a7edd6a4bd9c152935313d028a52a9e7473cc216f",
+        "visual": "e9d9abc966f1df141a86ef8cee0aa49489b21dd87f00bc52d2c71860960223c6"
+      },
+      "interval": {
+        "start": 230400,
+        "end": 246720
+      }
+    },
+    "long/takes/v03a-host-and-next-09/rule": {
+      "binding": {
+        "audio": "33a8c743b6355e57c42ca75ac6315d007670afd3c79b340840e8d2b1cbcf7b80",
+        "rate": 48000,
+        "samples": 343719,
+        "words": "c2d73bd5692b0e790d86df68619b6d00da33cf1c9888177783854477809cd637",
+        "definition": "446ec91787e18791963eb83bfeb6f49d138f7d6ddd44df9d8f8cbae60fe07bde",
+        "visual": "75d7a87508644cdffbf9848a29a04cf3eb52bf0847b6b511a2eca070cfe4fb7d"
+      },
+      "interval": {
+        "start": 170400,
+        "end": 192960
+      }
+    },
+    "long/takes/v03a-host-and-next-10/derived": {
+      "binding": {
+        "audio": "dd945397ef8f712d1f309ba34f306c05d8587ba0049c3cbbf83a8f8679627040",
+        "rate": 48000,
+        "samples": 351008,
+        "words": "140989fae272467cbbd3682d1a38340e43dbe421e20ace558b9f61eb80f48f26",
+        "definition": "d3700390f5128aff69e528e2d6d482e1802c542e2f43cf552383d71b2a9a1088",
+        "visual": "e784d66ee0ea9d6ed201ddfca5ba3e02cc7fa580a69162a9a2be74714865296c"
+      },
+      "interval": {
+        "start": 201120,
+        "end": 230400
+      }
+    },
+    "long/takes/v03a-host-and-next-10/records": {
+      "binding": {
+        "audio": "dd945397ef8f712d1f309ba34f306c05d8587ba0049c3cbbf83a8f8679627040",
+        "rate": 48000,
+        "samples": 351008,
+        "words": "140989fae272467cbbd3682d1a38340e43dbe421e20ace558b9f61eb80f48f26",
+        "definition": "12f74a1277efb0e728db2ed5bd194948e269744de63a93c0ee10b472c9ee572f",
+        "visual": "99bc0ac9fb651f44341b30d1d12af1925662f731d3fc4f447ec5880f55ae4de3"
+      },
+      "interval": {
+        "start": 87360,
+        "end": 131520
+      }
+    },
+    "long/takes/v03a-named-places-01/focus-1": {
+      "binding": {
+        "audio": "4da06ccba624f9fc443d902d5f5ce7c2637c4275fb82c56ee1f164ea2d10fc56",
+        "rate": 48000,
+        "samples": 72693,
+        "words": "bedd2447a6d4865a53e2fda639aab2bc222470762501fdaaddcc2c61a08fc421",
+        "definition": "869bf5936fbc846a8bd6eb5a69a12b311a6923823379bb3a1f7a897bfcd6787a",
+        "visual": "eb7f2d2ef0b891c65dc38f71844c015bc3e28a04651e8423b8762ce95178a343"
+      },
+      "interval": {
+        "start": 13440,
+        "end": 37440
+      }
+    },
+    "long/takes/v03a-named-places-02/focus-1": {
+      "binding": {
+        "audio": "b89ae4c1b64034e90beff50bad50f541170674a73af4046c62bc9b2ae23a176b",
+        "rate": 48000,
+        "samples": 342802,
+        "words": "c38f827698a34a77e91100ab9659f1f8d0f2d31e57ceab855882f458f420df13",
+        "definition": "564e8a86bc02f873a8e17c9686707c3147ad1616d2461fe910ffc38b2bb7c20d",
+        "visual": "8b557d3588447e5c98e2d890920a681dbe36ef94b6eba40624457fabeae4b0ce"
+      },
+      "interval": {
+        "start": 33600,
+        "end": 63840
+      }
+    },
+    "long/takes/v03a-named-places-03/focus-1": {
+      "binding": {
+        "audio": "f4b9c9e1264fc3f5c666a9bc2080efce608057fc7086c6ed48c014d3c33a7907",
+        "rate": 48000,
+        "samples": 180541,
+        "words": "7d4b7a90476879838b40e29b6918bea758b34dca46830137a86ce90056ff4d7d",
+        "definition": "48c6567f3c34d71260f260992b831be01545c44634410eb72f421c2bff1a8a62",
+        "visual": "9cdec17c48d77f2ebd74b75c1e5235eb1c1cd695b78122e06f3c5ee90e646baa"
+      },
+      "interval": {
+        "start": 9120,
+        "end": 35040
+      }
+    },
+    "long/takes/v03a-named-places-04/focus-1": {
+      "binding": {
+        "audio": "bcd34d4a5099f530effd6a9e54aab5a274b2dde3025bc48b7644254650c2587b",
+        "rate": 48000,
+        "samples": 119031,
+        "words": "ac39819e817c020b1be26243f611f2a283939cbe74b89beb4f613a158d8892cd",
+        "definition": "bdbfee80adfa486ebef209797374022ef73aaa63e11882e3ca0a637743540ff6",
+        "visual": "493da17b55cb315f5a6eec2ba5f39e9e1c41b865936be55161ce153febc0c92d"
+      },
+      "interval": {
+        "start": 7200,
+        "end": 19200
+      }
+    },
+    "long/takes/v03a-named-places-05/focus-1": {
+      "binding": {
+        "audio": "ab2036abc94a8372b15b25fe5cb72544a64047f436692739197c7d941741d411",
+        "rate": 48000,
+        "samples": 151553,
+        "words": "39448f71c0c2826a9f8443dc5fabf4a599259fcd9a90fec311c05fc18cbc04a1",
+        "definition": "385e8343c9e3ec5fd4cdbc4c09af7d85e16e909331feb5b0737750eedf61248c",
+        "visual": "15dcc07868cb6cc16f1f1d8ad4d238f2f494ea858a5dc03d27c59dba03ea54cf"
+      },
+      "interval": {
+        "start": 96000,
+        "end": 151553
+      }
+    },
+    "long/takes/v03a-named-places-06/focus-1": {
+      "binding": {
+        "audio": "704b09a8efda93e30fa9f5cf34d46e2429c9f2ce0f569eb064a06bda4e2464c6",
+        "rate": 48000,
+        "samples": 99755,
+        "words": "2221a66423420fbcf22518c87a824917d22d00697c36b532cebc43b9cd7f1fcb",
+        "definition": "75cebeb63d937a0ee8bb9542f454b19256e07fb5307fb206f4dd43817c9b8d73",
+        "visual": "06a06771d8743cdbbf76827134b8e75f4b45de2cc34e9d1510e1608ea99c32fc"
+      },
+      "interval": {
+        "start": 27840,
+        "end": 51360
+      }
+    },
+    "long/takes/v03a-named-places-07/focus-1": {
+      "binding": {
+        "audio": "19cad87e20f8ac2bb13b8de10d475f33b5c8c5b210a8a4053e38bc5fdd2ca5a9",
+        "rate": 48000,
+        "samples": 158462,
+        "words": "9855f78cc36432858ef3fef6589c5739566c131cfbb3d01477f33344aa211015",
+        "definition": "be9dffc4d4f079ff6695b37bbdb75906ee955dae2f6cae00605fe9407017b5ac",
+        "visual": "43c7f958da4064a91e03d26b1425add48e224dc4454f0c7426000826e8858f4c"
+      },
+      "interval": {
+        "start": 104160,
+        "end": 149760
+      }
+    },
+    "long/takes/v03a-named-places-08/focus-1": {
+      "binding": {
+        "audio": "3635ddeeb2161fafd47d45da1ae2890beed94028f7d2675e83834b4692b7614c",
+        "rate": 48000,
+        "samples": 180994,
+        "words": "54f6e91e10cd518ba19fe4877265f4f2a01f8855176f4c27d28659b55ce24f8a",
+        "definition": "75cebeb63d937a0ee8bb9542f454b19256e07fb5307fb206f4dd43817c9b8d73",
+        "visual": "bab159b1c2eadfc6a4603838b5915fb4ea91a78df151c32d5e713532daa1423c"
+      },
+      "interval": {
+        "start": 47040,
+        "end": 58560
+      }
+    },
+    "long/takes/v03a-named-places-09/focus-1": {
+      "binding": {
+        "audio": "6ed1699aba946d7c9ee2724c923a1d4bd645907bcd145029566fc32e7e8e75d7",
+        "rate": 48000,
+        "samples": 136447,
+        "words": "4889914fb34c64c4a21fb3d96b5ede28ad4ab81d79426afb3953669b35a49624",
+        "definition": "3507566b44539815b4c82de3b646a5362b774130441d5dae260dd6b9b0f5a0de",
+        "visual": "0f3abfe0aacef4eae116fff439df8b01eff73ac463a56deeff257bfcd4c81552"
+      },
+      "interval": {
+        "start": 34080,
+        "end": 42720
+      }
+    },
+    "long/takes/v03a-named-places-10/focus-1": {
+      "binding": {
+        "audio": "bce5f5b83a00f9ad1293b6c23185806ee9aa73fcc1757b867273423da723a20f",
+        "rate": 48000,
+        "samples": 104663,
+        "words": "2a356bf68f20f158f9b9a04fb3bd5257f427615f8db026fdccbcdb32f5ca1873",
+        "definition": "0baa9d1b0440225b94b6e2a3ff09d083221f5d6389dedbdaf45aa74021842e09",
+        "visual": "be6e238d2689d80f27ce870dc2b7ab77f1a15b5d8a06771a4f3c2e332c7d4cdc"
+      },
+      "interval": {
+        "start": 51360,
+        "end": 101760
+      }
+    },
+    "long/takes/v03a-named-places-11/focus-1": {
+      "binding": {
+        "audio": "1d047e2662ff1f9a924408bb809eb2cd65a74cc4de6c1b73ddca563d90043f5c",
+        "rate": 48000,
+        "samples": 207317,
+        "words": "2bd33bf43f4369a4e70ca32f7637b45fea11b85a611d1bf8d05c99ded7d29588",
+        "definition": "e35ef70d1a011af5743b513c46b3304e01cf65bdf46e881fa8bb3c2d30ffcca0",
+        "visual": "ab2bbcf5fb325fc8ae34e531bb2fd500e935385c706096502b2e687b2c6278d0"
+      },
+      "interval": {
+        "start": 53760,
+        "end": 94560
+      }
+    },
+    "long/takes/v03a-named-places-12/focus-1": {
+      "binding": {
+        "audio": "5753bfee4c5f1bf81780a0d1291276e73710231f31aa0b6f2e47dc621ea9e428",
+        "rate": 48000,
+        "samples": 114054,
+        "words": "15eb25321e6c52d5ece5187ffc8676672e60f8e23b6772392160e467723af8f3",
+        "definition": "3c58206cd872cee73492183dbe2324c6dbc8290108d40a7dd7989edad46d594b",
+        "visual": "0d15c57470895657b44785f5d4ea03710eeb0eda3133e2760ef41ba8a3b487fa"
+      },
+      "interval": {
+        "start": 66720,
+        "end": 111360
+      }
+    },
+    "long/takes/v03a-named-places-13/focus-1": {
+      "binding": {
+        "audio": "7b30dde8b3235ff8c9edddc7b9fa2c17b40b609866e73187bde5f5612acf13af",
+        "rate": 48000,
+        "samples": 251672,
+        "words": "dc9ebc98d8b1dead81a2d28735e7c324ab0122c21a62e0d9587dbaa2eab4114a",
+        "definition": "e35ef70d1a011af5743b513c46b3304e01cf65bdf46e881fa8bb3c2d30ffcca0",
+        "visual": "43dad251d1f46584bfa3830f5a2799314571ebe8c9de91265eccef068570b421"
+      },
+      "interval": {
+        "start": 102240,
+        "end": 147360
+      }
+    },
+    "long/takes/v03a-named-places-14/focus-1": {
+      "binding": {
+        "audio": "1543b8fedba9f0356d0f1dab9bd8c1734bb2ad97fbd9a0a90b78168299d829bd",
+        "rate": 48000,
+        "samples": 222430,
+        "words": "0a1620444728c207691777661577d4543a784610ee57f13a85635a0b22901c79",
+        "definition": "9ff1442a8baf198447870ea6f15c31a50ac749cb5bb5bb0f00a9e50de5d39afe",
+        "visual": "68ce45950b0cf8a9f1dad7d401f9123a645c6ca1eb8b9d069f953a747691ac26"
+      },
+      "interval": {
+        "start": 7200,
+        "end": 38880
+      }
+    },
+    "long/takes/v03a-refusals-01/focus-1": {
+      "binding": {
+        "audio": "80e42801ca65dff8faae1ea61aa39054aca5f355bd0793450b9006245570159a",
+        "rate": 48000,
+        "samples": 139981,
+        "words": "21ba1c1d5618f4686a1ec98a5f821c97a60e2ed71e749491352a1a2e169e1614",
+        "definition": "e6d3e6e12b9c95f2a8948453bc3e430d88307ec288601aad5bd2f33a9317a575",
+        "visual": "985deefcb8ded25e823da44b109e139079ee3c0df6f0d2c5302ce9654dfdb6ec"
+      },
+      "interval": {
+        "start": 41760,
+        "end": 80640
+      }
+    },
+    "long/takes/v03a-refusals-02/focus-1": {
+      "binding": {
+        "audio": "fba4034da8d490c7ab0e92bd317e66b275f791eafb92e2dbc29d526e020d0b41",
+        "rate": 48000,
+        "samples": 162746,
+        "words": "5538e6629eb33279d0cdd56604051700d2e6bbf0ce6119573c7d91d9ce90997c",
+        "definition": "836d4741568eee2b2c075e01b791ce09de637eff97858c0853f87bf2e1bcfbc6",
+        "visual": "87f9f734b78dcc7819ba97a0d99161c6fb75b1194e169080768d3dd00e22aa77"
+      },
+      "interval": {
+        "start": 34560,
+        "end": 66240
+      }
+    },
+    "long/takes/v03a-refusals-03/focus-1": {
+      "binding": {
+        "audio": "79a92c50edc95731d036b45f428237c36b24f3bd510712c3374982e03aba1c69",
+        "rate": 48000,
+        "samples": 200135,
+        "words": "2904962f9b56d23af8bc903da12ccb58884ebc77031e42e640a400017e639508",
+        "definition": "a571abfb4c579aaa59185c547fe177be75739642f2bb3373a20ebf4cbae02aaa",
+        "visual": "032a2fb887083614a6dfff4487498ef1521cee436708fe8ba6cd0e45667368e8"
+      },
+      "interval": {
+        "start": 6240,
+        "end": 38400
+      }
+    },
+    "long/takes/v03a-refusals-04/focus-1": {
+      "binding": {
+        "audio": "0c0b36786900c0ea7bf7bff78c46081ff0f78fd96748d52711ed22518a03e9ac",
+        "rate": 48000,
+        "samples": 172256,
+        "words": "97c44db7c79cf73a9e90023adf0a595576234c82d502d1c419bfb7616b9343ff",
+        "definition": "ab7d037c63ae469cb9e2c2d2fa0c409f0eebd1a7f925f3e60dcfb8fb7ab7faa6",
+        "visual": "0fb2c4a331bd0b3efa8417b5aef9a9de66728e08c1a71cd20ea2ebfb7fe0f3e4"
+      },
+      "interval": {
+        "start": 87840,
+        "end": 116160
+      }
+    },
+    "long/takes/v03a-refusals-05/focus-1": {
+      "binding": {
+        "audio": "b89f2debab3868885ceecf5d6e7222aef0c681a600b8033fbc814139fe9e81db",
+        "rate": 48000,
+        "samples": 285204,
+        "words": "dc946c0e685d05764ffe8081952afe28e49a0e229940fa813696316ef64fbae7",
+        "definition": "c163aa7f31119eece090e58cfae8c0e6bdfa6b390a76ab71479bbfc0b76755d2",
+        "visual": "e6f556ddfc03d4426f7ef064c575d619f477759392b452598e9fa79444ce4566"
+      },
+      "interval": {
+        "start": 120960,
+        "end": 174240
+      }
+    },
+    "long/takes/v03a-refusals-06/focus-1": {
+      "binding": {
+        "audio": "5498a59b43e1dba903ca6cb0c8ff417771324b49e032cc345595c6fee5e1f573",
+        "rate": 48000,
+        "samples": 79416,
+        "words": "ef904f7e43c458c2449584633a612d0c70dc0458ae70def34b560dedc6be7053",
+        "definition": "82df9fd432fa0777e3e8b0d90b19d1a6ea9f8e593ec06df66ef991653c04e17a",
+        "visual": "6c5e8f8dd53c42b61967b66026f34a3fd5b76ea7da2d31b51f4257deb0d27552"
+      },
+      "interval": {
+        "start": 35520,
+        "end": 79416
+      }
+    },
+    "long/takes/v03a-refusals-07/focus-1": {
+      "binding": {
+        "audio": "e180b8a51927a67e3fb0fdca901670723db4092fac8a7deee01920ec82143dc0",
+        "rate": 48000,
+        "samples": 250491,
+        "words": "92b07e976ef485f6fb522195edcb30ab1be15bfc3095f2b78eade1b79c5f2621",
+        "definition": "75cebeb63d937a0ee8bb9542f454b19256e07fb5307fb206f4dd43817c9b8d73",
+        "visual": "02eee30c4c1b6f81f0176f8891af2fe1a23cb8ed6612e5d12b671b287dd9c302"
+      },
+      "interval": {
+        "start": 51840,
+        "end": 69600
+      }
+    },
+    "long/takes/v03a-refusals-08/focus-1": {
+      "binding": {
+        "audio": "2a505535246c592afe0241e0ea43d37784aea3d3e34fa96d778061426f1adbe7",
+        "rate": 48000,
+        "samples": 76059,
+        "words": "5b4806ceec7704d5a29476f476a6acae1b1f824ec9dd63a58cee2016b1c54870",
+        "definition": "1daba33f21fb6d8d07074024a4afbf6ba4dcd6d1c771cf6dc362efc6641555da",
+        "visual": "ba6ed9f5f8b7e0ae60a0ab236a48139bd85915ffc82abb4909bdf7ebd3495397"
+      },
+      "interval": {
+        "start": 36480,
+        "end": 73920
+      }
+    },
+    "long/takes/v03a-refusals-09/focus-1": {
+      "binding": {
+        "audio": "08d287d9b2fe2dce1813b51d607b5b29348bf2db934e0ca0265f39f9cb0095dd",
+        "rate": 48000,
+        "samples": 122203,
+        "words": "715139ef7711e9fe225684744f51e291ce07491c05a172a39983541f1e70bce6",
+        "definition": "31fe9f1babccb388d0cba6dfa41788ed04b9bf2cbf5c9a045e40cb31062fa6c1",
+        "visual": "725cdd9d8326a398af86471e2151882051d5b4f76a37288d733872ce5748d95e"
+      },
+      "interval": {
+        "start": 29760,
+        "end": 74880
+      }
+    },
+    "long/takes/v03a-refusals-10/focus-1": {
+      "binding": {
+        "audio": "c282002fa018eb67772b862a0a0b59206d4f5c634167546e893e4cdcdd4985e3",
+        "rate": 48000,
+        "samples": 181309,
+        "words": "2b585b107cb13bfaa91c3f84f3397d74e5cfc29f4be4ac2d65b94324b636c3d2",
+        "definition": "6c31438a8d603b2246252a186b1f201a10e607f516b23301e17ec9fd6ce2bc31",
+        "visual": "db76977aeb83a7dcee9c451f7e8c6fb01353fa24cf5d9299e878ea7769213d10"
+      },
+      "interval": {
+        "start": 120000,
+        "end": 178560
+      }
+    },
+    "long/takes/v03a-refusals-11/focus-1": {
+      "binding": {
+        "audio": "ae188672af03efa42cf789a0b5641484b4d42f04cdfff023158046429629e33d",
+        "rate": 48000,
+        "samples": 181788,
+        "words": "1318ce4971ea0b2fd635caafe810d2063e86af7edf1506a1fb93ec8df33eac65",
+        "definition": "d0a54ab6a784a9f307224f92cbbf3640d3c2122852c328fc5ed0dcb76cf5b0bf",
+        "visual": "cfac05fe85ec5f1d5d1a5a7c3c128cc89d0db51e7d2338e66746147271ce1e8f"
+      },
+      "interval": {
+        "start": 119040,
+        "end": 180480
+      }
+    },
+    "long/takes/v03a-shop-02/focus-1": {
+      "binding": {
+        "audio": "f7d967bf5592cf77e51e8c94bb64df8cc9b9f0721f2c751ef0027dd2f10134f0",
+        "rate": 48000,
+        "samples": 108919,
+        "words": "bd0b1110551e0ee15a2e7a68a1689b9cbd61b761c3c8f7f81e0e8c40dc96c862",
+        "definition": "7e54e3bfbd840845aa3f66dce76a54d741e3d72463df83104924780660106537",
+        "visual": "c09a569ced7e8a6908e2f3aedbe013f0475122dd6d63300c7cac7044763056e6"
+      },
+      "interval": {
+        "start": 44640,
+        "end": 67680
+      }
+    },
+    "long/takes/v03a-shop-03/focus-1": {
+      "binding": {
+        "audio": "bb85c2d8f01ad588ce86a02b463b345649d44c0239a63fb91c1acee8edb15068",
+        "rate": 48000,
+        "samples": 122534,
+        "words": "2e4d57e4f7d75c8d652cc63ea079a45ab1379d02bdb20484336fe994d23fa216",
+        "definition": "f9b38c444876d214c1699e4270a8b1f5a78c9cb9935ab36938a9e0c9e3fde02d",
+        "visual": "b38f71f0aa980cd5077eb46d9a7074271c54954213dd539b0f6ac4359aaf744c"
+      },
+      "interval": {
+        "start": 47520,
+        "end": 75840
+      }
+    },
+    "long/takes/v03a-shop-09/focus-1": {
+      "binding": {
+        "audio": "10bb2d08549dcf1b89a39945c3e940e81279be00e2961399a2eea37843ef3994",
+        "rate": 48000,
+        "samples": 246672,
+        "words": "f0518064a29a8630f9141e7fb60d4fde352df43a0c77ca8c164e56398f7c8500",
+        "definition": "cab82963db5426074a2887f10b76c339687e1f91396ecc0f29d1fcba58d06e20",
+        "visual": "df7b1abac47cbf7e114080f46978058eca5ca413e545d2a798ff2c562c9a7bbe"
+      },
+      "interval": {
+        "start": 168000,
+        "end": 241920
+      }
+    },
+    "long/takes/v03a-shop-10/focus-1": {
+      "binding": {
+        "audio": "6d88f5c50f320d4dd52ff51075b0ebdfe31f369f150eeb52466b370e73d5f044",
+        "rate": 48000,
+        "samples": 211624,
+        "words": "32e78f2ff14917aa1d2857b781a14a6623f977506ded1b48d6653aedabd226b7",
+        "definition": "7e54e3bfbd840845aa3f66dce76a54d741e3d72463df83104924780660106537",
+        "visual": "1db8f23bdeef85864b5de41f1bffd4211345e2b905ebf9ceb2c885abd4c5aaa1"
+      },
+      "interval": {
+        "start": 86880,
+        "end": 113280
+      }
+    },
+    "long/takes/v03a-shop-11/focus-1": {
+      "binding": {
+        "audio": "041e980a20d514ee68d4db9ed462420b67a4dfe587ae9a905e4371e7ebf3ecfb",
+        "rate": 48000,
+        "samples": 170392,
+        "words": "5d3deae86c2a2d194f7d7d5f4c1cdd714be264243938322e23a767457caf3e66",
+        "definition": "39beb53e7e8a3bc26d577e37c71f7aa98c58b55ba0672ad14757eafdf1baaf68",
+        "visual": "4d8575a7fe4b3656a31ca9fe2e5868c1731d04852fa93b6137381607651c10e5"
+      },
+      "interval": {
+        "start": 42240,
+        "end": 72960
+      }
+    },
+    "long/takes/v03a-supplied-conclusion-01/focus-1": {
+      "binding": {
+        "audio": "4e5cf1f03e2c0197200a006adac90be06ee68d9a951be10d1f0689863fbd668c",
+        "rate": 48000,
+        "samples": 274400,
+        "words": "194b6edd2c5d84e7a5db60b13c02d2ba4c79e862d3d3c6a4f015c98038fefe3d",
+        "definition": "3f7ec9e9c206beb2498bf77c46837579cca1171faa01feb0cd514f6a7ed59361",
+        "visual": "778097e04d7f863b50a151fd0bc21426db8c8989ee67f93c032271c7112b45f5"
+      },
+      "interval": {
+        "start": 183360,
+        "end": 223200
+      }
+    },
+    "long/takes/v03a-supplied-conclusion-02/focus-1": {
+      "binding": {
+        "audio": "ce5bc4127fd01a95c6d644308ec557d6959a72b45f80166f23d85cc57911b396",
+        "rate": 48000,
+        "samples": 468614,
+        "words": "93db460ff2d923bdae0b27c24b340a11b63a0f1a2bf30b1de6abcb81c92f92b5",
+        "definition": "3c35d10c8b9801e37f5281e8c099eebcd5839bc6e6997e851441bfde555421d5",
+        "visual": "7dc12afeb5aa2d5026e97fc05b3b9712ffbb16e77441921148422880eded3d80"
+      },
+      "interval": {
+        "start": 266880,
+        "end": 342720
+      }
+    },
+    "long/takes/v03a-supplied-conclusion-03/focus-1": {
+      "binding": {
+        "audio": "cac87e813b71016248a15fc154eb10e84517d8ac460fd9205543ee146e4b30c2",
+        "rate": 48000,
+        "samples": 153854,
+        "words": "591af0c9b643dd1b3d00aa1683fba3858f88ad20a0c93220d06cdcdb3e52c8e9",
+        "definition": "c07e958104752dd06784a04a11f780ba59f21d8157119427c51d19f9691fa85c",
+        "visual": "7d5403095b543cbfbdb95305e1aab0d291d1c1b32cd3baa2dc9a985f057f7618"
+      },
+      "interval": {
+        "start": 24960,
+        "end": 43680
+      }
+    },
+    "long/takes/v03a-supplied-conclusion-03/focus-2": {
+      "binding": {
+        "audio": "cac87e813b71016248a15fc154eb10e84517d8ac460fd9205543ee146e4b30c2",
+        "rate": 48000,
+        "samples": 153854,
+        "words": "591af0c9b643dd1b3d00aa1683fba3858f88ad20a0c93220d06cdcdb3e52c8e9",
+        "definition": "84073acbf01595b793f66bdb312602632510b6baa0734e1203b8ab6b5f85c102",
+        "visual": "584dc2150b0a7b869596d36045c8e40df9276fb2928fe6b2db1231f318b85105"
+      },
+      "interval": {
+        "start": 54720,
+        "end": 145920
+      }
+    },
+    "long/takes/v03a-supplied-conclusion-04/focus-1": {
+      "binding": {
+        "audio": "a272693eb7f6ab3f3b1efe6e886194f457ead88b6bc50c7a2012f8eed6d02518",
+        "rate": 48000,
+        "samples": 106511,
+        "words": "071b18ac383b66432bd7c3060c62f8ce6adf244a58448e59adfd01c37edb20a6",
+        "definition": "16054c3825bfc91aa23cfdb7829862236f5c1208375f00c89126ff97283ac802",
+        "visual": "201de8b25cf3d81f950d912930bdab7f24c4a700052541f8b05daf5daffa3422"
+      },
+      "interval": {
+        "start": 71040,
+        "end": 103680
+      }
+    },
+    "long/takes/v03a-supplied-conclusion-05/focus-1": {
+      "binding": {
+        "audio": "8be76b16202e6584bdbcd6958b21efc400a9917b221cc3990f6ce475bd4cb0e7",
+        "rate": 48000,
+        "samples": 138620,
+        "words": "7627a691c2e423e0e54ee464aeef5c8bf60376477a4b74e5d99eebd1e94130a3",
+        "definition": "47e8375fd7cdce8993c9138a5cd99882a9ebc5c8792bcb733a2787115ee508b8",
+        "visual": "c858417552e0edc86a5dd451d4584a9ab422dcd4873586d1c0de23fb245b21d4"
+      },
+      "interval": {
+        "start": 60000,
+        "end": 136320
+      }
+    },
+    "long/takes/v03a-supply-premises-01/focus-1": {
+      "binding": {
+        "audio": "08dab8f924532e1370795c1fc3e1ed84a0b3af01bc15c9687ff0a5e19bab0b0b",
+        "rate": 48000,
+        "samples": 259335,
+        "words": "c55f18d75d383ab1157109bda0791a85fc36e48798afbdd705ca558d0c4bb187",
+        "definition": "f9b38c444876d214c1699e4270a8b1f5a78c9cb9935ab36938a9e0c9e3fde02d",
+        "visual": "b9e915b33f3ac49b3ae22665e148a4ffb437a9783ff2d35a010dc8178894630e"
+      },
+      "interval": {
+        "start": 113280,
+        "end": 156960
+      }
+    },
+    "long/takes/v03a-supply-premises-07/focus-1": {
+      "binding": {
+        "audio": "afaa22a8959bce31e6895c731de3067ca3ac8b744b9a4d1475467fb66720f271",
+        "rate": 48000,
+        "samples": 219976,
+        "words": "502e79558a1f88187367e23d2bf2ab43b77fae357576fa3e55584628bdd6b169",
+        "definition": "97f066a128d09047d9a2f115170a80ccd5bf453ff45d94ffc5e249c5e6365b94",
+        "visual": "e0a5a62915794a47e5cb5e40a59a54354d3fc18bb1b7c32787b07684381b23c4"
+      },
+      "interval": {
+        "start": 4800,
+        "end": 27840
+      }
+    },
+    "long/takes/v03a-supply-premises-07/focus-2": {
+      "binding": {
+        "audio": "afaa22a8959bce31e6895c731de3067ca3ac8b744b9a4d1475467fb66720f271",
+        "rate": 48000,
+        "samples": 219976,
+        "words": "502e79558a1f88187367e23d2bf2ab43b77fae357576fa3e55584628bdd6b169",
+        "definition": "2c146279af386adb59c897e2de99f2bac987df5e762459bbf5c2e41fac9f6e3d",
+        "visual": "7f736bc5edb3c953313ce0bb8016c3deb8cabf20693167503a6911db6c550b55"
+      },
+      "interval": {
+        "start": 120480,
+        "end": 152160
+      }
+    },
+    "long/takes/v03a-supply-premises-08/focus-1": {
+      "binding": {
+        "audio": "6fa32246bbed8d5eada60dacc1b086a5e25b83a6114faa78d27b640871f122e7",
+        "rate": 48000,
+        "samples": 117432,
+        "words": "b0673ffc848fc34bee493f2aab72d6990ea69a86dca7d2423d2aec7abf71891e",
+        "definition": "c46eb486d1160acbf09d5b8cf9a0140600e60ff2223e62f7a8219f8836934ac7",
+        "visual": "f686f342ccd01712756cad00fb57dcc9cf4e5b3d57af6e5bbdcc15a5912d20aa"
+      },
+      "interval": {
+        "start": 40800,
+        "end": 109440
+      }
+    },
+    "long/takes/v03a-supply-premises-12/focus-1": {
+      "binding": {
+        "audio": "4ed842add6dbe09549b6d9ae8a2af4b36b2c24b2cb61fcfc8262fc0d5639b43c",
+        "rate": 48000,
+        "samples": 209185,
+        "words": "09cbe7178e199fc546651a29685a271de88bb381c019dd8e1334949ad21d0f39",
+        "definition": "d88f504ca0307765f7ab3b42d5bb8cf9d9be30ab1c70381b6a8e3738f1416900",
+        "visual": "380879b6a9690cd6414126e6b2ccc6639d9a5d11b2a4add4ecb1b4ddf5d2d1fe"
+      },
+      "interval": {
+        "start": 60960,
+        "end": 106080
+      }
+    },
+    "short/takes/v03a-short-boundary-01/focus-1": {
+      "binding": {
+        "audio": "43f7d30a72e37e791301be2adbb1484708c30f622a2075497445c6827af4f569",
+        "rate": 48000,
+        "samples": 170313,
+        "words": "23bb5a69fb841302951afc15c27dcc042a3c2923a6fe7be84cab742e860a26eb",
+        "definition": "1ff4d35c89356d4ccfd40c88ed90599882ee8367e5cc56dd3491c36a6d70ea9b",
+        "visual": "0fcbe527a7a1c94b3f7ef0d6ea5af7ca779b6bcafd35b4667eacd1a2f5450de7"
+      },
+      "interval": {
+        "start": 77760,
+        "end": 109440
+      }
+    },
+    "short/takes/v03a-short-boundary-01/focus-2": {
+      "binding": {
+        "audio": "43f7d30a72e37e791301be2adbb1484708c30f622a2075497445c6827af4f569",
+        "rate": 48000,
+        "samples": 170313,
+        "words": "23bb5a69fb841302951afc15c27dcc042a3c2923a6fe7be84cab742e860a26eb",
+        "definition": "e9cd4a7489f55ce8c087e894c2e3ae572d71edd6aee7f74e49463f57acdc0d03",
+        "visual": "7e63b37bee4a2e9438001665333e201085264ae66421bc6d0dd4ee41d1e0ac36"
+      },
+      "interval": {
+        "start": 77760,
+        "end": 109440
+      }
+    },
+    "short/takes/v03a-short-boundary-02/focus-1": {
+      "binding": {
+        "audio": "2f66a4f35febdf36ea42a4c5a83e3f4b0ecded9499db279c101bf43f6886d3f5",
+        "rate": 48000,
+        "samples": 124663,
+        "words": "9a57ca3007eb78bdf6c9a338dce67e461c901ba63548d35896851efd5cb13759",
+        "definition": "d64bfd4b6556f793c25185d61b17292d97e403ab771861a1b3474c8c59bfa557",
+        "visual": "6c1acbf613e3dbd8468e74813d4001ca8bae53b2488a22d4f451bdbe76e34d45"
+      },
+      "interval": {
+        "start": 73920,
+        "end": 119040
+      }
+    },
+    "short/takes/v03a-short-claim-01/focus-1": {
+      "binding": {
+        "audio": "2621f0d079746da2ecddcdba9f11895caed62468daaaf62b3f1a5d07c55a76c2",
+        "rate": 48000,
+        "samples": 180605,
+        "words": "8cc261858aaa1cbbb6ac051d0e2b149b5670c2d51e3a2dc93760be3dd7b5f502",
+        "definition": "87f9f5c738310e4ea0ace8a4ecbad973c1e56bab6b978fc536aedc5f6ebc1f54",
+        "visual": "c443cd4ae8f987ff41e2910217a93f7bb11bb1ac522703041a4e60c2cef95b92"
+      },
+      "interval": {
+        "start": 63840,
+        "end": 94560
+      }
+    },
+    "short/takes/v03a-short-claim-02/focus-1": {
+      "binding": {
+        "audio": "a82f1891b3fda62a10384f24be5086381c77dcd8cd494c78e751b5515c5a465e",
+        "rate": 48000,
+        "samples": 171544,
+        "words": "f4575418e5105d1ba306caf1128b0100d461a52181ef78a3838bb7c7ef56fa62",
+        "definition": "c07e958104752dd06784a04a11f780ba59f21d8157119427c51d19f9691fa85c",
+        "visual": "6177d7442896a44a3181ab1411da7c9acedf32314d0775df2bbbdc7a06192b2e"
+      },
+      "interval": {
+        "start": 54720,
+        "end": 81600
+      }
+    },
+    "short/takes/v03a-short-claim-02/focus-2": {
+      "binding": {
+        "audio": "a82f1891b3fda62a10384f24be5086381c77dcd8cd494c78e751b5515c5a465e",
+        "rate": 48000,
+        "samples": 171544,
+        "words": "f4575418e5105d1ba306caf1128b0100d461a52181ef78a3838bb7c7ef56fa62",
+        "definition": "886cff99e2ac9da9b63abfefc54a5a201d825bd8ef207703e74bcfdd26d6f0aa",
+        "visual": "c2d2e44849a3ba816758c5f45a183a6fb178274eb48c5af5d05449f2609bea81"
+      },
+      "interval": {
+        "start": 105120,
+        "end": 168960
+      }
+    },
+    "short/takes/v03a-short-claim-03/focus-1": {
+      "binding": {
+        "audio": "822b98e4edd5fcb81245defc236dd5f5fd4dc5802bad7be5472ceea114862c5c",
+        "rate": 48000,
+        "samples": 127469,
+        "words": "58ddd2a78f268152c0b6dca632341459629b7d3ad937b925dfac45a19e40068c",
+        "definition": "e5c1fd9ba64ad66bf223f33c9f47db0e11e1f29924db857a194d79e6f17dc570",
+        "visual": "acb20b858c202b2173fc210af59845e95387625f19deed306329d24c5b8e8535"
+      },
+      "interval": {
+        "start": 46080,
+        "end": 88320
+      }
+    },
+    "short/takes/v03a-short-note-01/focus-1": {
+      "binding": {
+        "audio": "f6a2194da00fa5dcb9048d687a351c7473af8fe3e4dedd121425232e83873608",
+        "rate": 48000,
+        "samples": 161094,
+        "words": "28e169e9c67fb51487115fe74c5c02e5d9abd04bd970658b00599d38128cea34",
+        "definition": "7e54e3bfbd840845aa3f66dce76a54d741e3d72463df83104924780660106537",
+        "visual": "739aab145504eef51e9d79070ba0fe398bd5f8f6db70648fe41f9d2d55ab6f49"
+      },
+      "interval": {
+        "start": 74880,
+        "end": 111360
+      }
+    },
+    "short/takes/v03a-short-note-02/focus-1": {
+      "binding": {
+        "audio": "75ec4b1b4f16173d43f31fc5e78b703ab595c8a6bbcc718eda8d773537f78932",
+        "rate": 48000,
+        "samples": 193867,
+        "words": "1bacc7b3b2371ed09a477ab80a45e80095879ee6db1258efe852142fea4bf7e6",
+        "definition": "cab82963db5426074a2887f10b76c339687e1f91396ecc0f29d1fcba58d06e20",
+        "visual": "2900fdbc30454da1f70d8d76a7d428d921c1f51158c99c1da8829a10dc585361"
+      },
+      "interval": {
+        "start": 141120,
+        "end": 192960
+      }
+    },
+    "short/takes/v03a-short-premise-02/focus-1": {
+      "binding": {
+        "audio": "c223d3f781f248847b29151bbbd4dd09a8db7f0be79e44fb19ab0989d579c11c",
+        "rate": 48000,
+        "samples": 104859,
+        "words": "6847f5bb191035bd697ee95c88457ac33a138496205ed4a69cd6f98dfa39585d",
+        "definition": "237acbe156bff035004dbc485dd4521d18ec304001704485f03b98ab2c7560e9",
+        "visual": "d5af9e6e04e9b8c6d877994b5c39ceda3381aab571df4009bd3cb9168684a33b"
+      },
+      "interval": {
+        "start": 6720,
+        "end": 19680
+      }
+    },
+    "short/takes/v03a-short-premise-03/focus-1": {
+      "binding": {
+        "audio": "f10b7869fc523a31d6a9475735ee8a238b9db40fe0493e4bafdd17358b8711e6",
+        "rate": 48000,
+        "samples": 216826,
+        "words": "9637f16b14c25322a8f8d32e0f8d662b919c0bea66c8b70f383c5b38b843196e",
+        "definition": "7e54e3bfbd840845aa3f66dce76a54d741e3d72463df83104924780660106537",
+        "visual": "ee3f392edb27a56585a6e20446ea21acec12713c5b386cc3ca9f81a4681b0016"
+      },
+      "interval": {
+        "start": 6720,
+        "end": 40320
+      }
+    },
+    "short/takes/v03a-short-premise-04/focus-1": {
+      "binding": {
+        "audio": "5838bea4d3afadab61798b36fcc350d52889d35c1c01c13780cd802ddba7ee95",
+        "rate": 48000,
+        "samples": 265363,
+        "words": "72aca325e03868ca0363aedbc8a286b38a7ea3cd82f6a6a5023da583129e39b4",
+        "definition": "5ce407ecd6f6acfe6123e6313d67246ac2f7e8dfb48ca09175f8ef5ddfe24ce1",
+        "visual": "ee23e544b93ac281628396f290c53245bf64d67aaaacce4caf46923c115d19e6"
+      },
+      "interval": {
+        "start": 165600,
+        "end": 201600
+      }
+    }
+  },
+  "confirmations": [
+    {
+      "cut": "long",
+      "voice": "takes",
+      "owner_statement": "I did not click that. But I did check the the video and I can forms the cues are correct\n",
+      "recorded_by": "assistant relaying owner confirmation",
+      "review_sha256": "87bb0a8eb3c077a07f28b6842c78bb361ddca8d0a4e6c5f5e5efb1fecd40b49b",
+      "receipt_sha256": "14c4300b4688369a9f1713c8f5871d1994d146f568deaa9485f33209813f243c",
+      "review_identity": "37f19fa75ef45c322438a87a420c0b20592d054de9ac59174a3a878afddc04e8",
+      "cue_keys": [
+        "long/takes/v03a-build-statement-01/focus-1",
+        "long/takes/v03a-build-statement-01/name",
+        "long/takes/v03a-build-statement-02/focus-1",
+        "long/takes/v03a-build-statement-03/focus-1",
+        "long/takes/v03a-build-statement-04/focus-1",
+        "long/takes/v03a-build-statement-05/focus-1",
+        "long/takes/v03a-build-statement-06/focus-1",
+        "long/takes/v03a-build-statement-07/focus-1",
+        "long/takes/v03a-build-statement-08/focus-1",
+        "long/takes/v03a-build-statement-10/focus-1",
+        "long/takes/v03a-build-statement-11/focus-1",
+        "long/takes/v03a-build-statement-12/focus-1",
+        "long/takes/v03a-build-statement-13/focus-1",
+        "long/takes/v03a-build-statement-14/focus-1",
+        "long/takes/v03a-build-statement-15/focus-1",
+        "long/takes/v03a-build-statement-16/focus-1",
+        "long/takes/v03a-evaluate-claims-02/focus-1",
+        "long/takes/v03a-evaluate-claims-02/focus-2",
+        "long/takes/v03a-evaluate-claims-03/focus-1",
+        "long/takes/v03a-evaluate-claims-04/focus-1",
+        "long/takes/v03a-evaluate-claims-05/focus-1",
+        "long/takes/v03a-evaluate-claims-06/focus-1",
+        "long/takes/v03a-evaluate-claims-06/focus-2",
+        "long/takes/v03a-evaluate-claims-09/focus-1",
+        "long/takes/v03a-evaluate-claims-10/focus-1",
+        "long/takes/v03a-evaluate-claims-11/focus-1",
+        "long/takes/v03a-evaluate-claims-12/focus-1",
+        "long/takes/v03a-evaluate-claims-12/focus-2",
+        "long/takes/v03a-evaluate-claims-13/focus-1",
+        "long/takes/v03a-evaluate-claims-14/focus-1",
+        "long/takes/v03a-host-and-next-02/focus-1",
+        "long/takes/v03a-host-and-next-03/focus-1",
+        "long/takes/v03a-host-and-next-05/focus-1",
+        "long/takes/v03a-host-and-next-08/label",
+        "long/takes/v03a-host-and-next-08/packing",
+        "long/takes/v03a-host-and-next-08/same-parcel",
+        "long/takes/v03a-host-and-next-09/claim",
+        "long/takes/v03a-host-and-next-09/rule",
+        "long/takes/v03a-host-and-next-10/derived",
+        "long/takes/v03a-host-and-next-10/records",
+        "long/takes/v03a-named-places-01/focus-1",
+        "long/takes/v03a-named-places-02/focus-1",
+        "long/takes/v03a-named-places-03/focus-1",
+        "long/takes/v03a-named-places-04/focus-1",
+        "long/takes/v03a-named-places-05/focus-1",
+        "long/takes/v03a-named-places-06/focus-1",
+        "long/takes/v03a-named-places-07/focus-1",
+        "long/takes/v03a-named-places-08/focus-1",
+        "long/takes/v03a-named-places-09/focus-1",
+        "long/takes/v03a-named-places-10/focus-1",
+        "long/takes/v03a-named-places-11/focus-1",
+        "long/takes/v03a-named-places-12/focus-1",
+        "long/takes/v03a-named-places-13/focus-1",
+        "long/takes/v03a-named-places-14/focus-1",
+        "long/takes/v03a-refusals-01/focus-1",
+        "long/takes/v03a-refusals-02/focus-1",
+        "long/takes/v03a-refusals-03/focus-1",
+        "long/takes/v03a-refusals-04/focus-1",
+        "long/takes/v03a-refusals-05/focus-1",
+        "long/takes/v03a-refusals-06/focus-1",
+        "long/takes/v03a-refusals-07/focus-1",
+        "long/takes/v03a-refusals-08/focus-1",
+        "long/takes/v03a-refusals-09/focus-1",
+        "long/takes/v03a-refusals-10/focus-1",
+        "long/takes/v03a-refusals-11/focus-1",
+        "long/takes/v03a-shop-02/focus-1",
+        "long/takes/v03a-shop-03/focus-1",
+        "long/takes/v03a-shop-09/focus-1",
+        "long/takes/v03a-shop-10/focus-1",
+        "long/takes/v03a-shop-11/focus-1",
+        "long/takes/v03a-supplied-conclusion-01/focus-1",
+        "long/takes/v03a-supplied-conclusion-02/focus-1",
+        "long/takes/v03a-supplied-conclusion-03/focus-1",
+        "long/takes/v03a-supplied-conclusion-03/focus-2",
+        "long/takes/v03a-supplied-conclusion-04/focus-1",
+        "long/takes/v03a-supplied-conclusion-05/focus-1",
+        "long/takes/v03a-supply-premises-01/focus-1",
+        "long/takes/v03a-supply-premises-07/focus-1",
+        "long/takes/v03a-supply-premises-07/focus-2",
+        "long/takes/v03a-supply-premises-08/focus-1",
+        "long/takes/v03a-supply-premises-12/focus-1"
+      ]
+    },
+    {
+      "cut": "short",
+      "voice": "takes",
+      "owner_statement": "I did not click that. But I did check the the video and I can forms the cues are correct\n",
+      "recorded_by": "assistant relaying owner confirmation",
+      "review_sha256": "df2ef89e86f1e892647a881d604869b66ed3c049f8f1abdddc8cc4b4a83bd292",
+      "receipt_sha256": "34d4f7f4ac3f548c5b29ced1e5f58127086c4d6285c3aca88c5a91de13f6231f",
+      "review_identity": "a2ea7aa6da879a4e8b2b1b780ec5af925210dc21f5135e281331449e473c23c4",
+      "cue_keys": [
+        "short/takes/v03a-short-boundary-01/focus-1",
+        "short/takes/v03a-short-boundary-01/focus-2",
+        "short/takes/v03a-short-boundary-02/focus-1",
+        "short/takes/v03a-short-claim-01/focus-1",
+        "short/takes/v03a-short-claim-02/focus-1",
+        "short/takes/v03a-short-claim-02/focus-2",
+        "short/takes/v03a-short-claim-03/focus-1",
+        "short/takes/v03a-short-note-01/focus-1",
+        "short/takes/v03a-short-note-02/focus-1",
+        "short/takes/v03a-short-premise-02/focus-1",
+        "short/takes/v03a-short-premise-03/focus-1",
+        "short/takes/v03a-short-premise-04/focus-1"
+      ]
+    }
+  ]
+}

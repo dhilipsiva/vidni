@@ -1,0 +1,1695 @@
+schema = 1
+[meta]
+title = "Writing Rules and Evaluating Claims"
+subtitle = "Reasoning from First Principles"
+language = "en"
+strict = true
+default_scene = "shop"
+
+[voice]
+draft = "piper:en_US-joe-medium"
+length_scale = 1.04
+respell = [{ text = "Nibli KR", say = "Nibbly K R" }, { text = "Nibli", say = "Nibbly" }, { text = "Parcel A", say = "Parcel, A" }]
+heard_as = [{ heard = "nibbly", means = "nibli" }, { heard = "nibley", means = "nibli" }]
+
+[emphasis]
+min_duration = 3.0
+
+[timing]
+lead_in = 0.6
+line_gap = 0.32
+section_gap = 0.65
+tail = 1.2
+
+[style]
+theme = "../themes/quine"
+
+[lint]
+banned = ['\bask(?:s|ed|ing)?\b', '\bquestions?\b', '\bpause and\b', '\bpredict\b', 'UNDETERMINED']
+
+[[cuts]]
+id = "long"
+aspect = "16:9"
+captions = "both"
+platforms = ["youtube"]
+
+[[cuts]]
+id = "short"
+aspect = "9:16"
+captions = "burned"
+platforms = ["youtube-shorts"]
+
+[music]
+track = "none"
+
+[publish]
+description = "Neuro-Symbolic Lesson 4 continues the parcel example with one shared variable, a checklist rule, claim evaluation and supporting derivations. Compare derived and given conclusions, then introduce every and some. The shop and its records are fictional."
+tags = ["neuro-symbolic reasoning", "Nibli KR", "symbolic reasoning", "knowledge representation"]
+
+[publish.titles]
+youtube = "Writing Rules and Evaluating Claims | Neuro-Symbolic Lesson 4"
+youtube-shorts = "Records Need a Rule | Neuro-Symbolic Lesson 4"
+
+[sections.shop]
+label = ""
+chapter = "The checklist for the same parcel"
+
+[sections.plain-rule]
+label = ""
+chapter = "Say the rule in ordinary language"
+
+[sections.write-rule]
+label = ""
+chapter = "Write one rule with a shared variable"
+
+[sections.first-evaluation]
+label = ""
+chapter = "Supply the rule and evaluate the claim"
+
+[sections.derivation]
+label = ""
+chapter = "Add a record and follow the derivation"
+
+[sections.controls]
+label = ""
+chapter = "Compare derived and given support"
+
+[sections.some]
+label = ""
+chapter = "Every case and at least one example"
+
+[sections.parcel-b]
+label = ""
+chapter = "Apply the same rule to Parcel B"
+
+[sections.closing]
+label = ""
+chapter = "What the conclusion rests on"
+
+[sections.short-story]
+label = ""
+chapter = ""
+
+[[lines]]
+id = "v02-shop-01"
+section = "shop"
+show = "Back at our small shop, Parcel A has a packing record, and Parcel B has a label record."
+scene = "shop"
+source = "notes.md#v02-shop"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "a", phrase = "Parcel A" }, { id = "focus-2", target = "b", phrase = "Parcel B" }]
+
+[[lines]]
+id = "v02-shop-02"
+section = "shop"
+show = "The shop's dispatch checklist needs both confirmations for the same parcel."
+scene = "shop"
+source = "notes.md#v02-shop"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "same", phrase = "same parcel" }]
+
+[[lines]]
+id = "v02-shop-03"
+section = "shop"
+show = "A packing note about A and a label note about B do not satisfy that requirement for either parcel."
+scene = "shop"
+source = "notes.md#v02-shop"
+only = ["long"]
+
+[[lines]]
+id = "v02-shop-04"
+section = "shop"
+show = "Welcome to Neuro-Symbolic Lesson 4. We're learning to make reasoning explicit, one step at a time."
+scene = "purpose"
+source = "notes.md#v02-shop"
+only = ["long"]
+
+[[lines]]
+id = "v02-shop-05"
+section = "shop"
+show = "Last time we wrote individual records and evaluated claims against them."
+scene = "purpose"
+source = "notes.md#v02-shop"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "records", phrase = "individual records" }]
+
+[[lines]]
+id = "v02-shop-06"
+section = "shop"
+show = "This time we'll write the shop's requirement once, as a rule, and follow a conclusion back to the records that support it."
+scene = "purpose"
+source = "notes.md#v02-shop"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "rule", phrase = "as a rule" }, { id = "focus-2", target = "conclusion", phrase = "a conclusion" }]
+
+[[lines]]
+id = "v02-shop-07"
+section = "shop"
+show = "That conclusion means the checklist is met according to our records. It does not send a parcel anywhere."
+scene = "purpose"
+source = "notes.md#v02-shop"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "limit", phrase = "according to our records" }]
+
+[[lines]]
+id = "v02-plain-rule-01"
+section = "plain-rule"
+show = "The requirement starts with any parcel, without choosing A or B in advance."
+scene = "english-rule"
+source = "notes.md#v02-plain-rule"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "every", phrase = "any parcel" }]
+
+[[lines]]
+id = "v02-plain-rule-02"
+section = "plain-rule"
+show = "If that parcel has a packing confirmation, and that parcel has a label confirmation, then that parcel meets the dispatch checklist."
+scene = "english-rule"
+source = "notes.md#v02-plain-rule"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "condition-a", phrase = "packing confirmation" }, { id = "focus-2", target = "condition-b", phrase = "label confirmation" }, { id = "focus-3", target = "conclusion", phrase = "meets the dispatch checklist" }]
+
+[[lines]]
+id = "v02-plain-rule-03"
+section = "plain-rule"
+show = "Each time we say that parcel, we mean the same thing. We cannot take one confirmation from A and the other from B."
+scene = "english-rule"
+source = "notes.md#v02-plain-rule"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "same", phrase = "the same thing" }]
+
+[[lines]]
+id = "v02-plain-rule-04"
+section = "plain-rule"
+show = "This is a reusable pattern. A particular record concerns one named parcel; the rule can apply whenever its conditions are met."
+scene = "english-rule"
+source = "notes.md#v02-plain-rule"
+only = ["long"]
+
+[[lines]]
+id = "v02-plain-rule-05"
+section = "plain-rule"
+show = "Our records already use two lists: packed parcels and labelled parcels. We'll represent the conclusion with a third list, Dispatch Checklist Met."
+scene = "lists"
+source = "notes.md#v02-plain-rule"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "checklist", phrase = "third list" }]
+
+[[lines]]
+id = "v02-plain-rule-06"
+section = "plain-rule"
+show = "That third name is our label for parcels whose records satisfy this checklist. The name itself does not make anything qualify."
+scene = "lists"
+source = "notes.md#v02-plain-rule"
+only = ["long"]
+
+[[lines]]
+id = "v02-write-rule-01"
+section = "write-rule"
+show = "In Nibli KR, we give the placeholder a name: dollar parcel. The dollar sign marks a variable, and parcel reminds us what we're tracking."
+scene = "rule-1"
+source = "notes.md#v02-write-rule"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "var-binding", phrase = "dollar parcel" }]
+
+[[lines]]
+id = "v02-write-rule-02"
+section = "write-rule"
+show = "The beginning reads all dollar parcel, followed by a colon. It says to consider each possible value for that variable."
+scene = "rule-1"
+source = "notes.md#v02-write-rule"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "binder", phrase = "all dollar parcel" }]
+
+[[lines]]
+id = "v02-write-rule-03"
+section = "write-rule"
+show = "This does not say that every parcel meets the checklist. The conditions that follow still have to hold."
+scene = "rule-1"
+source = "notes.md#v02-write-rule"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "all", phrase = "every parcel" }]
+
+[[lines]]
+id = "v02-write-rule-04"
+section = "write-rule"
+show = "The first condition uses our familiar member predicate. Its first argument is now the variable, instead of a particular parcel name."
+scene = "rule-2"
+source = "notes.md#v02-write-rule"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "var-packed", phrase = "the variable" }]
+
+[[lines]]
+id = "v02-write-rule-05"
+section = "write-rule"
+show = "The second argument is Packed Parcels. Together, those arguments say that this parcel is on the packed-parcels list."
+scene = "rule-2"
+source = "notes.md#v02-write-rule"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "packed-set", phrase = "Packed Parcels" }]
+
+[[lines]]
+id = "v02-write-rule-06"
+section = "write-rule"
+show = "Next comes the ampersand, read as and. Both conditions must hold for the rule to apply."
+scene = "rule-3"
+source = "notes.md#v02-write-rule"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "and", phrase = "the ampersand" }]
+
+[[lines]]
+id = "v02-write-rule-07"
+section = "write-rule"
+show = "The second condition puts the same variable on the labelled-parcels list. We have changed the list, while keeping the parcel together."
+scene = "rule-3"
+source = "notes.md#v02-write-rule"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "var-labeled", phrase = "same variable" }, { id = "focus-2", target = "labeled-set", phrase = "labelled-parcels list" }]
+
+[[lines]]
+id = "v02-write-rule-08"
+section = "write-rule"
+show = "The arrow is written with a hyphen and a greater-than sign. Here we read it as then: it leads to the conclusion."
+scene = "rule-4"
+source = "notes.md#v02-write-rule"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "arrow", phrase = "The arrow" }]
+
+[[lines]]
+id = "v02-write-rule-09"
+section = "write-rule"
+show = "The conclusion puts that parcel on Dispatch Checklist Met. A period finishes the complete rule."
+scene = "rule-4"
+source = "notes.md#v02-write-rule"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "dispatch-set", phrase = "Dispatch Checklist Met" }, { id = "focus-2", target = "period", phrase = "A period" }]
+
+[[lines]]
+id = "v02-write-rule-10"
+section = "write-rule"
+show = "Notice the same variable in all three argument positions: packing, label, and conclusion. The engine must use one value throughout."
+scene = "rule-4"
+source = "notes.md#v02-write-rule"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "shared", phrase = "same variable" }]
+
+[[lines]]
+id = "v02-write-rule-11"
+section = "write-rule"
+show = "We've written the shop's requirement, rather than a separate checklist result for each parcel. Now we can evaluate a particular claim."
+scene = "rule-4"
+source = "notes.md#v02-write-rule"
+only = ["long"]
+
+[[lines]]
+id = "v02-write-rule-12"
+section = "write-rule"
+show = "This is one complete statement, wrapped here for reading. In the playground input, we keep that statement together."
+scene = "rule-4"
+source = "notes.md#v02-write-rule"
+only = ["long"]
+
+[[lines]]
+id = "v02-first-evaluation-01"
+section = "first-evaluation"
+show = "Here is the playground with our two original records and the completed rule in the knowledge-base pane."
+scene = "pg-02-rule"
+source = "notes.md#v02-first-evaluation"
+only = ["long"]
+camera = "wide"
+camera_vertical = "wide"
+
+[[lines]]
+id = "v02-first-evaluation-02"
+section = "first-evaluation"
+show = "The rule goes with the premises. Rules are starting assumptions too: this is the checklist we have chosen for our example."
+scene = "pg-02-rule"
+source = "notes.md#v02-first-evaluation"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "kb-rule", phrase = "The rule" }]
+camera = "kb"
+camera_vertical = "kb"
+
+[[lines]]
+id = "v02-first-evaluation-03"
+section = "first-evaluation"
+show = "Before using it, we compare the back-translation with our intended requirement. Its repeated X stands for the same shared variable."
+scene = "pg-03-review"
+source = "notes.md#v02-first-evaluation"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "review", phrase = "back-translation" }]
+camera = "review"
+camera_vertical = "review"
+
+[[lines]]
+id = "v02-first-evaluation-04"
+section = "first-evaluation"
+show = "The reading must retain both conditions and the same parcel. We select Use reviewed encoding to make this checked version available for evaluation."
+scene = "pg-03-review"
+source = "notes.md#v02-first-evaluation"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "review-action", phrase = "Use reviewed encoding" }]
+camera = "review"
+camera_vertical = "review"
+
+[[lines]]
+id = "v02-first-evaluation-05"
+section = "first-evaluation"
+show = "We're using the playground's default reasoning settings. The records and rule are now available for evaluation."
+scene = "pg-04-rule-ready"
+source = "notes.md#v02-first-evaluation"
+only = ["long"]
+camera = "wide"
+camera_vertical = "wide"
+
+[[lines]]
+id = "v02-first-evaluation-06"
+section = "first-evaluation"
+show = "In the separate claim field, we write that Parcel A is a member of Dispatch Checklist Met. This evaluates A without adding that conclusion."
+scene = "pg-04-rule-ready"
+source = "notes.md#v02-first-evaluation"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "claim", phrase = "separate claim field" }]
+camera = "claim"
+camera_vertical = "claim"
+
+[[lines]]
+id = "v02-first-evaluation-07"
+section = "first-evaluation"
+show = "The result is FALSE. The packing condition holds for A, but its own label confirmation is missing from the records."
+scene = "pg-05-missing-label"
+source = "notes.md#v02-first-evaluation"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "false", phrase = "FALSE" }]
+camera = "result"
+camera_vertical = "result"
+
+[[lines]]
+id = "v02-first-evaluation-08"
+section = "first-evaluation"
+show = "Here FALSE means the claim is not derivable from what we supplied. It does not establish that the physical parcel has no label."
+scene = "pg-05-missing-label"
+source = "notes.md#v02-first-evaluation"
+only = ["long"]
+camera = "result"
+camera_vertical = "result"
+
+[[lines]]
+id = "v02-first-evaluation-09"
+section = "first-evaluation"
+show = "B's label note cannot fill that gap for A. The shared variable keeps those two parcels separate."
+scene = "shop"
+source = "notes.md#v02-first-evaluation"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "a", phrase = "for A" }, { id = "focus-2", target = "b", phrase = "B's label note" }]
+
+[[lines]]
+id = "v02-derivation-01"
+section = "derivation"
+show = "Later, a colleague adds a label confirmation for Parcel A. Now both confirmations concern A. The information has changed."
+scene = "new-label"
+source = "notes.md#v02-derivation"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "label", phrase = "label confirmation" }]
+
+[[lines]]
+id = "v02-derivation-02"
+section = "derivation"
+show = "We encode that new record as another premise, and review the changed knowledge base before using it."
+scene = "pg-06-repaired-ready"
+source = "notes.md#v02-derivation"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "a-label", phrase = "new record" }]
+camera = "kb"
+camera_vertical = "kb"
+
+[[lines]]
+id = "v02-derivation-03"
+section = "derivation"
+show = "The claim stays the same. The TRUE result now follows from the added record and the rule we already supplied."
+scene = "pg-07-derived"
+source = "notes.md#v02-derivation"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "true", phrase = "TRUE" }]
+camera = "result"
+camera_vertical = "result"
+
+[[lines]]
+id = "v02-derivation-04"
+section = "derivation"
+show = "We can now follow the support in the proof panel. Start with the conclusion: A meets the dispatch checklist."
+scene = "pg-07-derived"
+source = "notes.md#v02-derivation"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "derived", phrase = "the conclusion" }]
+camera = "proof"
+camera_vertical = "proof"
+
+[[lines]]
+id = "v02-derivation-05"
+section = "derivation"
+show = "Beside it, the answer cites the recorded rule. That is the requirement connecting the two conditions to this conclusion."
+scene = "pg-07-derived"
+source = "notes.md#v02-derivation"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "citation", phrase = "recorded rule" }]
+camera = "proof"
+camera_vertical = "proof"
+
+[[lines]]
+id = "v02-derivation-06"
+section = "derivation"
+show = "Underneath are the supporting records. One says A is on the packed-parcels list, and is marked given."
+scene = "pg-07-derived"
+source = "notes.md#v02-derivation"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "packed", phrase = "packed-parcels list" }]
+camera = "proof"
+camera_vertical = "proof"
+
+[[lines]]
+id = "v02-derivation-07"
+section = "derivation"
+show = "The other says A is on the labelled-parcels list, also given. Both records concern A, exactly as our rule requires."
+scene = "pg-07-derived"
+source = "notes.md#v02-derivation"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "labeled", phrase = "labelled-parcels list" }]
+camera = "proof"
+camera_vertical = "proof"
+
+[[lines]]
+id = "v02-derivation-08"
+section = "derivation"
+show = "Given means we supplied that record. The checklist conclusion was derived: the engine applied our rule to those two records."
+scene = "pg-07-derived"
+source = "notes.md#v02-derivation"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "derived", phrase = "was derived" }]
+camera = "proof"
+camera_vertical = "proof"
+
+[[lines]]
+id = "v02-derivation-09"
+section = "derivation"
+show = "That short path from records, through a rule, to the conclusion is a derivation. It makes the support visible."
+scene = "pg-07-derived"
+source = "notes.md#v02-derivation"
+only = ["long"]
+camera = "proof"
+camera_vertical = "proof"
+
+[[lines]]
+id = "v02-derivation-10"
+section = "derivation"
+show = "Evaluating the claim again gives the same support. It does not add the conclusion to the premises we supplied."
+scene = "pg-08-repeat"
+source = "notes.md#v02-derivation"
+only = ["long"]
+camera = "inputs"
+camera_vertical = "inputs"
+
+[[lines]]
+id = "v02-controls-01"
+section = "controls"
+show = "A small comparison shows what the rule contributes. We'll keep A's two confirmations, but remove the rule."
+scene = "compare-rule"
+source = "notes.md#v02-controls"
+only = ["long"]
+
+[[lines]]
+id = "v02-controls-02"
+section = "controls"
+show = "With both records still present, A’s checklist claim now returns FALSE. The engine has no supplied rule connecting those lists to checklist membership."
+scene = "pg-09-no-rule"
+source = "notes.md#v02-controls"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "false", phrase = "FALSE" }]
+camera = "result"
+camera_vertical = "result"
+
+[[lines]]
+id = "v02-controls-03"
+section = "controls"
+show = "The two records are available information. The rule is what makes this particular conclusion follow from them."
+scene = "pg-09-no-rule"
+source = "notes.md#v02-controls"
+only = ["long"]
+camera = "kb"
+camera_vertical = "kb"
+
+[[lines]]
+id = "v02-controls-04"
+section = "controls"
+show = "For a second comparison, we supply the checklist conclusion itself as a premise. That is a different use of the same statement."
+scene = "compare-given"
+source = "notes.md#v02-controls"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "point", phrase = "conclusion itself" }]
+
+[[lines]]
+id = "v02-controls-05"
+section = "controls"
+show = "Now the verdict is TRUE, but the support is marked given. There is no rule citation connecting it to the two confirmations."
+scene = "pg-10-given"
+source = "notes.md#v02-controls"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "given", phrase = "marked given" }]
+camera = "proof"
+camera_vertical = "proof"
+
+[[lines]]
+id = "v02-controls-06"
+section = "controls"
+show = "A TRUE verdict alone does not tell us whether we supplied a conclusion or derived it. Reading the support tells us which happened."
+scene = "pg-10-given"
+source = "notes.md#v02-controls"
+only = ["long"]
+camera = "proof"
+camera_vertical = "proof"
+
+[[lines]]
+id = "v02-controls-07"
+section = "controls"
+show = "We remove that supplied conclusion and restore our rule. The answer once again derives checklist membership from A’s two records."
+scene = "pg-11-restored"
+source = "notes.md#v02-controls"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "derived", phrase = "derives checklist membership" }]
+camera = "proof"
+camera_vertical = "proof"
+
+[[lines]]
+id = "v02-some-01"
+section = "some"
+show = "The word all made our rule general. It can apply to each matching parcel, without a new rule written just for that name."
+scene = "objects"
+source = "notes.md#v02-some"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "rule-meaning", phrase = "each matching parcel" }]
+
+[[lines]]
+id = "v02-some-02"
+section = "some"
+show = "A different claim can require only one qualifying example. We will write: some object meets the dispatch checklist."
+scene = "objects"
+source = "notes.md#v02-some"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "some-meaning", phrase = "only one" }]
+
+[[lines]]
+id = "v02-some-03"
+section = "some"
+show = "First, we explicitly record Parcel A and Parcel B as objects. These are two additional premises, not facts inferred from their names."
+scene = "objects"
+source = "notes.md#v02-some"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "object-a", phrase = "Parcel A" }, { id = "focus-2", target = "object-b", phrase = "Parcel B" }]
+
+[[lines]]
+id = "v02-some-04"
+section = "some"
+show = "Parcel is not a predicate in the supported vocabulary, so we use the predicate object. It has one argument: the thing we are recording. The phrase some object then considers those recorded things."
+scene = "objects"
+source = "notes.md#v02-some"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "object-word", phrase = "predicate object" }, { id = "focus-2", target = "object-arg", phrase = "one argument" }]
+
+[[lines]]
+id = "v02-some-05"
+section = "some"
+show = "In the claim, some object takes the first argument position. Dispatch Checklist Met stays in the second position."
+scene = "pg-12-objects"
+source = "notes.md#v02-some"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "some", phrase = "some object" }, { id = "focus-2", target = "claim-set", phrase = "Dispatch Checklist Met" }]
+camera = "claim"
+camera_vertical = "claim"
+
+[[lines]]
+id = "v02-some-06"
+section = "some"
+show = "This means at least one recorded object belongs to that list. We are evaluating whether such an example is supported."
+scene = "pg-12-objects"
+source = "notes.md#v02-some"
+only = ["long"]
+camera = "claim"
+camera_vertical = "claim"
+
+[[lines]]
+id = "v02-some-07"
+section = "some"
+show = "The result is TRUE because A qualifies. Its object record and the checklist derivation supply the support."
+scene = "pg-13-some-one"
+source = "notes.md#v02-some"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "object-leaf", phrase = "object record" }, { id = "focus-2", target = "derived", phrase = "checklist derivation" }]
+camera = "proof"
+camera_vertical = "proof"
+
+[[lines]]
+id = "v02-some-08"
+section = "some"
+show = "One supported example is enough for this claim. It does not say that every object qualifies, or that exactly one does."
+scene = "pg-13-some-one"
+source = "notes.md#v02-some"
+only = ["long"]
+camera = "proof"
+camera_vertical = "proof"
+
+[[lines]]
+id = "v02-parcel-b-01"
+section = "parcel-b"
+show = "B still has only a label confirmation. Evaluating B's own checklist claim gives FALSE, because its packing record is missing."
+scene = "pg-14-b-missing"
+source = "notes.md#v02-parcel-b"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "false", phrase = "claim gives FALSE" }]
+camera = "result"
+camera_vertical = "result"
+
+[[lines]]
+id = "v02-parcel-b-02"
+section = "parcel-b"
+show = "Now a packing confirmation arrives for B as well. We add that record and review the changed input."
+scene = "b-record"
+source = "notes.md#v02-parcel-b"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "packing", phrase = "packing confirmation" }]
+
+[[lines]]
+id = "v02-parcel-b-03"
+section = "parcel-b"
+show = "The same rule now derives B's checklist membership. Its proof uses B's packing and label records. Both confirmations concern B, so neither comes from A."
+scene = "pg-16-b-derived"
+source = "notes.md#v02-parcel-b"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "packed", phrase = "B's packing" }, { id = "focus-2", target = "labeled", phrase = "label records" }]
+camera = "proof"
+camera_vertical = "proof"
+
+[[lines]]
+id = "v02-parcel-b-04"
+section = "parcel-b"
+show = "Both parcels now qualify. Evaluating the some-object claim still returns TRUE. At least one includes the case where both qualify."
+scene = "pg-17-some-both"
+source = "notes.md#v02-parcel-b"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "true", phrase = "TRUE" }]
+camera = "result"
+camera_vertical = "result"
+
+[[lines]]
+id = "v02-parcel-b-05"
+section = "parcel-b"
+show = "In ordinary conversation, some can suggest not all. That extra suggestion is not part of this formal claim."
+scene = "b-record"
+source = "notes.md#v02-parcel-b"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "some", phrase = "not all" }]
+
+[[lines]]
+id = "v02-closing-01"
+section = "closing"
+show = "We began with two separate records and one everyday requirement. A shared variable kept each parcel together across both conditions."
+scene = "closing"
+source = "notes.md#v02-closing"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "one", phrase = "shared variable" }]
+
+[[lines]]
+id = "v02-closing-02"
+section = "closing"
+show = "Once the right records were present, the rule supported a conclusion we had never supplied as a premise. The derivation showed the connection."
+scene = "closing"
+source = "notes.md#v02-closing"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "two", phrase = "The derivation" }]
+
+[[lines]]
+id = "v02-closing-03"
+section = "closing"
+show = "And the some-object claim needed only one supported example, even when more than one was available."
+scene = "closing"
+source = "notes.md#v02-closing"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "three", phrase = "one supported example" }]
+
+[[lines]]
+id = "v02-closing-04"
+section = "closing"
+show = "This is the symbolic foundation of our neuro-symbolic course: make the starting information explicit, evaluate a claim, and inspect what supports it."
+scene = "closing"
+source = "notes.md#v02-closing"
+only = ["long"]
+
+[[lines]]
+id = "v02-closing-05"
+section = "closing"
+show = "Next, we'll look at an argument place left empty, and why leaving it out differs from saying some value."
+scene = "closing"
+source = "notes.md#v02-closing"
+only = ["long"]
+emphasis = [{ id = "focus-1", target = "next", phrase = "left empty" }]
+
+[[lines]]
+id = "v02-short-story-01"
+section = "short-story"
+show = "A shop's dispatch checklist needs packing and label confirmations for the same parcel."
+scene = "short-shop"
+source = "notes.md#v02-short-story"
+only = ["short"]
+emphasis = [{ id = "focus-1", target = "label", phrase = "packing and label" }]
+
+[[lines]]
+id = "v02-short-story-02"
+section = "short-story"
+show = "Parcel A has a packing record and the checklist rule, but no label record."
+scene = "short-shop"
+source = "notes.md#v02-short-story"
+only = ["short"]
+emphasis = [{ id = "focus-1", target = "detail", phrase = "Parcel A" }]
+
+[[lines]]
+id = "v02-short-story-03"
+section = "short-story"
+show = "For the claim that A meets the checklist, the verdict is FALSE. That means unsupported by these records, not proof that a label was never attached."
+scene = "pg-18-short-missing"
+source = "notes.md#v02-short-story"
+only = ["short"]
+emphasis = [{ id = "focus-1", target = "false", phrase = "FALSE" }]
+camera = "result"
+camera_vertical = "result"
+
+[[lines]]
+id = "v02-short-story-04"
+section = "short-story"
+show = "A new label confirmation arrives for A. We add that record as a premise; the checklist rule stays the same."
+scene = "short-new"
+source = "notes.md#v02-short-story"
+only = ["short"]
+emphasis = [{ id = "focus-1", target = "label", phrase = "for A" }]
+
+[[lines]]
+id = "v02-short-story-05"
+section = "short-story"
+show = "The TRUE result now follows from both records and the checklist rule."
+scene = "pg-19-short-derived"
+source = "notes.md#v02-short-story"
+only = ["short"]
+emphasis = [{ id = "focus-1", target = "true", phrase = "TRUE" }]
+camera = "short-proof"
+camera_vertical = "short-proof"
+
+[[lines]]
+id = "v02-short-story-06"
+section = "short-story"
+show = "Without the rule, FALSE returns. Both records remain, but the connection is missing."
+scene = "pg-20-short-no-rule"
+source = "notes.md#v02-short-story"
+only = ["short"]
+emphasis = [{ id = "focus-1", target = "false", phrase = "FALSE" }]
+camera = "result"
+camera_vertical = "result"
+
+[[lines]]
+id = "v02-short-story-07"
+section = "short-story"
+show = "A missing record and a missing rule are different gaps in what supports the conclusion."
+scene = "short-rule"
+source = "notes.md#v02-short-story"
+only = ["short"]
+emphasis = [{ id = "focus-1", target = "label", phrase = "missing record" }, { id = "focus-2", target = "detail", phrase = "and a missing rule" }]
+
+[[lines]]
+id = "v02-short-story-08"
+section = "short-story"
+show = "Follow the support: records supply the information, and the rule connects it to the conclusion."
+scene = "short-close"
+source = "notes.md#v02-short-story"
+only = ["short"]
+emphasis = [{ id = "focus-1", target = "label", phrase = "Follow the support" }]
+
+[scenes.shop]
+kind = "image"
+url = "build/cards/shop.svg"
+scale = 3
+
+[scenes.shop.targets.a]
+element = "a-title"
+continuity = "shop-a"
+
+[scenes.shop.targets.b]
+element = "b-title"
+continuity = "shop-b"
+
+[scenes.shop.targets.same]
+element = "same"
+continuity = "shop-same"
+span = { text = "same parcel" }
+
+[scenes.shop.targets.limit]
+element = "limit"
+continuity = "shop-limit"
+
+[scenes.purpose]
+kind = "image"
+url = "build/cards/purpose.svg"
+scale = 3
+
+[scenes.purpose.targets.records]
+element = "records"
+continuity = "purpose-records"
+
+[scenes.purpose.targets.rule]
+element = "rule"
+continuity = "purpose-rule"
+
+[scenes.purpose.targets.conclusion]
+element = "conclusion"
+continuity = "purpose-conclusion"
+
+[scenes.purpose.targets.goal]
+element = "goal"
+continuity = "purpose-goal"
+
+[scenes.purpose.targets.limit]
+element = "limit"
+continuity = "purpose-limit"
+
+[scenes.english-rule]
+kind = "image"
+url = "build/cards/english-rule.svg"
+scale = 3
+
+[scenes.english-rule.targets.every]
+element = "every"
+continuity = "english-rule-every"
+
+[scenes.english-rule.targets.condition-a]
+element = "condition-a"
+continuity = "english-rule-condition-a"
+
+[scenes.english-rule.targets.condition-b]
+element = "condition-b"
+continuity = "english-rule-condition-b"
+
+[scenes.english-rule.targets.conclusion]
+element = "conclusion"
+continuity = "english-rule-conclusion"
+
+[scenes.english-rule.targets.same]
+element = "same"
+continuity = "english-rule-same"
+
+[scenes.lists]
+kind = "image"
+url = "build/cards/lists.svg"
+scale = 3
+
+[scenes.lists.targets.packed]
+element = "packed"
+continuity = "lists-packed"
+
+[scenes.lists.targets.labeled]
+element = "labeled"
+continuity = "lists-labeled"
+
+[scenes.lists.targets.checklist]
+element = "checklist"
+continuity = "lists-checklist"
+
+[scenes.lists.targets.meaning]
+element = "meaning"
+continuity = "lists-meaning"
+
+[scenes.rule-1]
+kind = "image"
+url = "build/cards/rule-1.svg"
+scale = 3
+
+[scenes.rule-1.targets.binder]
+element = "binder"
+continuity = "rule-build-binder"
+
+[scenes.rule-1.targets.all]
+element = "all"
+continuity = "rule-build-all"
+span = { text = "all" }
+
+[scenes.rule-1.targets.var-binding]
+element = "var-binding"
+continuity = "rule-build-var-binding"
+
+[scenes.rule-1.targets.colon]
+element = "colon"
+continuity = "rule-build-colon"
+
+[scenes.rule-1.targets.reading]
+element = "reading"
+continuity = "rule-build-reading"
+
+[scenes.rule-2]
+kind = "image"
+url = "build/cards/rule-2.svg"
+scale = 3
+
+[scenes.rule-2.targets.binder]
+element = "binder"
+continuity = "rule-build-binder"
+
+[scenes.rule-2.targets.all]
+element = "all"
+continuity = "rule-build-all"
+span = { text = "all" }
+
+[scenes.rule-2.targets.var-binding]
+element = "var-binding"
+continuity = "rule-build-var-binding"
+
+[scenes.rule-2.targets.colon]
+element = "colon"
+continuity = "rule-build-colon"
+
+[scenes.rule-2.targets.packing-condition]
+element = "packing-condition"
+continuity = "rule-build-packing-condition"
+
+[scenes.rule-2.targets.p-prefix]
+element = "p-prefix"
+continuity = "rule-build-p-prefix"
+
+[scenes.rule-2.targets.var-packed]
+element = "var-packed"
+continuity = "rule-build-var-packed"
+
+[scenes.rule-2.targets.packed-set]
+element = "packed-set"
+continuity = "rule-build-packed-set"
+span = { text = "PackedParcels" }
+
+[scenes.rule-2.targets.reading]
+element = "reading"
+continuity = "rule-build-reading"
+
+[scenes.rule-3]
+kind = "image"
+url = "build/cards/rule-3.svg"
+scale = 3
+
+[scenes.rule-3.targets.binder]
+element = "binder"
+continuity = "rule-build-binder"
+
+[scenes.rule-3.targets.all]
+element = "all"
+continuity = "rule-build-all"
+span = { text = "all" }
+
+[scenes.rule-3.targets.var-binding]
+element = "var-binding"
+continuity = "rule-build-var-binding"
+
+[scenes.rule-3.targets.colon]
+element = "colon"
+continuity = "rule-build-colon"
+
+[scenes.rule-3.targets.packing-condition]
+element = "packing-condition"
+continuity = "rule-build-packing-condition"
+
+[scenes.rule-3.targets.p-prefix]
+element = "p-prefix"
+continuity = "rule-build-p-prefix"
+
+[scenes.rule-3.targets.var-packed]
+element = "var-packed"
+continuity = "rule-build-var-packed"
+
+[scenes.rule-3.targets.packed-set]
+element = "packed-set"
+continuity = "rule-build-packed-set"
+span = { text = "PackedParcels" }
+
+[scenes.rule-3.targets.label-condition]
+element = "label-condition"
+continuity = "rule-build-label-condition"
+
+[scenes.rule-3.targets.and]
+element = "and"
+continuity = "rule-build-and"
+span = { text = "&" }
+
+[scenes.rule-3.targets.l-prefix]
+element = "l-prefix"
+continuity = "rule-build-l-prefix"
+
+[scenes.rule-3.targets.var-labeled]
+element = "var-labeled"
+continuity = "rule-build-var-labeled"
+
+[scenes.rule-3.targets.labeled-set]
+element = "labeled-set"
+continuity = "rule-build-labeled-set"
+span = { text = "LabeledParcels" }
+
+[scenes.rule-3.targets.reading]
+element = "reading"
+continuity = "rule-build-reading"
+
+[scenes.rule-4]
+kind = "image"
+url = "build/cards/rule-4.svg"
+scale = 3
+
+[scenes.rule-4.targets.binder]
+element = "binder"
+continuity = "rule-build-binder"
+
+[scenes.rule-4.targets.all]
+element = "all"
+continuity = "rule-build-all"
+span = { text = "all" }
+
+[scenes.rule-4.targets.var-binding]
+element = "var-binding"
+continuity = "rule-build-var-binding"
+
+[scenes.rule-4.targets.colon]
+element = "colon"
+continuity = "rule-build-colon"
+
+[scenes.rule-4.targets.packing-condition]
+element = "packing-condition"
+continuity = "rule-build-packing-condition"
+
+[scenes.rule-4.targets.p-prefix]
+element = "p-prefix"
+continuity = "rule-build-p-prefix"
+
+[scenes.rule-4.targets.var-packed]
+element = "var-packed"
+continuity = "rule-build-var-packed"
+
+[scenes.rule-4.targets.packed-set]
+element = "packed-set"
+continuity = "rule-build-packed-set"
+span = { text = "PackedParcels" }
+
+[scenes.rule-4.targets.label-condition]
+element = "label-condition"
+continuity = "rule-build-label-condition"
+
+[scenes.rule-4.targets.and]
+element = "and"
+continuity = "rule-build-and"
+span = { text = "&" }
+
+[scenes.rule-4.targets.l-prefix]
+element = "l-prefix"
+continuity = "rule-build-l-prefix"
+
+[scenes.rule-4.targets.var-labeled]
+element = "var-labeled"
+continuity = "rule-build-var-labeled"
+
+[scenes.rule-4.targets.labeled-set]
+element = "labeled-set"
+continuity = "rule-build-labeled-set"
+span = { text = "LabeledParcels" }
+
+[scenes.rule-4.targets.rule-conclusion]
+element = "rule-conclusion"
+continuity = "rule-build-rule-conclusion"
+
+[scenes.rule-4.targets.arrow]
+element = "arrow"
+continuity = "rule-build-arrow"
+span = { text = "->" }
+
+[scenes.rule-4.targets.c-prefix]
+element = "c-prefix"
+continuity = "rule-build-c-prefix"
+
+[scenes.rule-4.targets.var-conclusion]
+element = "var-conclusion"
+continuity = "rule-build-var-conclusion"
+
+[scenes.rule-4.targets.dispatch-set]
+element = "dispatch-set"
+continuity = "rule-build-dispatch-set"
+span = { text = "DispatchChecklistMet" }
+
+[scenes.rule-4.targets.period]
+element = "period"
+continuity = "rule-build-period"
+
+[scenes.rule-4.targets.reading]
+element = "reading"
+continuity = "rule-build-reading"
+
+[scenes.rule-4.targets.shared]
+elements = ["var-packed", "var-labeled", "var-conclusion"]
+continuity = "shared-parcel-arguments"
+
+[scenes.new-label]
+kind = "image"
+url = "build/cards/new-label.svg"
+scale = 3
+
+[scenes.new-label.targets.packing]
+element = "packing-body"
+continuity = "new-label-packing"
+
+[scenes.new-label.targets.label]
+element = "label-body"
+continuity = "new-label-label"
+
+[scenes.new-label.targets.change]
+element = "change"
+continuity = "new-label-change"
+
+[scenes.compare-rule]
+kind = "image"
+url = "build/cards/compare-rule.svg"
+scale = 3
+
+[scenes.compare-rule.targets.point]
+element = "point"
+continuity = "compare-rule-point"
+
+[scenes.compare-rule.targets.footer]
+element = "footer"
+continuity = "compare-rule-footer"
+
+[scenes.compare-given]
+kind = "image"
+url = "build/cards/compare-given.svg"
+scale = 3
+
+[scenes.compare-given.targets.point]
+element = "point"
+continuity = "compare-given-point"
+
+[scenes.compare-given.targets.footer]
+element = "footer"
+continuity = "compare-given-footer"
+
+[scenes.objects]
+kind = "image"
+url = "build/cards/objects.svg"
+scale = 3
+
+[scenes.objects.targets.rule-meaning]
+element = "rule-meaning"
+continuity = "objects-rule-meaning"
+
+[scenes.objects.targets.some-meaning]
+element = "some-meaning"
+continuity = "objects-some-meaning"
+
+[scenes.objects.targets.object-a]
+element = "object-a"
+continuity = "objects-object-a"
+
+[scenes.objects.targets.object-b]
+element = "object-b"
+continuity = "objects-object-b"
+
+[scenes.objects.targets.reading]
+element = "reading"
+continuity = "objects-reading"
+
+[scenes.objects.targets.object-word]
+element = "object-a"
+span = { text = "object" }
+continuity = "objects-object-word"
+
+[scenes.objects.targets.object-arg]
+element = "object-a"
+span = { text = "ParcelA" }
+continuity = "objects-object-arg"
+
+[scenes.b-record]
+kind = "image"
+url = "build/cards/b-record.svg"
+scale = 3
+
+[scenes.b-record.targets.packing]
+element = "packing-body"
+continuity = "b-record-packing"
+
+[scenes.b-record.targets.label]
+element = "label-body"
+continuity = "b-record-label"
+
+[scenes.b-record.targets.some]
+element = "some"
+continuity = "b-record-some"
+
+[scenes.closing]
+kind = "image"
+url = "build/cards/closing.svg"
+scale = 3
+
+[scenes.closing.targets.one]
+element = "one"
+continuity = "closing-one"
+
+[scenes.closing.targets.two]
+element = "two"
+continuity = "closing-two"
+
+[scenes.closing.targets.three]
+element = "three"
+continuity = "closing-three"
+
+[scenes.closing.targets.next]
+element = "next"
+continuity = "closing-next"
+
+[scenes.short-shop]
+kind = "image"
+url = "build/cards/short-shop.svg"
+scale = 3
+
+[scenes.short-shop.targets.label]
+element = "label"
+continuity = "short-shop-label"
+
+[scenes.short-shop.targets.detail]
+element = "detail-0"
+continuity = "short-shop-detail"
+span = { text = "Parcel A" }
+
+[scenes.short-new]
+kind = "image"
+url = "build/cards/short-new.svg"
+scale = 3
+
+[scenes.short-new.targets.label]
+element = "label"
+continuity = "short-new-label"
+
+[scenes.short-new.targets.detail]
+element = "detail-0"
+continuity = "short-new-detail"
+
+[scenes.short-rule]
+kind = "image"
+url = "build/cards/short-rule.svg"
+scale = 3
+
+[scenes.short-rule.targets.label]
+element = "label"
+continuity = "short-rule-label"
+
+[scenes.short-rule.targets.detail]
+element = "detail-0"
+continuity = "short-rule-detail"
+
+[scenes.short-close]
+kind = "image"
+url = "build/cards/short-close.svg"
+scale = 3
+
+[scenes.short-close.targets.label]
+element = "label"
+continuity = "short-close-label"
+
+[scenes.short-close.targets.detail]
+element = "detail-0"
+continuity = "short-close-detail"
+
+[scenes.pg-02-rule]
+kind = "image"
+url = "build/cards/pg-02-rule.svg"
+scale = 3
+
+[scenes.pg-02-rule.targets.kb-rule]
+element = "screen"
+capture = { receipt = "build/playground/02-rule.targets.json", target = "kb-text/all $parcel: member($parcel, PackedParcels) & member($parcel, LabeledParcels) -> member($parcel, DispatchChecklistMet)./1" }
+continuity = "02-rule-kb-rule"
+
+[scenes.pg-02-rule.targets.region-kb]
+element = "screen"
+capture = { receipt = "build/playground/02-rule.targets.json", target = "kb" }
+
+[scenes.pg-02-rule.cameras.kb]
+union = ["region-kb"]
+
+[scenes.pg-02-rule.cameras.wide]
+viewport = true
+
+[scenes.pg-03-review]
+kind = "image"
+url = "build/cards/pg-03-review.svg"
+scale = 3
+
+[scenes.pg-03-review.targets.review]
+element = "screen"
+capture = { receipt = "build/playground/03-review.targets.json", target = "review" }
+continuity = "03-review-review"
+
+[scenes.pg-03-review.targets.review-action]
+element = "screen"
+capture = { receipt = "build/playground/03-review.targets.json", target = "review-action" }
+continuity = "03-review-review-action"
+
+[scenes.pg-03-review.targets.region-review]
+element = "screen"
+capture = { receipt = "build/playground/03-review.targets.json", target = "review" }
+
+[scenes.pg-03-review.targets.region-review-action]
+element = "screen"
+capture = { receipt = "build/playground/03-review.targets.json", target = "review-action" }
+
+[scenes.pg-03-review.cameras.review]
+union = ["region-review", "region-review-action"]
+
+[scenes.pg-04-rule-ready]
+kind = "image"
+url = "build/cards/pg-04-rule-ready.svg"
+scale = 3
+
+[scenes.pg-04-rule-ready.targets.claim]
+element = "screen"
+capture = { receipt = "build/playground/04-rule-ready.targets.json", target = "claim-field" }
+continuity = "04-rule-ready-claim"
+
+[scenes.pg-04-rule-ready.targets.region-claim-field]
+element = "screen"
+capture = { receipt = "build/playground/04-rule-ready.targets.json", target = "claim-field" }
+
+[scenes.pg-04-rule-ready.cameras.claim]
+union = ["region-claim-field"]
+
+[scenes.pg-04-rule-ready.cameras.wide]
+viewport = true
+
+[scenes.pg-05-missing-label]
+kind = "image"
+url = "build/cards/pg-05-missing-label.svg"
+scale = 3
+
+[scenes.pg-05-missing-label.targets.false]
+element = "screen"
+capture = { receipt = "build/playground/05-missing-label.targets.json", target = "result-verdict" }
+continuity = "05-missing-label-false"
+
+[scenes.pg-05-missing-label.targets.region-result]
+element = "screen"
+capture = { receipt = "build/playground/05-missing-label.targets.json", target = "result" }
+
+[scenes.pg-05-missing-label.cameras.result]
+union = ["region-result"]
+
+[scenes.pg-06-repaired-ready]
+kind = "image"
+url = "build/cards/pg-06-repaired-ready.svg"
+scale = 3
+
+[scenes.pg-06-repaired-ready.targets.a-label]
+element = "screen"
+capture = { receipt = "build/playground/06-repaired-ready.targets.json", target = "kb-text/member(ParcelA, LabeledParcels)./1" }
+continuity = "06-repaired-ready-a-label"
+
+[scenes.pg-06-repaired-ready.targets.region-kb]
+element = "screen"
+capture = { receipt = "build/playground/06-repaired-ready.targets.json", target = "kb" }
+
+[scenes.pg-06-repaired-ready.cameras.kb]
+union = ["region-kb"]
+
+[scenes.pg-07-derived]
+kind = "image"
+url = "build/cards/pg-07-derived.svg"
+scale = 3
+
+[scenes.pg-07-derived.targets.citation]
+element = "screen"
+capture = { receipt = "build/playground/07-derived.targets.json", target = "derived-row" }
+continuity = "07-derived-citation"
+
+[scenes.pg-07-derived.targets.derived]
+element = "screen"
+capture = { receipt = "build/playground/07-derived.targets.json", target = "derived-conclusion" }
+continuity = "07-derived-derived"
+
+[scenes.pg-07-derived.targets.labeled]
+element = "screen"
+capture = { receipt = "build/playground/07-derived.targets.json", target = "labeled-leaf" }
+continuity = "07-derived-labeled"
+
+[scenes.pg-07-derived.targets.packed]
+element = "screen"
+capture = { receipt = "build/playground/07-derived.targets.json", target = "packed-leaf" }
+continuity = "07-derived-packed"
+
+[scenes.pg-07-derived.targets.true]
+element = "screen"
+capture = { receipt = "build/playground/07-derived.targets.json", target = "result-verdict" }
+continuity = "07-derived-true"
+
+[scenes.pg-07-derived.targets.region-proof-content]
+element = "screen"
+capture = { receipt = "build/playground/07-derived.targets.json", target = "proof-content" }
+
+[scenes.pg-07-derived.targets.region-result]
+element = "screen"
+capture = { receipt = "build/playground/07-derived.targets.json", target = "result" }
+
+[scenes.pg-07-derived.cameras.proof]
+union = ["region-proof-content"]
+
+[scenes.pg-07-derived.cameras.result]
+union = ["region-result"]
+
+[scenes.pg-08-repeat]
+kind = "image"
+url = "build/cards/pg-08-repeat.svg"
+scale = 3
+
+[scenes.pg-08-repeat.targets.region-kb]
+element = "screen"
+capture = { receipt = "build/playground/08-repeat.targets.json", target = "kb" }
+
+[scenes.pg-08-repeat.targets.region-claim-field]
+element = "screen"
+capture = { receipt = "build/playground/08-repeat.targets.json", target = "claim-field" }
+
+[scenes.pg-08-repeat.cameras.inputs]
+union = ["region-kb", "region-claim-field"]
+
+[scenes.pg-09-no-rule]
+kind = "image"
+url = "build/cards/pg-09-no-rule.svg"
+scale = 3
+
+[scenes.pg-09-no-rule.targets.false]
+element = "screen"
+capture = { receipt = "build/playground/09-no-rule.targets.json", target = "result-verdict" }
+continuity = "09-no-rule-false"
+
+[scenes.pg-09-no-rule.targets.region-kb]
+element = "screen"
+capture = { receipt = "build/playground/09-no-rule.targets.json", target = "kb" }
+
+[scenes.pg-09-no-rule.targets.region-result]
+element = "screen"
+capture = { receipt = "build/playground/09-no-rule.targets.json", target = "result" }
+
+[scenes.pg-09-no-rule.cameras.kb]
+union = ["region-kb"]
+
+[scenes.pg-09-no-rule.cameras.result]
+union = ["region-result"]
+
+[scenes.pg-10-given]
+kind = "image"
+url = "build/cards/pg-10-given.svg"
+scale = 3
+
+[scenes.pg-10-given.targets.given]
+element = "screen"
+capture = { receipt = "build/playground/10-given.targets.json", target = "given-conclusion" }
+continuity = "10-given-given"
+
+[scenes.pg-10-given.targets.region-proof-content]
+element = "screen"
+capture = { receipt = "build/playground/10-given.targets.json", target = "proof-content" }
+
+[scenes.pg-10-given.cameras.proof]
+union = ["region-proof-content"]
+
+[scenes.pg-11-restored]
+kind = "image"
+url = "build/cards/pg-11-restored.svg"
+scale = 3
+
+[scenes.pg-11-restored.targets.derived]
+element = "screen"
+capture = { receipt = "build/playground/11-restored.targets.json", target = "derived-conclusion" }
+continuity = "11-restored-derived"
+
+[scenes.pg-11-restored.targets.region-proof-content]
+element = "screen"
+capture = { receipt = "build/playground/11-restored.targets.json", target = "proof-content" }
+
+[scenes.pg-11-restored.cameras.proof]
+union = ["region-proof-content"]
+
+[scenes.pg-12-objects]
+kind = "image"
+url = "build/cards/pg-12-objects.svg"
+scale = 3
+
+[scenes.pg-12-objects.targets.claim-set]
+element = "screen"
+capture = { receipt = "build/playground/12-objects.targets.json", target = "claim-text/DispatchChecklistMet/1" }
+continuity = "12-objects-claim-set"
+
+[scenes.pg-12-objects.targets.some]
+element = "screen"
+capture = { receipt = "build/playground/12-objects.targets.json", target = "claim-text/some object/1" }
+continuity = "12-objects-some"
+
+[scenes.pg-12-objects.targets.region-claim-field]
+element = "screen"
+capture = { receipt = "build/playground/12-objects.targets.json", target = "claim-field" }
+
+[scenes.pg-12-objects.cameras.claim]
+union = ["region-claim-field"]
+
+[scenes.pg-13-some-one]
+kind = "image"
+url = "build/cards/pg-13-some-one.svg"
+scale = 3
+
+[scenes.pg-13-some-one.targets.derived]
+element = "screen"
+capture = { receipt = "build/playground/13-some-one.targets.json", target = "derived-conclusion" }
+continuity = "13-some-one-derived"
+
+[scenes.pg-13-some-one.targets.object-leaf]
+element = "screen"
+capture = { receipt = "build/playground/13-some-one.targets.json", target = "object-leaf" }
+continuity = "13-some-one-object-leaf"
+
+[scenes.pg-13-some-one.targets.region-proof-content]
+element = "screen"
+capture = { receipt = "build/playground/13-some-one.targets.json", target = "proof-content" }
+
+[scenes.pg-13-some-one.cameras.proof]
+union = ["region-proof-content"]
+
+[scenes.pg-14-b-missing]
+kind = "image"
+url = "build/cards/pg-14-b-missing.svg"
+scale = 3
+
+[scenes.pg-14-b-missing.targets.false]
+element = "screen"
+capture = { receipt = "build/playground/14-b-missing.targets.json", target = "result-verdict" }
+continuity = "14-b-missing-false"
+
+[scenes.pg-14-b-missing.targets.region-result]
+element = "screen"
+capture = { receipt = "build/playground/14-b-missing.targets.json", target = "result" }
+
+[scenes.pg-14-b-missing.cameras.result]
+union = ["region-result"]
+
+[scenes.pg-16-b-derived]
+kind = "image"
+url = "build/cards/pg-16-b-derived.svg"
+scale = 3
+
+[scenes.pg-16-b-derived.targets.labeled]
+element = "screen"
+capture = { receipt = "build/playground/16-b-derived.targets.json", target = "labeled-leaf" }
+continuity = "16-b-derived-labeled"
+
+[scenes.pg-16-b-derived.targets.packed]
+element = "screen"
+capture = { receipt = "build/playground/16-b-derived.targets.json", target = "packed-leaf" }
+continuity = "16-b-derived-packed"
+
+[scenes.pg-16-b-derived.targets.region-proof-content]
+element = "screen"
+capture = { receipt = "build/playground/16-b-derived.targets.json", target = "proof-content" }
+
+[scenes.pg-16-b-derived.cameras.proof]
+union = ["region-proof-content"]
+
+[scenes.pg-17-some-both]
+kind = "image"
+url = "build/cards/pg-17-some-both.svg"
+scale = 3
+
+[scenes.pg-17-some-both.targets.true]
+element = "screen"
+capture = { receipt = "build/playground/17-some-both.targets.json", target = "result-verdict" }
+continuity = "17-some-both-true"
+
+[scenes.pg-17-some-both.targets.region-result]
+element = "screen"
+capture = { receipt = "build/playground/17-some-both.targets.json", target = "result" }
+
+[scenes.pg-17-some-both.cameras.result]
+union = ["region-result"]
+
+[scenes.pg-18-short-missing]
+kind = "image"
+url = "build/cards/pg-18-short-missing.svg"
+scale = 3
+
+[scenes.pg-18-short-missing.targets.false]
+element = "screen"
+capture = { receipt = "build/playground/18-short-missing.targets.json", target = "result-verdict" }
+continuity = "18-short-missing-false"
+
+[scenes.pg-18-short-missing.targets.region-result]
+element = "screen"
+capture = { receipt = "build/playground/18-short-missing.targets.json", target = "result" }
+
+[scenes.pg-18-short-missing.cameras.result]
+union = ["region-result"]
+
+[scenes.pg-19-short-derived]
+kind = "image"
+url = "build/cards/pg-19-short-derived.svg"
+scale = 3
+
+[scenes.pg-19-short-derived.targets.true]
+element = "screen"
+capture = { receipt = "build/playground/19-short-derived.targets.json", target = "result-verdict" }
+continuity = "19-short-derived-true"
+
+[scenes.pg-19-short-derived.targets.region-proof-all-ink]
+element = "screen"
+capture = { receipt = "build/playground/19-short-derived.targets.json", target = "proof-all-ink" }
+
+[scenes.pg-19-short-derived.targets.region-result]
+element = "screen"
+capture = { receipt = "build/playground/19-short-derived.targets.json", target = "result" }
+
+[scenes.pg-19-short-derived.cameras.short-proof]
+union = ["region-proof-all-ink", "region-result"]
+
+[scenes.pg-20-short-no-rule]
+kind = "image"
+url = "build/cards/pg-20-short-no-rule.svg"
+scale = 3
+
+[scenes.pg-20-short-no-rule.targets.false]
+element = "screen"
+capture = { receipt = "build/playground/20-short-no-rule.targets.json", target = "result-verdict" }
+continuity = "20-short-no-rule-false"
+
+[scenes.pg-20-short-no-rule.targets.region-result]
+element = "screen"
+capture = { receipt = "build/playground/20-short-no-rule.targets.json", target = "result" }
+
+[scenes.pg-20-short-no-rule.cameras.result]
+union = ["region-result"]
